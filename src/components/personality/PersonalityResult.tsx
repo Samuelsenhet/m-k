@@ -1,7 +1,12 @@
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { type PersonalityTestResult, type DimensionKey, DIMENSION_LABELS, CATEGORY_INFO } from '@/types/personality';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, ArrowLeft, Share2 } from 'lucide-react';
+import { Heart, Sparkles, ArrowLeft, Share2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PersonalityResultProps {
   result: PersonalityTestResult;
@@ -18,7 +23,27 @@ const dimensionColors: Record<DimensionKey, string> = {
 
 export const PersonalityResult = ({ result, onRestart }: PersonalityResultProps) => {
   const categoryInfo = CATEGORY_INFO[result.category];
+  const { user } = useAuth();
 
+  useEffect(() => {
+    const saveResult = async () => {
+      if (!user) return;
+      
+      const { error } = await supabase.from('personality_results').insert({
+        user_id: user.id,
+        category: result.category,
+        scores: result.scores
+      });
+
+      if (error) {
+        console.error('Error saving result:', error);
+      } else {
+        toast.success('Ditt resultat har sparats!');
+      }
+    };
+
+    saveResult();
+  }, [user, result]);
   return (
     <div className="min-h-screen gradient-hero">
       <div className="container max-w-2xl mx-auto px-4 py-8">
@@ -119,12 +144,27 @@ export const PersonalityResult = ({ result, onRestart }: PersonalityResultProps)
             <ArrowLeft className="w-4 h-4" />
             Gör om testet
           </Button>
-          <Button
-            className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
-          >
-            <Share2 className="w-4 h-4" />
-            Dela resultat
-          </Button>
+          {user ? (
+            <Button
+              asChild
+              className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
+            >
+              <Link to="/profile">
+                <User className="w-4 h-4" />
+                Se alla resultat
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
+            >
+              <Link to="/auth">
+                <Share2 className="w-4 h-4" />
+                Logga in för att spara
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </div>
