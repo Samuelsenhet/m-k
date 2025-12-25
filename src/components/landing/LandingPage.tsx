@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogIn } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Heart, Sparkles, Users, MessageCircle, ArrowRight } from 'lucide-react';
 import heroIllustration from '@/assets/hero-illustration.png';
 
 interface LandingPageProps {
@@ -9,8 +7,6 @@ interface LandingPageProps {
 }
 
 export const LandingPage = ({ onStart }: LandingPageProps) => {
-  const { user } = useAuth();
-
   return (
     <div className="min-h-screen gradient-hero overflow-hidden">
       {/* Decorative elements */}
@@ -29,23 +25,9 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </div>
             <span className="text-2xl font-serif font-bold text-foreground">MÄÄK</span>
           </div>
-          <div className="flex items-center gap-2">
-            {user ? (
-              <Button variant="outline" asChild className="gap-2">
-                <Link to="/profile">
-                  <User className="w-4 h-4" />
-                  Min profil
-                </Link>
-              </Button>
-            ) : (
-              <Button variant="outline" asChild className="gap-2">
-                <Link to="/auth">
-                  <LogIn className="w-4 h-4" />
-                  Logga in
-                </Link>
-              </Button>
-            )}
-          </div>
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+            Om oss
+          </Button>
         </nav>
 
         {/* Hero */}
