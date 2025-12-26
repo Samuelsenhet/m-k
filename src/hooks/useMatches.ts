@@ -11,7 +11,9 @@ interface Match {
     displayName: string;
     avatarUrl?: string;
     category: PersonalityCategory;
+    archetype?: string;
     bio?: string;
+    photos?: string[];
   };
   matchType: 'similar' | 'complementary';
   matchScore: number;
@@ -97,17 +99,35 @@ export const useMatches = (): UseMatchesReturn => {
 
         const { data: personalityData, error: personalityError } = await supabase
           .from('personality_results')
-          .select('user_id, category')
+          .select('user_id, category, archetype')
           .in('user_id', matchedUserIds);
 
         if (personalityError) throw personalityError;
 
+        // Fetch profile photos for matched users
+        const { data: photosData, error: photosError } = await supabase
+          .from('profile_photos')
+          .select('user_id, storage_path, display_order')
+          .in('user_id', matchedUserIds)
+          .order('display_order', { ascending: true });
+
+        if (photosError) throw photosError;
+
         const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
-        const categoryMap = new Map(personalityData?.map((p) => [p.user_id, p.category]));
+        const categoryMap = new Map(personalityData?.map((p) => [p.user_id, { category: p.category, archetype: p.archetype }]));
+        
+        // Group photos by user
+        const photosMap = new Map<string, string[]>();
+        photosData?.forEach((photo) => {
+          const existing = photosMap.get(photo.user_id) || [];
+          existing.push(photo.storage_path);
+          photosMap.set(photo.user_id, existing);
+        });
 
         const formattedMatches: Match[] = existingMatches.map((m) => {
           const profile = profileMap.get(m.matched_user_id);
-          const category = categoryMap.get(m.matched_user_id) as PersonalityCategory || 'DIPLOMAT';
+          const personality = categoryMap.get(m.matched_user_id);
+          const photos = photosMap.get(m.matched_user_id) || [];
           
           return {
             id: m.id,
@@ -115,8 +135,10 @@ export const useMatches = (): UseMatchesReturn => {
               userId: m.matched_user_id,
               displayName: profile?.display_name || 'Anonym',
               avatarUrl: profile?.avatar_url || undefined,
-              category,
+              category: (personality?.category || 'DIPLOMAT') as PersonalityCategory,
+              archetype: personality?.archetype || undefined,
               bio: profile?.bio || undefined,
+              photos,
             },
             matchType: m.match_type as 'similar' | 'complementary',
             matchScore: Number(m.match_score),
@@ -142,7 +164,7 @@ export const useMatches = (): UseMatchesReturn => {
 
       const { data: allResults, error: allResultsError } = await supabase
         .from('personality_results')
-        .select('user_id, category, scores')
+        .select('user_id, category, archetype, scores')
         .neq('user_id', user.id);
 
       if (allResultsError) throw allResultsError;
@@ -160,6 +182,7 @@ export const useMatches = (): UseMatchesReturn => {
             displayName: profile?.display_name || 'Anonym',
             avatarUrl: profile?.avatar_url || undefined,
             category: r.category as PersonalityCategory,
+            archetype: r.archetype || undefined,
             scores: r.scores as Record<DimensionKey, number>,
             bio: profile?.bio || undefined,
           };
@@ -211,7 +234,9 @@ export const useMatches = (): UseMatchesReturn => {
           displayName: m.user.displayName,
           avatarUrl: m.user.avatarUrl,
           category: m.user.category,
+          archetype: (m.user as any).archetype,
           bio: m.user.bio,
+          photos: [],
         },
         matchType: m.matchType,
         matchScore: m.matchScore,
