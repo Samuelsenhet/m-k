@@ -6,13 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePhoneAuth } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PhoneInput } from '@/components/auth/PhoneInput';
 import { OtpInput } from '@/components/auth/OtpInput';
 import { AgeVerification, calculateAge } from '@/components/auth/AgeVerification';
-import { Heart, ArrowLeft, User, RefreshCw } from 'lucide-react';
+import { Heart, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const phoneSchema = z.string()
@@ -23,7 +21,6 @@ const phoneSchema = z.string()
 const otpSchema = z.string().length(6, 'Koden måste vara 6 siffror');
 
 const profileSchema = z.object({
-  displayName: z.string().min(2, 'Namnet måste vara minst 2 tecken'),
   dateOfBirth: z.object({
     day: z.string().min(1, 'Välj dag'),
     month: z.string().min(1, 'Välj månad'),
@@ -34,7 +31,6 @@ const profileSchema = z.object({
 export default function PhoneAuth() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState({ day: '', month: '', year: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [countdown, setCountdown] = useState(0);
@@ -98,7 +94,7 @@ export default function PhoneAuth() {
 
   const handleCompleteProfile = async () => {
     try {
-      profileSchema.parse({ displayName, dateOfBirth });
+      profileSchema.parse({ dateOfBirth });
       
       const age = calculateAge(dateOfBirth.day, dateOfBirth.month, dateOfBirth.year);
       if (age < 20) {
@@ -119,7 +115,6 @@ export default function PhoneAuth() {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            display_name: displayName,
             date_of_birth: dobString,
             phone: formattedPhone,
             phone_verified_at: new Date().toISOString(),
@@ -133,7 +128,6 @@ export default function PhoneAuth() {
             .from('profiles')
             .insert({
               user_id: session.session.user.id,
-              display_name: displayName,
               date_of_birth: dobString,
               phone: formattedPhone,
               phone_verified_at: new Date().toISOString(),
@@ -195,12 +189,12 @@ export default function PhoneAuth() {
             <CardTitle className="text-2xl font-serif">
               {step === 'phone' && 'Ange ditt nummer'}
               {step === 'verify' && 'Verifiera din telefon'}
-              {step === 'profile' && 'Skapa din profil'}
+              {step === 'profile' && 'Bekräfta din ålder'}
             </CardTitle>
             <CardDescription>
               {step === 'phone' && 'Vi skickar en verifieringskod via SMS'}
               {step === 'verify' && `Ange koden vi skickade till +46 ${phone}`}
-              {step === 'profile' && 'Berätta lite om dig själv'}
+              {step === 'profile' && 'Du måste vara minst 20 år för att använda MÄÄK'}
             </CardDescription>
           </CardHeader>
 
@@ -287,24 +281,6 @@ export default function PhoneAuth() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  <div className="space-y-2">
-                    <Label htmlFor="displayName">Vad heter du?</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="displayName"
-                        type="text"
-                        placeholder="Ditt namn"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.displayName && (
-                      <p className="text-sm text-destructive">{errors.displayName}</p>
-                    )}
-                  </div>
-
                   <AgeVerification
                     dateOfBirth={dateOfBirth}
                     onChange={setDateOfBirth}
@@ -314,7 +290,7 @@ export default function PhoneAuth() {
                   <Button
                     onClick={handleCompleteProfile}
                     className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
-                    disabled={loading || !displayName || !dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year}
+                    disabled={loading || !dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year}
                   >
                     {loading ? 'Sparar...' : 'Slutför registrering'}
                   </Button>
