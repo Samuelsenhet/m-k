@@ -7,8 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface PersonalityResultProps {
   result: PersonalityTestResult;
-  onRestart: () => void;
+  onRestart?: () => void;
   isExistingResult?: boolean;
+  onContinue?: () => void;
 }
 
 const dimensionColors: Record<DimensionKey, string> = {
@@ -19,10 +20,11 @@ const dimensionColors: Record<DimensionKey, string> = {
   at: 'bg-dimension-at',
 };
 
-export const PersonalityResult = ({ result, onRestart, isExistingResult = false }: PersonalityResultProps) => {
+export const PersonalityResult = ({ result, onRestart, isExistingResult = false, onContinue }: PersonalityResultProps) => {
   const categoryInfo = CATEGORY_INFO[result.category];
   const archetypeInfo = result.archetype ? ARCHETYPE_INFO[result.archetype] : null;
   const { user } = useAuth();
+  const isOnboarding = !!onContinue;
 
   return (
     <div className="min-h-screen gradient-hero">
@@ -157,7 +159,15 @@ export const PersonalityResult = ({ result, onRestart, isExistingResult = false 
           className="flex flex-col sm:flex-row gap-4 animate-slide-up"
           style={{ animationDelay: '0.5s' }}
         >
-          {isExistingResult ? (
+          {isOnboarding ? (
+            <Button
+              onClick={onContinue}
+              className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
+            >
+              <Heart className="w-4 h-4" />
+              Fortsätt med profilen
+            </Button>
+          ) : isExistingResult ? (
             <>
               <Button asChild variant="outline" className="flex-1 gap-2">
                 <Link to="/profile">
@@ -174,14 +184,16 @@ export const PersonalityResult = ({ result, onRestart, isExistingResult = false 
             </>
           ) : (
             <>
-              <Button
-                variant="outline"
-                onClick={onRestart}
-                className="flex-1 gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Gör om testet
-              </Button>
+              {onRestart && (
+                <Button
+                  variant="outline"
+                  onClick={onRestart}
+                  className="flex-1 gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Gör om testet
+                </Button>
+              )}
               {user ? (
                 <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
                   <Link to="/profile">
