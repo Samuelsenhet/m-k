@@ -6,7 +6,7 @@ import { useMatches } from '@/hooks/useMatches';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CATEGORY_INFO, ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
-import { Heart, X, Sparkles, Users, RefreshCw, MessageCircle, User, MapPin, Briefcase } from 'lucide-react';
+import { Heart, X, Sparkles, Users, RefreshCw, MessageCircle } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ProfileCompletionPrompt } from '@/components/profile/ProfileCompletionPrompt';
 import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
