@@ -46,6 +46,8 @@
   },
   "profile": {
     "title": "My Profile",
+    "my_profile": "My Profile",
+    "edit_profile": "Edit Profile",
     "editProfile": "Edit profile",
     "displayName": "Display name",
     "bio": "Bio",
@@ -56,6 +58,19 @@
     "language": "Language",
     "notifications": "Notifications",
     "privacy": "Privacy",
+    "logout": "Log out"
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "manage": "Manage",
+    "view": "View",
+    "achievements": "Achievements",
+    "personality_test": "Take personality test",
+    "start": "Start",
     "logout": "Log out"
   },
   "personality": {

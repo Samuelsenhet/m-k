@@ -5,11 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { LogOut, Settings, Sparkles, X } from 'lucide-react';
+import { LogOut, Settings, Sparkles, X, Trophy } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import { AchievementsPanel } from '@/components/achievements/AchievementsPanel';
+import { LanguageToggle } from '@/components/settings/LanguageToggle';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface PersonalityResultRow {
   id: string;
@@ -19,9 +22,11 @@ interface PersonalityResultRow {
 export default function Profile() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [archetype, setArchetype] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -78,7 +83,7 @@ export default function Profile() {
       <div className="relative container max-w-lg mx-auto px-4 py-4 pb-24">
         {/* Header */}
         <nav className="flex justify-between items-center mb-4">
-          <h1 className="font-serif font-bold text-lg">Min profil</h1>
+          <h1 className="font-serif font-bold text-lg">{t('profile.my_profile')}</h1>
           <div className="flex items-center gap-1">
             <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
               <SheetTrigger asChild>
@@ -88,29 +93,43 @@ export default function Profile() {
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
-                  <SheetTitle className="font-serif">Inställningar</SheetTitle>
+                  <SheetTitle className="font-serif">{t('settings.title')}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Konto</CardTitle>
+                      <CardTitle className="text-base">{t('settings.account')}</CardTitle>
                       <CardDescription className="text-sm">{user.email}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">Notifikationer</span>
-                        <Button variant="ghost" size="sm">Hantera</Button>
+                        <span className="text-sm">{t('settings.language')}</span>
+                        <LanguageToggle />
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">Integritet</span>
-                        <Button variant="ghost" size="sm">Hantera</Button>
+                        <span className="text-sm">{t('settings.notifications')}</span>
+                        <Button variant="ghost" size="sm">{t('settings.manage')}</Button>
                       </div>
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <span className="text-sm">{t('settings.privacy')}</span>
+                        <Button variant="ghost" size="sm">{t('settings.manage')}</Button>
+                      </div>
+                      <button 
+                        onClick={() => { setSettingsOpen(false); setShowAchievements(true); }}
+                        className="flex items-center justify-between py-2 border-b border-border w-full text-left"
+                      >
+                        <span className="text-sm flex items-center gap-2">
+                          <Trophy className="w-4 h-4" />
+                          {t('settings.achievements')}
+                        </span>
+                        <Button variant="ghost" size="sm">{t('settings.view')}</Button>
+                      </button>
                       <Link to="/" className="flex items-center justify-between py-2 border-b border-border">
                         <span className="text-sm flex items-center gap-2">
                           <Sparkles className="w-4 h-4" />
-                          Gör personlighetstest
+                          {t('settings.personality_test')}
                         </span>
-                        <Button variant="ghost" size="sm">Starta</Button>
+                        <Button variant="ghost" size="sm">{t('settings.start')}</Button>
                       </Link>
                     </CardContent>
                   </Card>
@@ -120,7 +139,7 @@ export default function Profile() {
                     onClick={handleSignOut}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Logga ut
+                    {t('settings.logout')}
                   </Button>
                 </div>
               </SheetContent>
@@ -129,10 +148,24 @@ export default function Profile() {
         </nav>
 
         {/* Profile Content */}
-        {isEditing ? (
+        {showAchievements ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-serif font-bold text-xl">Redigera profil</h2>
+              <h2 className="font-serif font-bold text-xl">{t('achievements.title')}</h2>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setShowAchievements(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <AchievementsPanel />
+          </div>
+        ) : isEditing ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif font-bold text-xl">{t('profile.edit_profile')}</h2>
               <Button 
                 variant="ghost" 
                 size="icon"
