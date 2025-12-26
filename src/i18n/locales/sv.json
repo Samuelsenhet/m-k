@@ -1,0 +1,100 @@
+{
+  "common": {
+    "loading": "Laddar...",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "confirm": "Bekräfta",
+    "back": "Tillbaka",
+    "next": "Nästa",
+    "done": "Klar",
+    "error": "Ett fel uppstod",
+    "retry": "Försök igen"
+  },
+  "nav": {
+    "matches": "Matchningar",
+    "chat": "Chatt",
+    "profile": "Profil"
+  },
+  "auth": {
+    "phoneTitle": "Ange ditt telefonnummer",
+    "phoneDescription": "Vi skickar en verifieringskod via SMS",
+    "verifyTitle": "Verifiera din kod",
+    "verifyDescription": "Ange koden vi skickade till",
+    "sendCode": "Skicka kod",
+    "verify": "Verifiera",
+    "resendCode": "Skicka kod igen",
+    "ageTitle": "Bekräfta din ålder",
+    "ageDescription": "Du måste vara minst 20 år för att använda Maak",
+    "ageConfirm": "Jag är 20 år eller äldre"
+  },
+  "matches": {
+    "title": "Dagens matchningar",
+    "noMatches": "Inga matchningar idag",
+    "expiresIn": "Löper ut om",
+    "like": "Gilla",
+    "pass": "Passa",
+    "mutualMatch": "Det är en match!",
+    "matchScore": "{{score}}% matchning",
+    "similar": "Liknande",
+    "complementary": "Kompletterande"
+  },
+  "chat": {
+    "newMatch": "Ny match! 🎉",
+    "chooseIcebreaker": "Välj en konversationsstartare eller skriv ditt eget meddelande",
+    "typeMessage": "Skriv ett meddelande...",
+    "noMessages": "Inga meddelanden ännu"
+  },
+  "profile": {
+    "title": "Min profil",
+    "editProfile": "Redigera profil",
+    "displayName": "Visningsnamn",
+    "bio": "Biografi",
+    "photos": "Foton",
+    "addPhoto": "Lägg till foto",
+    "completion": "{{percent}}% komplett",
+    "settings": "Inställningar",
+    "language": "Språk",
+    "notifications": "Aviseringar",
+    "privacy": "Integritet",
+    "logout": "Logga ut"
+  },
+  "personality": {
+    "testTitle": "Personlighetstest",
+    "testDescription": "Besvara frågorna för att hitta din arketyp",
+    "question": "Fråga {{current}} av {{total}}",
+    "results": "Dina resultat",
+    "archetype": "Din arketyp",
+    "diplomat": "Diplomat",
+    "strategist": "Strateg",
+    "builder": "Byggare",
+    "explorer": "Upptäckare"
+  },
+  "premium": {
+    "title": "Premium",
+    "upgrade": "Uppgradera till Premium",
+    "benefits": "Fördelar",
+    "unlimitedMatches": "Obegränsade matchningar",
+    "advancedFilters": "Avancerade filter",
+    "readReceipts": "Läskvitton",
+    "prioritySupport": "Prioriterad support",
+    "subscribe": "Prenumerera"
+  },
+  "achievements": {
+    "title": "Prestationer",
+    "profileComplete": "Profil komplett",
+    "firstMatch": "Första matchningen",
+    "firstMessage": "Första meddelandet",
+    "weekStreak": "7 dagars streak",
+    "photosAdded": "Foton tillagda"
+  },
+  "gdpr": {
+    "welcome": "Välkommen till Maak",
+    "privacy": "Vi värnar om din integritet",
+    "acceptAll": "Acceptera alla",
+    "customize": "Anpassa inställningar",
+    "necessary": "Nödvändiga cookies",
+    "analytics": "Analys",
+    "marketing": "Marknadsföring",
+    "personalization": "Personalisering"
+  }
+}
