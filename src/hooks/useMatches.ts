@@ -229,6 +229,26 @@ export const useMatches = (): UseMatchesReturn => {
     }
   };
 
+  const generateIcebreakers = async (matchId: string, userArchetype: string, matchedUserArchetype: string, userName: string, matchedUserName: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('generate-icebreakers', {
+        body: {
+          matchId,
+          userArchetype,
+          matchedUserArchetype,
+          userName,
+          matchedUserName,
+        },
+      });
+      
+      if (error) {
+        console.error('Error generating icebreakers:', error);
+      }
+    } catch (err) {
+      console.error('Failed to generate icebreakers:', err);
+    }
+  };
+
   const likeMatch = async (matchId: string) => {
     try {
       const { error: updateError } = await supabase
@@ -260,6 +280,38 @@ export const useMatches = (): UseMatchesReturn => {
             .from('matches')
             .update({ status: 'mutual' })
             .eq('id', reverseMatch.id);
+
+          // Get user's archetype for icebreaker generation
+          const { data: userResult } = await supabase
+            .from('personality_results')
+            .select('archetype')
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          const { data: matchedUserResult } = await supabase
+            .from('personality_results')
+            .select('archetype')
+            .eq('user_id', match.matchedUser.userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('user_id', user?.id)
+            .single();
+
+          // Generate AI icebreakers for this mutual match
+          generateIcebreakers(
+            matchId,
+            userResult?.archetype || 'DIPLOMAT',
+            matchedUserResult?.archetype || 'DIPLOMAT',
+            userProfile?.display_name || 'Användare',
+            match.matchedUser.displayName
+          );
 
           setMatches((prev) =>
             prev.map((m) =>

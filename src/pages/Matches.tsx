@@ -1,13 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMatches } from '@/hooks/useMatches';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CATEGORY_INFO } from '@/types/personality';
-import { Heart, X, ArrowLeft, Sparkles, Users, RefreshCw, MessageCircle } from 'lucide-react';
-
+import { CATEGORY_INFO, ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
+import { Heart, X, ArrowLeft, Sparkles, Users, RefreshCw, MessageCircle, User } from 'lucide-react';
+import { toast } from 'sonner';
 export default function Matches() {
   const { user, loading: authLoading } = useAuth();
   const { matches, loading, error, refreshMatches, likeMatch, passMatch } = useMatches();
@@ -69,7 +69,7 @@ export default function Matches() {
               {mutualMatches.map((match) => {
                 const categoryInfo = CATEGORY_INFO[match.matchedUser.category];
                 return (
-                  <Card key={match.id} className="border-primary/30 bg-primary/5">
+                  <Card key={match.id} className="border-primary/30 bg-primary/5 shadow-glow">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl">
@@ -80,9 +80,15 @@ export default function Matches() {
                           <p className="text-sm text-muted-foreground">{categoryInfo?.title}</p>
                         </div>
                       </div>
-                      <Button size="sm" className="gap-2">
-                        <MessageCircle className="w-4 h-4" />
-                        Chatta
+                      <Button 
+                        asChild
+                        size="sm" 
+                        className="gap-2 gradient-primary text-primary-foreground border-0"
+                      >
+                        <Link to={`/chat?match=${match.id}`}>
+                          <MessageCircle className="w-4 h-4" />
+                          Chatta
+                        </Link>
                       </Button>
                     </CardContent>
                   </Card>
