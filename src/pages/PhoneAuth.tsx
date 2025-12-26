@@ -178,7 +178,7 @@ export default function PhoneAuth() {
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          {step === 'phone' ? 'Tillbaka' : 'Ändra nummer'}
+          {step === 'phone' ? 'Tillbaka till startsidan' : 'Ändra nummer'}
         </button>
 
         <Card className="shadow-card border-border overflow-hidden">
@@ -225,14 +225,7 @@ export default function PhoneAuth() {
                     {loading ? 'Skickar...' : 'Skicka kod'}
                   </Button>
 
-                  <div className="text-center">
-                    <Link
-                      to="/auth"
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      Logga in med e-post istället
-                    </Link>
-                  </div>
+                  {/* Email auth link removed - phone only */}
                 </motion.div>
               )}
 

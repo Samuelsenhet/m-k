@@ -54,7 +54,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             ) : (
               <>
                 <Button asChild variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  <Link to="/auth">Logga in</Link>
+                  <Link to="/phone-auth">Logga in</Link>
                 </Button>
                 <Button asChild className="gradient-primary text-primary-foreground border-0 shadow-glow">
                   <Link to="/phone-auth">Registrera</Link>
