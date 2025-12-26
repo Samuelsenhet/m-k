@@ -46,6 +46,8 @@
   },
   "profile": {
     "title": "Min profil",
+    "my_profile": "Min profil",
+    "edit_profile": "Redigera profil",
     "editProfile": "Redigera profil",
     "displayName": "Visningsnamn",
     "bio": "Biografi",
@@ -56,6 +58,19 @@
     "language": "Språk",
     "notifications": "Aviseringar",
     "privacy": "Integritet",
+    "logout": "Logga ut"
+  },
+  "settings": {
+    "title": "Inställningar",
+    "account": "Konto",
+    "language": "Språk",
+    "notifications": "Notifikationer",
+    "privacy": "Integritet",
+    "manage": "Hantera",
+    "view": "Visa",
+    "achievements": "Prestationer",
+    "personality_test": "Gör personlighetstest",
+    "start": "Starta",
     "logout": "Logga ut"
   },
   "personality": {
