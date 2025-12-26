@@ -3,10 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Camera, MapPin, ChevronLeft, ChevronRight, Pencil, 
-  ImagePlus, MessageSquarePlus, Heart, Users
-} from 'lucide-react';
+import { Camera, MapPin, Pencil, ImagePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
 import { Link } from 'react-router-dom';
@@ -352,31 +349,6 @@ export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
         </Card>
       )}
 
-      {/* Profile Insights */}
-      <Card className="shadow-soft rounded-2xl">
-        <CardContent className="p-5">
-          <h2 className="font-serif font-bold text-lg mb-4">Profil Insights</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-rose-50 to-rose-100">
-              <p className="text-3xl font-bold text-rose-500">{matchCount}</p>
-              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                <Users className="w-3.5 h-3.5" />
-                Matchningar
-              </p>
-            </div>
-            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100">
-              <p className="text-3xl font-bold text-emerald-500">
-                {archetypeInfo ? '94%' : '-'}
-              </p>
-              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                <Heart className="w-3.5 h-3.5" />
-                Kompatibilitet
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Action Buttons */}
       <div className="space-y-3">
         <Button 
@@ -387,23 +359,14 @@ export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
           Uppdatera Profil
         </Button>
         
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            onClick={onEdit}
-            className="h-11 rounded-full"
-          >
-            <ImagePlus className="w-4 h-4 mr-2" />
-            Lägg till foto
-          </Button>
-          <Button 
-            variant="outline"
-            className="h-11 rounded-full"
-          >
-            <MessageSquarePlus className="w-4 h-4 mr-2" />
-            Ny prompt
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          onClick={onEdit}
+          className="w-full h-11 rounded-full"
+        >
+          <ImagePlus className="w-4 h-4 mr-2" />
+          Lägg till foto
+        </Button>
       </div>
     </div>
   );
