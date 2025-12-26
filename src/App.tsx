@@ -2,14 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ConsentProvider, useConsent } from "@/contexts/ConsentContext";
 import { GdprOnboarding } from "@/components/onboarding/GdprOnboarding";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
 import Matches from "./pages/Matches";
@@ -36,7 +35,7 @@ const AppContent = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth" element={<Navigate to="/phone-auth" replace />} />
           <Route path="/phone-auth" element={<PhoneAuth />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/matches" element={<Matches />} />
