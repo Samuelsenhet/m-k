@@ -259,6 +259,10 @@ export type Database = {
           pronouns: string | null
           religion: string | null
           sexuality: string | null
+          show_age: boolean
+          show_education: boolean
+          show_job: boolean
+          show_last_name: boolean
           smoking: string | null
           updated_at: string
           user_id: string
@@ -285,6 +289,10 @@ export type Database = {
           pronouns?: string | null
           religion?: string | null
           sexuality?: string | null
+          show_age?: boolean
+          show_education?: boolean
+          show_job?: boolean
+          show_last_name?: boolean
           smoking?: string | null
           updated_at?: string
           user_id: string
@@ -311,6 +319,10 @@ export type Database = {
           pronouns?: string | null
           religion?: string | null
           sexuality?: string | null
+          show_age?: boolean
+          show_education?: boolean
+          show_job?: boolean
+          show_last_name?: boolean
           smoking?: string | null
           updated_at?: string
           user_id?: string

@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PhotoUpload } from '@/components/profile/PhotoUpload';
 import { PersonalityTest } from '@/components/personality/PersonalityTest';
 import { PersonalityResult } from '@/components/personality/PersonalityResult';
 import { 
   Heart, ArrowRight, ArrowLeft, Check, Sparkles, User, Camera, 
-  Users, Brain, Briefcase, SkipForward, ChevronRight
+  Users, Brain, Briefcase, SkipForward, ChevronRight, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -45,11 +46,19 @@ interface ProfileData {
   smoking: string;
 }
 
+interface PrivacySettings {
+  showAge: boolean;
+  showJob: boolean;
+  showEducation: boolean;
+  showLastName: boolean;
+}
+
 const STEPS = [
   { id: 'basics', title: 'Grundläggande', icon: User, required: true },
   { id: 'personality', title: 'Personlighet', icon: Brain, required: true },
   { id: 'background', title: 'Bakgrund', icon: Briefcase, required: false },
   { id: 'photos', title: 'Foton', icon: Camera, required: true },
+  { id: 'privacy', title: 'Integritet', icon: Shield, required: true },
   { id: 'complete', title: 'Klart', icon: Sparkles, required: true },
 ];
 
@@ -99,6 +108,14 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
       prompt: PHOTO_PROMPTS[i]
     }))
   );
+
+  // Privacy settings state
+  const [privacy, setPrivacy] = useState<PrivacySettings>({
+    showAge: true,
+    showJob: true,
+    showEducation: true,
+    showLastName: false,
+  });
 
   // Removed age calculation - age verification handled in phone auth
   const photoCount = photos.filter(p => p.storage_path).length;
@@ -164,7 +181,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         return true;
       case 3: // Photos
         return photoCount >= 1;
-      case 4: // Complete
+      case 4: // Privacy
+        return true;
+      case 5: // Complete
         return true;
       default:
         return false;
@@ -236,6 +255,10 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           profile_completion: calculateCompletion(),
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
+          show_age: privacy.showAge,
+          show_job: privacy.showJob,
+          show_education: privacy.showEducation,
+          show_last_name: privacy.showLastName,
         })
         .eq('user_id', user.id);
 
@@ -658,8 +681,63 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               </div>
             )}
 
-            {/* Step 4: Complete */}
+            {/* Step 4: Privacy Settings */}
             {currentStep === 4 && (
+              <div className="space-y-5">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                    <Shield className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h1 className="text-xl font-serif font-bold text-foreground mb-1">
+                    Integritet & slutförande
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Kontrollera dina integritetsinställningar innan du slutför din profil
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-2xl p-4">
+                  <h3 className="font-semibold text-foreground mb-4">Synlighetsalternativ</h3>
+                  <div className="space-y-4">
+                    <label className="flex items-center justify-between py-2 border-b border-border cursor-pointer">
+                      <span className="text-sm text-foreground">Visa min ålder</span>
+                      <Checkbox 
+                        checked={privacy.showAge}
+                        onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, showAge: checked === true }))}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between py-2 border-b border-border cursor-pointer">
+                      <span className="text-sm text-foreground">Visa mitt jobb</span>
+                      <Checkbox 
+                        checked={privacy.showJob}
+                        onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, showJob: checked === true }))}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between py-2 border-b border-border cursor-pointer">
+                      <span className="text-sm text-foreground">Visa min utbildning</span>
+                      <Checkbox 
+                        checked={privacy.showEducation}
+                        onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, showEducation: checked === true }))}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between py-2 cursor-pointer">
+                      <span className="text-sm text-foreground">Visa mitt efternamn för matchningar</span>
+                      <Checkbox 
+                        checked={privacy.showLastName}
+                        onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, showLastName: checked === true }))}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  Du kan ändra dessa inställningar när som helst i din profil
+                </p>
+              </div>
+            )}
+
+            {/* Step 5: Complete */}
+            {currentStep === 5 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow animate-pulse">
