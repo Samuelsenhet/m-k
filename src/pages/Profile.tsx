@@ -5,9 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ArrowLeft, LogOut, MessageCircle, Settings, Sparkles, X } from 'lucide-react';
+import { LogOut, Settings, Sparkles, X } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
+import { BottomNav } from '@/components/navigation/BottomNav';
 import { toast } from 'sonner';
 
 interface PersonalityResultRow {
@@ -74,19 +75,11 @@ export default function Profile() {
         <div className="absolute top-1/2 -left-20 w-60 h-60 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="relative container max-w-lg mx-auto px-4 py-4">
+      <div className="relative container max-w-lg mx-auto px-4 py-4 pb-24">
         {/* Header */}
         <nav className="flex justify-between items-center mb-4">
-          <Link to="/matches" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
           <h1 className="font-serif font-bold text-lg">Min profil</h1>
           <div className="flex items-center gap-1">
-            <Link to="/chat">
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <MessageCircle className="w-5 h-5" />
-              </Button>
-            </Link>
             <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
@@ -157,6 +150,7 @@ export default function Profile() {
           />
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }
