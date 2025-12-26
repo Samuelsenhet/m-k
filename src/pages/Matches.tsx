@@ -6,7 +6,10 @@ import { useMatches } from '@/hooks/useMatches';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CATEGORY_INFO, ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
-import { Heart, X, ArrowLeft, Sparkles, Users, RefreshCw, MessageCircle, User, MapPin, Briefcase } from 'lucide-react';
+import { Heart, X, Sparkles, Users, RefreshCw, MessageCircle, User, MapPin, Briefcase } from 'lucide-react';
+import { BottomNav } from '@/components/navigation/BottomNav';
+import { ProfileCompletionPrompt } from '@/components/profile/ProfileCompletionPrompt';
+import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -37,22 +40,24 @@ export default function Matches() {
   const mutualMatches = matches.filter((m) => m.status === 'mutual');
 
   return (
-    <div className="min-h-screen gradient-hero">
-      <div className="container max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" />
-            Tillbaka
-          </Link>
+    <div className="min-h-screen gradient-hero pb-20">
+      <div className="container max-w-lg mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-serif font-bold">Dagens matchningar</h1>
+            <p className="text-sm text-muted-foreground">
+              3 liknande + 2 kompletterande
+            </p>
+          </div>
           <Button variant="ghost" size="icon" onClick={refreshMatches}>
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-5 h-5" />
           </Button>
         </div>
 
-        <h1 className="text-3xl font-serif font-bold mb-2">Dagens matchningar</h1>
-        <p className="text-muted-foreground mb-8">
-          3 liknande + 2 kompletterande profiler varje dag
-        </p>
+        {/* Profile Completion Prompt */}
+        <div className="mb-6">
+          <ProfileCompletionPrompt />
+        </div>
 
         {error && (
           <Card className="mb-6 border-destructive/50 bg-destructive/10">
@@ -282,6 +287,8 @@ export default function Matches() {
           </Card>
         )}
       </div>
+      <NotificationPrompt />
+      <BottomNav />
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { MatchList } from '@/components/chat/MatchList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
+import { BottomNav } from '@/components/navigation/BottomNav';
 
 interface SelectedMatch {
   id: string;
@@ -109,7 +110,7 @@ export default function Chat() {
   if (!user) return null;
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pb-16">
       {selectedMatch ? (
         <ChatWindow
           matchId={selectedMatch.id}
@@ -122,14 +123,9 @@ export default function Chat() {
       ) : (
         <>
           <div className="p-4 border-b border-border bg-card">
-            <div className="flex items-center gap-3">
-              <Link to="/" className="text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-primary" />
-                <h1 className="font-serif font-semibold text-lg">Meddelanden</h1>
-              </div>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <h1 className="font-serif font-semibold text-lg">Meddelanden</h1>
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4">
@@ -140,6 +136,7 @@ export default function Chat() {
           </div>
         </>
       )}
+      {!selectedMatch && <BottomNav />}
     </div>
   );
 }
