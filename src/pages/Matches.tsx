@@ -10,6 +10,7 @@ import { Heart, X, Sparkles, Users, RefreshCw, MessageCircle, User, MapPin, Brie
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ProfileCompletionPrompt } from '@/components/profile/ProfileCompletionPrompt';
 import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
+import { MatchCountdown } from '@/components/matches/MatchCountdown';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -208,6 +209,7 @@ export default function Matches() {
                         <div className="text-right">
                           <div className="text-2xl font-bold text-primary">{match.matchScore}%</div>
                           <div className="text-xs text-muted-foreground">matchning</div>
+                          <MatchCountdown expiresAt={match.expiresAt} className="mt-1 justify-end" />
                         </div>
                       </div>
 

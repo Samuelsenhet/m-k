@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, Sparkles, Check, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import { TypingIndicator } from './TypingIndicator';
 
 interface Message {
   id: string;
@@ -41,12 +42,45 @@ export function ChatWindow({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showIcebreakers, setShowIcebreakers] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [partnerTyping, setPartnerTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchMessages();
-    setupRealtimeSubscription();
+    const cleanup = setupRealtimeSubscription();
+    return cleanup;
   }, [matchId]);
+
+  // Mark messages as read when viewing
+  useEffect(() => {
+    if (messages.length > 0 && user) {
+      markMessagesAsRead();
+    }
+  }, [messages, user]);
+
+  const markMessagesAsRead = async () => {
+    if (!user) return;
+    
+    const unreadMessages = messages.filter(
+      (m) => m.sender_id !== user.id && !m.is_read
+    );
+    
+    if (unreadMessages.length === 0) return;
+
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .in('id', unreadMessages.map((m) => m.id));
+
+    // Update local state
+    setMessages((prev) =>
+      prev.map((m) =>
+        unreadMessages.some((u) => u.id === m.id) ? { ...m, is_read: true } : m
+      )
+    );
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -88,13 +122,59 @@ export function ChatWindow({
             return [...prev, newMsg];
           });
           setShowIcebreakers(false);
+          setPartnerTyping(false);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `match_id=eq.${matchId}`,
+        },
+        (payload) => {
+          const updatedMsg = payload.new as Message;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m))
+          );
+        }
+      )
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload.userId !== user?.id) {
+          setPartnerTyping(true);
+          setTimeout(() => setPartnerTyping(false), 3000);
+        }
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
+  };
+
+  const broadcastTyping = useCallback(() => {
+    if (!isTyping) {
+      setIsTyping(true);
+      supabase.channel(`messages:${matchId}`).send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId: user?.id },
+      });
+    }
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+  }, [isTyping, matchId, user?.id]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    broadcastTyping();
   };
 
   const scrollToBottom = () => {
@@ -198,18 +278,37 @@ export function ChatWindow({
                     )}
                   >
                     <p className="text-sm">{message.content}</p>
-                    <p
+                    <div
                       className={cn(
-                        'text-xs mt-1',
-                        isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        'flex items-center gap-1 mt-1',
+                        isOwn ? 'justify-end' : ''
                       )}
                     >
-                      {format(new Date(message.created_at), 'HH:mm', { locale: sv })}
-                    </p>
+                      <span
+                        className={cn(
+                          'text-xs',
+                          isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        )}
+                      >
+                        {format(new Date(message.created_at), 'HH:mm', { locale: sv })}
+                      </span>
+                      {isOwn && (
+                        message.is_read ? (
+                          <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
+                        ) : (
+                          <Check className="w-3 h-3 text-primary-foreground/50" />
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
+            {partnerTyping && (
+              <div className="flex justify-start">
+                <TypingIndicator />
+              </div>
+            )}
             <div ref={scrollRef} />
           </div>
         )}
@@ -220,7 +319,7 @@ export function ChatWindow({
         <div className="flex gap-2">
           <Input
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Skriv ett meddelande..."
             disabled={sending}
             className="flex-1"
