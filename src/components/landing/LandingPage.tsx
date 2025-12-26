@@ -32,14 +32,23 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <Button asChild variant="ghost" className="text-muted-foreground hover:text-foreground gap-2">
-                  <Link to="/profile">
-                    <User className="w-4 h-4" />
-                    Min profil
+                <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <Link to="/matches">
+                    <Heart className="w-5 h-5" />
                   </Link>
                 </Button>
-                <Button variant="ghost" onClick={() => signOut()} className="text-muted-foreground hover:text-foreground gap-2">
-                  <LogOut className="w-4 h-4" />
+                <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <Link to="/chat">
+                    <MessageCircle className="w-5 h-5" />
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <Link to="/profile">
+                    <User className="w-5 h-5" />
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => signOut()} className="text-muted-foreground hover:text-foreground">
+                  <LogOut className="w-5 h-5" />
                 </Button>
               </>
             ) : (
