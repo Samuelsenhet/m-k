@@ -111,5 +111,13 @@
     "analytics": "Analys",
     "marketing": "Marknadsföring",
     "personalization": "Personalisering"
+  },
+  "privacy": {
+    "title": "Integritet",
+    "description": "Välj vad som visas för dina matchningar",
+    "showAge": "Visa min ålder",
+    "showJob": "Visa mitt jobb",
+    "showEducation": "Visa min utbildning",
+    "showLastName": "Visa mitt efternamn"
   }
 }
