@@ -1,12 +1,16 @@
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users, MessageCircle, ArrowRight } from 'lucide-react';
+import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import heroIllustration from '@/assets/hero-illustration.png';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LandingPageProps {
   onStart: () => void;
 }
 
 export const LandingPage = ({ onStart }: LandingPageProps) => {
+  const { user, signOut } = useAuth();
+
   return (
     <div className="min-h-screen gradient-hero overflow-hidden">
       {/* Decorative elements */}
@@ -25,9 +29,25 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </div>
             <span className="text-2xl font-serif font-bold text-foreground">MÄÄK</span>
           </div>
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-            Om oss
-          </Button>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <Button asChild variant="ghost" className="text-muted-foreground hover:text-foreground gap-2">
+                  <Link to="/profile">
+                    <User className="w-4 h-4" />
+                    Min profil
+                  </Link>
+                </Button>
+                <Button variant="ghost" onClick={() => signOut()} className="text-muted-foreground hover:text-foreground gap-2">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <Button asChild variant="ghost" className="text-muted-foreground hover:text-foreground">
+                <Link to="/auth">Logga in</Link>
+              </Button>
+            )}
+          </div>
         </nav>
 
         {/* Hero */}
