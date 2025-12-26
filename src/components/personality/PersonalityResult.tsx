@@ -1,11 +1,14 @@
-import { type PersonalityTestResult, type DimensionKey, DIMENSION_LABELS, CATEGORY_INFO } from '@/types/personality';
+import { type PersonalityTestResult, type DimensionKey, DIMENSION_LABELS, CATEGORY_INFO, ARCHETYPE_INFO } from '@/types/personality';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, ArrowLeft, Share2 } from 'lucide-react';
+import { Heart, Sparkles, ArrowLeft, Share2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PersonalityResultProps {
   result: PersonalityTestResult;
   onRestart: () => void;
+  isExistingResult?: boolean;
 }
 
 const dimensionColors: Record<DimensionKey, string> = {
@@ -16,8 +19,10 @@ const dimensionColors: Record<DimensionKey, string> = {
   at: 'bg-dimension-at',
 };
 
-export const PersonalityResult = ({ result, onRestart }: PersonalityResultProps) => {
+export const PersonalityResult = ({ result, onRestart, isExistingResult = false }: PersonalityResultProps) => {
   const categoryInfo = CATEGORY_INFO[result.category];
+  const archetypeInfo = result.archetype ? ARCHETYPE_INFO[result.archetype] : null;
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen gradient-hero">
@@ -28,24 +33,65 @@ export const PersonalityResult = ({ result, onRestart }: PersonalityResultProps)
             <Heart className="w-5 h-5 text-primary" fill="currentColor" />
             <span className="font-semibold text-foreground">MÄÄK</span>
           </div>
+          {isExistingResult && (
+            <p className="text-sm text-muted-foreground">Ditt sparade resultat</p>
+          )}
         </div>
 
-        {/* Category Card */}
-        <div 
-          className="bg-card rounded-3xl p-8 shadow-card border border-border mb-6 text-center animate-slide-up"
-          style={{ animationDelay: '0.1s' }}
-        >
-          <div className="text-6xl mb-4">{categoryInfo.emoji}</div>
-          <p className="text-muted-foreground text-sm uppercase tracking-wider mb-2">
-            Din personlighetstyp
-          </p>
-          <h1 className="text-3xl font-serif text-gradient mb-4">
-            {categoryInfo.title}
-          </h1>
-          <p className="text-muted-foreground leading-relaxed max-w-md mx-auto">
-            {categoryInfo.description}
-          </p>
-        </div>
+        {/* Archetype Card (if available) */}
+        {archetypeInfo && (
+          <div 
+            className="bg-card rounded-3xl overflow-hidden shadow-card border border-border mb-6 animate-slide-up"
+            style={{ animationDelay: '0.1s' }}
+          >
+            <div className="gradient-primary p-6 text-primary-foreground text-center">
+              <div className="text-5xl mb-3">{archetypeInfo.emoji}</div>
+              <h1 className="text-2xl font-serif font-bold mb-1">{archetypeInfo.title}</h1>
+              <p className="text-sm opacity-90">{archetypeInfo.name} • {categoryInfo.emoji} {categoryInfo.title}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-muted-foreground leading-relaxed">{archetypeInfo.description}</p>
+              
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Kärleksstil</h3>
+                <p className="text-sm text-muted-foreground">{archetypeInfo.loveStyle}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Styrkor</h3>
+                <div className="flex flex-wrap gap-2">
+                  {archetypeInfo.strengths.map((strength) => (
+                    <span 
+                      key={strength} 
+                      className="px-3 py-1 bg-secondary text-secondary-foreground text-xs rounded-full"
+                    >
+                      {strength}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Fallback Category Card (if no archetype) */}
+        {!archetypeInfo && (
+          <div 
+            className="bg-card rounded-3xl p-8 shadow-card border border-border mb-6 text-center animate-slide-up"
+            style={{ animationDelay: '0.1s' }}
+          >
+            <div className="text-6xl mb-4">{categoryInfo.emoji}</div>
+            <p className="text-muted-foreground text-sm uppercase tracking-wider mb-2">
+              Din personlighetstyp
+            </p>
+            <h1 className="text-3xl font-serif text-gradient mb-4">
+              {categoryInfo.title}
+            </h1>
+            <p className="text-muted-foreground leading-relaxed max-w-md mx-auto">
+              {categoryInfo.description}
+            </p>
+          </div>
+        )}
 
         {/* Scores */}
         <div 
@@ -111,21 +157,56 @@ export const PersonalityResult = ({ result, onRestart }: PersonalityResultProps)
           className="flex flex-col sm:flex-row gap-4 animate-slide-up"
           style={{ animationDelay: '0.5s' }}
         >
-          <Button
-            variant="outline"
-            onClick={onRestart}
-            className="flex-1 gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Gör om testet
-          </Button>
-          <Button
-            className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
-          >
-            <Share2 className="w-4 h-4" />
-            Dela resultat
-          </Button>
+          {isExistingResult ? (
+            <>
+              <Button asChild variant="outline" className="flex-1 gap-2">
+                <Link to="/profile">
+                  <User className="w-4 h-4" />
+                  Gå till profil
+                </Link>
+              </Button>
+              <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
+                <Link to="/matches">
+                  <Heart className="w-4 h-4" />
+                  Hitta matchningar
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={onRestart}
+                className="flex-1 gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Gör om testet
+              </Button>
+              {user ? (
+                <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
+                  <Link to="/profile">
+                    <User className="w-4 h-4" />
+                    Gå till profil
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
+                  <Link to="/auth">
+                    <Heart className="w-4 h-4" />
+                    Skapa konto
+                  </Link>
+                </Button>
+              )}
+            </>
+          )}
         </div>
+
+        {/* One-time notice for logged in users */}
+        {user && !isExistingResult && (
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            OBS: Du kan bara göra testet en gång per konto.
+          </p>
+        )}
       </div>
     </div>
   );
