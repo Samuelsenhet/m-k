@@ -200,49 +200,82 @@ export type Database = {
       }
       profiles: {
         Row: {
+          alcohol: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
+          education: string | null
           gender: string | null
+          height: number | null
+          hometown: string | null
           id: string
           looking_for: string | null
           onboarding_completed: boolean
           phone: string | null
           phone_verified_at: string | null
+          politics: string | null
+          profile_completion: number | null
+          pronouns: string | null
+          religion: string | null
+          sexuality: string | null
+          smoking: string | null
           updated_at: string
           user_id: string
+          work: string | null
         }
         Insert: {
+          alcohol?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          education?: string | null
           gender?: string | null
+          height?: number | null
+          hometown?: string | null
           id?: string
           looking_for?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
+          politics?: string | null
+          profile_completion?: number | null
+          pronouns?: string | null
+          religion?: string | null
+          sexuality?: string | null
+          smoking?: string | null
           updated_at?: string
           user_id: string
+          work?: string | null
         }
         Update: {
+          alcohol?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          education?: string | null
           gender?: string | null
+          height?: number | null
+          hometown?: string | null
           id?: string
           looking_for?: string | null
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
+          politics?: string | null
+          profile_completion?: number | null
+          pronouns?: string | null
+          religion?: string | null
+          sexuality?: string | null
+          smoking?: string | null
           updated_at?: string
           user_id?: string
+          work?: string | null
         }
         Relationships: []
       }

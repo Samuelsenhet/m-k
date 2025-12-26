@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +9,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhotoUpload } from '@/components/profile/PhotoUpload';
-import { Heart, ArrowRight, ArrowLeft, CalendarIcon, Check, Sparkles, User, Camera, Users } from 'lucide-react';
+import { PersonalityTest } from '@/components/personality/PersonalityTest';
+import { PersonalityResult } from '@/components/personality/PersonalityResult';
+import { 
+  Heart, ArrowRight, ArrowLeft, CalendarIcon, Check, Sparkles, User, Camera, 
+  Users, Brain, Briefcase, SkipForward, ChevronRight
+} from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { type PersonalityTestResult, ARCHETYPE_INFO, type ArchetypeCode } from '@/types/personality';
 
 interface OnboardingWizardProps {
   onComplete: () => void;
@@ -26,42 +32,157 @@ interface PhotoSlot {
   prompt?: string;
 }
 
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: Date | undefined;
+  pronouns: string;
+  gender: string;
+  height: string;
+  sexuality: string;
+  lookingFor: string;
+  hometown: string;
+  work: string;
+  education: string;
+  religion: string;
+  politics: string;
+  alcohol: string;
+  smoking: string;
+}
+
 const STEPS = [
-  { id: 'name', title: 'Namn', icon: User },
-  { id: 'birthday', title: 'Födelsedag', icon: CalendarIcon },
-  { id: 'photos', title: 'Foton', icon: Camera },
-  { id: 'preferences', title: 'Preferenser', icon: Users },
+  { id: 'basics', title: 'Grundläggande', icon: User, required: true },
+  { id: 'personality', title: 'Personlighet', icon: Brain, required: true },
+  { id: 'background', title: 'Bakgrund', icon: Briefcase, required: false },
+  { id: 'photos', title: 'Foton', icon: Camera, required: true },
+  { id: 'complete', title: 'Klart', icon: Sparkles, required: true },
+];
+
+const PHOTO_PROMPTS = [
+  "Vad gör dig genuint lycklig?",
+  "Din mest äventyrliga sida",
+  "En vanlig dag i ditt liv",
+  "Något du är stolt över",
+  "Din dolda talang",
+  "Med dina favoritpersoner",
 ];
 
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [direction, setDirection] = useState(1);
   
-  // Form state
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
-  const [gender, setGender] = useState('');
-  const [lookingFor, setLookingFor] = useState('');
+  // Profile data state
+  const [profile, setProfile] = useState<ProfileData>({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: undefined,
+    pronouns: '',
+    gender: '',
+    height: '',
+    sexuality: '',
+    lookingFor: '',
+    hometown: '',
+    work: '',
+    education: '',
+    religion: '',
+    politics: '',
+    alcohol: '',
+    smoking: '',
+  });
+
+  // Personality test state
+  const [personalityResult, setPersonalityResult] = useState<PersonalityTestResult | null>(null);
+  const [showPersonalityResult, setShowPersonalityResult] = useState(false);
+  const [hasExistingPersonality, setHasExistingPersonality] = useState(false);
+
+  // Photos state
   const [photos, setPhotos] = useState<PhotoSlot[]>(
-    Array.from({ length: 6 }, (_, i) => ({ storage_path: '', display_order: i }))
+    Array.from({ length: 6 }, (_, i) => ({ 
+      storage_path: '', 
+      display_order: i,
+      prompt: PHOTO_PROMPTS[i]
+    }))
   );
 
-  const age = dateOfBirth ? differenceInYears(new Date(), dateOfBirth) : null;
+  const age = profile.dateOfBirth ? differenceInYears(new Date(), profile.dateOfBirth) : null;
   const photoCount = photos.filter(p => p.storage_path).length;
+
+  // Check for existing personality result
+  useEffect(() => {
+    if (user) {
+      checkExistingPersonality();
+    }
+  }, [user]);
+
+  const checkExistingPersonality = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('personality_results')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (data) {
+      setHasExistingPersonality(true);
+      setPersonalityResult({
+        scores: data.scores as PersonalityTestResult['scores'],
+        category: data.category as PersonalityTestResult['category'],
+        archetype: (data.archetype || 'INFJ') as ArchetypeCode,
+        answers: [],
+      });
+    }
+  };
+
+  // Calculate completion percentage
+  const calculateCompletion = () => {
+    let filled = 0;
+    let total = 10;
+
+    if (profile.firstName) filled++;
+    if (profile.dateOfBirth) filled++;
+    if (profile.gender) filled++;
+    if (profile.sexuality) filled++;
+    if (profile.lookingFor) filled++;
+    if (personalityResult) filled++;
+    if (photoCount >= 1) filled++;
+    if (photoCount >= 4) filled++;
+    if (profile.hometown || profile.work || profile.education) filled++;
+    if (profile.pronouns || profile.height) filled++;
+
+    return Math.round((filled / total) * 100);
+  };
+
+  const updateProfile = (field: keyof ProfileData, value: any) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
+  };
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return firstName.trim().length >= 2;
-      case 1: return dateOfBirth && age !== null && age >= 20;
-      case 2: return photoCount >= 1;
-      case 3: return gender && lookingFor;
-      default: return false;
+      case 0: // Basics
+        return profile.firstName.trim().length >= 2 && 
+               profile.dateOfBirth && 
+               age !== null && 
+               age >= 20 &&
+               profile.gender &&
+               profile.sexuality &&
+               profile.lookingFor;
+      case 1: // Personality
+        return personalityResult !== null;
+      case 2: // Background (optional)
+        return true;
+      case 3: // Photos
+        return photoCount >= 1;
+      case 4: // Complete
+        return true;
+      default:
+        return false;
     }
   };
 
   const handleNext = () => {
+    setDirection(1);
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
@@ -70,9 +191,35 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   };
 
   const handleBack = () => {
+    setDirection(-1);
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
     }
+  };
+
+  const handleSkip = () => {
+    setDirection(1);
+    setCurrentStep(prev => prev + 1);
+  };
+
+  const handlePersonalityComplete = async (result: PersonalityTestResult) => {
+    setPersonalityResult(result);
+    setShowPersonalityResult(true);
+
+    // Save to database
+    if (user && !hasExistingPersonality) {
+      await supabase.from('personality_results').insert({
+        user_id: user.id,
+        scores: result.scores,
+        category: result.category,
+        archetype: result.archetype,
+      });
+    }
+  };
+
+  const handlePersonalityResultContinue = () => {
+    setShowPersonalityResult(false);
+    handleNext();
   };
 
   const handleComplete = async () => {
@@ -83,10 +230,21 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
       const { error } = await supabase
         .from('profiles')
         .update({
-          display_name: firstName + (lastName ? ` ${lastName}` : ''),
-          date_of_birth: dateOfBirth?.toISOString().split('T')[0],
-          gender,
-          looking_for: lookingFor,
+          display_name: profile.firstName + (profile.lastName ? ` ${profile.lastName}` : ''),
+          date_of_birth: profile.dateOfBirth?.toISOString().split('T')[0],
+          pronouns: profile.pronouns || null,
+          gender: profile.gender,
+          height: profile.height ? parseInt(profile.height) : null,
+          sexuality: profile.sexuality,
+          looking_for: profile.lookingFor,
+          hometown: profile.hometown || null,
+          work: profile.work || null,
+          education: profile.education || null,
+          religion: profile.religion || null,
+          politics: profile.politics || null,
+          alcohol: profile.alcohol || null,
+          smoking: profile.smoking || null,
+          profile_completion: calculateCompletion(),
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
         })
@@ -94,7 +252,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
       if (error) throw error;
 
-      toast.success('Profil skapad!');
+      toast.success('Din profil är skapad!');
       onComplete();
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -105,254 +263,515 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   };
 
   const stepVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 100 : -100,
+    enter: (dir: number) => ({
+      x: dir > 0 ? 100 : -100,
       opacity: 0,
     }),
     center: {
       x: 0,
       opacity: 1,
     },
-    exit: (direction: number) => ({
-      x: direction < 0 ? 100 : -100,
+    exit: (dir: number) => ({
+      x: dir < 0 ? 100 : -100,
       opacity: 0,
     }),
   };
+
+  // Show personality test as full screen
+  if (currentStep === 1 && !personalityResult) {
+    return <PersonalityTest onComplete={handlePersonalityComplete} />;
+  }
+
+  // Show personality result
+  if (showPersonalityResult && personalityResult) {
+    return (
+      <PersonalityResult 
+        result={personalityResult} 
+        onContinue={handlePersonalityResultContinue}
+      />
+    );
+  }
+
+  const completion = calculateCompletion();
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col">
       {/* Header */}
       <div className="p-4">
-        <div className="flex items-center justify-center gap-2 mb-6">
+        <div className="flex items-center justify-center gap-2 mb-4">
           <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-glow">
             <Heart className="w-5 h-5 text-primary-foreground" fill="currentColor" />
           </div>
           <span className="text-2xl font-serif font-bold text-foreground">MÄÄK</span>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex justify-center gap-2 mb-2">
+        {/* Progress Bar */}
+        <div className="max-w-md mx-auto mb-2">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs text-muted-foreground">Profil</span>
+            <span className="text-xs font-medium text-primary">{completion}% komplett</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full gradient-primary"
+              initial={{ width: 0 }}
+              animate={{ width: `${completion}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+
+        {/* Step Indicators */}
+        <div className="flex justify-center gap-1 mb-2">
           {STEPS.map((step, index) => (
             <div
               key={step.id}
               className={cn(
-                'flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all',
+                'h-1.5 rounded-full transition-all duration-300',
                 index === currentStep
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'w-8 bg-primary'
                   : index < currentStep
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-muted text-muted-foreground'
+                  ? 'w-4 bg-primary/50'
+                  : 'w-4 bg-muted'
               )}
-            >
-              {index < currentStep ? (
-                <Check className="w-3 h-3" />
-              ) : (
-                <step.icon className="w-3 h-3" />
-              )}
-              <span className="hidden sm:inline">{step.title}</span>
-            </div>
+            />
           ))}
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 container max-w-md mx-auto px-4 py-8">
-        <AnimatePresence mode="wait" custom={1}>
+      <div className="flex-1 container max-w-md mx-auto px-4 py-4 overflow-y-auto">
+        <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStep}
-            custom={1}
+            custom={direction}
             variants={stepVariants}
             initial="enter"
             animate="center"
             exit="exit"
             transition={{ duration: 0.3 }}
           >
-            {/* Step 0: Name */}
+            {/* Step 0: Basic Info */}
             {currentStep === 0 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
-                    <User className="w-8 h-8 text-primary-foreground" />
+              <div className="space-y-5">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                    <User className="w-7 h-7 text-primary-foreground" />
                   </div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
-                    Du är unik
+                  <h1 className="text-xl font-serif font-bold text-foreground mb-1">
+                    Berätta om dig själv
                   </h1>
-                  <p className="text-muted-foreground">
-                    Det ska även din profil vara. Vad heter du?
+                  <p className="text-sm text-muted-foreground">
+                    Grundläggande information för din profil
                   </p>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Förnamn *</Label>
-                    <Input
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Ditt förnamn"
-                      className="text-lg py-6"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">
-                      Efternamn <span className="text-muted-foreground text-sm">(valfritt)</span>
-                    </Label>
-                    <Input
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Ditt efternamn"
-                      className="text-lg py-6"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Delas endast med dina matchningar
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 1: Birthday */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
-                    <CalendarIcon className="w-8 h-8 text-primary-foreground" />
-                  </div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
-                    När fyller du år?
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Du måste vara minst 20 år för att använda MÄÄK
-                  </p>
-                </div>
-
-                <div className="flex justify-center">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full max-w-xs py-6 text-lg justify-start',
-                          !dateOfBirth && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-5 w-5" />
-                        {dateOfBirth ? format(dateOfBirth, 'PPP', { locale: sv }) : 'Välj datum'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="center">
-                      <Calendar
-                        mode="single"
-                        selected={dateOfBirth}
-                        onSelect={setDateOfBirth}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date('1920-01-01')
-                        }
-                        defaultMonth={new Date(2000, 0)}
-                        captionLayout="dropdown-buttons"
-                        fromYear={1920}
-                        toYear={new Date().getFullYear() - 18}
-                        className={cn('p-3 pointer-events-auto')}
+                  {/* Name */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName" className="text-sm">Förnamn *</Label>
+                      <Input
+                        id="firstName"
+                        value={profile.firstName}
+                        onChange={(e) => updateProfile('firstName', e.target.value)}
+                        placeholder="Förnamn"
+                        className="py-5"
                       />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName" className="text-sm">Efternamn</Label>
+                      <Input
+                        id="lastName"
+                        value={profile.lastName}
+                        onChange={(e) => updateProfile('lastName', e.target.value)}
+                        placeholder="Valfritt"
+                        className="py-5"
+                      />
+                    </div>
+                  </div>
 
-                {dateOfBirth && age !== null && (
-                  <div className={cn(
-                    'text-center p-4 rounded-xl',
-                    age >= 20 ? 'bg-primary/10' : 'bg-destructive/10'
-                  )}>
-                    {age >= 20 ? (
-                      <>
-                        <p className="text-2xl font-bold text-foreground mb-1">
-                          Du är {age} år
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Född {format(dateOfBirth, 'd MMMM yyyy', { locale: sv })}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-destructive font-medium">
-                        Du måste vara minst 20 år för att använda MÄÄK
-                      </p>
+                  {/* Birthday */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Födelsedatum * <span className="text-muted-foreground">(20+ för att använda MÄÄK)</span></Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full py-5 justify-start text-left font-normal',
+                            !profile.dateOfBirth && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {profile.dateOfBirth ? format(profile.dateOfBirth, 'PPP', { locale: sv }) : 'Välj datum'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={profile.dateOfBirth}
+                          onSelect={(date) => updateProfile('dateOfBirth', date)}
+                          disabled={(date) => date > new Date() || date < new Date('1920-01-01')}
+                          defaultMonth={new Date(2000, 0)}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1920}
+                          toYear={new Date().getFullYear() - 18}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {profile.dateOfBirth && age !== null && age < 20 && (
+                      <p className="text-xs text-destructive">Du måste vara minst 20 år</p>
                     )}
                   </div>
-                )}
-              </div>
-            )}
 
-            {/* Step 2: Photos */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
-                    <Camera className="w-8 h-8 text-primary-foreground" />
+                  {/* Pronouns & Height */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Pronomen</Label>
+                      <Select value={profile.pronouns} onValueChange={(v) => updateProfile('pronouns', v)}>
+                        <SelectTrigger className="py-5">
+                          <SelectValue placeholder="Välj..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hon/henne">hon/henne</SelectItem>
+                          <SelectItem value="han/honom">han/honom</SelectItem>
+                          <SelectItem value="hen/hen">hen/hen</SelectItem>
+                          <SelectItem value="de/dem">de/dem</SelectItem>
+                          <SelectItem value="annat">annat</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Längd (cm)</Label>
+                      <Input
+                        type="number"
+                        value={profile.height}
+                        onChange={(e) => updateProfile('height', e.target.value)}
+                        placeholder="175"
+                        className="py-5"
+                        min={100}
+                        max={250}
+                      />
+                    </div>
                   </div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
-                    Visa dig själv
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Ladda upp minst 1 foto, gärna 4-6 stycken
-                  </p>
-                </div>
 
-                <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
-
-                <div className="text-center text-sm text-muted-foreground">
-                  {photoCount} av 6 foton uppladdade
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Preferences */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
-                    <Sparkles className="w-8 h-8 text-primary-foreground" />
-                  </div>
-                  <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
-                    Nästan klart!
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Berätta lite om dig och vem du söker
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Jag identifierar mig som</Label>
-                    <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger className="py-6 text-lg">
+                  {/* Gender */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Jag identifierar mig som *</Label>
+                    <Select value={profile.gender} onValueChange={(v) => updateProfile('gender', v)}>
+                      <SelectTrigger className="py-5">
                         <SelectValue placeholder="Välj..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="kvinna">Kvinna</SelectItem>
                         <SelectItem value="man">Man</SelectItem>
                         <SelectItem value="icke-binär">Icke-binär</SelectItem>
+                        <SelectItem value="transkvinna">Transkvinna</SelectItem>
+                        <SelectItem value="transman">Transman</SelectItem>
                         <SelectItem value="annat">Annat</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Jag söker</Label>
-                    <Select value={lookingFor} onValueChange={setLookingFor}>
-                      <SelectTrigger className="py-6 text-lg">
+                  {/* Sexuality */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Sexualitet *</Label>
+                    <Select value={profile.sexuality} onValueChange={(v) => updateProfile('sexuality', v)}>
+                      <SelectTrigger className="py-5">
+                        <SelectValue placeholder="Välj..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="heterosexuell">Heterosexuell</SelectItem>
+                        <SelectItem value="homosexuell">Homosexuell</SelectItem>
+                        <SelectItem value="bisexuell">Bisexuell</SelectItem>
+                        <SelectItem value="pansexuell">Pansexuell</SelectItem>
+                        <SelectItem value="asexuell">Asexuell</SelectItem>
+                        <SelectItem value="annat">Annat</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Looking for */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Jag söker *</Label>
+                    <Select value={profile.lookingFor} onValueChange={(v) => updateProfile('lookingFor', v)}>
+                      <SelectTrigger className="py-5">
                         <SelectValue placeholder="Välj..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="kvinnor">Kvinnor</SelectItem>
                         <SelectItem value="män">Män</SelectItem>
+                        <SelectItem value="icke-binära">Icke-binära</SelectItem>
                         <SelectItem value="alla">Alla</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Step 1: Personality (already completed) */}
+            {currentStep === 1 && personalityResult && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                    <Brain className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h1 className="text-xl font-serif font-bold text-foreground mb-1">
+                    Din personlighet
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {hasExistingPersonality ? 'Du har redan gjort testet' : 'Testet är klart!'}
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-2xl p-6 text-center">
+                  <div className="text-4xl mb-3">
+                    {ARCHETYPE_INFO[personalityResult.archetype].emoji}
+                  </div>
+                  <h2 className="text-lg font-serif font-bold text-foreground mb-1">
+                    {ARCHETYPE_INFO[personalityResult.archetype].name}
+                  </h2>
+                  <p className="text-sm text-primary font-medium mb-3">
+                    {ARCHETYPE_INFO[personalityResult.archetype].title}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {ARCHETYPE_INFO[personalityResult.archetype].description}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {ARCHETYPE_INFO[personalityResult.archetype].strengths.map((strength, i) => (
+                    <span key={i} className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">
+                      {strength}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Background (Skippable) */}
+            {currentStep === 2 && (
+              <div className="space-y-5">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                    <Briefcase className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h1 className="text-xl font-serif font-bold text-foreground mb-1">
+                    Bakgrund
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Valfritt - du kan fylla i detta senare
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Hemstad</Label>
+                    <Input
+                      value={profile.hometown}
+                      onChange={(e) => updateProfile('hometown', e.target.value)}
+                      placeholder="Stockholm"
+                      className="py-5"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Arbete</Label>
+                    <Input
+                      value={profile.work}
+                      onChange={(e) => updateProfile('work', e.target.value)}
+                      placeholder="Titel @ Företag"
+                      className="py-5"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Utbildning</Label>
+                    <Input
+                      value={profile.education}
+                      onChange={(e) => updateProfile('education', e.target.value)}
+                      placeholder="Program @ Universitet"
+                      className="py-5"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Religion</Label>
+                      <Select value={profile.religion} onValueChange={(v) => updateProfile('religion', v)}>
+                        <SelectTrigger className="py-5">
+                          <SelectValue placeholder="Välj..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="agnostiker">Agnostiker</SelectItem>
+                          <SelectItem value="ateist">Ateist</SelectItem>
+                          <SelectItem value="kristen">Kristen</SelectItem>
+                          <SelectItem value="muslim">Muslim</SelectItem>
+                          <SelectItem value="jude">Jude</SelectItem>
+                          <SelectItem value="buddhist">Buddhist</SelectItem>
+                          <SelectItem value="hindu">Hindu</SelectItem>
+                          <SelectItem value="spirituell">Spirituell</SelectItem>
+                          <SelectItem value="annat">Annat</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Politik</Label>
+                      <Select value={profile.politics} onValueChange={(v) => updateProfile('politics', v)}>
+                        <SelectTrigger className="py-5">
+                          <SelectValue placeholder="Välj..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="vänster">Vänster</SelectItem>
+                          <SelectItem value="liberal">Liberal</SelectItem>
+                          <SelectItem value="moderat">Moderat</SelectItem>
+                          <SelectItem value="konservativ">Konservativ</SelectItem>
+                          <SelectItem value="höger">Höger</SelectItem>
+                          <SelectItem value="opolitisk">Opolitisk</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Alkohol</Label>
+                      <Select value={profile.alcohol} onValueChange={(v) => updateProfile('alcohol', v)}>
+                        <SelectTrigger className="py-5">
+                          <SelectValue placeholder="Välj..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aldrig">Aldrig</SelectItem>
+                          <SelectItem value="sällan">Sällan</SelectItem>
+                          <SelectItem value="socialt">Socialt</SelectItem>
+                          <SelectItem value="ofta">Ofta</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Rökning/Snus</Label>
+                      <Select value={profile.smoking} onValueChange={(v) => updateProfile('smoking', v)}>
+                        <SelectTrigger className="py-5">
+                          <SelectValue placeholder="Välj..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aldrig">Aldrig</SelectItem>
+                          <SelectItem value="ibland">Ibland</SelectItem>
+                          <SelectItem value="regelbundet">Regelbundet</SelectItem>
+                          <SelectItem value="dagligen">Dagligen</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Photos */}
+            {currentStep === 3 && (
+              <div className="space-y-5">
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                    <Camera className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <h1 className="text-xl font-serif font-bold text-foreground mb-1">
+                    Visa dig själv
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Minst 1 foto krävs, 4-6 rekommenderas
+                  </p>
+                </div>
+
+                <div className="bg-card/50 border border-border rounded-xl p-4 mb-4">
+                  <p className="text-sm text-center italic text-muted-foreground">
+                    "{PHOTO_PROMPTS[0]}" - Berätta genom dina bilder
+                  </p>
+                </div>
+
+                <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
+
+                <div className="text-center">
+                  <span className={cn(
+                    "text-sm font-medium",
+                    photoCount >= 4 ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {photoCount} av 6 foton
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Complete */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow animate-pulse">
+                    <Sparkles className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
+                    Din profil är {completion}% komplett!
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Du är redo att börja matcha
+                  </p>
+                </div>
+
+                {/* Summary Card */}
+                <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                  <div className="p-4 border-b border-border">
+                    <div className="flex items-center gap-3">
+                      {photos[0]?.storage_path && (
+                        <img 
+                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${photos[0].storage_path}`}
+                          alt="Profile"
+                          className="w-16 h-16 rounded-xl object-cover"
+                        />
+                      )}
+                      <div>
+                        <h3 className="font-semibold text-foreground">
+                          {profile.firstName} {profile.lastName}
+                        </h3>
+                        {age && <p className="text-sm text-muted-foreground">{age} år</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-3">
+                    {personalityResult && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{ARCHETYPE_INFO[personalityResult.archetype].emoji}</span>
+                        <span className="text-sm text-foreground">
+                          {ARCHETYPE_INFO[personalityResult.archetype].title}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {profile.hometown && (
+                        <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
+                          📍 {profile.hometown}
+                        </span>
+                      )}
+                      {profile.work && (
+                        <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
+                          💼 {profile.work}
+                        </span>
+                      )}
+                      {profile.education && (
+                        <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
+                          🎓 {profile.education}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  Du kan alltid uppdatera din profil senare
+                </p>
               </div>
             )}
           </motion.div>
@@ -372,6 +791,19 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               Tillbaka
             </Button>
           )}
+          
+          {/* Skip button for optional step */}
+          {currentStep === 2 && (
+            <Button
+              variant="ghost"
+              onClick={handleSkip}
+              className="gap-2"
+            >
+              Hoppa över
+              <SkipForward className="w-4 h-4" />
+            </Button>
+          )}
+
           <Button
             onClick={handleNext}
             disabled={!canProceed() || saving}
@@ -379,8 +811,13 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           >
             {currentStep === STEPS.length - 1 ? (
               <>
-                {saving ? 'Sparar...' : 'Slutför'}
-                <Check className="w-4 h-4" />
+                {saving ? 'Sparar...' : 'Börja matcha'}
+                <Heart className="w-4 h-4" />
+              </>
+            ) : currentStep === 0 ? (
+              <>
+                Nästa: Personlighetstest
+                <Brain className="w-4 h-4" />
               </>
             ) : (
               <>
