@@ -26,97 +26,24 @@ interface ProfileViewProps {
   archetype?: string | null;
 }
 
-// Personality trait categories with colors
-const TRAIT_CATEGORIES = {
-  emotional: { 
-    label: 'Emotionell', 
-    bgClass: 'bg-rose-400', 
-    textClass: 'text-white',
-    traits: ['Vårdande', 'Empatisk', 'Känslosam']
-  },
-  creative: { 
-    label: 'Kreativ', 
-    bgClass: 'bg-rose-400', 
-    textClass: 'text-white',
-    traits: ['Konstnärlig', 'Fantasifull', 'Innovativ']
-  },
-  social: { 
-    label: 'Social', 
-    bgClass: 'bg-rose-400', 
-    textClass: 'text-white',
-    traits: ['Empatisk', 'Utåtriktad', 'Omtänksam']
-  },
-  mental: { 
-    label: 'Mental', 
-    bgClass: 'bg-emerald-400', 
-    textClass: 'text-white',
-    traits: ['Reflekterande', 'Analytisk', 'Logisk']
-  },
-  intellectual: { 
-    label: 'Intellektuell', 
-    bgClass: 'bg-emerald-100', 
-    textClass: 'text-emerald-700',
-    traits: ['Analytisk', 'Nyfiken', 'Strategisk']
-  },
-  physical: { 
-    label: 'Fysisk', 
-    bgClass: 'bg-rose-100', 
-    textClass: 'text-rose-700',
-    traits: ['Äventyrlig', 'Aktiv', 'Energisk']
-  },
-  spiritual: { 
-    label: 'Andlig', 
-    bgClass: 'bg-emerald-100', 
-    textClass: 'text-emerald-700',
-    traits: ['Visionär', 'Intuitiv', 'Reflekterande']
-  },
+// Category color mapping using design system
+const CATEGORY_STYLES: Record<string, { className: string; label: string }> = {
+  DIPLOMAT: { className: 'badge-diplomat', label: 'Diplomat' },
+  STRATEGER: { className: 'badge-strateger', label: 'Strateg' },
+  BYGGARE: { className: 'badge-byggare', label: 'Byggare' },
+  UPPTÄCKARE: { className: 'badge-upptackare', label: 'Upptäckare' },
 };
 
-// Map archetypes to trait combinations
+// Get traits from archetype info
 const getArchetypeTraits = (archetype: string) => {
-  const traitMap: Record<string, { category: string; trait: string; primary?: boolean }[]> = {
-    'INFJ': [
-      { category: 'emotional', trait: 'Vårdande', primary: true },
-      { category: 'creative', trait: 'Konstnärlig', primary: true },
-      { category: 'social', trait: 'Empatisk', primary: true },
-      { category: 'mental', trait: 'Reflekterande', primary: true },
-      { category: 'intellectual', trait: 'Analytisk' },
-      { category: 'spiritual', trait: 'Visionär' },
-    ],
-    'ENFP': [
-      { category: 'creative', trait: 'Fantasifull', primary: true },
-      { category: 'social', trait: 'Utåtriktad', primary: true },
-      { category: 'emotional', trait: 'Empatisk', primary: true },
-      { category: 'mental', trait: 'Reflekterande', primary: true },
-      { category: 'physical', trait: 'Äventyrlig' },
-      { category: 'spiritual', trait: 'Intuitiv' },
-    ],
-    'INTJ': [
-      { category: 'mental', trait: 'Analytisk', primary: true },
-      { category: 'intellectual', trait: 'Strategisk', primary: true },
-      { category: 'creative', trait: 'Innovativ', primary: true },
-      { category: 'spiritual', trait: 'Visionär', primary: true },
-      { category: 'emotional', trait: 'Vårdande' },
-      { category: 'physical', trait: 'Aktiv' },
-    ],
-    'ESFJ': [
-      { category: 'social', trait: 'Omtänksam', primary: true },
-      { category: 'emotional', trait: 'Vårdande', primary: true },
-      { category: 'mental', trait: 'Reflekterande', primary: true },
-      { category: 'creative', trait: 'Konstnärlig', primary: true },
-      { category: 'physical', trait: 'Energisk' },
-      { category: 'intellectual', trait: 'Analytisk' },
-    ],
-  };
+  const info = ARCHETYPE_INFO[archetype as ArchetypeCode];
+  if (!info) return [];
   
-  return traitMap[archetype] || [
-    { category: 'emotional', trait: 'Vårdande', primary: true },
-    { category: 'social', trait: 'Empatisk', primary: true },
-    { category: 'mental', trait: 'Reflekterande', primary: true },
-    { category: 'creative', trait: 'Konstnärlig', primary: true },
-    { category: 'intellectual', trait: 'Analytisk' },
-    { category: 'spiritual', trait: 'Visionär' },
-  ];
+  return info.strengths.map((strength, i) => ({
+    trait: strength,
+    primary: i < 2,
+    category: info.category,
+  }));
 };
 
 export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
@@ -288,46 +215,43 @@ export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
       {archetypeInfo && (
         <Card className="shadow-soft rounded-2xl">
           <CardContent className="p-5">
-            <h2 className="font-serif font-bold text-lg text-center mb-5">
-              Arketyper & Profil
-            </h2>
-            
-            {/* Primary traits - larger badges */}
-            <div className="flex flex-wrap justify-center gap-2 mb-3">
-              {traits.filter(t => t.primary).map((trait, index) => {
-                const category = TRAIT_CATEGORIES[trait.category as keyof typeof TRAIT_CATEGORIES];
-                return (
-                  <span
-                    key={index}
-                    className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium",
-                      category?.bgClass || 'bg-muted',
-                      category?.textClass || 'text-foreground'
-                    )}
-                  >
-                    {category?.label}: {trait.trait}
-                  </span>
-                );
-              })}
+            {/* Archetype header with category color */}
+            <div className="text-center mb-5">
+              <span className="text-4xl mb-2 block">{archetypeInfo.emoji}</span>
+              <h2 className="font-serif font-bold text-xl">{archetypeInfo.title}</h2>
+              <span className={cn(
+                "inline-block px-3 py-1 rounded-full text-xs font-medium mt-2",
+                CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-muted'
+              )}>
+                {CATEGORY_STYLES[archetypeInfo.category]?.label}
+              </span>
             </div>
 
-            {/* Secondary traits - smaller badges */}
+            {/* Description */}
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              {archetypeInfo.description}
+            </p>
+            
+            {/* Strengths as badges */}
             <div className="flex flex-wrap justify-center gap-2 mb-4">
-              {traits.filter(t => !t.primary).map((trait, index) => {
-                const category = TRAIT_CATEGORIES[trait.category as keyof typeof TRAIT_CATEGORIES];
-                return (
-                  <span
-                    key={index}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium border",
-                      category?.bgClass.includes('100') ? category.bgClass : 'bg-muted/50',
-                      category?.textClass || 'text-foreground'
-                    )}
-                  >
-                    {category?.label}: {trait.trait}
-                  </span>
-                );
-              })}
+              {archetypeInfo.strengths.map((strength, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-medium",
+                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-muted'
+                  )}
+                >
+                  {strength}
+                </span>
+              ))}
+            </div>
+
+            {/* Love style */}
+            <div className="bg-muted/50 rounded-xl p-3 mb-4">
+              <p className="text-xs text-muted-foreground text-center">
+                <span className="font-medium text-foreground">I relationer:</span> {archetypeInfo.loveStyle}
+              </p>
             </div>
 
             <Link to="/" className="block">
