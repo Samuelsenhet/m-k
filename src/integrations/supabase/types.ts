@@ -14,6 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_questions: {
+        Row: {
+          active_date: string
+          created_at: string
+          id: string
+          question_text: string
+        }
+        Insert: {
+          active_date: string
+          created_at?: string
+          id?: string
+          question_text: string
+        }
+        Update: {
+          active_date?: string
+          created_at?: string
+          id?: string
+          question_text?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          match_date: string
+          match_score: number
+          match_type: string
+          matched_user_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          match_date?: string
+          match_score?: number
+          match_type: string
+          matched_user_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          match_date?: string
+          match_score?: number
+          match_type?: string
+          matched_user_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          match_id: string
+          message_type: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          match_id: string
+          message_type?: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          match_id?: string
+          message_type?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personality_results: {
         Row: {
           category: string
@@ -40,27 +135,80 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
+          gender: string | null
           id: string
+          looking_for: string | null
+          phone: string | null
+          phone_verified_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          gender?: string | null
           id?: string
+          looking_for?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          gender?: string | null
           id?: string
+          looking_for?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      question_responses: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          response_text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          response_text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          response_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "daily_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
