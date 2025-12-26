@@ -18,6 +18,17 @@ function getPhotoUrl(storagePath: string) {
   return `${SUPABASE_URL}/storage/v1/object/public/profile-photos/${storagePath}`;
 }
 
+// Category badge class mapping for psychological color coding
+const getCategoryBadgeClass = (category: string) => {
+  const classes: Record<string, string> = {
+    DIPLOMAT: 'badge-diplomat',
+    STRATEGER: 'badge-strateger',
+    BYGGARE: 'badge-byggare',
+    UPPTÄCKARE: 'badge-upptackare',
+  };
+  return classes[category] || 'bg-secondary text-secondary-foreground';
+};
+
 export default function Matches() {
   const { user, loading: authLoading } = useAuth();
   const { matches, loading, error, refreshMatches, likeMatch, passMatch } = useMatches();
@@ -196,14 +207,9 @@ export default function Matches() {
                           <h3 className="text-xl font-semibold">{match.matchedUser.displayName}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-lg">{archetypeInfo?.emoji || categoryInfo?.emoji}</span>
-                            <span className="text-sm font-medium text-primary">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeClass(match.matchedUser.category)}`}>
                               {archetypeInfo?.title || categoryInfo?.title}
                             </span>
-                            {archetypeInfo && (
-                              <span className="text-xs text-muted-foreground">
-                                ({archetypeInfo.name})
-                              </span>
-                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -220,13 +226,13 @@ export default function Matches() {
                         </p>
                       )}
 
-                      {/* Strengths */}
+                      {/* Strengths with category colors */}
                       {archetypeInfo && (
                         <div className="flex flex-wrap gap-1.5 mb-4">
                           {archetypeInfo.strengths.slice(0, 3).map((strength, i) => (
                             <span 
                               key={i} 
-                              className="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded-full"
+                              className={`px-2 py-0.5 text-xs rounded-full ${getCategoryBadgeClass(match.matchedUser.category)}`}
                             >
                               {strength}
                             </span>
