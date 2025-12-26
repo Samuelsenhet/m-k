@@ -15,12 +15,12 @@ interface PhotoSlot {
 }
 
 const PHOTO_PROMPTS = [
-  'Ditt bästa leende',
-  'Gör något du älskar',
-  'Med vänner eller familj',
-  'På en resa eller äventyr',
-  'Din kreativa sida',
-  'Något som gör dig glad',
+  '📸 Ditt bästa leende',
+  '🎯 Gör något du älskar',
+  '👯 Med vänner eller familj',
+  '✈️ På en resa eller äventyr',
+  '🎨 Din kreativa sida',
+  '🐕 Med ditt husdjur',
 ];
 
 interface PhotoUploadProps {
