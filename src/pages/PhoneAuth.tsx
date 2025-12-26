@@ -109,11 +109,12 @@ export default function PhoneAuth() {
       setErrors({});
       
       // Format date for database
-      const dobString = `${dateOfBirth.year}-${dateOfBirth.month}-${dateOfBirth.day}`;
+      const dobString = `${dateOfBirth.year}-${dateOfBirth.month.padStart(2, '0')}-${dateOfBirth.day.padStart(2, '0')}`;
       const formattedPhone = phone.startsWith('0') ? `+46${phone.slice(1)}` : `+46${phone}`;
       
       // Update profile in database
       const { data: session } = await supabase.auth.getSession();
+      
       if (session.session) {
         const { error: updateError } = await supabase
           .from('profiles')
@@ -139,14 +140,19 @@ export default function PhoneAuth() {
             });
           
           if (insertError) {
+            console.error('Profile insert error:', insertError);
             toast.error('Kunde inte spara profil');
             return;
           }
         }
-      }
 
-      toast.success('Profil skapad!');
-      navigate('/onboarding');
+        toast.success('Profil skapad!');
+        navigate('/onboarding');
+      } else {
+        // No session - show error and redirect to start
+        toast.error('Sessionen har gått ut. Försök igen.');
+        setStep('phone');
+      }
     } catch (e) {
       if (e instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
