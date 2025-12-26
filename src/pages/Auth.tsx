@@ -192,7 +192,7 @@ export default function Auth() {
               </Button>
             </form>
             
-            <div className="mt-6 text-center">
+            <div className="mt-6 space-y-4 text-center">
               <button
                 type="button"
                 onClick={() => {
@@ -206,6 +206,22 @@ export default function Auth() {
                   : 'Har du redan ett konto? Logga in'
                 }
               </button>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">eller</span>
+                </div>
+              </div>
+              
+              <Link
+                to="/phone-auth"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                Registrera dig med telefon istället
+              </Link>
             </div>
           </CardContent>
         </Card>
