@@ -145,8 +145,8 @@ export default function PhoneAuth() {
         }
       }
 
-      toast.success('Profil skapad! Välkommen till MÄÄK!');
-      navigate('/');
+      toast.success('Profil skapad!');
+      navigate('/onboarding');
     } catch (e) {
       if (e instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};

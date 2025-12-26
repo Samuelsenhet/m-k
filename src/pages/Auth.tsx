@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,9 +33,25 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      checkOnboardingStatus();
     }
-  }, [user, navigate]);
+  }, [user]);
+
+  const checkOnboardingStatus = async () => {
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profile?.onboarding_completed) {
+      navigate('/');
+    } else {
+      navigate('/onboarding');
+    }
+  };
 
   const validateForm = () => {
     try {
@@ -77,7 +94,7 @@ export default function Auth() {
           }
         } else {
           toast.success('Inloggad!');
-          navigate('/');
+          // Navigation handled by useEffect
         }
       } else {
         const { error } = await signUp(email, password, displayName);
@@ -88,8 +105,8 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
-          toast.success('Konto skapat! Du är nu inloggad.');
-          navigate('/');
+          toast.success('Konto skapat!');
+          // Navigation handled by useEffect - will go to onboarding
         }
       }
     } finally {

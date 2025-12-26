@@ -208,6 +208,7 @@ export type Database = {
           gender: string | null
           id: string
           looking_for: string | null
+          onboarding_completed: boolean
           phone: string | null
           phone_verified_at: string | null
           updated_at: string
@@ -222,6 +223,7 @@ export type Database = {
           gender?: string | null
           id?: string
           looking_for?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
           updated_at?: string
@@ -236,6 +238,7 @@ export type Database = {
           gender?: string | null
           id?: string
           looking_for?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
           updated_at?: string
