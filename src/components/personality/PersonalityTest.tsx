@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { QUESTIONS } from '@/data/questions';
-import { type PersonalityTestResult, type DimensionKey, type PersonalityCategory } from '@/types/personality';
+import { type PersonalityTestResult, type DimensionKey, type PersonalityCategory, calculateArchetype, getCategoryFromArchetype } from '@/types/personality';
 import { ProgressBar } from './ProgressBar';
 import { QuestionCard } from './QuestionCard';
 import { Button } from '@/components/ui/button';
@@ -55,12 +55,13 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
       scores[k] = Math.round(((avg - 1) / 4) * 100);
     });
 
-    const category = determineCategory(scores);
+    const archetype = calculateArchetype(scores);
+    const category = getCategoryFromArchetype(archetype);
 
     return {
       scores,
       category,
-      archetype: 'Standard',
+      archetype,
       answers,
     };
   };

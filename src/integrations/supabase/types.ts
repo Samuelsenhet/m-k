@@ -35,6 +35,41 @@ export type Database = {
         }
         Relationships: []
       }
+      icebreakers: {
+        Row: {
+          created_at: string
+          display_order: number
+          icebreaker_text: string
+          id: string
+          match_id: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icebreaker_text: string
+          id?: string
+          match_id: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icebreaker_text?: string
+          id?: string
+          match_id?: string
+          used?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icebreakers_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           created_at: string
@@ -111,6 +146,7 @@ export type Database = {
       }
       personality_results: {
         Row: {
+          archetype: string | null
           category: string
           created_at: string
           id: string
@@ -118,6 +154,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archetype?: string | null
           category: string
           created_at?: string
           id?: string
@@ -125,10 +162,38 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archetype?: string | null
           category?: string
           created_at?: string
           id?: string
           scores?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_photos: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          prompt: string | null
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          prompt?: string | null
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          prompt?: string | null
+          storage_path?: string
           user_id?: string
         }
         Relationships: []
