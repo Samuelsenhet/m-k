@@ -11,8 +11,9 @@ import { toast } from 'sonner';
 interface PersonalityResultRow {
   id: string;
   user_id: string;
-  scores: Record<DimensionKey, number>;
+  scores: unknown;
   category: string;
+  archetype?: string;
   created_at: string;
 }
 
@@ -47,7 +48,7 @@ export default function Profile() {
     if (error) {
       toast.error('Kunde inte hämta resultat');
     } else {
-      setResults((data as PersonalityResultRow[]) || []);
+      setResults((data as unknown as PersonalityResultRow[]) || []);
     }
     setLoadingResults(false);
   };

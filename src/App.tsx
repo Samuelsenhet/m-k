@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
 import Matches from "./pages/Matches";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const AppContent = () => {
           <Route path="/phone-auth" element={<PhoneAuth />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/matches" element={<Matches />} />
+          <Route path="/chat" element={<Chat />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
