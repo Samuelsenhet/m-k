@@ -5,18 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhotoUpload } from '@/components/profile/PhotoUpload';
 import { PersonalityTest } from '@/components/personality/PersonalityTest';
 import { PersonalityResult } from '@/components/personality/PersonalityResult';
 import { 
-  Heart, ArrowRight, ArrowLeft, CalendarIcon, Check, Sparkles, User, Camera, 
+  Heart, ArrowRight, ArrowLeft, Check, Sparkles, User, Camera, 
   Users, Brain, Briefcase, SkipForward, ChevronRight
 } from 'lucide-react';
-import { format, differenceInYears } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { type PersonalityTestResult, ARCHETYPE_INFO, type ArchetypeCode } from '@/types/personality';
@@ -35,7 +31,6 @@ interface PhotoSlot {
 interface ProfileData {
   firstName: string;
   lastName: string;
-  dateOfBirth: Date | undefined;
   pronouns: string;
   gender: string;
   height: string;
@@ -77,7 +72,6 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [profile, setProfile] = useState<ProfileData>({
     firstName: '',
     lastName: '',
-    dateOfBirth: undefined,
     pronouns: '',
     gender: '',
     height: '',
@@ -106,7 +100,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     }))
   );
 
-  const age = profile.dateOfBirth ? differenceInYears(new Date(), profile.dateOfBirth) : null;
+  // Removed age calculation - age verification handled in phone auth
   const photoCount = photos.filter(p => p.storage_path).length;
 
   // Check for existing personality result
@@ -138,10 +132,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   // Calculate completion percentage
   const calculateCompletion = () => {
     let filled = 0;
-    let total = 10;
+    let total = 9;
 
     if (profile.firstName) filled++;
-    if (profile.dateOfBirth) filled++;
     if (profile.gender) filled++;
     if (profile.sexuality) filled++;
     if (profile.lookingFor) filled++;
@@ -162,9 +155,6 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     switch (currentStep) {
       case 0: // Basics
         return profile.firstName.trim().length >= 2 && 
-               profile.dateOfBirth && 
-               age !== null && 
-               age >= 20 &&
                profile.gender &&
                profile.sexuality &&
                profile.lookingFor;
@@ -231,7 +221,6 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         .from('profiles')
         .update({
           display_name: profile.firstName + (profile.lastName ? ` ${profile.lastName}` : ''),
-          date_of_birth: profile.dateOfBirth?.toISOString().split('T')[0],
           pronouns: profile.pronouns || null,
           gender: profile.gender,
           height: profile.height ? parseInt(profile.height) : null,
@@ -389,41 +378,6 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                         className="py-5"
                       />
                     </div>
-                  </div>
-
-                  {/* Birthday */}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Födelsedatum * <span className="text-muted-foreground">(20+ för att använda MÄÄK)</span></Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full py-5 justify-start text-left font-normal',
-                            !profile.dateOfBirth && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {profile.dateOfBirth ? format(profile.dateOfBirth, 'PPP', { locale: sv }) : 'Välj datum'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={profile.dateOfBirth}
-                          onSelect={(date) => updateProfile('dateOfBirth', date)}
-                          disabled={(date) => date > new Date() || date < new Date('1920-01-01')}
-                          defaultMonth={new Date(2000, 0)}
-                          captionLayout="dropdown-buttons"
-                          fromYear={1920}
-                          toYear={new Date().getFullYear() - 18}
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {profile.dateOfBirth && age !== null && age < 20 && (
-                      <p className="text-xs text-destructive">Du måste vara minst 20 år</p>
-                    )}
                   </div>
 
                   {/* Pronouns & Height */}
@@ -734,7 +688,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                         <h3 className="font-semibold text-foreground">
                           {profile.firstName} {profile.lastName}
                         </h3>
-                        {age && <p className="text-sm text-muted-foreground">{age} år</p>}
+                        
                       </div>
                     </div>
                   </div>
