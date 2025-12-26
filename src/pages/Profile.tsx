@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { LogOut, Settings, Sparkles, X, Trophy } from 'lucide-react';
+import { LogOut, Settings, X, Trophy } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -124,13 +124,6 @@ export default function Profile() {
                         </span>
                         <Button variant="ghost" size="sm">{t('settings.view')}</Button>
                       </button>
-                      <Link to="/" className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm flex items-center gap-2">
-                          <Sparkles className="w-4 h-4" />
-                          {t('settings.personality_test')}
-                        </span>
-                        <Button variant="ghost" size="sm">{t('settings.start')}</Button>
-                      </Link>
                     </CardContent>
                   </Card>
                   <Button 

@@ -1,13 +1,23 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { QUESTIONS } from '@/data/questions';
-import { type PersonalityTestResult, type DimensionKey, type PersonalityCategory, calculateArchetype, getCategoryFromArchetype } from '@/types/personality';
+import { type PersonalityTestResult, type DimensionKey, calculateArchetype, getCategoryFromArchetype } from '@/types/personality';
 import { ProgressBar } from './ProgressBar';
 import { QuestionCard } from './QuestionCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const DIMENSION_ORDER: DimensionKey[] = ['ei', 'sn', 'tf', 'jp', 'at'];
+
+
+// Fisher-Yates shuffle algorithm
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 interface PersonalityTestProps {
   onComplete: (result: PersonalityTestResult) => void;
@@ -15,20 +25,24 @@ interface PersonalityTestProps {
 
 export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<number[]>(Array(QUESTIONS.length).fill(0));
   const { toast } = useToast();
+  
+  // Shuffle questions once per user session
+  const shuffledQuestions = useMemo(() => shuffleArray(QUESTIONS), []);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
 
-  const currentQuestion = QUESTIONS[currentIndex];
-  const isComplete = answers.every((a) => a >= 1 && a <= 5);
-  const answeredCount = answers.filter((a) => a >= 1).length;
+  const currentQuestion = shuffledQuestions[currentIndex];
+  const answeredCount = Object.keys(answers).length;
+  const isComplete = answeredCount === shuffledQuestions.length;
 
   const setAnswer = (value: number) => {
-    const newAnswers = [...answers];
-    newAnswers[currentIndex] = value;
-    setAnswers(newAnswers);
+    setAnswers(prev => ({
+      ...prev,
+      [currentQuestion.id]: value
+    }));
 
     // Auto-advance after a brief delay
-    if (currentIndex < QUESTIONS.length - 1) {
+    if (currentIndex < shuffledQuestions.length - 1) {
       setTimeout(() => {
         setCurrentIndex((i) => i + 1);
       }, 400);
@@ -44,47 +58,38 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
       at: 0,
     };
 
-    for (let i = 0; i < QUESTIONS.length; i++) {
-      const dim = DIMENSION_ORDER[Math.floor(i / 6)];
-      scores[dim] += answers[i];
-    }
+    // Group answers by dimension using original question data
+    const dimensionCounts: Record<DimensionKey, number> = { ei: 0, sn: 0, tf: 0, jp: 0, at: 0 };
+    
+    QUESTIONS.forEach((q) => {
+      const answerValue = answers[q.id];
+      if (answerValue) {
+        scores[q.dimension] += answerValue;
+        dimensionCounts[q.dimension]++;
+      }
+    });
 
-    // Convert 1-5 average to 0-100
+    // Convert to 0-100 scale
     (Object.keys(scores) as DimensionKey[]).forEach((k) => {
-      const avg = scores[k] / 6;
+      const count = dimensionCounts[k] || 1;
+      const avg = scores[k] / count;
       scores[k] = Math.round(((avg - 1) / 4) * 100);
     });
 
     const archetype = calculateArchetype(scores);
     const category = getCategoryFromArchetype(archetype);
 
+    // Convert answers record to array for storage
+    const answersArray = QUESTIONS.map(q => answers[q.id] || 0);
+
     return {
       scores,
       category,
       archetype,
-      answers,
+      answers: answersArray,
     };
   };
 
-  const determineCategory = (scores: Record<DimensionKey, number>): PersonalityCategory => {
-    const order = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-    const top = order[0][0] as DimensionKey;
-
-    switch (top) {
-      case 'sn':
-        return 'UPPTÄCKARE';
-      case 'ei':
-        return 'DIPLOMAT';
-      case 'tf':
-        return 'STRATEGER';
-      case 'jp':
-        return 'BYGGARE';
-      case 'at':
-        return scores.at > 55 ? 'STRATEGER' : 'DIPLOMAT';
-      default:
-        return 'DIPLOMAT';
-    }
-  };
 
   const handleSubmit = () => {
     if (!isComplete) {
@@ -114,15 +119,15 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
         </div>
 
         {/* Progress */}
-        <ProgressBar current={answeredCount} total={QUESTIONS.length} className="mb-8" />
+        <ProgressBar current={answeredCount} total={shuffledQuestions.length} className="mb-8" />
 
         {/* Question */}
         <div className="relative min-h-[200px] mb-8">
-          {QUESTIONS.map((q, idx) => (
+          {shuffledQuestions.map((q, idx) => (
             <QuestionCard
               key={q.id}
               question={q}
-              answer={answers[idx]}
+              answer={answers[q.id] || 0}
               onAnswer={setAnswer}
               isActive={idx === currentIndex}
             />
@@ -141,10 +146,10 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
             Föregående
           </Button>
 
-          {currentIndex < QUESTIONS.length - 1 ? (
+          {currentIndex < shuffledQuestions.length - 1 ? (
             <Button
-              onClick={() => setCurrentIndex((i) => Math.min(QUESTIONS.length - 1, i + 1))}
-              disabled={answers[currentIndex] === 0}
+              onClick={() => setCurrentIndex((i) => Math.min(shuffledQuestions.length - 1, i + 1))}
+              disabled={!answers[currentQuestion.id]}
               className="gap-2 gradient-primary text-primary-foreground border-0"
             >
               Nästa
