@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PhotoUpload } from './PhotoUpload';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Save, User, Heart, Info, Sparkles } from 'lucide-react';
+import { Loader2, Save, User, Heart, Info, Sparkles, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileData {
   display_name: string;
@@ -27,6 +29,13 @@ interface ProfileData {
   pronouns: string;
 }
 
+interface PrivacySettings {
+  show_age: boolean;
+  show_job: boolean;
+  show_education: boolean;
+  show_last_name: boolean;
+}
+
 interface PhotoSlot {
   id?: string;
   storage_path: string;
@@ -40,6 +49,7 @@ interface ProfileEditorProps {
 
 export function ProfileEditor({ onComplete }: ProfileEditorProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
@@ -57,6 +67,12 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     alcohol: '',
     pronouns: '',
   });
+  const [privacy, setPrivacy] = useState<PrivacySettings>({
+    show_age: true,
+    show_job: true,
+    show_education: true,
+    show_last_name: false,
+  });
   const [photos, setPhotos] = useState<PhotoSlot[]>([]);
 
   useEffect(() => {
@@ -71,7 +87,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, bio, gender, looking_for, height, work, education, hometown, religion, politics, smoking, alcohol, pronouns')
+      .select('display_name, bio, gender, looking_for, height, work, education, hometown, religion, politics, smoking, alcohol, pronouns, show_age, show_job, show_education, show_last_name')
       .eq('user_id', user.id)
       .single();
 
@@ -92,6 +108,12 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         smoking: data.smoking || '',
         alcohol: data.alcohol || '',
         pronouns: data.pronouns || '',
+      });
+      setPrivacy({
+        show_age: data.show_age ?? true,
+        show_job: data.show_job ?? true,
+        show_education: data.show_education ?? true,
+        show_last_name: data.show_last_name ?? false,
       });
     }
     setLoading(false);
@@ -137,6 +159,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         smoking: profile.smoking || null,
         alcohol: profile.alcohol || null,
         pronouns: profile.pronouns || null,
+        show_age: privacy.show_age,
+        show_job: privacy.show_job,
+        show_education: privacy.show_education,
+        show_last_name: privacy.show_last_name,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', user.id);
@@ -148,6 +174,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       onComplete?.();
     }
     setSaving(false);
+  };
+
+  const updatePrivacy = (field: keyof PrivacySettings, value: boolean) => {
+    setPrivacy(prev => ({ ...prev, [field]: value }));
   };
 
   const updateField = (field: keyof ProfileData, value: string) => {
@@ -409,6 +439,63 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                   <SelectItem value="Opolitisk">Opolitisk</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Privacy Settings */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-serif text-base flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            {t('privacy.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t('privacy.description')}
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2 border-b border-border">
+              <Label htmlFor="show_age" className="text-sm cursor-pointer">
+                {t('privacy.showAge')}
+              </Label>
+              <Checkbox
+                id="show_age"
+                checked={privacy.show_age}
+                onCheckedChange={(checked) => updatePrivacy('show_age', checked === true)}
+              />
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-border">
+              <Label htmlFor="show_job" className="text-sm cursor-pointer">
+                {t('privacy.showJob')}
+              </Label>
+              <Checkbox
+                id="show_job"
+                checked={privacy.show_job}
+                onCheckedChange={(checked) => updatePrivacy('show_job', checked === true)}
+              />
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-border">
+              <Label htmlFor="show_education" className="text-sm cursor-pointer">
+                {t('privacy.showEducation')}
+              </Label>
+              <Checkbox
+                id="show_education"
+                checked={privacy.show_education}
+                onCheckedChange={(checked) => updatePrivacy('show_education', checked === true)}
+              />
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <Label htmlFor="show_last_name" className="text-sm cursor-pointer">
+                {t('privacy.showLastName')}
+              </Label>
+              <Checkbox
+                id="show_last_name"
+                checked={privacy.show_last_name}
+                onCheckedChange={(checked) => updatePrivacy('show_last_name', checked === true)}
+              />
             </div>
           </div>
         </CardContent>

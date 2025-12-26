@@ -111,5 +111,13 @@
     "analytics": "Analytics",
     "marketing": "Marketing",
     "personalization": "Personalization"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "description": "Choose what is shown to your matches",
+    "showAge": "Show my age",
+    "showJob": "Show my job",
+    "showEducation": "Show my education",
+    "showLastName": "Show my last name"
   }
 }
