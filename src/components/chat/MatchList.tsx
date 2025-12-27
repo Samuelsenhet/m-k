@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageCircle, Heart } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { sv } from 'date-fns/locale';
+import mascotLove from '@/assets/mascot-love.png';
 
 interface Match {
   id: string;
@@ -122,9 +123,11 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
   if (matches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Heart className="w-8 h-8 text-primary" />
-        </div>
+        <img 
+          src={mascotLove} 
+          alt="MÄÄK mascot" 
+          className="w-24 h-24 object-contain mb-4 animate-float"
+        />
         <h3 className="font-serif font-semibold text-foreground mb-2">
           Inga matchningar ännu
         </h3>
