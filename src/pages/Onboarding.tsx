@@ -23,16 +23,30 @@ export default function Onboarding() {
   const checkOnboardingStatus = async () => {
     if (!user) return;
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('onboarding_completed')
+      .select('onboarding_completed, date_of_birth')
       .eq('user_id', user.id)
       .single();
 
-    if (profile?.onboarding_completed) {
+    if (error || !profile) {
+      // No profile yet, redirect to phone-auth to complete age verification
+      navigate('/phone-auth');
+      return;
+    }
+
+    if (!profile.date_of_birth) {
+      // Age not verified yet, go back to phone-auth
+      navigate('/phone-auth');
+      return;
+    }
+
+    if (profile.onboarding_completed) {
       // Already completed onboarding, redirect to home
       navigate('/');
+      return;
     }
+    
     setCheckingStatus(false);
   };
 
