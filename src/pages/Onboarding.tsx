@@ -11,7 +11,7 @@ export default function Onboarding() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      navigate('/phone-auth');
       return;
     }
 
