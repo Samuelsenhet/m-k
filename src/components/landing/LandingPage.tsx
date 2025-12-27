@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut } from 'lucide-react';
+import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import heroIllustration from '@/assets/hero-illustration.png';
 import { useAuth } from '@/contexts/AuthContext';
@@ -164,6 +164,88 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             <p className="text-sm text-muted-foreground">
               Skräddarsydda konversationsstartare baserat på dina profiler
             </p>
+          </div>
+        </div>
+
+        {/* How it works */}
+        <div 
+          className="mt-24 animate-slide-up"
+          style={{ animationDelay: '0.5s' }}
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-serif font-bold text-foreground mb-3">
+              Så fungerar det
+            </h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Tre enkla steg till meningsfulla kontakter
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Connection line */}
+            <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent -translate-y-1/2" />
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Step 1 */}
+              <div className="relative text-center group">
+                <div className="relative z-10 w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform">
+                  <Phone className="w-7 h-7 text-primary-foreground" />
+                  <div className="absolute -top-2 -right-2 w-7 h-7 bg-card border-2 border-primary rounded-full flex items-center justify-center text-sm font-bold text-primary">
+                    1
+                  </div>
+                </div>
+                <h3 className="font-serif font-semibold text-lg text-foreground mb-2">
+                  Skapa konto
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Verifiera ditt telefonnummer och skapa din profil på under 2 minuter
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="relative text-center group">
+                <div className="relative z-10 w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform">
+                  <Brain className="w-7 h-7 text-primary-foreground" />
+                  <div className="absolute -top-2 -right-2 w-7 h-7 bg-card border-2 border-primary rounded-full flex items-center justify-center text-sm font-bold text-primary">
+                    2
+                  </div>
+                </div>
+                <h3 className="font-serif font-semibold text-lg text-foreground mb-2">
+                  Gör personlighetstestet
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Svara på 30 frågor så vårt AI kan förstå din personlighet på djupet
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="relative text-center group">
+                <div className="relative z-10 w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform">
+                  <Calendar className="w-7 h-7 text-primary-foreground" />
+                  <div className="absolute -top-2 -right-2 w-7 h-7 bg-card border-2 border-primary rounded-full flex items-center justify-center text-sm font-bold text-primary">
+                    3
+                  </div>
+                </div>
+                <h3 className="font-serif font-semibold text-lg text-foreground mb-2">
+                  Få dagliga matchningar
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Varje dag får du nya matchningar baserade på personlighetskompatibilitet
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA after how it works */}
+          <div className="text-center mt-12">
+            <Button
+              onClick={handleStart}
+              size="lg"
+              className="gradient-primary text-primary-foreground border-0 shadow-glow px-8 py-6 rounded-2xl gap-2 hover:scale-105 transition-transform"
+            >
+              Kom igång gratis
+              <ArrowRight className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 
