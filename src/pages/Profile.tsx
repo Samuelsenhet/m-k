@@ -30,7 +30,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      navigate('/phone-auth');
     }
   }, [user, loading, navigate]);
 
