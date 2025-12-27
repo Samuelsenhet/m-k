@@ -112,7 +112,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               className="gradient-primary text-primary-foreground border-0 shadow-glow text-lg px-8 py-6 rounded-2xl gap-3 hover:scale-105 transition-transform"
             >
               <Heart className="w-5 h-5" />
-              Starta personlighetstest
+              Skapa konto
               <ArrowRight className="w-5 h-5" />
             </Button>
             </div>
