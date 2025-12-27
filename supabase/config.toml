@@ -1,1 +1,7 @@
 project_id = "jfhaahfvzzcgabtijovr"
+
+[functions.generate-icebreakers]
+verify_jwt = false
+
+[functions.ai-assistant]
+verify_jwt = false

@@ -5,11 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { LogOut, Settings, X, Trophy } from 'lucide-react';
+import { LogOut, Settings, X, Trophy, Sparkles } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { AchievementsPanel } from '@/components/achievements/AchievementsPanel';
+import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { LanguageToggle } from '@/components/settings/LanguageToggle';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +28,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -141,7 +143,11 @@ export default function Profile() {
         </nav>
 
         {/* Profile Content */}
-        {showAchievements ? (
+        {showAIAssistant ? (
+          <div className="space-y-4">
+            <AIAssistantPanel onClose={() => setShowAIAssistant(false)} />
+          </div>
+        ) : showAchievements ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-serif font-bold text-xl">{t('achievements.title')}</h2>
@@ -170,10 +176,21 @@ export default function Profile() {
             <ProfileEditor onComplete={() => setIsEditing(false)} />
           </div>
         ) : (
-          <ProfileView 
-            onEdit={() => setIsEditing(true)} 
-            archetype={archetype}
-          />
+          <div className="space-y-4">
+            <ProfileView 
+              onEdit={() => setIsEditing(true)} 
+              archetype={archetype}
+            />
+            
+            {/* AI Assistant Quick Access */}
+            <Button
+              onClick={() => setShowAIAssistant(true)}
+              className="w-full gradient-primary text-primary-foreground border-0 shadow-glow gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Få AI-förslag
+            </Button>
+          </div>
         )}
       </div>
       <BottomNav />
