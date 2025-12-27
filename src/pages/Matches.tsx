@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMatches } from '@/hooks/useMatches';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CATEGORY_INFO, ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
-import { Heart, X, Sparkles, Users, RefreshCw, MessageCircle } from 'lucide-react';
+import { Heart, X, Sparkles, Users, RefreshCw, MessageCircle, Brain, Clock, Zap, Info } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { ProfileCompletionPrompt } from '@/components/profile/ProfileCompletionPrompt';
 import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
 import { MatchCountdown } from '@/components/matches/MatchCountdown';
+import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
+import { cn } from '@/lib/utils';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -33,6 +36,8 @@ export default function Matches() {
   const { user, loading: authLoading } = useAuth();
   const { matches, loading, error, refreshMatches, likeMatch, passMatch } = useMatches();
   const navigate = useNavigate();
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -50,24 +55,92 @@ export default function Matches() {
 
   const pendingMatches = matches.filter((m) => m.status === 'pending');
   const mutualMatches = matches.filter((m) => m.status === 'mutual');
+  const similarMatches = pendingMatches.filter((m) => m.matchType === 'similar');
+  const complementaryMatches = pendingMatches.filter((m) => m.matchType === 'complementary');
+
+  const getFilteredMatches = () => {
+    switch (activeTab) {
+      case 'similar':
+        return similarMatches;
+      case 'complementary':
+        return complementaryMatches;
+      default:
+        return pendingMatches;
+    }
+  };
+
+  const filteredMatches = getFilteredMatches();
 
   return (
     <div className="min-h-screen gradient-hero pb-20">
       <div className="container max-w-lg mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        {/* Header with AI button */}
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-serif font-bold">Dagens matchningar</h1>
-            <p className="text-sm text-muted-foreground">
-              3 liknande + 2 kompletterande
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              24h löpande • Kvalitetsfokus
             </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={refreshMatches}>
-            <RefreshCw className="w-5 h-5" />
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowAIPanel(!showAIPanel)}
+              className={cn(showAIPanel && "bg-primary/10 text-primary")}
+            >
+              <Brain className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={refreshMatches}>
+              <RefreshCw className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
+        {/* Matching System Info Card */}
+        <Card className="mb-4 bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-sm mb-1">Smart Personlighetsanalys</h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Baserad på 30 frågor • 16 arketyper • 4 kategorier
+                </p>
+                <div className="flex gap-2 text-xs">
+                  <span className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    <Users className="w-3 h-3" />
+                    {similarMatches.length} Likhets
+                  </span>
+                  <span className="flex items-center gap-1 bg-accent/10 text-accent-foreground px-2 py-0.5 rounded-full">
+                    <Sparkles className="w-3 h-3" />
+                    {complementaryMatches.length} Motsats
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Panel */}
+        <AnimatePresence>
+          {showAIPanel && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-4 overflow-hidden"
+            >
+              <AIAssistantPanel onClose={() => setShowAIPanel(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Profile Completion Prompt */}
-        <div className="mb-6">
+        <div className="mb-4">
           <ProfileCompletionPrompt />
         </div>
 
@@ -137,8 +210,46 @@ export default function Matches() {
         )}
 
         {pendingMatches.length > 0 && (
-          <div className="space-y-6">
-            {pendingMatches.map((match, index) => {
+          <div className="space-y-4">
+            {/* Filter Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all" className="text-xs">
+                  Alla ({pendingMatches.length})
+                </TabsTrigger>
+                <TabsTrigger value="similar" className="text-xs gap-1">
+                  <Users className="w-3 h-3" />
+                  Likhets ({similarMatches.length})
+                </TabsTrigger>
+                <TabsTrigger value="complementary" className="text-xs gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Motsats ({complementaryMatches.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* Match explanation based on filter */}
+            <div className="text-center py-2">
+              {activeTab === 'similar' && (
+                <p className="text-xs text-muted-foreground">
+                  Personer med liknande värderingar och personlighet
+                </p>
+              )}
+              {activeTab === 'complementary' && (
+                <p className="text-xs text-muted-foreground">
+                  Kompletterande personligheter för balans
+                </p>
+              )}
+              {activeTab === 'all' && (
+                <p className="text-xs text-muted-foreground">
+                  Synkflöde + Vågflöde matchningar
+                </p>
+              )}
+            </div>
+
+            {/* Match cards */}
+            <div className="space-y-6">
+            {filteredMatches.map((match, index) => {
               const archetype = match.matchedUser.archetype as ArchetypeCode | undefined;
               const archetypeInfo = archetype ? ARCHETYPE_INFO[archetype] : null;
               const categoryInfo = CATEGORY_INFO[match.matchedUser.category];
@@ -282,6 +393,7 @@ export default function Matches() {
                 </motion.div>
               );
             })}
+            </div>
           </div>
         )}
 
