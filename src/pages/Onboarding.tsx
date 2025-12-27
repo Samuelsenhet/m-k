@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
 
 export default function Onboarding() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [displayName, setDisplayName] = useState<string | undefined>();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,7 +28,7 @@ export default function Onboarding() {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('onboarding_completed, date_of_birth')
+      .select('onboarding_completed, date_of_birth, display_name')
       .eq('user_id', user.id)
       .single();
 
@@ -47,11 +50,26 @@ export default function Onboarding() {
       return;
     }
     
+    setDisplayName(profile.display_name || undefined);
     setCheckingStatus(false);
   };
 
-  const handleComplete = () => {
-    navigate('/');
+  const handleComplete = async () => {
+    // Fetch the display name after onboarding is complete
+    if (user) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .single();
+      
+      setDisplayName(data?.display_name?.split(' ')[0] || undefined);
+    }
+    setShowWelcome(true);
+  };
+
+  const handleWelcomeContinue = () => {
+    navigate('/matches');
   };
 
   if (loading || checkingStatus) {
@@ -63,6 +81,10 @@ export default function Onboarding() {
   }
 
   if (!user) return null;
+
+  if (showWelcome) {
+    return <WelcomeScreen displayName={displayName} onContinue={handleWelcomeContinue} />;
+  }
 
   return <OnboardingWizard onComplete={handleComplete} />;
 }
