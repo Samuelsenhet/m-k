@@ -53,17 +53,16 @@ export default function PhoneAuth() {
           // Already completed everything, go to matches
           navigate('/matches');
         } else if (profile?.date_of_birth) {
-          // Age verified but onboarding not complete, go to onboarding
+          // Age already verified, go to onboarding (returning user or completed age step)
           navigate('/onboarding');
-        } else if (step === 'phone' || step === 'verify') {
-          // Need to verify age - move to profile step
-          setStep('profile');
         }
+        // If no date_of_birth and user just verified phone, they'll see the profile step
+        // This only happens for NEW users who haven't verified age yet
       }
     };
     
     checkUserStatus();
-  }, [user, step, navigate, setStep]);
+  }, [user, navigate]);
 
   useEffect(() => {
     if (countdown > 0) {
