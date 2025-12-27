@@ -93,9 +93,22 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
           
           // Generate email from phone number for demo purposes
           const demoEmail = `${formattedPhone.replace('+', '')}@demo.maak.app`;
-          const demoPassword = `Demo${phone}${Date.now()}`;
+          // Use a consistent password based on phone (so returning users can sign in)
+          const demoPassword = `DemoPass${formattedPhone.replace('+', '')}!`;
           
-          // Try to sign up with this email
+          // First, try to sign in (for returning users)
+          const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
+            email: demoEmail,
+            password: demoPassword,
+          });
+
+          if (!signInError && signInData.session) {
+            // Returning user - successfully signed in
+            // useEffect in PhoneAuth will handle redirect
+            return true;
+          }
+          
+          // If sign in failed, try to sign up (new user)
           const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
             email: demoEmail,
             password: demoPassword,
@@ -108,10 +121,10 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
           });
 
           if (signUpError) {
-            // If user already exists, try to sign in
+            // If user already exists but sign in failed, password might be different
             if (signUpError.message.includes('already registered')) {
-              // Returning user - don't show age verification, useEffect in PhoneAuth will redirect
-              return true;
+              setError('Kontot finns redan. Kontakta support om du inte kan logga in.');
+              return false;
             }
             throw signUpError;
           }
