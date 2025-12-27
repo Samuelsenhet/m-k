@@ -1,15 +1,27 @@
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import heroIllustration from '@/assets/hero-illustration.png';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LandingPageProps {
-  onStart: () => void;
+  onStart?: () => void;
 }
 
 export const LandingPage = ({ onStart }: LandingPageProps) => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleStart = () => {
+    if (user) {
+      // User is logged in, go to onboarding
+      navigate('/onboarding');
+    } else {
+      // User not logged in, go to phone auth first
+      navigate('/phone-auth');
+    }
+    onStart?.();
+  };
 
   return (
     <div className="min-h-screen gradient-hero overflow-hidden">
@@ -95,7 +107,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               style={{ animationDelay: '0.3s' }}
           >
             <Button
-              onClick={onStart}
+              onClick={handleStart}
               size="lg"
               className="gradient-primary text-primary-foreground border-0 shadow-glow text-lg px-8 py-6 rounded-2xl gap-3 hover:scale-105 transition-transform"
             >
