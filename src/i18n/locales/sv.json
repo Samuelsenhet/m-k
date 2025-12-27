@@ -71,7 +71,12 @@
     "achievements": "Prestationer",
     "personality_test": "Gör personlighetstest",
     "start": "Starta",
-    "logout": "Logga ut"
+    "logout": "Logga ut",
+    "delete_account": "Radera konto",
+    "delete_account_title": "Radera ditt konto",
+    "delete_account_description": "Är du säker på att du vill radera ditt konto? All din data kommer att tas bort permanent. Denna åtgärd kan inte ångras.",
+    "delete_account_confirm": "Ja, radera mitt konto",
+    "deleting": "Raderar..."
   },
   "personality": {
     "testTitle": "Personlighetstest",

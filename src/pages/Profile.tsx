@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { LogOut, Settings, X, Trophy, Sparkles } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { LogOut, Settings, X, Trophy, Sparkles, Trash2 } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -29,6 +30,7 @@ export default function Profile() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,6 +64,33 @@ export default function Profile() {
     await signOut();
     toast.success('Du har loggat ut');
     navigate('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete user data from all tables
+      // Order matters due to foreign key constraints
+      await supabase.from('messages').delete().eq('sender_id', user.id);
+      await supabase.from('user_achievements').delete().eq('user_id', user.id);
+      await supabase.from('question_responses').delete().eq('user_id', user.id);
+      await supabase.from('personality_results').delete().eq('user_id', user.id);
+      await supabase.from('profile_photos').delete().eq('user_id', user.id);
+      await supabase.from('profiles').delete().eq('user_id', user.id);
+      
+      // Sign out the user (the auth user will remain but profile is deleted)
+      await signOut();
+      
+      toast.success('Ditt konto har raderats');
+      navigate('/');
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      toast.error('Kunde inte radera kontot. Försök igen.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (loading) {
@@ -136,6 +165,36 @@ export default function Profile() {
                     <LogOut className="w-4 h-4 mr-2" />
                     {t('settings.logout')}
                   </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {t('settings.delete_account')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.delete_account_title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('settings.delete_account_description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteAccount}
+                          disabled={isDeleting}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {isDeleting ? t('settings.deleting') : t('settings.delete_account_confirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </SheetContent>
             </Sheet>

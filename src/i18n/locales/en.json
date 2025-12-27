@@ -71,7 +71,12 @@
     "achievements": "Achievements",
     "personality_test": "Take personality test",
     "start": "Start",
-    "logout": "Log out"
+    "logout": "Log out",
+    "delete_account": "Delete account",
+    "delete_account_title": "Delete your account",
+    "delete_account_description": "Are you sure you want to delete your account? All your data will be permanently removed. This action cannot be undone.",
+    "delete_account_confirm": "Yes, delete my account",
+    "deleting": "Deleting..."
   },
   "personality": {
     "testTitle": "Personality Test",
