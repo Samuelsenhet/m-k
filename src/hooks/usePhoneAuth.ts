@@ -122,8 +122,33 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
 
           if (signUpError) {
             // If user already exists but sign in failed, password might be different
+            // Try to reset their password via edge function
             if (signUpError.message.includes('already registered')) {
-              setError('Kontot finns redan. Kontakta support om du inte kan logga in.');
+              console.log('User exists with different password, attempting reset...');
+              
+              try {
+                const { data: resetData, error: resetError } = await supabase.functions.invoke('reset-demo-password', {
+                  body: { email: demoEmail, newPassword: demoPassword }
+                });
+
+                if (!resetError && resetData?.success) {
+                  // Password reset successful, try to sign in again
+                  const { error: retryError, data: retryData } = await supabase.auth.signInWithPassword({
+                    email: demoEmail,
+                    password: demoPassword,
+                  });
+
+                  if (!retryError && retryData.session) {
+                    // Successfully signed in after password reset
+                    return true;
+                  }
+                }
+              } catch (resetErr) {
+                console.error('Password reset failed:', resetErr);
+              }
+              
+              // If all else fails, show error
+              setError('Kunde inte logga in. Försök igen senare.');
               return false;
             }
             throw signUpError;
