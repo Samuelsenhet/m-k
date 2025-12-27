@@ -60,6 +60,17 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     }
   };
 
+  const checkIfNewUser = async (userId: string): Promise<boolean> => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('date_of_birth')
+      .eq('user_id', userId)
+      .single();
+    
+    // New user if no date_of_birth set
+    return !profile?.date_of_birth;
+  };
+
   const verifyOtp = async (phone: string, token: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -99,14 +110,14 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
           if (signUpError) {
             // If user already exists, try to sign in
             if (signUpError.message.includes('already registered')) {
-              // For demo, we just proceed to profile since we can't sign in without password
-              setStep('profile');
+              // Returning user - don't show age verification, useEffect in PhoneAuth will redirect
               return true;
             }
             throw signUpError;
           }
 
           if (signUpData.session) {
+            // New user - show age verification
             setStep('profile');
             return true;
           }
@@ -120,7 +131,12 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       }
 
       if (data.session) {
-        setStep('profile');
+        // Check if this is a new user or returning user
+        const isNew = await checkIfNewUser(data.session.user.id);
+        if (isNew) {
+          setStep('profile');
+        }
+        // If not new, the useEffect in PhoneAuth will handle redirect
         return true;
       }
 
