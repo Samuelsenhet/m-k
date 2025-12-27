@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePhoneAuth } from '@/hooks/usePhoneAuth';
+import { usePhoneAuth, PhoneAuthStep } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,9 +40,38 @@ export default function PhoneAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && step !== 'profile') {
-      navigate('/');
-    }
+    const checkUserStatus = async () => {
+      if (user) {
+        // Check if user has completed onboarding
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile?.onboarding_completed) {
+          // Already completed everything, go home
+          navigate('/');
+        } else if (step === 'phone' || step === 'verify') {
+          // Has session but not completed onboarding, go to profile step or onboarding
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('date_of_birth')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (profileData?.date_of_birth) {
+            // Age verified, go to onboarding
+            navigate('/onboarding');
+          } else {
+            // Need to verify age
+            setStep('profile');
+          }
+        }
+      }
+    };
+    
+    checkUserStatus();
   }, [user, step, navigate]);
 
   useEffect(() => {
