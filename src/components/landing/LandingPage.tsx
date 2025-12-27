@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar, HelpCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import heroIllustration from '@/assets/hero-illustration.png';
 import { useAuth } from '@/contexts/AuthContext';
@@ -246,6 +247,91 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               Kom igång gratis
               <ArrowRight className="w-5 h-5" />
             </Button>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div 
+          className="mt-24 animate-slide-up"
+          style={{ animationDelay: '0.6s' }}
+        >
+          <div className="text-center mb-12">
+            <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow">
+              <HelpCircle className="w-7 h-7 text-primary-foreground" />
+            </div>
+            <h2 className="text-3xl font-serif font-bold text-foreground mb-3">
+              Vanliga frågor
+            </h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Har du funderingar? Här hittar du svar på de vanligaste frågorna.
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <Accordion type="single" collapsible className="space-y-3">
+              <AccordionItem value="item-1" className="bg-card rounded-2xl border border-border px-6 shadow-card">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  Hur fungerar personlighetsmatchningen?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5">
+                  Vårt personlighetstest analyserar 30 olika aspekter av din personlighet baserat på 
+                  vetenskapliga modeller. Vår AI jämför sedan ditt resultat med andra användare för att 
+                  hitta personer som kompletterar din personlighet på bästa sätt.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-2" className="bg-card rounded-2xl border border-border px-6 shadow-card">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  Är MÄÄK gratis att använda?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5">
+                  Ja! Det är helt gratis att skapa konto, göra personlighetstestet och få dagliga 
+                  matchningar. Vi tror på att alla förtjänar att hitta kärlek utan prisbarriärer.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-3" className="bg-card rounded-2xl border border-border px-6 shadow-card">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  Hur många matchningar får jag per dag?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5">
+                  Du får nya matchningar varje dag baserat på din personlighetsprofil. Antalet varierar 
+                  beroende på tillgänglighet, men kvalitet går alltid före kvantitet hos oss.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-4" className="bg-card rounded-2xl border border-border px-6 shadow-card">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  Vad är AI-isbrytare?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5">
+                  När du matchas med någon genererar vår AI skräddarsydda konversationsstartare baserat 
+                  på båda era profiler och personligheter. Detta gör det enklare att börja prata och 
+                  skapa en genuin koppling.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-5" className="bg-card rounded-2xl border border-border px-6 shadow-card">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  Hur skyddas min integritet?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5">
+                  Din integritet är vår högsta prioritet. Du bestämmer själv vilken information som 
+                  visas på din profil, och vi delar aldrig dina uppgifter med tredje part. All data 
+                  lagras säkert och krypterat.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-6" className="bg-card rounded-2xl border border-border px-6 shadow-card">
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  Vilken ålder krävs för att använda MÄÄK?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5">
+                  Du måste vara minst 20 år för att använda MÄÄK. Vi verifierar ålder vid registrering 
+                  för att skapa en trygg miljö för alla användare.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
 
