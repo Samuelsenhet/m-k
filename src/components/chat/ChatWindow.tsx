@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, ArrowLeft, Sparkles, Check, CheckCheck } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Send, Loader2, ArrowLeft, Sparkles, Check, CheckCheck, Brain, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { TypingIndicator } from './TypingIndicator';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -44,6 +46,9 @@ export function ChatWindow({
   const [showIcebreakers, setShowIcebreakers] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
+  const [aiIcebreakers, setAiIcebreakers] = useState<string[]>([]);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -209,6 +214,59 @@ export function ChatWindow({
 
   const handleIcebreakerClick = (icebreaker: string) => {
     sendMessage(icebreaker);
+    setShowAIPanel(false);
+  };
+
+  const generateAIIcebreakers = async () => {
+    if (!user) return;
+    
+    setLoadingAI(true);
+    setAiIcebreakers([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          userId: user.id,
+          type: 'icebreakers',
+          matchedUserId,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Parse the icebreakers from the AI response
+      const suggestion = data.suggestion as string;
+      const lines = suggestion.split('\n').filter(line => 
+        line.trim() && 
+        (line.match(/^\d+\./) || line.startsWith('-') || line.startsWith('•'))
+      );
+      
+      const parsed = lines.map(line => 
+        line.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '').replace(/^[""]|[""]$/g, '').trim()
+      ).filter(line => line.length > 10);
+
+      if (parsed.length > 0) {
+        setAiIcebreakers(parsed.slice(0, 3));
+      } else {
+        // Fallback: try to extract sentences
+        const sentences = suggestion.match(/[""][^""]+[""]/g);
+        if (sentences) {
+          setAiIcebreakers(sentences.map(s => s.replace(/[""]|[""]/g, '').trim()).slice(0, 3));
+        } else {
+          toast.error('Kunde inte generera isbrytare');
+        }
+      }
+    } catch (error) {
+      console.error('AI Icebreaker error:', error);
+      toast.error('Kunde inte generera AI-isbrytare');
+    } finally {
+      setLoadingAI(false);
+    }
   };
 
   return (
@@ -227,6 +285,78 @@ export function ChatWindow({
         <div className="flex-1">
           <h2 className="font-semibold text-foreground">{matchedUserName}</h2>
         </div>
+        
+        {/* AI Icebreaker Button */}
+        <Sheet open={showAIPanel} onOpenChange={setShowAIPanel}>
+          <SheetTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-primary"
+              onClick={() => {
+                setShowAIPanel(true);
+                if (aiIcebreakers.length === 0) {
+                  generateAIIcebreakers();
+                }
+              }}
+            >
+              <Brain className="w-5 h-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-auto max-h-[60vh]">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2 font-serif">
+                <Sparkles className="w-5 h-5 text-primary" />
+                AI-genererade isbrytare
+              </SheetTitle>
+            </SheetHeader>
+            <div className="mt-4 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Personliga konversationsstartare baserade på era profiler
+              </p>
+              
+              {loadingAI ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Genererar förslag...</p>
+                  </div>
+                </div>
+              ) : aiIcebreakers.length > 0 ? (
+                <div className="space-y-2">
+                  {aiIcebreakers.map((icebreaker, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleIcebreakerClick(icebreaker)}
+                      className="w-full p-3 text-left text-sm bg-primary/5 hover:bg-primary/10 rounded-xl border border-primary/20 transition-colors"
+                    >
+                      {icebreaker}
+                    </button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateAIIcebreakers}
+                    className="w-full mt-3 gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Generera nya förslag
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Button
+                    onClick={generateAIIcebreakers}
+                    className="gradient-primary text-primary-foreground gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Generera isbrytare
+                  </Button>
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Messages */}
