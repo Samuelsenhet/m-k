@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Users, MessageCircle } from 'lucide-react';
+import { Heart, Sparkles, Users, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import mascotCelebrate from '@/assets/mascot-celebrate.png';
 
 interface WelcomeScreenProps {
   displayName?: string;
@@ -40,35 +39,35 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
       <div className="relative max-w-md w-full text-center">
         {/* Logo and Welcome */}
         <motion.div
-          initial={{ scale: 0, rotate: -10 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 0.5, type: 'spring', bounce: 0.4 }}
-          className="mb-6"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, type: 'spring' }}
+          className="mb-8"
         >
-          <img 
-            src={mascotCelebrate} 
-            alt="MÄÄK mascot celebrating" 
-            className="w-32 h-32 mx-auto object-contain drop-shadow-xl"
-          />
+          <div className="w-20 h-20 gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-glow">
+            <Heart className="w-10 h-10 text-primary-foreground" fill="currentColor" />
+          </div>
+          
+          <motion.h1
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-3xl font-serif font-bold text-foreground mb-2"
+          >
+            Välkommen{displayName ? `, ${displayName}` : ''}!
+          </motion.h1>
+          
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-muted-foreground"
+          >
+            Din profil är nu klar. Här är vad som väntar dig.
+          </motion.p>
         </motion.div>
-        
-        <motion.h1
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-3xl font-serif font-bold text-foreground mb-2"
-        >
-          Välkommen{displayName ? `, ${displayName}` : ''}!
-        </motion.h1>
-        
-        <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-muted-foreground mb-8"
-        >
-          Din profil är nu klar. Här är vad som väntar dig.
-        </motion.p>
+
+        {/* Features */}
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

@@ -1,18 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, User } from 'lucide-react';
+import { Heart, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import mascotIcon from '@/assets/mascot-icon.png';
 
 interface NavItem {
   path: string;
   label: string;
-  icon?: typeof MessageCircle;
-  isMascot?: boolean;
+  icon: typeof Heart;
 }
 
 const navItems: NavItem[] = [
-  { path: '/matches', label: 'Matchning', isMascot: true },
+  { path: '/matches', label: 'Matchning', icon: Heart },
   { path: '/chat', label: 'Chatt', icon: MessageCircle },
   { path: '/profile', label: 'Profil', icon: User },
 ];
@@ -44,24 +42,13 @@ export function BottomNav() {
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
-                {item.isMascot ? (
-                  <img 
-                    src={mascotIcon} 
-                    alt="MÄÄK" 
-                    className={cn(
-                      "w-7 h-7 object-contain transition-transform",
-                      isActive && "scale-110"
-                    )}
-                  />
-                ) : item.icon && (
-                  <item.icon 
-                    className={cn(
-                      "w-6 h-6 transition-transform",
-                      isActive && "scale-110"
-                    )} 
-                    fill={isActive ? "currentColor" : "none"}
-                  />
-                )}
+                <item.icon 
+                  className={cn(
+                    "w-6 h-6 transition-transform",
+                    isActive && "scale-110"
+                  )} 
+                  fill={isActive ? "currentColor" : "none"}
+                />
                 <span className={cn(
                   "text-xs mt-1 font-medium",
                   isActive && "text-primary"

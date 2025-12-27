@@ -1,7 +1,5 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import mascotThinking from "@/assets/mascot-thinking.png";
 
 const NotFound = () => {
   const location = useLocation();
@@ -11,20 +9,13 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center gradient-hero p-4">
-      <div className="text-center max-w-md">
-        <img 
-          src={mascotThinking} 
-          alt="MÄÄK mascot confused" 
-          className="w-40 h-40 mx-auto mb-6 animate-float drop-shadow-xl"
-        />
-        <h1 className="mb-2 text-6xl font-serif font-bold text-foreground">404</h1>
-        <p className="mb-6 text-xl text-muted-foreground">
-          Hoppsan! Den här sidan finns inte.
-        </p>
-        <Button asChild className="gradient-primary text-primary-foreground border-0 shadow-glow">
-          <Link to="/">Tillbaka till start</Link>
-        </Button>
+    <div className="flex min-h-screen items-center justify-center bg-muted">
+      <div className="text-center">
+        <h1 className="mb-4 text-4xl font-bold">404</h1>
+        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
+        <a href="/" className="text-primary underline hover:text-primary/90">
+          Return to Home
+        </a>
       </div>
     </div>
   );

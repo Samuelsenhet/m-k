@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar, HelpCircle, Heart } from 'lucide-react';
+import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar, HelpCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import mascotWaving from '@/assets/mascot-waving.png';
-import mascotIcon from '@/assets/mascot-icon.png';
+import heroIllustration from '@/assets/hero-illustration.png';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LandingPageProps {
@@ -38,11 +37,9 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         {/* Header */}
         <nav className="flex justify-between items-center mb-16 animate-fade-in">
           <div className="flex items-center gap-2">
-            <img 
-              src={mascotIcon} 
-              alt="MÄÄK mascot" 
-              className="w-10 h-10 object-contain"
-            />
+            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-glow">
+              <Heart className="w-5 h-5 text-primary-foreground" fill="currentColor" />
+            </div>
             <span className="text-2xl font-serif font-bold text-foreground">MÄÄK</span>
           </div>
           <div className="flex items-center gap-2">
@@ -122,15 +119,15 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </div>
           </div>
           
-          {/* Hero Image - Mascot */}
+          {/* Hero Image */}
           <div 
             className="order-1 md:order-2 animate-slide-up flex justify-center"
             style={{ animationDelay: '0.2s' }}
           >
             <img 
-              src={mascotWaving} 
-              alt="MÄÄK - Vår gulliga maskot hälsar välkommen" 
-              className="w-full max-w-sm animate-float drop-shadow-2xl"
+              src={heroIllustration} 
+              alt="MÄÄK - Personlighetsbaserad dejting illustration" 
+              className="w-full max-w-md animate-float"
             />
           </div>
         </div>

@@ -14,8 +14,6 @@ import { NotificationPrompt } from '@/components/notifications/NotificationPromp
 import { MatchCountdown } from '@/components/matches/MatchCountdown';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { cn } from '@/lib/utils';
-import mascotThinking from '@/assets/mascot-thinking.png';
-import mascotIcon from '@/assets/mascot-icon.png';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -78,19 +76,12 @@ export default function Matches() {
       <div className="container max-w-lg mx-auto px-4 py-6">
         {/* Header with AI button */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <img 
-              src={mascotIcon} 
-              alt="MÄÄK" 
-              className="w-10 h-10 object-contain"
-            />
-            <div>
-              <h1 className="text-2xl font-serif font-bold">Dagens matchningar</h1>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                24h löpande • Kvalitetsfokus
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-serif font-bold">Dagens matchningar</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              24h löpande • Kvalitetsfokus
+            </p>
           </div>
           <div className="flex gap-1">
             <Button 
@@ -409,11 +400,7 @@ export default function Matches() {
         {!error && pendingMatches.length === 0 && mutualMatches.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
-              <img 
-                src={mascotThinking} 
-                alt="MÄÄK mascot thinking" 
-                className="w-24 h-24 mx-auto mb-4 animate-float"
-              />
+              <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Inga matchningar just nu</p>
               <p className="text-sm text-muted-foreground mt-2">Kom tillbaka imorgon!</p>
             </CardContent>
