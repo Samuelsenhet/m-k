@@ -42,37 +42,28 @@ export default function PhoneAuth() {
   useEffect(() => {
     const checkUserStatus = async () => {
       if (user) {
-        // Check if user has completed onboarding
+        // Check user profile status
         const { data: profile } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('onboarding_completed, date_of_birth')
           .eq('user_id', user.id)
           .single();
         
         if (profile?.onboarding_completed) {
-          // Already completed everything, go home
-          navigate('/');
+          // Already completed everything, go to matches
+          navigate('/matches');
+        } else if (profile?.date_of_birth) {
+          // Age verified but onboarding not complete, go to onboarding
+          navigate('/onboarding');
         } else if (step === 'phone' || step === 'verify') {
-          // Has session but not completed onboarding, go to profile step or onboarding
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('date_of_birth')
-            .eq('user_id', user.id)
-            .single();
-          
-          if (profileData?.date_of_birth) {
-            // Age verified, go to onboarding
-            navigate('/onboarding');
-          } else {
-            // Need to verify age
-            setStep('profile');
-          }
+          // Need to verify age - move to profile step
+          setStep('profile');
         }
       }
     };
     
     checkUserStatus();
-  }, [user, step, navigate]);
+  }, [user, step, navigate, setStep]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -170,7 +161,19 @@ export default function PhoneAuth() {
         }
 
         toast.success('Profil skapad!');
-        navigate('/onboarding');
+        
+        // Check if user already completed onboarding (returning user)
+        const { data: profileCheck } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('user_id', session.session.user.id)
+          .single();
+        
+        if (profileCheck?.onboarding_completed) {
+          navigate('/matches');
+        } else {
+          navigate('/onboarding');
+        }
       } else {
         // No session - show error and redirect to start
         toast.error('Sessionen har gått ut. Försök igen.');
