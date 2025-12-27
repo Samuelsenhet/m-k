@@ -26,7 +26,7 @@ export default function Chat() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      navigate('/phone-auth');
     }
   }, [user, loading, navigate]);
 
