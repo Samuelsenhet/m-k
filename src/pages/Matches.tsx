@@ -148,9 +148,6 @@ export default function Matches() {
           <Card className="mb-6 border-destructive/50 bg-destructive/10">
             <CardContent className="p-4 text-center text-destructive">
               {error}
-              <Link to="/" className="block mt-2 text-primary underline">
-                Ta personlighetstestet
-              </Link>
             </CardContent>
           </Card>
         )}
