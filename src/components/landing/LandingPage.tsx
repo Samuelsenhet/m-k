@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar, HelpCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import heroIllustration from '@/assets/hero-illustration.png';
+import { MaakMascot } from '@/components/mascot/MaakMascot';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LandingPageProps {
@@ -119,16 +119,12 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </div>
           </div>
           
-          {/* Hero Image */}
+          {/* Hero Mascot */}
           <div 
             className="order-1 md:order-2 animate-slide-up flex justify-center"
             style={{ animationDelay: '0.2s' }}
           >
-            <img 
-              src={heroIllustration} 
-              alt="MÄÄK - Personlighetsbaserad dejting illustration" 
-              className="w-full max-w-md animate-float"
-            />
+            <MaakMascot size={280} className="drop-shadow-xl" />
           </div>
         </div>
 
