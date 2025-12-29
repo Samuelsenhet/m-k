@@ -1,13 +1,12 @@
 import { type PersonalityTestResult, type DimensionKey, DIMENSION_LABELS, CATEGORY_INFO, ARCHETYPE_INFO } from '@/types/personality';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, ArrowLeft, Share2, User } from 'lucide-react';
+import { Heart, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PersonalityResultProps {
   result: PersonalityTestResult;
-  onRestart?: () => void;
   isExistingResult?: boolean;
   onContinue?: () => void;
 }
@@ -20,7 +19,7 @@ const dimensionColors: Record<DimensionKey, string> = {
   at: 'bg-dimension-at',
 };
 
-export const PersonalityResult = ({ result, onRestart, isExistingResult = false, onContinue }: PersonalityResultProps) => {
+export const PersonalityResult = ({ result, isExistingResult = false, onContinue }: PersonalityResultProps) => {
   const categoryInfo = CATEGORY_INFO[result.category];
   const archetypeInfo = result.archetype ? ARCHETYPE_INFO[result.archetype] : null;
   const { user } = useAuth();
@@ -167,7 +166,7 @@ export const PersonalityResult = ({ result, onRestart, isExistingResult = false,
               <Heart className="w-4 h-4" />
               Fortsätt med profilen
             </Button>
-          ) : isExistingResult ? (
+          ) : (
             <>
               <Button asChild variant="outline" className="flex-1 gap-2">
                 <Link to="/profile">
@@ -182,43 +181,8 @@ export const PersonalityResult = ({ result, onRestart, isExistingResult = false,
                 </Link>
               </Button>
             </>
-          ) : (
-            <>
-              {onRestart && (
-                <Button
-                  variant="outline"
-                  onClick={onRestart}
-                  className="flex-1 gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Gör om testet
-                </Button>
-              )}
-              {user ? (
-                <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
-                  <Link to="/profile">
-                    <User className="w-4 h-4" />
-                    Gå till profil
-                  </Link>
-                </Button>
-              ) : (
-                <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
-                  <Link to="/auth">
-                    <Heart className="w-4 h-4" />
-                    Skapa konto
-                  </Link>
-                </Button>
-              )}
-            </>
           )}
         </div>
-
-        {/* One-time notice for logged in users */}
-        {user && !isExistingResult && (
-          <p className="text-center text-xs text-muted-foreground mt-4">
-            OBS: Du kan bara göra testet en gång per konto.
-          </p>
-        )}
       </div>
     </div>
   );

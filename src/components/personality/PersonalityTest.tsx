@@ -115,7 +115,16 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
             <span className="font-semibold text-foreground">MÄÄK</span>
           </div>
           <h1 className="text-2xl font-serif text-foreground mb-2">Personlighetstest</h1>
-          <p className="text-muted-foreground">Upptäck din matchningsprofil</p>
+          <p className="text-muted-foreground mb-4">Upptäck din matchningsprofil</p>
+          
+          {/* Important notice */}
+          <div className="bg-accent/50 border border-accent rounded-xl p-4 text-left max-w-md mx-auto">
+            <p className="text-sm font-semibold text-foreground mb-1">⚠️ Viktigt att veta</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Du får bara en chans att göra detta test. Svara ärligt och noggrant på varje fråga – 
+              dina svar påverkar vilka matchningar du får. Ta dig tid och tänk igenom varje fråga ordentligt.
+            </p>
+          </div>
         </div>
 
         {/* Progress */}
