@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Camera, MapPin, Pencil, ImagePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
-import { Link } from 'react-router-dom';
 
 interface ProfileData {
   display_name: string | null;
@@ -254,11 +253,6 @@ export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
               </p>
             </div>
 
-            <Link to="/" className="block">
-              <Button variant="ghost" size="sm" className="w-full text-primary hover:text-primary/80">
-                🧠 Ta personlighetstestet igen
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       )}
