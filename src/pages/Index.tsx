@@ -103,15 +103,6 @@ const Index = () => {
     }
   };
 
-  const handleRestart = () => {
-    // If user has existing result, they can't restart
-    if (user && hasExistingResult) {
-      toast.info('Du kan bara göra testet en gång per konto.');
-      return;
-    }
-    setTestResult(null);
-    setAppState('landing');
-  };
 
   if (appState === 'loading') {
     return (
@@ -138,7 +129,6 @@ const Index = () => {
       {appState === 'result' && testResult && (
         <PersonalityResult 
           result={testResult} 
-          onRestart={handleRestart}
           isExistingResult={hasExistingResult}
         />
       )}
