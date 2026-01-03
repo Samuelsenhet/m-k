@@ -13,6 +13,7 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { AchievementsPanel } from '@/components/achievements/AchievementsPanel';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { LanguageToggle } from '@/components/settings/LanguageToggle';
+import { MatchingSettings } from '@/components/settings/MatchingSettings';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
@@ -240,6 +241,9 @@ export default function Profile() {
               onEdit={() => setIsEditing(true)} 
               archetype={archetype}
             />
+            
+            {/* Matching Settings */}
+            <MatchingSettings />
             
             {/* AI Assistant Quick Access */}
             <Button
