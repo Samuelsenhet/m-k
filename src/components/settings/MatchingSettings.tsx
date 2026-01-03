@@ -19,7 +19,7 @@ export function MatchingSettings() {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<MatchingPreferences>({
     interested_in: 'all',
-    min_age: 20,
+    min_age: 18,
     max_age: 50,
     max_distance: 50,
   });
@@ -44,7 +44,7 @@ export function MatchingSettings() {
     if (data && !error) {
       setPreferences({
         interested_in: data.interested_in || 'all',
-        min_age: data.min_age || 20,
+        min_age: data.min_age || 18,
         max_age: data.max_age || 50,
         max_distance: data.max_distance || 50,
       });
@@ -178,7 +178,7 @@ export function MatchingSettings() {
                       updatePreference('min_age', value);
                     }
                   }}
-                  min={20}
+                  min={18}
                   max={70}
                   step={1}
                   className="w-full"
@@ -194,7 +194,7 @@ export function MatchingSettings() {
                       updatePreference('max_age', value);
                     }
                   }}
-                  min={20}
+                  min={18}
                   max={70}
                   step={1}
                   className="w-full"
