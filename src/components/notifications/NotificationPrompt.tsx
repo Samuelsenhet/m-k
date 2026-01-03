@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, BellOff, X } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -46,35 +46,40 @@ export function NotificationPrompt() {
         exit={{ opacity: 0, y: 50 }}
         className="fixed bottom-20 left-4 right-4 z-50 max-w-md mx-auto"
       >
-        <Card className="shadow-lg border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Bell className="w-5 h-5 text-primary" />
+        <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              {/* Bell Icon with pink background */}
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Bell className="w-7 h-7 text-primary" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm mb-1">Missa inga matchningar!</h3>
-                <p className="text-xs text-muted-foreground mb-3">
+              
+              <div className="flex-1 pt-1">
+                <h3 className="font-bold text-lg mb-1">Missa inga matchningar!</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Aktivera notiser för att få veta när du har nya matchningar och meddelanden.
                 </p>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    onClick={handleEnable}
-                    disabled={loading}
-                    className="flex-1"
-                  >
-                    {loading ? 'Aktiverar...' : 'Aktivera'}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={handleDismiss}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 mt-6">
+              <Button 
+                variant="outline"
+                onClick={handleDismiss}
+                className="flex-1 h-12 rounded-xl bg-muted/50 border-0 hover:bg-muted"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Inte nu
+              </Button>
+              <Button 
+                onClick={handleEnable}
+                disabled={loading}
+                className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/70 hover:from-primary/90 hover:to-primary/60"
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                {loading ? 'Aktiverar...' : 'Aktivera'}
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -250,7 +250,11 @@ export type Database = {
           height: number | null
           hometown: string | null
           id: string
+          interested_in: string | null
           looking_for: string | null
+          max_age: number | null
+          max_distance: number | null
+          min_age: number | null
           onboarding_completed: boolean
           phone: string | null
           phone_verified_at: string | null
@@ -280,7 +284,11 @@ export type Database = {
           height?: number | null
           hometown?: string | null
           id?: string
+          interested_in?: string | null
           looking_for?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
@@ -310,7 +318,11 @@ export type Database = {
           height?: number | null
           hometown?: string | null
           id?: string
+          interested_in?: string | null
           looking_for?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
