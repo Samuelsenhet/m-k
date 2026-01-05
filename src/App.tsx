@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ConsentProvider, useConsent } from "@/contexts/ConsentContext";
 import { GdprOnboarding } from "@/components/onboarding/GdprOnboarding";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { MobileOnlyWrapper } from "@/components/layout/MobileOnlyWrapper";
 import Index from "./pages/Index";
 import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
@@ -30,7 +31,7 @@ const AppContent = () => {
   }
 
   return (
-    <>
+    <MobileOnlyWrapper>
       {!hasConsented && <GdprOnboarding />}
       <BrowserRouter>
         <Routes>
@@ -45,7 +46,7 @@ const AppContent = () => {
         </Routes>
       </BrowserRouter>
       <InstallPrompt />
-    </>
+    </MobileOnlyWrapper>
   );
 };
 
