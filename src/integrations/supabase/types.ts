@@ -592,7 +592,7 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           display_name?: string | null
-          education?: string | null
+          education?: never
           gender?: string | null
           height?: number | null
           hometown?: string | null
@@ -606,7 +606,7 @@ export type Database = {
           show_education?: boolean | null
           show_job?: boolean | null
           user_id?: string | null
-          work?: string | null
+          work?: never
         }
         Update: {
           avatar_url?: string | null
@@ -614,7 +614,7 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           display_name?: string | null
-          education?: string | null
+          education?: never
           gender?: string | null
           height?: number | null
           hometown?: string | null
@@ -628,7 +628,7 @@ export type Database = {
           show_education?: boolean | null
           show_job?: boolean | null
           user_id?: string | null
-          work?: string | null
+          work?: never
         }
         Relationships: []
       }
