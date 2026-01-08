@@ -206,8 +206,8 @@ export const useMatches = (): UseMatchesReturn => {
       const matchResults = calculateDailyMatches(
         currentUser,
         candidates,
-        3, // 3 similar
-        2  // 2 complementary
+        5, // Total matches (60% similar, 40% complementary)
+        [] // No previous matched IDs for now
       );
 
       // Save matches to database
