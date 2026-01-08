@@ -53,6 +53,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_match_batches: {
+        Row: {
+          batch_size: number
+          date: string
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          special_event: string | null
+          special_event_message: string | null
+        }
+        Insert: {
+          batch_size?: number
+          date: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          special_event?: string | null
+          special_event_message?: string | null
+        }
+        Update: {
+          batch_size?: number
+          date?: string
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          special_event?: string | null
+          special_event_message?: string | null
+        }
+        Relationships: []
+      }
       daily_questions: {
         Row: {
           active_date: string
@@ -111,35 +141,44 @@ export type Database = {
       }
       matches: {
         Row: {
+          composite_score: number | null
           created_at: string
           expires_at: string
           id: string
+          is_first_day_match: boolean | null
           match_date: string
           match_score: number
           match_type: string
           matched_user_id: string
+          special_effects: Json | null
           status: string
           user_id: string
         }
         Insert: {
+          composite_score?: number | null
           created_at?: string
           expires_at?: string
           id?: string
+          is_first_day_match?: boolean | null
           match_date?: string
           match_score?: number
           match_type: string
           matched_user_id: string
+          special_effects?: Json | null
           status?: string
           user_id: string
         }
         Update: {
+          composite_score?: number | null
           created_at?: string
           expires_at?: string
           id?: string
+          is_first_day_match?: boolean | null
           match_date?: string
           match_score?: number
           match_type?: string
           matched_user_id?: string
+          special_effects?: Json | null
           status?: string
           user_id?: string
         }
@@ -403,15 +442,212 @@ export type Database = {
           },
         ]
       }
+      user_journey_state: {
+        Row: {
+          created_at: string | null
+          first_matches_delivered_at: string | null
+          id: string
+          journey_phase: string | null
+          registration_completed_at: string | null
+          total_matches_received: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          first_matches_delivered_at?: string | null
+          id?: string
+          journey_phase?: string | null
+          registration_completed_at?: string | null
+          total_matches_received?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          first_matches_delivered_at?: string | null
+          id?: string
+          journey_phase?: string | null
+          registration_completed_at?: string | null
+          total_matches_received?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_match_deliveries: {
+        Row: {
+          batch_id: string | null
+          date: string
+          delivered_at: string | null
+          id: string
+          last_matched_profile_ids: string[] | null
+          matches_delivered: number
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          date: string
+          delivered_at?: string | null
+          id?: string
+          last_matched_profile_ids?: string[] | null
+          matches_delivered?: number
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          date?: string
+          delivered_at?: string | null
+          id?: string
+          last_matched_profile_ids?: string[] | null
+          matches_delivered?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_match_deliveries_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "daily_match_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          is_plus: boolean | null
+          subscription_tier: string | null
+          updated_at: string | null
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          is_plus?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          is_plus?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      match_candidate_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          display_name: string | null
+          education: string | null
+          gender: string | null
+          height: number | null
+          hometown: string | null
+          interested_in: string | null
+          looking_for: string | null
+          max_age: number | null
+          max_distance: number | null
+          min_age: number | null
+          onboarding_completed: boolean | null
+          show_age: boolean | null
+          show_education: boolean | null
+          show_job: boolean | null
+          user_id: string | null
+          work: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          education?: string | null
+          gender?: string | null
+          height?: number | null
+          hometown?: string | null
+          interested_in?: string | null
+          looking_for?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          onboarding_completed?: boolean | null
+          show_age?: boolean | null
+          show_education?: boolean | null
+          show_job?: boolean | null
+          user_id?: string | null
+          work?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          education?: string | null
+          gender?: string | null
+          height?: number | null
+          hometown?: string | null
+          interested_in?: string | null
+          looking_for?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          onboarding_completed?: boolean | null
+          show_age?: boolean | null
+          show_education?: boolean | null
+          show_job?: boolean | null
+          user_id?: string | null
+          work?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      can_view_profile_for_matching: {
+        Args: { _profile_user_id: string; _viewer_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -538,6 +774,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
