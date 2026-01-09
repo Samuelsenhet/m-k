@@ -47,7 +47,7 @@ export default function PhoneAuth() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_completed, date_of_birth')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
         
         if (profile?.onboarding_completed) {
@@ -130,26 +130,33 @@ export default function PhoneAuth() {
       const { data: session } = await supabase.auth.getSession();
       
       if (session.session) {
-        const { error: updateError } = await supabase
+        // Try to update first, returning the updated row
+        const { data: updatedProfile, error: updateError } = await supabase
           .from('profiles')
           .update({
             date_of_birth: dobString,
             phone: formattedPhone,
             phone_verified_at: new Date().toISOString(),
           })
-          .eq('user_id', session.session.user.id);
+          .eq('id', session.session.user.id)
+          .select('date_of_birth, onboarding_completed')
+          .single();
+
+        let savedProfile = updatedProfile;
 
         if (updateError) {
           console.error('Profile update error:', updateError);
-          // If profile doesn't exist, create it
-          const { error: insertError } = await supabase
+          // If profile doesn't exist, create it and return the inserted row
+          const { data: insertedProfile, error: insertError } = await supabase
             .from('profiles')
             .insert({
-              user_id: session.session.user.id,
+              id: session.session.user.id,
               date_of_birth: dobString,
               phone: formattedPhone,
               phone_verified_at: new Date().toISOString(),
-            });
+            })
+            .select('date_of_birth, onboarding_completed')
+            .single();
           
           if (insertError) {
             console.error('Profile insert error:', insertError);
@@ -157,21 +164,23 @@ export default function PhoneAuth() {
             setIsCompletingProfile(false);
             return;
           }
+          
+          savedProfile = insertedProfile;
         }
 
         toast.success('Profil skapad!');
         
-        // Check if user already completed onboarding (returning user)
-        const { data: profileCheck } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('user_id', session.session.user.id)
-          .single();
+        // Use the returned profile directly - no delay needed
+        if (!savedProfile?.date_of_birth) {
+          toast.error('Ett fel uppstod vid sparande. Försök igen.');
+          setIsCompletingProfile(false);
+          return;
+        }
         
-        if (profileCheck?.onboarding_completed) {
-          navigate('/matches');
+        if (savedProfile.onboarding_completed) {
+          navigate('/matches', { replace: true });
         } else {
-          navigate('/onboarding');
+          navigate('/onboarding', { replace: true });
         }
       } else {
         // No session - show error and redirect to start

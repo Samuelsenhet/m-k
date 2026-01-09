@@ -26,41 +26,41 @@ export default function Onboarding() {
   const checkOnboardingStatus = async () => {
     if (!user) return;
 
-    const { data: profile, error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('onboarding_completed, date_of_birth, display_name')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
-    if (error || !profile) {
+    if (error || !data) {
       // No profile yet, redirect to phone-auth to complete age verification
       navigate('/phone-auth');
       return;
     }
 
-    if (!profile.date_of_birth) {
-      // Age not verified yet, go back to phone-auth
+    if (!data.date_of_birth) {
+      // Missing date_of_birth, redirect to phone-auth to complete
       navigate('/phone-auth');
       return;
     }
 
-    if (profile.onboarding_completed) {
+    if (data.onboarding_completed) {
       // Already completed onboarding, redirect to home
       navigate('/');
       return;
     }
     
-    setDisplayName(profile.display_name || undefined);
+    setDisplayName(data.display_name || undefined);
     setCheckingStatus(false);
   };
 
   const handleComplete = async () => {
-    // Fetch the display name after onboarding is complete
+    // Re-fetch to get the updated display_name after wizard completion
     if (user) {
       const { data } = await supabase
         .from('profiles')
         .select('display_name')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
       
       setDisplayName(data?.display_name?.split(' ')[0] || undefined);
