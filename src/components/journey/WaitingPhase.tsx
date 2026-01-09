@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Clock, Heart, Sparkles } from 'lucide-react';
+import { MaakMascot } from '@/components/mascot';
 
 interface WaitingPhaseProps {
   timeRemaining: string; // e.g., "18h 42m"
@@ -45,14 +46,7 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
       <div className="w-full max-w-lg space-y-6">
         {/* Mascot Container */}
         <div className="flex justify-center">
-          <div className="relative">
-            {/* Mascot Placeholder - Replace with actual mascot component */}
-            <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center animate-bounce">
-              <Heart className="w-16 h-16 text-primary" />
-            </div>
-            {/* Breathing animation overlay */}
-            <div className="absolute inset-0 rounded-full bg-primary/5 animate-pulse" />
-          </div>
+          <MaakMascot pose="idle" expression="😊" size={150} />
         </div>
 
         {/* Main Message Card */}

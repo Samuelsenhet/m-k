@@ -36,7 +36,7 @@ export const WaitingPeriodScreen = ({
       <div className="w-full max-w-md space-y-6">
         {/* Mascot */}
         <div className="flex justify-center">
-          <MaakMascot pose="Idle" size={120} />
+          <MaakMascot pose="idle" expression="😊" size={120} />
         </div>
         
         {/* Main Card */}

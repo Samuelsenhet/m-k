@@ -4,31 +4,20 @@
 
 ---
 
-## ✅ Step 1: Database Migration (10 min)
+#---- Check tables created
+SELECT tablename FROM pg_tables 
+WHERE schemaname = 'public' 
+AND tablename IN ('consents', 'privacy_settings');
 
-**Supabase Dashboard** → **SQL Editor** → **New Query**
+-- Check column added
+SELECT column_name FROM information_schema.columns 
+WHERE table_name = 'profiles' 
+AND column_name = 'onboarding_completed_at';
 
-Copy & paste SQL from: `/supabase/migrations/20260109000002_add_consent_privacy_tables.sql`
-
-**Verify**:
-```sql
-SELECT COUNT(*) FROM public.consents; -- Should be 3x user count
-SELECT COUNT(*) FROM public.privacy_settings; -- Should match user count
-```
-
----
-
-## ✅ Step 2: Deploy Edge Functions (5 min)
-
-### match-daily
-**Dashboard** → **Edge Functions** → **match-daily** → **Edit**
-
-Copy code from: `/supabase/functions/match-daily/index.ts`
-
-Click **Deploy**
-
-### match-status
-Already correct (no changes needed)
+-- Check consent seeding
+SELECT COUNT(*) as total_consents FROM public.consents;
+SELECT COUNT(*) as total_users FROM auth.users;
+-- total_consents should be ~3x total_users
 
 ---
 

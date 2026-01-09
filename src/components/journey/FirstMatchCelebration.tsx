@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MaakMascot } from '@/components/mascot';
 
 interface FirstMatchCelebrationProps {
   specialMessage: string;
@@ -64,12 +65,7 @@ export function FirstMatchCelebration({
         <CardContent className="p-8 text-center space-y-6">
           {/* Animated Mascot */}
           <div className="flex justify-center">
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center animate-bounce">
-                <Heart className="w-12 h-12 text-primary-foreground fill-current" />
-              </div>
-              <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-500 animate-pulse" />
-            </div>
+            <MaakMascot pose="love" expression="😍" size={140} />
           </div>
 
           {/* Celebration Message */}

@@ -78,7 +78,7 @@ export const FirstMatchCelebration = ({
           animate={{ scale: 1 }}
           transition={{ type: 'spring', duration: 0.8, bounce: 0.5 }}
         >
-          <MaakMascot pose="Happy" size={140} />
+          <MaakMascot pose="happy" expression="😍" size={140} />
         </motion.div>
         
         {/* Main Card */}
