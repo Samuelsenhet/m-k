@@ -41,8 +41,9 @@ export default function PhoneAuth() {
 
   useEffect(() => {
     const checkUserStatus = async () => {
-      if (user) {
-        // Check user profile status
+      if (user && step === 'phone') {
+        // Only check and redirect if we're on the phone step
+        // This prevents redirect loops when completing profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_completed, date_of_birth')
@@ -53,16 +54,14 @@ export default function PhoneAuth() {
           // Already completed everything, go to matches
           navigate('/matches');
         } else if (profile?.date_of_birth) {
-          // Age already verified, go to onboarding (returning user or completed age step)
+          // Age already verified, go to onboarding
           navigate('/onboarding');
         }
-        // If no date_of_birth and user just verified phone, they'll see the profile step
-        // This only happens for NEW users who haven't verified age yet
       }
     };
     
     checkUserStatus();
-  }, [user, navigate]);
+  }, [user, navigate, step]);
 
   useEffect(() => {
     if (countdown > 0) {
