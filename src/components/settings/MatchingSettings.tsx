@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 interface MatchingPreferences {
-  interested_in: string;
   min_age: number;
   max_age: number;
   max_distance: number;
@@ -18,7 +17,6 @@ interface MatchingPreferences {
 export function MatchingSettings() {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<MatchingPreferences>({
-    interested_in: 'all',
     min_age: 20,
     max_age: 50,
     max_distance: 50,
@@ -37,13 +35,12 @@ export function MatchingSettings() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('interested_in, min_age, max_age, max_distance')
+      .select('min_age, max_age, max_distance')
       .eq('user_id', user.id)
       .single();
 
     if (data && !error) {
       setPreferences({
-        interested_in: data.interested_in || 'all',
         min_age: data.min_age || 20,
         max_age: data.max_age || 50,
         max_distance: data.max_distance || 50,
@@ -58,7 +55,6 @@ export function MatchingSettings() {
     const { error } = await supabase
       .from('profiles')
       .update({
-        interested_in: preferences.interested_in,
         min_age: preferences.min_age,
         max_age: preferences.max_age,
         max_distance: preferences.max_distance,
@@ -90,15 +86,6 @@ export function MatchingSettings() {
     setHasChanges(true);
   };
 
-  const getInterestedInLabel = (value: string) => {
-    switch (value) {
-      case 'man': return 'Man';
-      case 'woman': return 'Kvinna';
-      case 'all': return 'Alla';
-      default: return 'Alla';
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* Summary Card */}
@@ -107,14 +94,6 @@ export function MatchingSettings() {
           <CardTitle className="text-lg font-semibold">Matchningsinställningar</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-primary" />
-              <span className="text-muted-foreground">Intresserad av</span>
-            </div>
-            <span className="font-medium">{getInterestedInLabel(preferences.interested_in)}</span>
-          </div>
-          
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-primary" />
@@ -136,24 +115,6 @@ export function MatchingSettings() {
       {/* Detailed Settings */}
       <Card className="bg-card">
         <CardContent className="pt-6 space-y-6">
-          {/* Interested In */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Intresserad av</label>
-            <Select
-              value={preferences.interested_in}
-              onValueChange={(value) => updatePreference('interested_in', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="woman">Kvinna</SelectItem>
-                <SelectItem value="man">Man</SelectItem>
-                <SelectItem value="all">Alla</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Age Range */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
