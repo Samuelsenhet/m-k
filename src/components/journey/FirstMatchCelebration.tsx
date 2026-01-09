@@ -1,0 +1,114 @@
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Heart, Sparkles, ArrowRight } from 'lucide-react';
+import confetti from 'canvas-confetti';
+
+interface FirstMatchCelebrationProps {
+  specialMessage: string;
+  matchCount: number;
+  onContinue: () => void;
+}
+
+export function FirstMatchCelebration({ 
+  specialMessage, 
+  matchCount,
+  onContinue 
+}: FirstMatchCelebrationProps) {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    // Trigger confetti animation
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: ['#ff0080', '#ff8c00', '#ffd700']
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: ['#ff0080', '#ff8c00', '#ffd700']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    frame();
+
+    // Auto-dismiss after 5 seconds
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(onContinue, 300); // Wait for fade out animation
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [onContinue]);
+
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <Card className="w-full max-w-md border-primary/50 shadow-2xl animate-in zoom-in-95 duration-500">
+        <CardContent className="p-8 text-center space-y-6">
+          {/* Animated Mascot */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center animate-bounce">
+                <Heart className="w-12 h-12 text-primary-foreground fill-current" />
+              </div>
+              <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-500 animate-pulse" />
+            </div>
+          </div>
+
+          {/* Celebration Message */}
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              {specialMessage}
+            </h2>
+            <p className="text-muted-foreground">
+              Du har {matchCount} {matchCount === 1 ? 'matchning' : 'nya matchningar'} som väntar på dig!
+            </p>
+          </div>
+
+          {/* Voice Bubble from Mascot */}
+          <div className="relative p-4 bg-primary/5 rounded-2xl border border-primary/20">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-primary/5 border-l border-t border-primary/20 rotate-45" />
+            <p className="text-sm font-medium">
+              "Lycka till med dina nya matchningar! Jag tror du kommer älska dem! 💫"
+            </p>
+          </div>
+
+          {/* Continue Button */}
+          <Button 
+            onClick={() => {
+              setIsVisible(false);
+              setTimeout(onContinue, 300);
+            }}
+            size="lg"
+            className="w-full group"
+          >
+            Visa mina matchningar
+            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Button>
+
+          {/* Auto-dismiss hint */}
+          <p className="text-xs text-muted-foreground">
+            Stängs automatiskt om 5 sekunder...
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

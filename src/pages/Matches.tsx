@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMatches } from '@/hooks/useMatches';
+import { useMatchStatus } from '@/hooks/useMatchStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -13,6 +14,7 @@ import { ProfileCompletionPrompt } from '@/components/profile/ProfileCompletionP
 import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
 import { MatchCountdown } from '@/components/matches/MatchCountdown';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
+import { WaitingPhase, FirstMatchCelebration } from '@/components/journey';
 import { cn } from '@/lib/utils';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -35,9 +37,12 @@ const getCategoryBadgeClass = (category: string) => {
 export default function Matches() {
   const { user, loading: authLoading } = useAuth();
   const { matches, loading, error, refreshMatches, likeMatch, passMatch } = useMatches();
+  const { status: matchStatus, isLoading: statusLoading } = useMatchStatus();
   const navigate = useNavigate();
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [specialMessage, setSpecialMessage] = useState<string>('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -45,7 +50,29 @@ export default function Matches() {
     }
   }, [user, authLoading, navigate]);
 
-  if (authLoading || loading) {
+  // Check for first match celebration
+  useEffect(() => {
+    if (matches.length > 0) {
+      const firstMatch = matches[0];
+      // Check if this has special effects (first match ever)
+      if ((firstMatch as any).special_effects?.includes('celebration')) {
+        setSpecialMessage((firstMatch as any).special_event_message || '🎉 Dina första matchningar är här!');
+        setShowCelebration(true);
+      }
+    }
+  }, [matches]);
+
+  // Show waiting phase if user is in WAITING journey phase
+  if (matchStatus?.journey_phase === 'WAITING') {
+    return (
+      <WaitingPhase 
+        timeRemaining={matchStatus.time_remaining}
+        nextMatchAvailable={matchStatus.next_reset_time}
+      />
+    );
+  }
+
+  if (authLoading || loading || statusLoading) {
     return (
       <div className="min-h-screen gradient-hero flex items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -72,25 +99,35 @@ export default function Matches() {
   const filteredMatches = getFilteredMatches();
 
   return (
-    <div className="min-h-screen gradient-hero pb-20">
-      <div className="container max-w-lg mx-auto px-4 py-6">
-        {/* Header with AI button */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-serif font-bold">Dagens matchningar</h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              24h löpande • Kvalitetsfokus
-            </p>
-          </div>
-          <div className="flex gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setShowAIPanel(!showAIPanel)}
-              className={cn(showAIPanel && "bg-primary/10 text-primary")}
-            >
-              <Brain className="w-5 h-5" />
+    <>
+      {/* First Match Celebration Overlay */}
+      {showCelebration && (
+        <FirstMatchCelebration
+          specialMessage={specialMessage}
+          matchCount={matches.length}
+          onContinue={() => setShowCelebration(false)}
+        />
+      )}
+
+      <div className="min-h-screen gradient-hero pb-20">
+        <div className="container max-w-lg mx-auto px-4 py-6">
+          {/* Header with AI button */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-serif font-bold">Dagens matchningar</h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                24h löpande • Kvalitetsfokus
+              </p>
+            </div>
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowAIPanel(!showAIPanel)}
+                className={cn(showAIPanel && "bg-primary/10 text-primary")}
+              >
+                <Brain className="w-5 h-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={refreshMatches}>
               <RefreshCw className="w-5 h-5" />
@@ -407,5 +444,6 @@ export default function Matches() {
       <NotificationPrompt />
       <BottomNav />
     </div>
+    </>
   );
 }

@@ -1,12 +1,12 @@
 import { DimensionKey, PersonalityCategory } from '@/types/personality';
 
 // Score signals for ranking (must sum to 1.0)
+// Age is a dealbreaker filter, NOT a scoring signal
 export const SCORE_SIGNALS = {
-  PERSONALITY_SIMILARITY: 0.35,
-  ARCHETYPE_ALIGNMENT: 0.20,
-  CONVERSATION_ANXIETY_REDUCTION: 0.15,
-  AGE_INTERVAL_MATCH: 0.20,
-  INTEREST_OVERLAP: 0.10
+  PERSONALITY_SIMILARITY: 0.40,
+  ARCHETYPE_ALIGNMENT: 0.30,
+  CONVERSATION_ANXIETY_REDUCTION: 0.00, // Removed from MVP scoring
+  INTEREST_OVERLAP: 0.30
 } as const;
 
 // Matching ratio: 60% similar + 40% complementary
@@ -34,6 +34,7 @@ interface MatchCandidate {
   age?: number;
   gender?: string;
   interests?: string[];
+  onboardingCompleted?: boolean; // Add for dealbreaker check
 }
 
 interface UserProfile extends MatchCandidate {
@@ -69,23 +70,29 @@ export interface MatchOutput {
   dimension_score_breakdown: DimensionBreakdown[];
   archetype_alignment_score: number;
   conversation_anxiety_reduction_score: number;
-  ai_icebreakers: string[];
+  ai_icebreakers: string[]; // Exactly 3 icebreakers
   personality_insight: string;
   match_reason: string;
   is_first_day_match: boolean;
-  is_plus_match?: boolean;
-  expires_at: string | null;
+  expires_at: null; // Always null in MVP
+  special_effects: string[] | null; // ['confetti', 'celebration'] for first match, null otherwise
   photo_urls: string[];
   bio_preview: string;
   common_interests: string[];
 }
 
 // Dealbreaker checks - must pass before scoring
+// Age interval is a dealbreaker filter (all users are 20+)
 export const passesDealbreakers = (
   user: UserProfile,
   candidate: MatchCandidate
 ): boolean => {
-  // Age must be within user's preferred range
+  // Onboarding completion check (PRP requirement)
+  if (candidate.onboardingCompleted === false) {
+    return false;
+  }
+  
+  // Age must be within user's preferred range (dealbreaker)
   if (user.minAge && user.maxAge && candidate.age) {
     if (candidate.age < user.minAge || candidate.age > user.maxAge) {
       return false;
@@ -218,31 +225,6 @@ const calculateAnxietyReduction = (
   return Math.min(100, Math.round(score));
 };
 
-// Calculate age match score (0-100)
-const calculateAgeMatchScore = (
-  user: UserProfile,
-  candidate: MatchCandidate
-): number => {
-  if (!user.age || !candidate.age) return 50;
-  
-  const ageDiff = Math.abs(user.age - candidate.age);
-  
-  // Perfect match: same age or 1 year difference
-  if (ageDiff <= 1) return 100;
-  
-  // Very good: 2-3 years
-  if (ageDiff <= 3) return 90;
-  
-  // Good: 4-5 years
-  if (ageDiff <= 5) return 75;
-  
-  // Acceptable: 6-10 years
-  if (ageDiff <= 10) return 50;
-  
-  // Less ideal but still within range
-  return 25;
-};
-
 // Calculate interest overlap score (0-100)
 const calculateInterestOverlap = (
   interests1?: string[],
@@ -265,29 +247,24 @@ const calculateInterestOverlap = (
 };
 
 // Calculate composite score using all signals
+// Age is handled as dealbreaker filter, not scoring signal
 export const calculateCompositeScore = (
   user: UserProfile,
   candidate: MatchCandidate
 ): { total: number; breakdown: Record<string, number> } => {
   const personality = calculateSimilarityScore(user.scores, candidate.scores);
   const archetype = calculateArchetypeAlignment(user.archetype, candidate.archetype);
-  const anxiety = calculateAnxietyReduction(user.scores, candidate.scores);
-  const age = calculateAgeMatchScore(user, candidate);
   const interests = calculateInterestOverlap(user.interests, candidate.interests);
   
   const breakdown = {
     personality,
     archetype,
-    anxiety,
-    age,
     interests
   };
   
   const total = 
     personality * SCORE_SIGNALS.PERSONALITY_SIMILARITY +
     archetype * SCORE_SIGNALS.ARCHETYPE_ALIGNMENT +
-    anxiety * SCORE_SIGNALS.CONVERSATION_ANXIETY_REDUCTION +
-    age * SCORE_SIGNALS.AGE_INTERVAL_MATCH +
     interests * SCORE_SIGNALS.INTEREST_OVERLAP;
   
   return { total: Math.round(total), breakdown };
@@ -310,16 +287,6 @@ export const getDimensionBreakdown = (
       high: 'Era arketyper harmonierar väl',
       medium: 'Era arketyper skapar intressant dynamik',
       low: 'Era arketyper utmanar varandra positivt'
-    },
-    anxiety: {
-      high: 'Samtalen kommer flyta naturligt',
-      medium: 'Bra balans i kommunikationsstil',
-      low: 'Använd isbrytare för att komma igång'
-    },
-    age: {
-      high: 'Ni är i samma livsfas',
-      medium: 'Bra ålderskompatibilitet',
-      low: 'Olika erfarenheter att dela'
     },
     interests: {
       high: 'Många gemensamma intressen',
@@ -397,55 +364,42 @@ const getCompatibilityFactors = (
   return factors;
 };
 
-// Calculate daily match count with safe variance (0 or +1, never -1)
-export const calculateDailyMatchCount = (
-  baseDailyMatches: number,
-  minDailyMatches: number,
-  maxDailyMatches: number,
-  engagementMultiplier: number = 1.0,
-  manualOverride?: number | null
-): number => {
-  // 1. Manual override takes priority
-  if (manualOverride !== null && manualOverride !== undefined) {
-    return Math.max(minDailyMatches, Math.min(manualOverride, maxDailyMatches));
-  }
-  
-  // 2. Base calculation with engagement
-  let matchCount = Math.floor(baseDailyMatches * engagementMultiplier);
-  
-  // 3. Clamp to bounds FIRST (before variance)
-  matchCount = Math.max(minDailyMatches, Math.min(matchCount, maxDailyMatches));
-  
-  // 4. Apply variance (0 or +1 only, never -1 to prevent going below min)
-  if (Math.random() > 0.5 && matchCount < maxDailyMatches) {
-    matchCount += 1;
-  }
-  
-  // 5. Final clamp
-  return Math.max(minDailyMatches, Math.min(matchCount, maxDailyMatches));
-};
-
-// Main function to calculate daily matches with dealbreakers and composite scoring
-export const calculateDailyMatches = (
+// Generate match pool for user with global batch size (admin-controlled)
+// MVP FLOW:
+// 1. Admin sets global batch_size (3-10) at 00:00 CET
+// 2. For each user: filter batch by dealbreakers (age, gender, onboarding)
+// 3. Score remaining candidates using composite algorithm
+// 4. Split 60% similar / 40% complementary
+// 5. Store in user_daily_match_pool
+// 6. Delivery layer caps at 5 for free users, full batch for Plus
+export const generateUserMatchPool = (
   currentUser: UserProfile,
   candidates: MatchCandidate[],
-  totalMatchCount: number = 5,
+  batchSize: number, // Admin-controlled global batch size (3-10)
   previousMatchedIds: string[] = []
 ): MatchResult[] => {
   // Filter out current user
   const otherUsers = candidates.filter((c) => c.userId !== currentUser.userId);
   
-  // Apply dealbreakers first
+  // Apply dealbreakers first (age interval, gender, etc.)
   const eligibleCandidates = otherUsers.filter((c) => passesDealbreakers(currentUser, c));
   
   // Apply repeat avoidance (no same match 2 days in a row if alternatives exist)
   const previousSet = new Set(previousMatchedIds);
   const freshCandidates = eligibleCandidates.filter((c) => !previousSet.has(c.userId));
   
-  // Use fresh candidates if available, otherwise fall back to all eligible
-  const candidatePool = freshCandidates.length >= totalMatchCount 
+  // Use fresh candidates if enough exist, otherwise fall back to allow repeats
+  // FALLBACK LOGIC: If no alternatives, allow repeat to prevent 0 matches for free users
+  const candidatePool = freshCandidates.length >= batchSize 
     ? freshCandidates 
-    : eligibleCandidates;
+    : freshCandidates.length > 0 
+      ? freshCandidates 
+      : eligibleCandidates; // Allow repeats if no fresh candidates
+  
+  // If still not enough candidates, work with what we have
+  if (candidatePool.length === 0) {
+    return [];
+  }
   
   // Calculate all scores using composite scoring
   const scoredCandidates = candidatePool.map((candidate) => {
@@ -455,17 +409,33 @@ export const calculateDailyMatches = (
       compositeScore: total,
       similarScore: calculateSimilarityScore(currentUser.scores, candidate.scores),
       complementaryScore: calculateComplementaryScore(currentUser.scores, candidate.scores),
-      breakdown
+      breakdown,
+      // Tie-breakers for candidates with similar scores
+      interestScore: calculateInterestOverlap(currentUser.interests, candidate.interests),
+      archetypeScore: calculateArchetypeAlignment(currentUser.archetype, candidate.archetype)
     };
   });
   
-  // Calculate counts based on 60/40 ratio
-  const similarCount = Math.ceil(totalMatchCount * MATCH_RATIO.SIMILAR);
-  const complementaryCount = totalMatchCount - similarCount;
+  // Calculate counts based on 60/40 ratio (always)
+  // Cap batch size to available candidates
+  const actualBatchSize = Math.min(batchSize, candidatePool.length);
+  const similarCount = Math.ceil(actualBatchSize * MATCH_RATIO.SIMILAR);
+  const complementaryCount = actualBatchSize - similarCount;
   
-  // Get top similar matches (sorted by similarity score)
+  // Get top similar matches (sorted by similarity score with tie-breakers)
   const similarMatches = [...scoredCandidates]
-    .sort((a, b) => b.similarScore - a.similarScore)
+    .sort((a, b) => {
+      // Primary sort: similarity score
+      if (b.similarScore !== a.similarScore) {
+        return b.similarScore - a.similarScore;
+      }
+      // Tie-breaker 1: interest overlap
+      if (b.interestScore !== a.interestScore) {
+        return b.interestScore - a.interestScore;
+      }
+      // Tie-breaker 2: archetype alignment
+      return b.archetypeScore - a.archetypeScore;
+    })
     .slice(0, similarCount)
     .map((item) => ({
       user: item.candidate,
@@ -484,7 +454,18 @@ export const calculateDailyMatches = (
   const similarIds = new Set(similarMatches.map((m) => m.user.userId));
   const complementaryMatches = [...scoredCandidates]
     .filter((item) => !similarIds.has(item.candidate.userId))
-    .sort((a, b) => b.complementaryScore - a.complementaryScore)
+    .sort((a, b) => {
+      // Primary sort: complementary score
+      if (b.complementaryScore !== a.complementaryScore) {
+        return b.complementaryScore - a.complementaryScore;
+      }
+      // Tie-breaker 1: interest overlap
+      if (b.interestScore !== a.interestScore) {
+        return b.interestScore - a.interestScore;
+      }
+      // Tie-breaker 2: archetype alignment
+      return b.archetypeScore - a.archetypeScore;
+    })
     .slice(0, complementaryCount)
     .map((item) => ({
       user: item.candidate,
@@ -499,9 +480,21 @@ export const calculateDailyMatches = (
       dimensionBreakdown: getDimensionBreakdown(currentUser, item.candidate),
     }));
   
-  // Shuffle and return combined matches
+  // Combine and shuffle matches
   const allMatches = [...similarMatches, ...complementaryMatches];
   return allMatches.sort(() => Math.random() - 0.5);
+};
+
+// Legacy function for backward compatibility - replaced by generateUserMatchPool in MVP
+// Main function to calculate daily matches with dealbreakers and composite scoring
+export const calculateDailyMatches = (
+  currentUser: UserProfile,
+  candidates: MatchCandidate[],
+  totalMatchCount: number = 5,
+  previousMatchedIds: string[] = []
+): MatchResult[] => {
+  // Redirect to new batch-based function
+  return generateUserMatchPool(currentUser, candidates, totalMatchCount, previousMatchedIds);
 };
 
 // Generate match reason text
@@ -513,4 +506,8 @@ export const generateMatchReason = (matchType: 'similar' | 'complementary'): str
 };
 
 // Export individual functions for testing
-export { calculateSimilarityScore, calculateComplementaryScore, getCompatibilityFactors };
+export { 
+  calculateSimilarityScore, 
+  calculateComplementaryScore, 
+  getCompatibilityFactors
+};
