@@ -41,7 +41,7 @@ export function MatchingSettings() {
 
     if (data && !error) {
       setPreferences({
-        min_age: data.min_age || 20,
+        min_age: Math.max(data.min_age || 20, 20),
         max_age: data.max_age || 50,
         max_distance: data.max_distance || 50,
       });
