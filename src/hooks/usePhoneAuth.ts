@@ -91,13 +91,11 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
 
         // Use only phone digits (no special characters) for email
         const cleanPhone = phone.replace(/\D/g, "");
-        // Generate secure random password instead of deterministic one
-        const randomPassword = crypto.randomUUID() + Date.now().toString(36);
-        const demoEmail = `user${cleanPhone}@maak-demo.com`;
+        // Use clean email format without special characters
+        const demoEmail = `${cleanPhone}@maak.app`;
+        const demoPassword = `Maak${cleanPhone}Demo!2026`;
 
         // Try to sign in first (for returning users)
-        // Note: In demo mode, we use a known password pattern for persistence
-        const demoPassword = `Maak${cleanPhone}Demo!2026`;
         const { error: signInError, data: signInData } =
           await supabase.auth.signInWithPassword({
             email: demoEmail,
@@ -112,6 +110,18 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
             setStep("profile");
           }
           return true;
+        }
+
+        // Check if phone number is already in use (only for non-deleted accounts)
+        const { data: existingProfile } = await supabase
+          .from("profiles")
+          .select("user_id, phone")
+          .eq("phone", formattedPhone)
+          .single();
+
+        if (existingProfile) {
+          setError("Detta telefonnummer används redan. Logga in istället.");
+          return false;
         }
 
         // New user - sign up with email confirmation disabled
