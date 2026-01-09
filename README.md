@@ -1,8 +1,56 @@
-# Welcome to your Lovable project
+# MÄÄK - Personality Test Dating App
 
-## Project info
+Swedish personality-based dating platform with PRP compliance and user journey phases.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **UI**: shadcn/ui + Tailwind CSS + Framer Motion
+- **Auth**: Phone-based authentication (demo mode)
+- **PWA**: Service worker enabled
+
+## Setup
+
+1. Clone the repository
+2. Copy `.env.example` to `.env`
+3. Add your Supabase credentials from https://supabase.com/dashboard
+4. Install dependencies: `npm install`
+5. Run dev server: `npm run dev`
+
+## Available Scripts
+
+- `npm run dev` - Start development server (port 8080)
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Deployment
+
+Built for deployment on Vercel with Supabase backend.
+
+## Project Structure
+
+```
+src/
+├── components/     # React components (17+ folders)
+├── contexts/       # React contexts (Auth, Consent)
+├── hooks/          # Custom hooks (12 hooks)
+├── pages/          # Route pages (9 pages)
+├── integrations/   # Supabase integration
+└── lib/           # Utilities
+```
+
+## Features
+
+- 🔐 Phone-based authentication
+- 🎭 Personality test & matching algorithm
+- 💬 Real-time chat
+- 🎉 Achievement system
+- 🤖 AI assistant
+- 📱 PWA support
+- 🌍 i18n (Swedish)
+- 🛡️ GDPR compliant
 
 ## How can I edit this code?
 
@@ -10,7 +58,7 @@ There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Simply visit the Lovable Project and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 

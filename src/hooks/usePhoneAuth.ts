@@ -35,21 +35,11 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     try {
       const formattedPhone = formatPhoneE164(phone);
       
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-      });
-
-      if (authError) {
-        // Phone provider not configured - use fallback flow
-        // This creates a demo experience until phone provider is set up
-        if (authError.message.includes('phone') || authError.message.includes('provider') || authError.message.includes('Unsupported')) {
-          console.log('Phone provider not configured, using demo flow');
-          setStep('verify');
-          return true;
-        }
-        throw authError;
+      // For demo purposes, since phone auth isn't configured,
+      // we'll skip the actual SMS sending and just move to verify step
+      if (import.meta.env.DEV) {
+        console.log('Demo mode: Phone auth not configured, proceeding to verify step');
       }
-
       setStep('verify');
       return true;
     } catch (err: any) {
@@ -78,108 +68,70 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     try {
       const formattedPhone = formatPhoneE164(phone);
       
-      // First try real OTP verification
-      const { error: authError, data } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token,
-        type: 'sms',
-      });
-
-      if (authError) {
-        // If phone provider not configured, use email-based signup as fallback
-        // This creates a real user session using a generated email
-        if (token === '123456') {
-          console.log('Demo mode: creating user with email fallback');
-          
-          // Generate email from phone number for demo purposes
-          const demoEmail = `${formattedPhone.replace('+', '')}@demo.maak.app`;
-          // Use a consistent password based on phone (so returning users can sign in)
-          const demoPassword = `DemoPass${formattedPhone.replace('+', '')}!`;
-          
-          // First, try to sign in (for returning users)
-          const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
-            email: demoEmail,
-            password: demoPassword,
-          });
-
-          if (!signInError && signInData.session) {
-            // Returning user - successfully signed in
-            // useEffect in PhoneAuth will handle redirect
-            return true;
-          }
-          
-          // If sign in failed, try to sign up (new user)
-          const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
-            email: demoEmail,
-            password: demoPassword,
-            options: {
-              emailRedirectTo: `${window.location.origin}/`,
-              data: {
-                phone: formattedPhone,
-              }
-            }
-          });
-
-          if (signUpError) {
-            // If user already exists but sign in failed, password might be different
-            // Try to reset their password via edge function
-            if (signUpError.message.includes('already registered')) {
-              console.log('User exists with different password, attempting reset...');
-              
-              try {
-                const { data: resetData, error: resetError } = await supabase.functions.invoke('reset-demo-password', {
-                  body: { email: demoEmail, newPassword: demoPassword }
-                });
-
-                if (!resetError && resetData?.success) {
-                  // Password reset successful, try to sign in again
-                  const { error: retryError, data: retryData } = await supabase.auth.signInWithPassword({
-                    email: demoEmail,
-                    password: demoPassword,
-                  });
-
-                  if (!retryError && retryData.session) {
-                    // Successfully signed in after password reset
-                    return true;
-                  }
-                }
-              } catch (resetErr) {
-                console.error('Password reset failed:', resetErr);
-              }
-              
-              // If all else fails, show error
-              setError('Kunde inte logga in. Försök igen senare.');
-              return false;
-            }
-            throw signUpError;
-          }
-
-          if (signUpData.session) {
-            // New user - show age verification
-            setStep('profile');
-            return true;
-          }
-
-          // If no session but signup succeeded, proceed anyway (email confirmation might be disabled)
-          setStep('profile');
-          return true;
-        }
-        
-        throw authError;
+      // Demo mode: Accept demo code 123456
+      if (token !== '123456') {
+        setError('Ogiltig verifieringskod. Använd 123456 för demo.');
+        return false;
       }
 
-      if (data.session) {
-        // Check if this is a new user or returning user
-        const isNew = await checkIfNewUser(data.session.user.id);
+      if (import.meta.env.DEV) {
+        console.log('Demo mode: Using email-based authentication');
+      }
+      
+      // Use only phone digits (no special characters) for email
+      const cleanPhone = phone.replace(/\D/g, '');
+      const demoEmail = `user${cleanPhone}@maak-demo.com`;
+      const demoPassword = `Maak${cleanPhone}Demo!2026`;
+      
+      // Try to sign in first (for returning users)
+      const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
+      });
+
+      if (!signInError && signInData.session) {
+        // Returning user successfully signed in
+        if (import.meta.env.DEV) {
+          console.log('Returning user signed in successfully');
+        }
+        return true;
+      }
+      
+      // New user - sign up with email confirmation disabled
+      if (import.meta.env.DEV) {
+        console.log('New user - creating account');
+      }
+      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+        email: demoEmail,
+        password: demoPassword,
+        options: {
+          emailRedirectTo: undefined,
+          data: {
+            phone: formattedPhone,
+          }
+        }
+      });
+
+      if (signUpError) {
+        console.error('Sign up error:', signUpError);
+        throw signUpError;
+      }
+
+      if (signUpData.user) {
+        if (import.meta.env.DEV) {
+          console.log('User created:', signUpData.user.id);
+        }
+        // Check if this is a new user (should always be true here)
+        const isNew = signUpData.session ? await checkIfNewUser(signUpData.user.id) : true;
         if (isNew) {
           setStep('profile');
         }
-        // If not new, the useEffect in PhoneAuth will handle redirect
         return true;
       }
 
       throw new Error('Verifiering misslyckades');
     } catch (err: any) {
+      console.error('Verify OTP error:', err);
       setError(err.message || 'Ogiltig verifieringskod');
       return false;
     } finally {
