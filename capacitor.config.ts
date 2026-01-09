@@ -1,9 +1,9 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: 'com.maak.app',
-  appName: 'MÄÄK',
-  webDir: 'dist',
+  appId: "com.maak.app",
+  appName: "MÄÄK",
+  webDir: "dist",
   // For production deployment, use HTTPS:
   // server: {
   //   url: 'https://your-app.vercel.app'

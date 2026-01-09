@@ -19,7 +19,8 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "MÄÄK - Personlighetstest för Relationer",
         short_name: "MÄÄK",
-        description: "Upptäck din personlighetstyp och hitta kompatibla partners",
+        description:
+          "Upptäck din personlighetstyp och hitta kompatibla partners",
         theme_color: "#f97316",
         background_color: "#fdf8f6",
         display: "standalone",
@@ -75,10 +76,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'lucide-react'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'form-vendor': ['zod', 'sonner'],
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "ui-vendor": ["framer-motion", "lucide-react"],
+          "supabase-vendor": ["@supabase/supabase-js"],
+          "form-vendor": ["zod", "sonner"],
         },
       },
     },
