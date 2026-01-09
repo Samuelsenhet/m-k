@@ -141,7 +141,7 @@ export function MatchingSettings() {
                   }}
                   min={20}
                   max={70}
-                  step={1}
+                  step={5}
                   className="w-full"
                 />
               </div>
@@ -157,7 +157,7 @@ export function MatchingSettings() {
                   }}
                   min={20}
                   max={70}
-                  step={1}
+                  step={5}
                   className="w-full"
                 />
               </div>
