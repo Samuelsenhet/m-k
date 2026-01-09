@@ -34,6 +34,7 @@ export default function PhoneAuth() {
   const [dateOfBirth, setDateOfBirth] = useState({ day: '', month: '', year: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [countdown, setCountdown] = useState(0);
+  const [isCompletingProfile, setIsCompletingProfile] = useState(false);
   
   const { step, loading, error, sendOtp, verifyOtp, resendOtp, setStep } = usePhoneAuth();
   const { user } = useAuth();
@@ -41,9 +42,8 @@ export default function PhoneAuth() {
 
   useEffect(() => {
     const checkUserStatus = async () => {
-      if (user && step === 'phone') {
-        // Only check and redirect if we're on the phone step
-        // This prevents redirect loops when completing profile
+      // Don't redirect if we're in the middle of completing profile
+      if (user && !isCompletingProfile) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_completed, date_of_birth')
@@ -51,17 +51,16 @@ export default function PhoneAuth() {
           .single();
         
         if (profile?.onboarding_completed) {
-          // Already completed everything, go to matches
           navigate('/matches');
-        } else if (profile?.date_of_birth) {
-          // Age already verified, go to onboarding
+        } else if (profile?.date_of_birth && step === 'phone') {
+          // Only auto-navigate if we're on phone step and date_of_birth exists
           navigate('/onboarding');
         }
       }
     };
     
     checkUserStatus();
-  }, [user, navigate, step]);
+  }, [user, navigate, isCompletingProfile, step]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -121,6 +120,7 @@ export default function PhoneAuth() {
       }
       
       setErrors({});
+      setIsCompletingProfile(true);
       
       // Format date for database
       const dobString = `${dateOfBirth.year}-${dateOfBirth.month.padStart(2, '0')}-${dateOfBirth.day.padStart(2, '0')}`;
@@ -154,6 +154,7 @@ export default function PhoneAuth() {
           if (insertError) {
             console.error('Profile insert error:', insertError);
             toast.error('Kunde inte spara profil');
+            setIsCompletingProfile(false);
             return;
           }
         }
@@ -176,6 +177,7 @@ export default function PhoneAuth() {
         // No session - show error and redirect to start
         toast.error('Sessionen har gått ut. Försök igen.');
         setStep('phone');
+        setIsCompletingProfile(false);
       }
     } catch (e) {
       if (e instanceof z.ZodError) {
