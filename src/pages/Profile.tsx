@@ -74,13 +74,30 @@ export default function Profile() {
     try {
       // Delete user data from all tables
       // Order matters due to foreign key constraints
-      await supabase.from('messages').delete().eq('sender_id', user.id);
-      await supabase.from('achievements').delete().eq('user_id', user.id);
-      await supabase.from('notifications').delete().eq('user_id', user.id);
-      await supabase.from('matches').delete().eq('user_id', user.id);
-      await supabase.from('personality_scores').delete().eq('user_id', user.id);
-      await supabase.from('dealbreakers').delete().eq('user_id', user.id);
-      await supabase.from('profiles').delete().eq('id', user.id);
+      const deleteOperations = [
+        supabase.from('messages').delete().eq('sender_id', user.id),
+        supabase.from('achievements').delete().eq('user_id', user.id),
+        supabase.from('notifications').delete().eq('user_id', user.id),
+        supabase.from('matches').delete().eq('user_id', user.id),
+        supabase.from('personality_scores').delete().eq('user_id', user.id),
+        supabase.from('dealbreakers').delete().eq('user_id', user.id),
+      ];
+
+      // Execute all deletes and check for errors
+      const results = await Promise.all(deleteOperations);
+      const errors = results.filter(r => r.error).map(r => r.error);
+      
+      if (errors.length > 0) {
+        console.error('Errors during account deletion:', errors);
+        // Continue anyway - some tables might not exist or be empty
+      }
+
+      // Delete profile last (has foreign key constraints)
+      const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+        throw new Error('Kunde inte radera profilen');
+      }
       
       // Sign out the user (the auth user will remain but profile is deleted)
       await signOut();

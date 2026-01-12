@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -11,6 +11,16 @@ interface UseRealtimeOptions<T> {
 export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseRealtimeOptions<T>) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Store callbacks in refs to avoid recreating channel on callback changes
+  const onMessageRef = useRef(onMessage);
+  const onErrorRef = useRef(onError);
+  
+  // Update refs when callbacks change
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+    onErrorRef.current = onError;
+  }, [onMessage, onError]);
 
   useEffect(() => {
     // Check if already subscribed to prevent multiple subscriptions
@@ -28,12 +38,12 @@ export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseReal
     channel
       .on('broadcast', { event: 'message_created' }, (payload) => {
         try {
-          if (onMessage) {
-            onMessage(payload.payload as T);
+          if (onMessageRef.current) {
+            onMessageRef.current(payload.payload as T);
           }
         } catch (error) {
-          if (onError && error instanceof Error) {
-            onError(error);
+          if (onErrorRef.current && error instanceof Error) {
+            onErrorRef.current(error);
           }
         }
       })
@@ -52,7 +62,7 @@ export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseReal
         setIsConnected(false);
       }
     };
-  }, [roomId, onMessage, onError]);
+  }, [roomId]); // Only recreate channel when roomId changes
 
   const sendMessage = async (message: T) => {
     if (!channelRef.current) {

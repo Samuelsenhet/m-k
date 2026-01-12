@@ -40,63 +40,96 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
   const fetchMutualMatches = useCallback(async () => {
     if (!user) return;
 
-    // Fetch mutual matches
-    const { data: matchesData, error: matchesError } = await supabase
-      .from('matches')
-      .select('*')
-      .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
-      .eq('status', 'mutual')
-      .order('created_at', { ascending: false });
+    try {
+      // Fetch mutual matches
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('matches')
+        .select('*')
+        .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
+        .eq('status', 'mutual')
+        .order('created_at', { ascending: false });
 
-    if (matchesError) {
-      console.error('Error fetching matches:', matchesError);
-      setLoading(false);
-      return;
-    }
+      if (matchesError) {
+        console.error('Error fetching matches:', matchesError);
+        setLoading(false);
+        return;
+      }
 
-    // For each match, get the matched user's profile
-    const matchesWithProfiles = await Promise.all(
-      (matchesData || []).map(async (match) => {
+      if (!matchesData || matchesData.length === 0) {
+        setMatches([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get all matched user IDs
+      const matchedUserIds = matchesData.map(match => 
+        match.user_id === user.id ? match.matched_user_id : match.user_id
+      );
+      const matchIds = matchesData.map(m => m.id);
+
+      // Batch fetch all profiles at once
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', matchedUserIds);
+
+      // Batch fetch last messages for all matches (using a subquery approach)
+      const { data: lastMessagesData } = await supabase
+        .from('messages')
+        .select('match_id, content, created_at')
+        .in('match_id', matchIds)
+        .order('created_at', { ascending: false });
+
+      // Batch fetch unread counts - get all unread messages and count per match
+      const { data: unreadData } = await supabase
+        .from('messages')
+        .select('match_id')
+        .in('match_id', matchIds)
+        .neq('sender_id', user.id)
+        .eq('is_read', false);
+
+      // Create lookup maps
+      const profileMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+      
+      // Get last message per match (first occurrence since ordered desc)
+      const lastMessageMap = new Map<string, { content: string; created_at: string }>();
+      lastMessagesData?.forEach(msg => {
+        if (!lastMessageMap.has(msg.match_id)) {
+          lastMessageMap.set(msg.match_id, { content: msg.content, created_at: msg.created_at });
+        }
+      });
+
+      // Count unreads per match
+      const unreadCountMap = new Map<string, number>();
+      unreadData?.forEach(msg => {
+        unreadCountMap.set(msg.match_id, (unreadCountMap.get(msg.match_id) || 0) + 1);
+      });
+
+      // Combine data
+      const matchesWithProfiles = matchesData.map(match => {
         const matchedUserId = match.user_id === user.id 
           ? match.matched_user_id 
           : match.user_id;
 
-        // Get profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('display_name, avatar_url')
-          .eq('user_id', matchedUserId)
-          .single();
-
-        // Get last message
-        const { data: messageData } = await supabase
-          .from('messages')
-          .select('content, created_at')
-          .eq('match_id', match.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        // Get unread count
-        const { count } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('match_id', match.id)
-          .neq('sender_id', user.id)
-          .eq('is_read', false);
+        const profile = profileMap.get(matchedUserId);
+        const lastMessage = lastMessageMap.get(match.id);
+        const unreadCount = unreadCountMap.get(match.id) || 0;
 
         return {
           ...match,
           matched_user_id: matchedUserId,
-          matched_profile: profileData || { display_name: 'Användare', avatar_url: null },
-          last_message: messageData || undefined,
-          unread_count: count || 0,
+          matched_profile: profile || { display_name: 'Användare', avatar_url: null },
+          last_message: lastMessage,
+          unread_count: unreadCount,
         };
-      })
-    );
+      });
 
-    setMatches(matchesWithProfiles);
-    setLoading(false);
+      setMatches(matchesWithProfiles);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {

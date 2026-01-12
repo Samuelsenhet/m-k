@@ -207,6 +207,7 @@ export function ChatWindow({
     if (error) {
       console.error('Error sending message:', error);
       setNewMessage(content);
+      toast.error('Meddelandet kunde inte skickas. Försök igen.');
     }
     setSending(false);
   };
