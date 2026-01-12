@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { usePhoneAuth, PhoneAuthStep } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,7 @@ const profileSchema = z.object({
 });
 
 export default function PhoneAuth() {
+  const { t } = useTranslation();
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState({ day: '', month: '', year: '' });
@@ -76,7 +78,7 @@ export default function PhoneAuth() {
       setErrors({});
       const success = await sendOtp(phone);
       if (success) {
-        toast.success('Verifieringskod skickad!');
+        toast.success(t('auth.sendCode') + '!');
         setCountdown(60);
       }
     } catch (e) {
@@ -92,7 +94,7 @@ export default function PhoneAuth() {
       setErrors({});
       const success = await verifyOtp(phone, otp);
       if (success) {
-        toast.success('Telefon verifierad!');
+        toast.success(t('auth.verify') + '!');
       }
     } catch (e) {
       if (e instanceof z.ZodError) {
@@ -105,7 +107,7 @@ export default function PhoneAuth() {
     if (countdown > 0) return;
     const success = await resendOtp(phone);
     if (success) {
-      toast.success('Ny kod skickad!');
+      toast.success(t('auth.resendCode') + '!');
       setCountdown(60);
     }
   };
@@ -116,7 +118,7 @@ export default function PhoneAuth() {
       
       const age = calculateAge(dateOfBirth.day, dateOfBirth.month, dateOfBirth.year);
       if (age < 20) {
-        setErrors({ age: 'Du måste vara minst 20 år' });
+        setErrors({ age: t('auth.error_too_young') });
         return;
       }
       
@@ -161,7 +163,7 @@ export default function PhoneAuth() {
           
           if (insertError) {
             console.error('Profile insert error:', insertError);
-            toast.error('Kunde inte spara profil');
+            toast.error(t('profile.error_saving'));
             setIsCompletingProfile(false);
             return;
           }
@@ -169,11 +171,11 @@ export default function PhoneAuth() {
           savedProfile = insertedProfile;
         }
 
-        toast.success('Profil skapad!');
+        toast.success(t('auth.profile_created'));
         
         // Use the returned profile directly - no delay needed
         if (!savedProfile?.date_of_birth) {
-          toast.error('Ett fel uppstod vid sparande. Försök igen.');
+          toast.error(t('common.error') + '. ' + t('common.retry'));
           setIsCompletingProfile(false);
           return;
         }
@@ -185,7 +187,7 @@ export default function PhoneAuth() {
         }
       } else {
         // No session - show error and redirect to start
-        toast.error('Sessionen har gått ut. Försök igen.');
+        toast.error(t('common.error') + '. ' + t('common.retry'));
         setStep('phone');
         setIsCompletingProfile(false);
       }
@@ -220,7 +222,7 @@ export default function PhoneAuth() {
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          {step === 'phone' ? 'Tillbaka till startsidan' : 'Ändra nummer'}
+          {step === 'phone' ? t('common.back') : t('common.back')}
         </button>
 
         <Card className="shadow-card border-border overflow-hidden">
@@ -229,14 +231,14 @@ export default function PhoneAuth() {
               <Heart className="w-7 h-7 text-primary-foreground" fill="currentColor" />
             </div>
             <CardTitle className="text-2xl font-serif">
-              {step === 'phone' && 'Ange ditt nummer'}
-              {step === 'verify' && 'Verifiera din telefon'}
-              {step === 'profile' && 'Bekräfta din ålder'}
+              {step === 'phone' && t('auth.phoneTitle')}
+              {step === 'verify' && t('auth.verifyTitle')}
+              {step === 'profile' && t('auth.ageTitle')}
             </CardTitle>
             <CardDescription>
-              {step === 'phone' && 'Vi skickar en verifieringskod via SMS'}
-              {step === 'verify' && `Ange koden vi skickade till +46 ${phone}`}
-              {step === 'profile' && 'Du måste vara minst 20 år för att använda MÄÄK'}
+              {step === 'phone' && t('auth.phoneDescription')}
+              {step === 'verify' && `${t('auth.verifyDescription')} +46 ${phone}`}
+              {step === 'profile' && t('auth.ageDescription')}
             </CardDescription>
           </CardHeader>
 
@@ -264,7 +266,7 @@ export default function PhoneAuth() {
                     className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
                     disabled={loading || phone.replace(/\D/g, '').length < 9}
                   >
-                    {loading ? 'Skickar...' : 'Skicka kod'}
+                    {loading ? t('common.sending') : t('auth.sendCode')}
                   </Button>
 
                   {/* Email auth link removed - phone only */}
@@ -293,7 +295,7 @@ export default function PhoneAuth() {
                     className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
                     disabled={loading || otp.length !== 6}
                   >
-                    {loading ? 'Verifierar...' : 'Verifiera'}
+                    {loading ? t('common.verifying') : t('auth.verify')}
                   </Button>
 
                   <div className="text-center">
@@ -303,7 +305,7 @@ export default function PhoneAuth() {
                       className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      {countdown > 0 ? `Skicka igen om ${countdown}s` : 'Skicka ny kod'}
+                      {countdown > 0 ? t('auth.resendIn', { seconds: countdown }) : t('auth.resendCode')}
                     </button>
                   </div>
 
@@ -334,7 +336,7 @@ export default function PhoneAuth() {
                     className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
                     disabled={loading || !dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year}
                   >
-                    {loading ? 'Sparar...' : 'Slutför registrering'}
+                    {loading ? t('auth.completing') : t('auth.completeProfile')}
                   </Button>
                 </motion.div>
               )}

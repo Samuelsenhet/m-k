@@ -2,13 +2,17 @@
   "common": {
     "loading": "Loading...",
     "save": "Save",
+    "saving": "Saving...",
     "cancel": "Cancel",
     "confirm": "Confirm",
     "back": "Back",
     "next": "Next",
     "done": "Done",
     "error": "An error occurred",
-    "retry": "Try again"
+    "retry": "Try again",
+    "sending": "Sending...",
+    "verifying": "Verifying...",
+    "save_changes": "Save changes"
   },
   "nav": {
     "matches": "Matches",
@@ -25,7 +29,17 @@
     "resendCode": "Resend code",
     "ageTitle": "Confirm your age",
     "ageDescription": "You must be at least 20 years old to use Maak",
-    "ageConfirm": "I am 20 years old or older"
+    "ageConfirm": "I am 20 years old or older",
+    "resendIn": "Resend in {{seconds}}s",
+    "completeProfile": "Complete profile",
+    "completing": "Completing registration...",
+    "welcome": "Welcome! 🎉",
+    "profile_created": "Your profile has been created!",
+    "error_too_young": "You must be at least 20 years old to use Maak",
+    "error_phone_required": "Phone number is required",
+    "error_verification_failed": "Verification failed",
+    "error_send_failed": "Could not send verification code",
+    "login_failed": "Login failed"
   },
   "matches": {
     "title": "Today's matches",
@@ -36,7 +50,10 @@
     "mutualMatch": "It's a match!",
     "matchScore": "{{score}}% match",
     "similar": "Similar",
-    "complementary": "Complementary"
+    "complementary": "Complementary",
+    "loading_error": "Could not load matches",
+    "complete_test": "Complete the personality test to see matches",
+    "mutual_matches": "Your matches"
   },
   "chat": {
     "newMatch": "New match! 🎉",
@@ -57,7 +74,10 @@
     "edit_profile": "Edit Profile",
     "editProfile": "Edit profile",
     "displayName": "Display name",
+    "firstName": "First name",
+    "lastName": "Last name",
     "bio": "Bio",
+    "bio_placeholder": "Tell us something about yourself...",
     "photos": "Photos",
     "addPhoto": "Add photo",
     "completion": "{{percent}}% complete",
@@ -65,7 +85,14 @@
     "language": "Language",
     "notifications": "Notifications",
     "privacy": "Privacy",
-    "logout": "Log out"
+    "logout": "Log out",
+    "basic_info": "Basic info",
+    "pronouns": "Pronouns",
+    "select_placeholder": "Select...",
+    "error_loading": "Could not load profile",
+    "error_saving": "Could not save profile",
+    "profile_saved": "Profile saved!",
+    "changes_saved": "Your changes have been saved"
   },
   "settings": {
     "title": "Settings",
@@ -131,5 +158,39 @@
     "showJob": "Show my job",
     "showEducation": "Show my education",
     "showLastName": "Show my last name"
+  },
+  "onboarding": {
+    "welcome_title": "Welcome to MÄÄK!",
+    "welcome_subtitle": "Find your perfect match based on personality",
+    "features": {
+      "daily_matches": "Daily matches",
+      "conversations": "Start conversations",
+      "personality": "Personality-based matching"
+    },
+    "step_age": "Age",
+    "step_name": "Name",
+    "step_personality": "Personality",
+    "step_photos": "Photos",
+    "step_complete": "Done!",
+    "profile_ready": "Your profile is ready!",
+    "ready_description": "You're ready to start matching with others based on your personality",
+    "see_matches": "See my matches",
+    "congratulations": "Congratulations! 🎉"
+  },
+  "ai_assistant": {
+    "title": "AI Assistant",
+    "analyzing": "Analyzing your profile...",
+    "generate_new": "Generate new suggestion",
+    "select_category": "Select a category...",
+    "categories": {
+      "photos": "Photos",
+      "bio": "Bio",
+      "basic": "Basic"
+    },
+    "placeholders": {
+      "bio": "Write something interesting about yourself..."
+    },
+    "error_auth": "You must be logged in",
+    "error_fetch": "Could not fetch AI suggestions"
   }
 }

@@ -63,7 +63,7 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success('Du har loggat ut');
+    toast.success(t('settings.logout'));
     navigate('/');
   };
 
@@ -96,17 +96,17 @@ export default function Profile() {
       const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
       if (profileError) {
         console.error('Error deleting profile:', profileError);
-        throw new Error('Kunde inte radera profilen');
+        throw new Error(t('profile.error_saving'));
       }
       
       // Sign out the user (the auth user will remain but profile is deleted)
       await signOut();
       
-      toast.success('Ditt konto har raderats');
+      toast.success(t('settings.delete_account_title'));
       navigate('/');
     } catch (error) {
       console.error('Error deleting account:', error);
-      toast.error('Kunde inte radera kontot. Försök igen.');
+      toast.error(t('common.error') + '. ' + t('common.retry'));
     } finally {
       setIsDeleting(false);
     }
@@ -115,7 +115,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="min-h-screen gradient-hero flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Laddar...</div>
+        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
       </div>
     );
   }
@@ -269,7 +269,7 @@ export default function Profile() {
               className="w-full gradient-primary text-primary-foreground border-0 shadow-glow gap-2"
             >
               <Sparkles className="w-4 h-4" />
-              Få AI-förslag
+              {t('ai_assistant.title')}
             </Button>
           </div>
         )}

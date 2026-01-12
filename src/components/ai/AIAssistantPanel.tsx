@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ interface AIAssistantPanelProps {
 
 export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssistantPanelProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<SuggestionType | null>(null);
@@ -25,33 +27,33 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
   const suggestionTypes = [
     {
       type: 'all' as SuggestionType,
-      label: 'Komplett analys',
+      label: t('ai_assistant.title'),
       icon: Sparkles,
-      description: 'Få en fullständig AI-analys',
+      description: t('ai_assistant.analyzing'),
     },
     {
       type: 'matching' as SuggestionType,
-      label: 'Matchningsinsikter',
+      label: t('matches.similar'),
       icon: Brain,
-      description: 'Vilka passar dig bäst?',
+      description: t('matches.matchScore', { score: '' }),
     },
     {
       type: 'profile' as SuggestionType,
-      label: 'Profilförbättringar',
+      label: t('profile.edit_profile'),
       icon: User,
-      description: 'Gör din profil bättre',
+      description: t('profile.bio'),
     },
     ...(matchedUserId ? [{
       type: 'icebreakers' as SuggestionType,
-      label: 'Konversationsstartare',
+      label: t('chat.generate_icebreakers'),
       icon: MessageCircle,
-      description: 'Personliga isbrytare',
+      description: t('chat.personalized_starters'),
     }] : []),
   ];
 
   const fetchSuggestion = async (type: SuggestionType) => {
     if (!user) {
-      toast.error('Du måste vara inloggad');
+      toast.error(t('ai_assistant.error_auth'));
       return;
     }
 
@@ -78,7 +80,7 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
       setSuggestion(data.suggestion);
     } catch (error) {
       console.error('AI Assistant error:', error);
-      toast.error('Kunde inte hämta AI-förslag');
+      toast.error(t('ai_assistant.error_fetch'));
     } finally {
       setLoading(false);
     }
@@ -93,8 +95,8 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-lg font-serif">AI-assistent</CardTitle>
-              <p className="text-xs text-muted-foreground">Smarta förslag baserade på din profil</p>
+              <CardTitle className="text-lg font-serif">{t('ai_assistant.title')}</CardTitle>
+              <p className="text-xs text-muted-foreground">{t('chat.personalized_starters')}</p>
             </div>
           </div>
           {onClose && (
@@ -141,7 +143,7 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
             >
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-sm text-muted-foreground">Analyserar din profil...</p>
+                <p className="text-sm text-muted-foreground">{t('ai_assistant.analyzing')}</p>
               </div>
             </motion.div>
           )}
@@ -176,7 +178,7 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
                 className="w-full gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Generera nytt förslag
+                {t('ai_assistant.generate_new')}
               </Button>
             </motion.div>
           )}
@@ -188,7 +190,7 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
               animate={{ opacity: 1 }}
               className="text-center py-6 text-muted-foreground"
             >
-              <p className="text-sm">Välj en kategori ovan för att få AI-förslag</p>
+              <p className="text-sm">{t('ai_assistant.select_category')}</p>
             </motion.div>
           )}
         </AnimatePresence>

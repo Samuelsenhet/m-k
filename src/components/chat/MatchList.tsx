@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, MessageCircle, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import { sv, enUS } from 'date-fns/locale';
 
 interface Match {
   id: string;
@@ -34,8 +35,10 @@ interface MatchListProps {
 
 export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const dateLocale = i18n.language === 'sv' ? sv : enUS;
 
   const fetchMutualMatches = useCallback(async () => {
     if (!user) return;
@@ -157,10 +160,10 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
           <Heart className="w-8 h-8 text-primary" />
         </div>
         <h3 className="font-serif font-semibold text-foreground mb-2">
-          Inga matchningar ännu
+          {t('matches.noMatches')}
         </h3>
         <p className="text-sm text-muted-foreground">
-          När du och någon annan gillar varandra syns det här
+          {t('chat.chooseIcebreaker')}
         </p>
       </div>
     );
@@ -193,7 +196,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
                   <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(match.last_message.created_at), {
                       addSuffix: true,
-                      locale: sv,
+                      locale: dateLocale,
                     })}
                   </span>
                 )}
@@ -206,7 +209,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
                 ) : (
                   <p className="text-sm text-primary flex items-center gap-1">
                     <MessageCircle className="w-3 h-3" />
-                    Starta konversationen
+                    {t('chat.chooseIcebreaker')}
                   </p>
                 )}
                 {match.unread_count && match.unread_count > 0 && (
