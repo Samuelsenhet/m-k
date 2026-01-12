@@ -30,7 +30,7 @@ npm run dev          # Dev server at localhost:8080
 npm run build        # Production build
 npm run lint         # ESLint check
 supabase db push     # Push migrations to production
-supabase gen types typescript --local > src/integrations/supabase/types.ts
+supabase gen types typescript --project-id "$VITE_SUPABASE_PROJECT_ID" > src/integrations/supabase/types.ts
 ```
 
 ## Project Conventions
