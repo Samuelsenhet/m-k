@@ -53,17 +53,24 @@ export default function PhoneAuth() {
           .eq('id', user.id)
           .single();
         
+        // Returning user with completed onboarding -> matches
         if (profile?.onboarding_completed) {
-          navigate('/matches');
-        } else if (profile?.date_of_birth && step === 'phone') {
-          // Only auto-navigate if we're on phone step and date_of_birth exists
-          navigate('/onboarding');
+          navigate('/matches', { replace: true });
+          return;
         }
+        
+        // Returning user with date_of_birth but incomplete onboarding -> onboarding
+        if (profile?.date_of_birth) {
+          navigate('/onboarding', { replace: true });
+          return;
+        }
+        
+        // New user without date_of_birth -> stay here for age verification
       }
     };
     
     checkUserStatus();
-  }, [user, navigate, isCompletingProfile, step]);
+  }, [user, navigate, isCompletingProfile]);
 
   useEffect(() => {
     if (countdown > 0) {
