@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { TypingIndicator } from './TypingIndicator';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -20,6 +21,54 @@ interface Message {
   created_at: string;
   is_read: boolean;
 }
+
+// Memoized message bubble to prevent unnecessary re-renders
+interface MessageBubbleProps {
+  message: Message;
+  isOwn: boolean;
+}
+
+const MessageBubble = memo(function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+  return (
+    <div
+      className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}
+      role="listitem"
+    >
+      <div
+        className={cn(
+          'max-w-[75%] rounded-2xl px-4 py-2',
+          isOwn
+            ? 'bg-primary text-primary-foreground rounded-br-md'
+            : 'bg-muted text-foreground rounded-bl-md'
+        )}
+      >
+        <p className="text-sm">{message.content}</p>
+        <div
+          className={cn(
+            'flex items-center gap-1 mt-1',
+            isOwn ? 'justify-end' : ''
+          )}
+        >
+          <span
+            className={cn(
+              'text-xs',
+              isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
+            )}
+          >
+            {format(new Date(message.created_at), 'HH:mm', { locale: sv })}
+          </span>
+          {isOwn && (
+            message.is_read ? (
+              <CheckCheck className="w-3 h-3 text-primary-foreground/70" aria-label="Läst" />
+            ) : (
+              <Check className="w-3 h-3 text-primary-foreground/50" aria-label="Skickat" />
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 interface ChatWindowProps {
   matchId: string;
@@ -39,6 +88,7 @@ export function ChatWindow({
   onBack,
 }: ChatWindowProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -278,11 +328,11 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
-        <Button variant="ghost" size="icon" onClick={onBack}>
+        <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('common.back')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <Avatar className="w-10 h-10">
-          <AvatarImage src={matchedUserAvatar} />
+          <AvatarImage src={matchedUserAvatar} alt={matchedUserName} />
           <AvatarFallback className="bg-primary/10 text-primary">
             {matchedUserName.charAt(0).toUpperCase()}
           </AvatarFallback>
@@ -298,6 +348,7 @@ export function ChatWindow({
               variant="ghost" 
               size="icon"
               className="text-primary"
+              aria-label={t('chat.ai_icebreakers')}
               onClick={() => {
                 setShowAIPanel(true);
                 if (aiIcebreakers.length === 0) {
@@ -396,49 +447,14 @@ export function ChatWindow({
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {messages.map((message) => {
-              const isOwn = message.sender_id === user?.id;
-              return (
-                <div
-                  key={message.id}
-                  className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}
-                >
-                  <div
-                    className={cn(
-                      'max-w-[75%] rounded-2xl px-4 py-2',
-                      isOwn
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
-                        : 'bg-muted text-foreground rounded-bl-md'
-                    )}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <div
-                      className={cn(
-                        'flex items-center gap-1 mt-1',
-                        isOwn ? 'justify-end' : ''
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'text-xs',
-                          isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                        )}
-                      >
-                        {format(new Date(message.created_at), 'HH:mm', { locale: sv })}
-                      </span>
-                      {isOwn && (
-                        message.is_read ? (
-                          <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
-                        ) : (
-                          <Check className="w-3 h-3 text-primary-foreground/50" />
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="space-y-4" role="list" aria-label={t('chat.messages')}>
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isOwn={message.sender_id === user?.id}
+              />
+            ))}
             {partnerTyping && (
               <div className="flex justify-start">
                 <TypingIndicator />

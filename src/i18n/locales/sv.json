@@ -42,7 +42,14 @@
     "newMatch": "Ny match! 🎉",
     "chooseIcebreaker": "Välj en konversationsstartare eller skriv ditt eget meddelande",
     "typeMessage": "Skriv ett meddelande...",
-    "noMessages": "Inga meddelanden ännu"
+    "noMessages": "Inga meddelanden ännu",
+    "messages": "Meddelanden",
+    "ai_icebreakers": "AI-genererade isbrytare",
+    "send_failed": "Meddelandet kunde inte skickas. Försök igen.",
+    "generating": "Genererar förslag...",
+    "generate_new": "Generera nya förslag",
+    "generate_icebreakers": "Generera isbrytare",
+    "personalized_starters": "Personliga konversationsstartare baserade på era profiler"
   },
   "profile": {
     "title": "Min profil",

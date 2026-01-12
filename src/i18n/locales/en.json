@@ -42,7 +42,14 @@
     "newMatch": "New match! 🎉",
     "chooseIcebreaker": "Choose a conversation starter or write your own message",
     "typeMessage": "Type a message...",
-    "noMessages": "No messages yet"
+    "noMessages": "No messages yet",
+    "messages": "Messages",
+    "ai_icebreakers": "AI-generated icebreakers",
+    "send_failed": "Message could not be sent. Try again.",
+    "generating": "Generating suggestions...",
+    "generate_new": "Generate new suggestions",
+    "generate_icebreakers": "Generate icebreakers",
+    "personalized_starters": "Personalized conversation starters based on your profiles"
   },
   "profile": {
     "title": "My Profile",
