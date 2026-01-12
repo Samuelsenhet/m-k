@@ -119,7 +119,7 @@ serve(async (req) => {
     };
 
     // Build system prompt based on type
-    let systemPrompt = `Du är MÄÄK AI-assistent, en hjälpsam och varm dejtingcoach som hjälper användare att hitta kärleken. 
+    const systemPrompt = `Du är MÄÄK AI-assistent, en hjälpsam och varm dejtingcoach som hjälper användare att hitta kärleken. 
 Du har tillgång till användarens profildata och personlighetsanalys. Ge konkreta, personliga och uppmuntrande råd på svenska.
 Var kortfattad men hjälpsam. Använd emoji sparsamt.`;
 

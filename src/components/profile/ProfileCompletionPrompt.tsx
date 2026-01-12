@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,20 +18,14 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
   const [missingItems, setMissingItems] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      checkProfileCompletion();
-    }
-  }, [user]);
-
-  const checkProfileCompletion = async () => {
+  const checkProfileCompletion = useCallback(async () => {
     if (!user) return;
 
     const [profileRes, photosRes, personalityRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('display_name, bio, gender, looking_for, hometown, work, education, height')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single(),
       supabase
         .from('profile_photos')
@@ -49,7 +43,7 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
     const hasPersonality = (personalityRes.data?.length || 0) > 0;
 
     let filled = 0;
-    let total = 8;
+    const total = 8;
     const missing: string[] = [];
 
     if (profile?.display_name) filled++; else missing.push('Lägg till namn');
@@ -64,7 +58,11 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
 
     setCompletion(Math.round((filled / total) * 100));
     setMissingItems(missing.slice(0, 3));
-  };
+  }, [user]);
+
+  useEffect(() => {
+    checkProfileCompletion();
+  }, [checkProfileCompletion]);
 
   const handleDismiss = () => {
     setDismissed(true);

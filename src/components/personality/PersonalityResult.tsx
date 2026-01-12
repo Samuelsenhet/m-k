@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 
 interface PersonalityResultProps {
   result: PersonalityTestResult;

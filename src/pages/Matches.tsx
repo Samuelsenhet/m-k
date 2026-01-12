@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { useMatches } from '@/hooks/useMatches';
 import { useMatchStatus } from '@/hooks/useMatchStatus';
 import { Button } from '@/components/ui/button';
@@ -55,8 +55,8 @@ export default function Matches() {
     if (matches.length > 0) {
       const firstMatch = matches[0];
       // Check if this has special effects (first match ever)
-      if ((firstMatch as any).special_effects?.includes('celebration')) {
-        setSpecialMessage((firstMatch as any).special_event_message || '🎉 Dina första matchningar är här!');
+      if (firstMatch.special_effects?.includes('celebration')) {
+        setSpecialMessage(firstMatch.special_event_message || '🎉 Dina första matchningar är här!');
         setShowCelebration(true);
       }
     }

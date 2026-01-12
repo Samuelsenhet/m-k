@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,27 +39,27 @@ export default function Profile() {
     }
   }, [user, loading, navigate]);
 
+  const fetchArchetype = useCallback(async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('personality_scores')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // personality_scores doesn't have archetype field
+    // This feature needs to be implemented with the correct table structure
+    if (data) {
+      setArchetype('explorer'); // Placeholder
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchArchetype();
     }
-  }, [user]);
-
-  const fetchArchetype = async () => {
-    if (!user) return;
-    
-    const { data } = await supabase
-      .from('personality_results')
-      .select('id, archetype')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (data?.archetype) {
-      setArchetype(data.archetype);
-    }
-  };
+  }, [user, fetchArchetype]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -75,18 +75,19 @@ export default function Profile() {
       // Delete user data from all tables
       // Order matters due to foreign key constraints
       await supabase.from('messages').delete().eq('sender_id', user.id);
-      await supabase.from('user_achievements').delete().eq('user_id', user.id);
-      await supabase.from('question_responses').delete().eq('user_id', user.id);
-      await supabase.from('personality_results').delete().eq('user_id', user.id);
-      await supabase.from('profile_photos').delete().eq('user_id', user.id);
-      await supabase.from('profiles').delete().eq('user_id', user.id);
+      await supabase.from('achievements').delete().eq('user_id', user.id);
+      await supabase.from('notifications').delete().eq('user_id', user.id);
+      await supabase.from('matches').delete().eq('user_id', user.id);
+      await supabase.from('personality_scores').delete().eq('user_id', user.id);
+      await supabase.from('dealbreakers').delete().eq('user_id', user.id);
+      await supabase.from('profiles').delete().eq('id', user.id);
       
       // Sign out the user (the auth user will remain but profile is deleted)
       await signOut();
       
       toast.success('Ditt konto har raderats');
       navigate('/');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting account:', error);
       toast.error('Kunde inte radera kontot. Försök igen.');
     } finally {

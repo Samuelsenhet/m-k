@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
+import { ACHIEVEMENT_DEFINITIONS, getLocalizedAchievement } from '@/constants/achievements';
 
 export interface Achievement {
   id: string;
   code: string;
-  name_sv: string;
-  name_en: string;
-  description_sv: string;
-  description_en: string;
+  name: string;
+  description: string;
   icon: string;
   points: number;
   category: string;
@@ -40,40 +39,41 @@ export const useAchievements = (): UseAchievementsReturn => {
     }
 
     try {
-      // Fetch all achievements
-      const { data: allAchievements, error: achievementsError } = await supabase
+      // Fetch earned achievements from existing table
+      const { data: earnedData, error } = await supabase
         .from('achievements')
-        .select('*')
-        .order('points', { ascending: false });
-
-      if (achievementsError) throw achievementsError;
-
-      // Fetch user's earned achievements
-      const { data: userAchievements, error: userError } = await supabase
-        .from('user_achievements')
-        .select('achievement_id, earned_at')
+        .select('achievement_type, unlocked_at')
         .eq('user_id', user.id);
 
-      if (userError) throw userError;
+      if (error) throw error;
 
-      const earnedMap = new Map(
-        userAchievements?.map((ua) => [ua.achievement_id, ua.earned_at]) || []
+      const earnedMap = new Map<string, string>(
+        (earnedData || []).map((row) => [row.achievement_type, row.unlocked_at])
       );
+
+      // Map definitions with i18n and earned status
+      const mergedAchievements: Achievement[] = ACHIEVEMENT_DEFINITIONS.map((def) => {
+        const localized = getLocalizedAchievement(def, i18n.language);
+        return {
+          id: def.id,
+          code: def.code,
+          name: localized.name,
+          description: localized.description,
+          icon: def.icon,
+          points: def.points,
+          category: def.category,
+          earned_at: earnedMap.get(def.code),
+        };
+      });
+
       setEarnedIds(new Set(earnedMap.keys()));
-
-      // Merge achievements with earned status
-      const mergedAchievements = (allAchievements || []).map((a) => ({
-        ...a,
-        earned_at: earnedMap.get(a.id),
-      }));
-
       setAchievements(mergedAchievements);
     } catch (error) {
       console.error('Error fetching achievements:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, i18n.language]);
 
   useEffect(() => {
     fetchAchievements();
@@ -83,30 +83,34 @@ export const useAchievements = (): UseAchievementsReturn => {
     if (!user) return false;
 
     const achievement = achievements.find((a) => a.code === code);
-    if (!achievement || earnedIds.has(achievement.id)) {
+    if (!achievement || earnedIds.has(achievement.code)) {
       return false;
     }
 
     try {
-      const { error } = await supabase.from('user_achievements').insert({
-        user_id: user.id,
-        achievement_id: achievement.id,
-      });
+      const { data, error } = await supabase
+        .from('achievements')
+        .insert({
+          user_id: user.id,
+          achievement_type: achievement.code,
+        })
+        .select('achievement_type, unlocked_at')
+        .single();
 
       if (error) {
-        if (error.code === '23505') {
-          // Already exists, silently ignore
+        if ((error as { code?: string }).code === '23505') {
           return false;
         }
         throw error;
       }
 
-      // Update local state
-      setEarnedIds((prev) => new Set([...prev, achievement.id]));
+      const earnedAt = data?.unlocked_at ?? new Date().toISOString();
+
+      setEarnedIds((prev) => new Set([...prev, achievement.code]));
       setAchievements((prev) =>
         prev.map((a) =>
-          a.id === achievement.id
-            ? { ...a, earned_at: new Date().toISOString() }
+          a.code === achievement.code
+            ? { ...a, earned_at: earnedAt }
             : a
         )
       );

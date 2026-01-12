@@ -3,7 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar, HelpCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MaakMascot } from '@/components/mascot/MaakMascot';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 
 interface LandingPageProps {
   onStart?: () => void;

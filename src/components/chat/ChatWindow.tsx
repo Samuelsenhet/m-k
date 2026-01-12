@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,46 +52,7 @@ export function ChatWindow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    fetchMessages();
-    const cleanup = setupRealtimeSubscription();
-    return cleanup;
-  }, [matchId]);
-
-  // Mark messages as read when viewing
-  useEffect(() => {
-    if (messages.length > 0 && user) {
-      markMessagesAsRead();
-    }
-  }, [messages, user]);
-
-  const markMessagesAsRead = async () => {
-    if (!user) return;
-    
-    const unreadMessages = messages.filter(
-      (m) => m.sender_id !== user.id && !m.is_read
-    );
-    
-    if (unreadMessages.length === 0) return;
-
-    await supabase
-      .from('messages')
-      .update({ is_read: true })
-      .in('id', unreadMessages.map((m) => m.id));
-
-    // Update local state
-    setMessages((prev) =>
-      prev.map((m) =>
-        unreadMessages.some((u) => u.id === m.id) ? { ...m, is_read: true } : m
-      )
-    );
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     const { data, error } = await supabase
       .from('messages')
       .select('*')
@@ -107,9 +68,9 @@ export function ChatWindow({
       }
     }
     setLoading(false);
-  };
+  }, [matchId]);
 
-  const setupRealtimeSubscription = () => {
+  const setupRealtimeSubscription = useCallback(() => {
     const channel = supabase
       .channel(`messages:${matchId}`)
       .on(
@@ -156,7 +117,50 @@ export function ChatWindow({
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [matchId, user?.id]);
+
+  useEffect(() => {
+    fetchMessages();
+    const cleanup = setupRealtimeSubscription();
+    return () => {
+      cleanup();
+    };
+  }, [fetchMessages, setupRealtimeSubscription]);
+
+  // Mark messages as read when viewing
+  const markMessagesAsRead = useCallback(async () => {
+    if (!user) return;
+    
+    const unreadMessages = messages.filter(
+      (m) => m.sender_id !== user.id && !m.is_read
+    );
+    
+    if (unreadMessages.length === 0) return;
+
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .in('id', unreadMessages.map((m) => m.id));
+
+    // Update local state
+    setMessages((prev) =>
+      prev.map((m) =>
+        unreadMessages.some((u) => u.id === m.id) ? { ...m, is_read: true } : m
+      )
+    );
+  }, [messages, user]);
+
+  useEffect(() => {
+    if (messages.length > 0 && user) {
+      markMessagesAsRead();
+    }
+  }, [messages, user, markMessagesAsRead]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  
 
   const broadcastTyping = useCallback(() => {
     if (!isTyping) {

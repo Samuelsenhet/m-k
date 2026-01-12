@@ -3,6 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type PhoneAuthStep = "phone" | "verify" | "profile";
 
+type ErrorWithMessage = { message?: string };
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+  if (typeof error === "object" && error && "message" in error) {
+    const message = (error as ErrorWithMessage).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+  return fallback;
+};
+
 interface UsePhoneAuthReturn {
   step: PhoneAuthStep;
   loading: boolean;
@@ -53,8 +68,8 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
 
       setStep("verify");
       return true;
-    } catch (err: any) {
-      setError(err.message || "Kunde inte skicka verifieringskod");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Kunde inte skicka verifieringskod"));
       return false;
     } finally {
       setLoading(false);
@@ -65,7 +80,7 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     const { data: profile } = await supabase
       .from("profiles")
       .select("date_of_birth")
-      .eq("user_id", userId)
+      .eq("id", userId)
       .single();
 
     // New user if no date_of_birth set
@@ -177,9 +192,9 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       }
 
       throw new Error("Verifiering misslyckades");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Verify OTP error:", err);
-      setError(err.message || "Ogiltig verifieringskod");
+      setError(getErrorMessage(err, "Ogiltig verifieringskod"));
       return false;
     } finally {
       setLoading(false);

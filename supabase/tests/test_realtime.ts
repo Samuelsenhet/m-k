@@ -108,23 +108,34 @@ export async function testNotificationsRealtime() {
 
   // Create a test notification after 2 seconds
   setTimeout(async () => {
-    console.log('📤 Creating test notification...')
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert({
-        user_id: user.data.user!.id,
-        title: 'Test Notification',
-        body: 'This is a test notification for realtime',
-        type: 'test',
-        read: false
-      })
-      .select()
-      .single()
+    try {
+      console.log('📤 Creating test notification...')
+      
+      if (!user.data.user) {
+        console.error('❌ No authenticated user')
+        return
+      }
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.data.user.id,
+          title: 'Test Notification',
+          body: 'This is a test notification for realtime',
+          type: 'test',
+          read: false
+        })
+        .select()
+        .single()
 
-    if (error) {
-      console.error('❌ Error creating notification:', error)
-    } else {
-      console.log('✅ Notification created:', data)
+      if (error) {
+        console.error('❌ Error creating notification:', error)
+        throw error
+      } else {
+        console.log('✅ Notification created:', data)
+      }
+    } catch (err) {
+      console.error('❌ Async error in test notification:', err)
     }
   }, 2000)
 

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { MatchResult, calculateDailyMatches } from '@/lib/matching';
 import { PersonalityCategory, DimensionKey } from '@/types/personality';
 
@@ -20,7 +20,22 @@ interface Match {
   status: 'pending' | 'liked' | 'passed' | 'mutual';
   compatibilityFactors: string[];
   expiresAt: string;
+  special_effects?: string[] | null;
+  special_event_message?: string | null;
 }
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: string }).message;
+    if (typeof message === 'string' && message.length > 0) {
+      return message;
+    }
+  }
+  return fallback;
+};
 
 interface UseMatchesReturn {
   matches: Match[];
@@ -48,7 +63,7 @@ export const useMatches = (): UseMatchesReturn => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchMatches = async () => {
+  const fetchMatches = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -145,6 +160,8 @@ export const useMatches = (): UseMatchesReturn => {
             status: m.status as Match['status'],
             compatibilityFactors: [],
             expiresAt: m.expires_at,
+            special_effects: m.special_effects,
+            special_event_message: m.special_event_message,
           };
         });
 
@@ -234,7 +251,7 @@ export const useMatches = (): UseMatchesReturn => {
           displayName: m.user.displayName,
           avatarUrl: m.user.avatarUrl,
           category: m.user.category,
-          archetype: (m.user as any).archetype,
+          archetype: m.user.archetype,
           bio: m.user.bio,
           photos: [],
         },
@@ -246,13 +263,13 @@ export const useMatches = (): UseMatchesReturn => {
       }));
 
       setMatches(formattedMatches);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching matches:', err);
-      setError(err.message || 'Kunde inte hämta matchningar');
+      setError(getErrorMessage(err, 'Kunde inte hämta matchningar'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const generateIcebreakers = async (matchId: string, userArchetype: string, matchedUserArchetype: string, userName: string, matchedUserName: string) => {
     try {
@@ -269,7 +286,7 @@ export const useMatches = (): UseMatchesReturn => {
       if (error) {
         console.error('Error generating icebreakers:', error);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to generate icebreakers:', err);
     }
   };
@@ -352,7 +369,7 @@ export const useMatches = (): UseMatchesReturn => {
           m.id === matchId ? { ...m, status: 'liked' } : m
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error liking match:', err);
     }
   };
@@ -371,14 +388,14 @@ export const useMatches = (): UseMatchesReturn => {
           m.id === matchId ? { ...m, status: 'passed' } : m
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error passing match:', err);
     }
   };
 
   useEffect(() => {
     fetchMatches();
-  }, [user]);
+  }, [fetchMatches]);
 
   return {
     matches,

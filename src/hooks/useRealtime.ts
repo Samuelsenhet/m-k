@@ -8,7 +8,7 @@ interface UseRealtimeOptions<T> {
   onError?: (error: Error) => void;
 }
 
-export function useRealtime<T = any>({ roomId, onMessage, onError }: UseRealtimeOptions<T>) {
+export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseRealtimeOptions<T>) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 

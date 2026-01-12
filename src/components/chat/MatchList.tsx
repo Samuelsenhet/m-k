@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -37,13 +37,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchMutualMatches();
-    }
-  }, [user]);
-
-  const fetchMutualMatches = async () => {
+  const fetchMutualMatches = useCallback(async () => {
     if (!user) return;
 
     // Fetch mutual matches
@@ -103,7 +97,11 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
 
     setMatches(matchesWithProfiles);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchMutualMatches();
+  }, [fetchMutualMatches]);
 
   const getPhotoUrl = (path: string | null) => {
     if (!path) return undefined;

@@ -19,6 +19,7 @@ export const OtpInput = ({
   disabled 
 }: OtpInputProps) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const hasAutoFocused = useRef(false);
 
   const handleChange = (index: number, digit: string) => {
     if (!/^\d*$/.test(digit)) return;
@@ -46,11 +47,15 @@ export const OtpInput = ({
     onChange(pastedData);
   };
 
-  // Auto-focus first empty input on mount
+  // Auto-focus first empty input on mount without fighting manual focus handlers
   useEffect(() => {
-    const firstEmptyIndex = value.length < length ? value.length : length - 1;
+    if (hasAutoFocused.current) {
+      return;
+    }
+    const firstEmptyIndex = Math.min(value.length, length - 1);
     inputRefs.current[firstEmptyIndex]?.focus();
-  }, []);
+    hasAutoFocused.current = true;
+  }, [length, value.length]);
 
   return (
     <div className="space-y-3">

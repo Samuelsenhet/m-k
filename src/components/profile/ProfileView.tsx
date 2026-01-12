@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Camera, MapPin, Pencil, ImagePlus } from 'lucide-react';
@@ -56,13 +56,7 @@ export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
   const archetypeInfo = archetype ? ARCHETYPE_INFO[archetype as ArchetypeCode] : null;
   const traits = archetype ? getArchetypeTraits(archetype) : [];
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
 
     const [profileRes, photosRes, matchesRes] = await Promise.all([
@@ -96,7 +90,13 @@ export function ProfileView({ onEdit, archetype }: ProfileViewProps) {
     }
 
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user, fetchData]);
 
   const getPublicUrl = (path: string) => {
     const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);

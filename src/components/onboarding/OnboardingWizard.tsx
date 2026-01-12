@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,13 +121,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const photoCount = photos.filter(p => p.storage_path).length;
 
   // Check for existing personality result
-  useEffect(() => {
-    if (user) {
-      checkExistingPersonality();
-    }
-  }, [user]);
-
-  const checkExistingPersonality = async () => {
+  const checkExistingPersonality = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from('personality_results')
@@ -144,12 +138,18 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         answers: [],
       });
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      checkExistingPersonality();
+    }
+  }, [user, checkExistingPersonality]);
 
   // Calculate completion percentage
   const calculateCompletion = () => {
     let filled = 0;
-    let total = 9;
+    const total = 9;
 
     if (profile.firstName) filled++;
     if (profile.gender) filled++;
@@ -164,7 +164,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     return Math.round((filled / total) * 100);
   };
 
-  const updateProfile = (field: keyof ProfileData, value: any) => {
+  const updateProfile = (field: keyof ProfileData, value: ProfileData[keyof ProfileData]) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 

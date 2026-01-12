@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,14 +75,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
   });
   const [photos, setPhotos] = useState<PhotoSlot[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchPhotos();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
     
     const { data, error } = await supabase
@@ -117,9 +110,9 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       });
     }
     setLoading(false);
-  };
+  }, [user]);
 
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -137,7 +130,14 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       });
       setPhotos(photoSlots);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchPhotos();
+    }
+  }, [user, fetchProfile, fetchPhotos]);
 
   const handleSave = async () => {
     if (!user) return;

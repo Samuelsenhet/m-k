@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { MatchList } from '@/components/chat/MatchList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
@@ -31,14 +31,23 @@ export default function Chat() {
   }, [user, loading, navigate]);
 
   // Handle match query parameter
-  useEffect(() => {
-    const matchId = searchParams.get('match');
-    if (matchId && user && !selectedMatch) {
-      loadMatchFromUrl(matchId);
+  const handleSelectMatch = useCallback(async (match: SelectedMatch) => {
+    setSelectedMatch(match);
+    const { data } = await supabase
+      .from('icebreakers')
+      .select('icebreaker_text')
+      .eq('match_id', match.id)
+      .eq('used', false)
+      .order('display_order');
+    
+    if (data && data.length > 0) {
+      setIcebreakers(data.map(i => i.icebreaker_text));
+    } else {
+      setIcebreakers([]);
     }
-  }, [searchParams, user]);
+  }, []);
 
-  const loadMatchFromUrl = async (matchId: string) => {
+  const loadMatchFromUrl = useCallback(async (matchId: string) => {
     setLoadingMatch(true);
     try {
       // Fetch the match
@@ -73,25 +82,14 @@ export default function Chat() {
     } finally {
       setLoadingMatch(false);
     }
-  };
+  }, [handleSelectMatch, user]);
 
-  const handleSelectMatch = async (match: SelectedMatch) => {
-    setSelectedMatch(match);
-    
-    // Fetch icebreakers for this match
-    const { data } = await supabase
-      .from('icebreakers')
-      .select('icebreaker_text')
-      .eq('match_id', match.id)
-      .eq('used', false)
-      .order('display_order');
-    
-    if (data && data.length > 0) {
-      setIcebreakers(data.map(i => i.icebreaker_text));
-    } else {
-      setIcebreakers([]);
+  useEffect(() => {
+    const matchId = searchParams.get('match');
+    if (matchId && user && !selectedMatch) {
+      loadMatchFromUrl(matchId);
     }
-  };
+  }, [searchParams, user, selectedMatch, loadMatchFromUrl]);
 
   const handleBack = () => {
     setSelectedMatch(null);

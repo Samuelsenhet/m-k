@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Plus, X, Loader2, ImageIcon } from 'lucide-react';
@@ -100,7 +100,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       onPhotosChange(newPhotos);
 
       toast.success('Foto uppladdat!');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Upload error:', error);
       toast.error('Kunde inte ladda upp foto');
     } finally {

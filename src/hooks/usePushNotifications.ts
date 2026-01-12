@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 
 interface PushNotificationState {
   isSupported: boolean;
@@ -8,6 +8,10 @@ interface PushNotificationState {
   permission: NotificationPermission | 'default';
   loading: boolean;
   error: string | null;
+}
+
+interface LocalNotificationData extends Record<string, unknown> {
+  type?: string;
 }
 
 export function usePushNotifications() {
@@ -53,7 +57,7 @@ export function usePushNotifications() {
       }
       
       return false;
-    } catch (error) {
+    } catch (error: unknown) {
       setState(prev => ({ 
         ...prev, 
         loading: false, 
@@ -63,18 +67,19 @@ export function usePushNotifications() {
     }
   }, [state.isSupported]);
 
-  const sendLocalNotification = useCallback((title: string, body: string, data?: any) => {
+  const sendLocalNotification = useCallback((title: string, body: string, data?: LocalNotificationData) => {
     if (state.permission !== 'granted') return;
     
     try {
+      const tag = typeof data?.type === 'string' ? data.type : 'general';
       new Notification(title, {
         body,
         icon: '/pwa-192x192.png',
         badge: '/pwa-192x192.png',
         data,
-        tag: data?.type || 'general',
+        tag,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to send notification:', error);
     }
   }, [state.permission]);

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Calendar, Navigation } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { toast } from '@/hooks/use-toast';
 
 interface MatchingPreferences {
@@ -24,13 +24,7 @@ export function MatchingSettings() {
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchPreferences();
-    }
-  }, [user]);
-
-  const fetchPreferences = async () => {
+  const fetchPreferences = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -46,7 +40,11 @@ export function MatchingSettings() {
         max_distance: data.max_distance || 50,
       });
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchPreferences();
+  }, [fetchPreferences]);
 
   const handleSave = async () => {
     if (!user) return;

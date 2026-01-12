@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { calculateAge } from './age-utils';
 
 interface AgeVerificationProps {
   dateOfBirth: { day: string; month: string; year: string };
@@ -31,19 +31,6 @@ const YEARS = Array.from({ length: 100 }, (_, i) => (currentYear - 18 - i).toStr
 const getDaysInMonth = (month: string, year: string): number => {
   if (!month || !year) return 31;
   return new Date(parseInt(year), parseInt(month), 0).getDate();
-};
-
-export const calculateAge = (day: string, month: string, year: string): number => {
-  const birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  
-  return age;
 };
 
 export const AgeVerification = ({ dateOfBirth, onChange, error }: AgeVerificationProps) => {

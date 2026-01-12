@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useConsent } from '@/contexts/ConsentContext';
+import { useConsent } from '@/contexts/useConsent';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Shield, Heart, ChartBar, Megaphone, Sparkles, ChevronRight, Check } from 'lucide-react';

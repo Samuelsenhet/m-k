@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
@@ -12,18 +12,7 @@ export default function Onboarding() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [displayName, setDisplayName] = useState<string | undefined>();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/phone-auth');
-      return;
-    }
-
-    if (user) {
-      checkOnboardingStatus();
-    }
-  }, [user, loading, navigate]);
-
-  const checkOnboardingStatus = async () => {
+  const checkOnboardingStatus = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
@@ -52,7 +41,18 @@ export default function Onboarding() {
     
     setDisplayName(data.display_name || undefined);
     setCheckingStatus(false);
-  };
+  }, [navigate, user]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/phone-auth');
+      return;
+    }
+
+    if (user) {
+      checkOnboardingStatus();
+    }
+  }, [user, loading, navigate, checkOnboardingStatus]);
 
   const handleComplete = async () => {
     // Re-fetch to get the updated display_name after wizard completion

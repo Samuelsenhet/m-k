@@ -5,7 +5,7 @@ import { PersonalityResult } from '@/components/personality/PersonalityResult';
 import type { PersonalityTestResult, ArchetypeCode, DimensionKey } from '@/types/personality';
 import { getCategoryFromArchetype } from '@/types/personality';
 import { Helmet } from 'react-helmet-async';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -28,16 +28,20 @@ const Index = () => {
       }
 
       const { data, error } = await supabase
-        .from('personality_results')
+        .from('personality_scores')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .maybeSingle();
 
       if (data && !error) {
         // User already has a result - show it
-        const scores = data.scores as Record<DimensionKey, number>;
+        const scores: Record<DimensionKey, number> = {
+          openness: data.openness || 0,
+          conscientiousness: data.conscientiousness || 0,
+          extraversion: data.extraversion || 0,
+          agreeableness: data.agreeableness || 0,
+          neuroticism: data.neuroticism || 0
+        };
         const archetype = data.archetype as ArchetypeCode || 'INFJ';
         const category = getCategoryFromArchetype(archetype);
         
@@ -74,11 +78,10 @@ const Index = () => {
     if (user) {
       // Double-check they don't already have a result
       const { data: existing } = await supabase
-        .from('personality_results')
+        .from('personality_scores')
         .select('id')
         .eq('user_id', user.id)
-        .limit(1)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         toast.info('Du har redan ett sparat resultat.');
@@ -86,13 +89,15 @@ const Index = () => {
       }
 
       const { error } = await supabase
-        .from('personality_results')
-        .insert({
+        .from('personality_scores')
+        .upsert({
           user_id: user.id,
-          scores: result.scores,
-          category: result.category,
-          archetype: result.archetype,
-        });
+          openness: result.scores.openness,
+          conscientiousness: result.scores.conscientiousness,
+          extraversion: result.scores.extraversion,
+          agreeableness: result.scores.agreeableness,
+          neuroticism: result.scores.neuroticism
+        }, { onConflict: 'user_id' });
       
       if (error) {
         toast.error('Kunde inte spara resultatet');

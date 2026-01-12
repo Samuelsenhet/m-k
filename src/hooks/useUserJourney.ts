@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 
 export type JourneyPhase = 'ONBOARDING' | 'WAITING' | 'READY' | 'ACTIVE';
 
@@ -21,6 +21,35 @@ export interface UserJourneyState {
 
 const RESET_HOUR = 0; // 00:00 CET
 const TIMEZONE = 'Europe/Stockholm';
+
+const determineJourneyPhase = ({
+  isOnboardingComplete,
+  firstDeliveryDate,
+  nextAvailableDate,
+  isFirstDay,
+}: {
+  isOnboardingComplete: boolean;
+  firstDeliveryDate: string | null;
+  nextAvailableDate: string | null;
+  isFirstDay: boolean;
+}): JourneyPhase => {
+  if (!isOnboardingComplete) {
+    return 'ONBOARDING';
+  }
+
+  if (!firstDeliveryDate) {
+    return isFirstDay ? 'WAITING' : 'READY';
+  }
+
+  if (nextAvailableDate) {
+    const nextDate = new Date(nextAvailableDate);
+    if (nextDate > new Date()) {
+      return 'READY';
+    }
+  }
+
+  return 'ACTIVE';
+};
 
 const calculateTimeUntilReset = (): TimeRemaining => {
   const now = new Date();
@@ -62,76 +91,49 @@ export const useUserJourney = () => {
     }
 
     try {
-      // Check if journey state exists
-      const { data: existingState, error: fetchError } = await supabase
-        .from('user_journey_state')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
       // Check profile for onboarding status
       const { data: profile } = await supabase
         .from('profiles')
-        .select('onboarding_completed')
-        .eq('user_id', user.id)
+        .select('onboarding_completed, created_at')
+        .eq('id', user.id)
         .maybeSingle();
 
       const isOnboardingComplete = profile?.onboarding_completed ?? false;
 
-      if (!existingState) {
-        // Create initial journey state
-        const { data: newState, error: insertError } = await supabase
-          .from('user_journey_state')
-          .insert({
-            user_id: user.id,
-            journey_phase: isOnboardingComplete ? 'ACTIVE' : 'ONBOARDING',
-            registration_completed_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+      // Check for match delivery status
+      const { data: deliveryStatus } = await supabase
+        .from('user_match_delivery_status')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-        if (insertError) throw insertError;
+      const firstDelivered = deliveryStatus?.last_delivered_date ?? null;
+      const isFirstDay = !firstDelivered;
 
-        setJourneyState({
-          journeyPhase: (newState?.journey_phase as JourneyPhase) || 'ONBOARDING',
-          registrationCompletedAt: newState?.registration_completed_at 
-            ? new Date(newState.registration_completed_at) 
-            : null,
-          firstMatchesDeliveredAt: null,
-          totalMatchesReceived: 0,
-          timeUntilNextReset: calculateTimeUntilReset(),
-          isFirstDay: true
-        });
-      } else {
-        // Determine correct phase based on current state
-        let phase: JourneyPhase = existingState.journey_phase as JourneyPhase;
-        
-        // If still marked as onboarding but onboarding is complete, update
-        if (phase === 'ONBOARDING' && isOnboardingComplete) {
-          phase = 'ACTIVE';
-          await supabase
-            .from('user_journey_state')
-            .update({ journey_phase: 'ACTIVE', updated_at: new Date().toISOString() })
-            .eq('user_id', user.id);
-        }
+      const { count: matchesCount, error: matchesError } = await supabase
+        .from('matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
 
-        const isFirstDay = !existingState.first_matches_delivered_at;
-
-        setJourneyState({
-          journeyPhase: phase,
-          registrationCompletedAt: existingState.registration_completed_at 
-            ? new Date(existingState.registration_completed_at) 
-            : null,
-          firstMatchesDeliveredAt: existingState.first_matches_delivered_at 
-            ? new Date(existingState.first_matches_delivered_at) 
-            : null,
-          totalMatchesReceived: existingState.total_matches_received || 0,
-          timeUntilNextReset: calculateTimeUntilReset(),
-          isFirstDay
-        });
+      if (matchesError) {
+        throw matchesError;
       }
+
+      const journeyPhase = determineJourneyPhase({
+        isOnboardingComplete,
+        firstDeliveryDate: firstDelivered,
+        nextAvailableDate: deliveryStatus?.next_available_date ?? null,
+        isFirstDay,
+      });
+
+      setJourneyState({
+        journeyPhase,
+        registrationCompletedAt: profile?.created_at ? new Date(profile.created_at) : null,
+        firstMatchesDeliveredAt: firstDelivered ? new Date(firstDelivered) : null,
+        totalMatchesReceived: matchesCount ?? 0,
+        timeUntilNextReset: calculateTimeUntilReset(),
+        isFirstDay,
+      });
     } catch (err) {
       console.error('Error fetching journey state:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch journey state'));
@@ -161,52 +163,46 @@ export const useUserJourney = () => {
     if (!user?.id) return;
 
     try {
-      const updates: Record<string, unknown> = {
-        journey_phase: newPhase,
-        updated_at: new Date().toISOString()
-      };
-
-      // If transitioning to ACTIVE after first matches, record the timestamp
-      if (newPhase === 'ACTIVE' && journeyState.isFirstDay) {
-        updates.first_matches_delivered_at = new Date().toISOString();
+      // Update onboarding_completed in profiles if transitioning to ACTIVE
+      if (newPhase === 'ACTIVE') {
+        await supabase
+          .from('profiles')
+          .update({ onboarding_completed: true, onboarding_completed_at: new Date().toISOString() })
+          .eq('id', user.id);
       }
-
-      await supabase
-        .from('user_journey_state')
-        .update(updates)
-        .eq('user_id', user.id);
 
       setJourneyState(prev => ({
         ...prev,
-        journeyPhase: newPhase,
-        firstMatchesDeliveredAt: newPhase === 'ACTIVE' && prev.isFirstDay 
-          ? new Date() 
-          : prev.firstMatchesDeliveredAt,
-        isFirstDay: newPhase === 'ACTIVE' ? false : prev.isFirstDay
+        journeyPhase: newPhase
       }));
     } catch (err) {
       console.error('Error updating journey phase:', err);
     }
   };
 
-  const incrementMatchesReceived = async (count: number) => {
+  const incrementMatchesReceived = async (_count: number) => {
     if (!user?.id) return;
 
-    const newTotal = journeyState.totalMatchesReceived + count;
-
     try {
-      await supabase
-        .from('user_journey_state')
-        .update({
-          total_matches_received: newTotal,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
+      const now = new Date();
+      const todayIso = now.toISOString();
 
-      setJourneyState(prev => ({
-        ...prev,
-        totalMatchesReceived: newTotal
-      }));
+      const { error } = await supabase
+        .from('user_match_delivery_status')
+        .upsert(
+          {
+            user_id: user.id,
+            last_delivered_date: todayIso,
+            updated_at: todayIso,
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      await fetchJourneyState();
     } catch (err) {
       console.error('Error incrementing matches received:', err);
     }

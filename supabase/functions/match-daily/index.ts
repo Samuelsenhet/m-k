@@ -7,6 +7,85 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+type MatchType = 'similar' | 'complementary'
+
+interface DimensionBreakdown {
+  dimension: string
+  score: number
+  alignment: 'high' | 'medium' | 'low'
+  description: string
+}
+
+interface CandidateUser {
+  userId: string
+  displayName: string
+  avatarUrl?: string
+  age?: number
+  archetype?: string
+  photos?: string[]
+  bio?: string
+}
+
+interface MatchPoolCandidate {
+  user: CandidateUser
+  matchType: MatchType
+  matchScore: number
+  dimensionBreakdown?: DimensionBreakdown[]
+  archetypeScore?: number
+  anxietyScore?: number
+  icebreakers?: string[]
+  personalityInsight?: string
+  commonInterests?: string[]
+}
+
+interface ProfileRelation {
+  display_name?: string | null
+  avatar_url?: string | null
+}
+
+interface ExistingMatchRowDetailed {
+  id: string
+  matched_user_id: string
+  match_type: MatchType
+  match_score: number | null
+  match_age: number | null
+  match_archetype: string | null
+  dimension_breakdown?: DimensionBreakdown[] | null
+  archetype_score?: number | null
+  anxiety_reduction_score?: number | null
+  icebreakers?: string[] | null
+  personality_insight?: string | null
+  photo_urls?: string[] | null
+  bio_preview?: string | null
+  common_interests?: string[] | null
+  profiles?: ProfileRelation | null
+}
+
+interface InsertedMatchRow {
+  id: string
+  matched_user_id: string
+  match_type: MatchType
+  match_score: number | null
+  match_age?: number | null
+  match_archetype?: string | null
+  dimension_breakdown?: DimensionBreakdown[] | null
+  archetype_score?: number | null
+  anxiety_reduction_score?: number | null
+  icebreakers?: string[] | null
+  personality_insight?: string | null
+  photo_urls?: string[] | null
+  bio_preview?: string | null
+  common_interests?: string[] | null
+}
+
+interface MatchIdRow {
+  matched_user_id: string
+}
+
+interface MatchRecordId {
+  id: string
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -48,7 +127,7 @@ serve(async (req: Request) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('onboarding_completed, onboarding_completed_at, subscription_tier')
-      .eq('user_id', requestUserId)
+      .eq('id', requestUserId)
       .single()
 
     if (profileError || !profile) {
@@ -124,7 +203,9 @@ serve(async (req: Request) => {
       )
     }
 
-    const candidates = matchPool.candidates as any[]
+    const candidates: MatchPoolCandidate[] = Array.isArray(matchPool.candidates)
+      ? matchPool.candidates as MatchPoolCandidate[]
+      : []
     
     // 3. Determine delivery count based on subscription tier
     // Free users: capped at 5 (not guaranteed, just max limit)
@@ -146,11 +227,12 @@ serve(async (req: Request) => {
       .eq('user_id', requestUserId)
       .eq('match_date', today)
 
-    const alreadyDeliveredIds = new Set(existingMatches?.map((m: any) => m.matched_user_id) || [])
+    const existingMatchRows: MatchIdRow[] = (existingMatches ?? []) as MatchIdRow[]
+    const alreadyDeliveredIds = new Set(existingMatchRows.map((m) => m.matched_user_id))
 
     // Filter out already delivered
     const newMatchesToDeliver = matchesToDeliver.filter(
-      (m: any) => !alreadyDeliveredIds.has(m.user.userId)
+      (match) => !alreadyDeliveredIds.has(match.user.userId)
     )
 
     // 6. If already delivered, return existing
@@ -164,7 +246,9 @@ serve(async (req: Request) => {
 
       if (existingError) throw existingError
 
-      const formattedMatches = existingMatchData?.map((m: any, index: number) => ({
+      const existingDetailedRows: ExistingMatchRowDetailed[] = (existingMatchData ?? []) as ExistingMatchRowDetailed[]
+
+      const formattedMatches = existingDetailedRows.map((m, index) => ({
         match_id: m.id,
         profile_id: m.matched_user_id,
         display_name: m.profiles?.display_name || 'Anonym',
@@ -174,7 +258,7 @@ serve(async (req: Request) => {
         dimension_score_breakdown: m.dimension_breakdown || [],
         archetype_alignment_score: m.archetype_score || 80,
         conversation_anxiety_reduction_score: m.anxiety_reduction_score || 75,
-        ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3), // Always exactly 3
+        ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3),
         personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
         match_reason: m.match_type === 'similar' ? '60% liknande värderingar' : '40% kompletterande energi',
         is_first_day_match: index === 0,
@@ -182,7 +266,7 @@ serve(async (req: Request) => {
         photo_urls: m.photo_urls || [],
         bio_preview: m.bio_preview || '',
         common_interests: m.common_interests || []
-      })) || []
+      }))
 
       return new Response(
         JSON.stringify({
@@ -199,7 +283,7 @@ serve(async (req: Request) => {
     }
 
     // 7. Insert new matches into database
-    const matchInserts = newMatchesToDeliver.map((match: any) => ({
+    const matchInserts = newMatchesToDeliver.map((match) => ({
       user_id: requestUserId,
       matched_user_id: match.user.userId,
       match_type: match.matchType,
@@ -229,7 +313,8 @@ serve(async (req: Request) => {
     }
 
     // 8. Update last_daily_matches for repeat prevention
-    const matchIds = insertedMatches?.map((m: any) => m.id) || []
+    const insertedMatchRows: InsertedMatchRow[] = (insertedMatches ?? []) as InsertedMatchRow[]
+    const matchIds = insertedMatchRows.map((m) => m.id)
     await supabaseClient
       .from('last_daily_matches')
       .upsert({
@@ -246,10 +331,11 @@ serve(async (req: Request) => {
       .order('created_at', { ascending: true })
       .limit(10) // Get first 10 to check
 
-    const isFirstMatchEver = allUserMatches?.length === insertedMatches?.length
+    const userMatchRows: MatchRecordId[] = (allUserMatches ?? []) as MatchRecordId[]
+    const isFirstMatchEver = userMatchRows.length === insertedMatchRows.length
 
     // 11. Format response as MatchOutput[]
-    const formattedMatches = insertedMatches?.map((m: any, index: number) => ({
+    const formattedMatches = insertedMatchRows.map((m, index) => ({
       match_id: m.id,
       profile_id: m.matched_user_id,
       display_name: newMatchesToDeliver[index]?.user?.displayName || 'Anonym',
@@ -259,16 +345,16 @@ serve(async (req: Request) => {
       dimension_score_breakdown: m.dimension_breakdown || [],
       archetype_alignment_score: m.archetype_score || 80,
       conversation_anxiety_reduction_score: m.anxiety_reduction_score || 75,
-      ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3), // Always exactly 3
+      ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3),
       personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
       match_reason: m.match_type === 'similar' ? '60% liknande värderingar' : '40% kompletterande energi',
-      is_first_day_match: index === 0 && isFirstMatchEver, // True only for very first match
+      is_first_day_match: index === 0 && isFirstMatchEver,
       expires_at: null,
-      special_effects: index === 0 && isFirstMatchEver ? ['confetti', 'celebration'] : null, // First match celebration
+      special_effects: index === 0 && isFirstMatchEver ? ['confetti', 'celebration'] : null,
       photo_urls: m.photo_urls || [],
       bio_preview: m.bio_preview || '',
       common_interests: m.common_interests || []
-    })) || []
+    }))
     
     // Determine special event message
     let specialEventMessage: string | null = null

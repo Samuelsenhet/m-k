@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { z } from 'zod';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/useAuth';
 import { usePhoneAuth, PhoneAuthStep } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PhoneInput } from '@/components/auth/PhoneInput';
 import { OtpInput } from '@/components/auth/OtpInput';
-import { AgeVerification, calculateAge } from '@/components/auth/AgeVerification';
+import { AgeVerification } from '@/components/auth/AgeVerification';
+import { calculateAge } from '@/components/auth/age-utils';
 import { Heart, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
