@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Get allowed origin from environment or default to wildcard for development
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -12,9 +15,32 @@ serve(async (req) => {
   }
 
   try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error('Supabase configuration is missing');
+    }
+
+    // Create client with user's auth token to verify identity
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: req.headers.get('Authorization') || '' },
+      },
+    });
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { matchId, userArchetype, matchedUserArchetype, userName, matchedUserName } = await req.json();
     
-    console.log('Generating icebreakers for match:', matchId);
+    console.log('Generating icebreakers for match:', matchId, 'by user:', user.id);
     console.log('User archetype:', userArchetype, 'Matched archetype:', matchedUserArchetype);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');

@@ -7,8 +7,11 @@ interface NotificationPayload {
   type?: 'info' | 'success' | 'warning' | 'error';
 }
 
+// Get allowed origin from environment or default to wildcard for development
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
