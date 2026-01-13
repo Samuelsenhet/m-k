@@ -42,6 +42,8 @@ interface UseMatchesReturn {
   loading: boolean;
   error: string | null;
   refreshMatches: () => Promise<void>;
+  fetchMoreMatches: () => Promise<void>;
+  hasMore: boolean;
   likeMatch: (matchId: string) => Promise<void>;
   passMatch: (matchId: string) => Promise<void>;
 }
@@ -57,118 +59,118 @@ interface ProfileWithResults {
   }[];
 }
 
-export const useMatches = (): UseMatchesReturn => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 5;
   const { user } = useAuth();
 
   const fetchMatches = useCallback(async () => {
     if (!user) return;
-    
     setLoading(true);
     setError(null);
+    setMatches([]);
+    setNextCursor(null);
+    setHasMore(true);
 
     try {
-      // First, check if user has personality results
-      const { data: userResults, error: resultsError } = await supabase
-        .from('personality_results')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (resultsError) throw resultsError;
-      
-      if (!userResults || userResults.length === 0) {
+      // Call the Edge Function for paginated matches
+      const { data, error } = await supabase.functions.invoke('v1/match-daily', {
+        body: {
+          user_id: user.id,
+          page_size: PAGE_SIZE,
+        },
+      });
+      if (error) throw error;
+      if (!data || !data.matches) {
         setMatches([]);
-        setError('Slutför personlighetstestet för att se matchningar');
+        setHasMore(false);
         setLoading(false);
         return;
       }
+      setMatches(data.matches.map((m: any) => ({
+        id: m.match_id,
+        matchedUser: {
+          userId: m.profile_id,
+          displayName: m.display_name,
+          avatarUrl: m.avatar_url,
+          category: m.category || 'DIPLOMAT',
+          archetype: m.archetype,
+          bio: m.bio_preview,
+          photos: m.photo_urls || [],
+        },
+        matchType: m.match_reason?.includes('liknande') ? 'similar' : 'complementary',
+        matchScore: m.compatibility_percentage,
+        status: 'pending',
+        compatibilityFactors: [],
+        expiresAt: m.expires_at,
+        special_effects: m.special_effects,
+        special_event_message: m.special_event_message,
+      })));
+      setNextCursor(data.next_cursor || null);
+      setHasMore(!!data.next_cursor);
+    } catch (err: unknown) {
+      console.error('Error fetching matches:', err);
+      setError(getErrorMessage(err, 'Kunde inte hämta matchningar'));
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
-      const currentUserResult = userResults[0];
-      const currentUserScores = currentUserResult.scores as Record<DimensionKey, number>;
-
-      // Check for existing matches for today
-      const today = new Date().toISOString().split('T')[0];
-      const { data: existingMatches, error: matchesError } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('match_date', today);
-
-      if (matchesError) throw matchesError;
-
-      // If we have matches for today, use them
-      if (existingMatches && existingMatches.length > 0) {
-        // Fetch matched user profiles
-        const matchedUserIds = existingMatches.map((m) => m.matched_user_id);
-        
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url, bio')
-          .in('user_id', matchedUserIds);
-
-        if (profilesError) throw profilesError;
-
-        const { data: personalityData, error: personalityError } = await supabase
-          .from('personality_results')
-          .select('user_id, category, archetype')
-          .in('user_id', matchedUserIds);
-
-        if (personalityError) throw personalityError;
-
-        // Fetch profile photos for matched users
-        const { data: photosData, error: photosError } = await supabase
-          .from('profile_photos')
-          .select('user_id, storage_path, display_order')
-          .in('user_id', matchedUserIds)
-          .order('display_order', { ascending: true });
-
-        if (photosError) throw photosError;
-
-        const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
-        const categoryMap = new Map(personalityData?.map((p) => [p.user_id, { category: p.category, archetype: p.archetype }]));
-        
-        // Group photos by user
-        const photosMap = new Map<string, string[]>();
-        photosData?.forEach((photo) => {
-          const existing = photosMap.get(photo.user_id) || [];
-          existing.push(photo.storage_path);
-          photosMap.set(photo.user_id, existing);
-        });
-
-        const formattedMatches: Match[] = existingMatches.map((m) => {
-          const profile = profileMap.get(m.matched_user_id);
-          const personality = categoryMap.get(m.matched_user_id);
-          const photos = photosMap.get(m.matched_user_id) || [];
-          
-          return {
-            id: m.id,
-            matchedUser: {
-              userId: m.matched_user_id,
-              displayName: profile?.display_name || 'Anonym',
-              avatarUrl: profile?.avatar_url || undefined,
-              category: (personality?.category || 'DIPLOMAT') as PersonalityCategory,
-              archetype: personality?.archetype || undefined,
-              bio: profile?.bio || undefined,
-              photos,
-            },
-            matchType: m.match_type as 'similar' | 'complementary',
-            matchScore: Number(m.match_score),
-            status: m.status as Match['status'],
-            compatibilityFactors: [],
-            expiresAt: m.expires_at,
-            special_effects: m.special_effects,
-            special_event_message: m.special_event_message,
-          };
-        });
-
-        setMatches(formattedMatches);
+  // Fetch more matches using cursor
+  const fetchMoreMatches = useCallback(async () => {
+    if (!user || !nextCursor || !hasMore) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('v1/match-daily', {
+        body: {
+          user_id: user.id,
+          page_size: PAGE_SIZE,
+          cursor: nextCursor,
+        },
+      });
+      if (error) throw error;
+      if (!data || !data.matches) {
+        setHasMore(false);
         setLoading(false);
         return;
       }
+      setMatches((prev) => [
+        ...prev,
+        ...data.matches.map((m: any) => ({
+          id: m.match_id,
+          matchedUser: {
+            userId: m.profile_id,
+            displayName: m.display_name,
+            avatarUrl: m.avatar_url,
+            category: m.category || 'DIPLOMAT',
+            archetype: m.archetype,
+            bio: m.bio_preview,
+            photos: m.photo_urls || [],
+          },
+          matchType: m.match_reason?.includes('liknande') ? 'similar' : 'complementary',
+          matchScore: m.compatibility_percentage,
+          status: 'pending',
+          compatibilityFactors: [],
+          expiresAt: m.expires_at,
+          special_effects: m.special_effects,
+          special_event_message: m.special_event_message,
+        })),
+      ]);
+      setNextCursor(data.next_cursor || null);
+      setHasMore(!!data.next_cursor);
+    } catch (err: unknown) {
+      console.error('Error fetching more matches:', err);
+      setError(getErrorMessage(err, 'Kunde inte hämta fler matchningar'));
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, nextCursor, hasMore]);
 
       // No matches for today, generate new ones
       // Fetch all other users with personality results
@@ -209,7 +211,7 @@ export const useMatches = (): UseMatchesReturn => {
         setMatches([]);
         setError('Inga matchningar tillgängliga just nu');
         setLoading(false);
-        return;
+        // Removed invalid return statement
       }
 
       // Calculate matches using our algorithm
@@ -402,6 +404,8 @@ export const useMatches = (): UseMatchesReturn => {
     loading,
     error,
     refreshMatches: fetchMatches,
+    fetchMoreMatches,
+    hasMore,
     likeMatch,
     passMatch,
   };

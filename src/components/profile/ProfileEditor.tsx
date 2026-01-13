@@ -27,6 +27,10 @@ interface ProfileData {
   smoking: string;
   alcohol: string;
   pronouns: string;
+  instagram?: string;
+  snapchat?: string;
+  tiktok?: string;
+  personality_result?: string; // MBTI code or similar
 }
 
 interface PrivacySettings {
@@ -66,6 +70,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     smoking: '',
     alcohol: '',
     pronouns: '',
+    instagram: '',
+    snapchat: '',
+    tiktok: '',
+    personality_result: '',
   });
   const [privacy, setPrivacy] = useState<PrivacySettings>({
     show_age: true,
@@ -80,7 +88,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, bio, gender, looking_for, height, work, education, hometown, religion, politics, smoking, alcohol, pronouns, show_age, show_job, show_education, show_last_name')
+      .select('display_name, bio, gender, looking_for, height, work, education, hometown, religion, politics, smoking, alcohol, pronouns, instagram, snapchat, tiktok, personality_result, show_age, show_job, show_education, show_last_name')
       .eq('user_id', user.id)
       .single();
 
@@ -101,6 +109,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         smoking: data.smoking || '',
         alcohol: data.alcohol || '',
         pronouns: data.pronouns || '',
+        instagram: data.instagram || '',
+        snapchat: data.snapchat || '',
+        tiktok: data.tiktok || '',
+        personality_result: data.personality_result || '',
       });
       setPrivacy({
         show_age: data.show_age ?? true,
@@ -143,6 +155,20 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     if (!user) return;
     setSaving(true);
 
+
+    // Fetch personality test result (MBTI code) from personality_results
+    let personalityResult = profile.personality_result;
+    if (!personalityResult) {
+      const { data: pData } = await supabase
+        .from('personality_results')
+        .select('archetype')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (pData?.archetype) {
+        personalityResult = pData.archetype;
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -159,6 +185,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         smoking: profile.smoking || null,
         alcohol: profile.alcohol || null,
         pronouns: profile.pronouns || null,
+        instagram: profile.instagram || null,
+        snapchat: profile.snapchat || null,
+        tiktok: profile.tiktok || null,
+        personality_result: personalityResult || null,
         show_age: privacy.show_age,
         show_job: privacy.show_job,
         show_education: privacy.show_education,
@@ -293,7 +323,68 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         </CardContent>
       </Card>
 
+      {/* Social Media */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-serif text-base flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            Sociala medier
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="instagram" className="text-xs">Instagram</Label>
+              <Input
+                id="instagram"
+                value={profile.instagram}
+                onChange={(e) => updateField('instagram', e.target.value)}
+                placeholder="@dittnamn"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="snapchat" className="text-xs">Snapchat</Label>
+              <Input
+                id="snapchat"
+                value={profile.snapchat}
+                onChange={(e) => updateField('snapchat', e.target.value)}
+                placeholder="@dittnamn"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tiktok" className="text-xs">TikTok</Label>
+              <Input
+                id="tiktok"
+                value={profile.tiktok}
+                onChange={(e) => updateField('tiktok', e.target.value)}
+                placeholder="@dittnamn"
+                className="h-9"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* More About Me */}
+            {/* Personality Test Result */}
+            {profile.personality_result && (
+              <Card className="shadow-soft">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-serif text-base flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-primary" />
+                    Personlighetstest
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg">{profile.personality_result}</span>
+                    <span className="text-xs text-muted-foreground">(MBTI/Arketyp)</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
       <Card className="shadow-soft">
         <CardHeader className="pb-2">
           <CardTitle className="font-serif text-base flex items-center gap-2">

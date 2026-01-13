@@ -61,13 +61,20 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
         return true;
       }
 
-      // Production: Send real OTP via Supabase
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
+      // Production: Send OTP via Twilio Edge Function
+      const jwt = supabase.auth.getSession().then((res) => res.data.session?.access_token);
+      const response = await fetch("/functions/v1/twilio-send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${await jwt}`,
+        },
+        body: JSON.stringify({ phone: formattedPhone }),
       });
-
-      if (error) throw error;
-
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Kunde inte skicka verifieringskod");
+      }
       setStep("verify");
       return true;
     } catch (err: unknown) {
@@ -179,24 +186,33 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
         throw new Error("Verifiering misslyckades");
       }
 
-      // Production: Verify OTP with Supabase
-      const { error, data } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: token,
-        type: "sms",
+      // Production: Verify OTP via Twilio Edge Function
+      const jwt = supabase.auth.getSession().then((res) => res.data.session?.access_token);
+      const response = await fetch("/functions/v1/twilio-verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${await jwt}`,
+        },
+        body: JSON.stringify({ phone: formattedPhone, code: token }),
       });
-
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Ogiltig verifieringskod");
+      }
+      // If Twilio verification succeeds, sign in/up with Supabase
+      const { error, data: supaData } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+      });
       if (error) throw error;
-
-      if (data.session) {
-        // Check if profile is complete
-        const isNewUser = await checkIfNewUser(data.session.user.id);
+      if (supaData.session && (supaData.session as any).user && (supaData.session as any).user.id) {
+        const userId = (supaData.session as any).user.id;
+        const isNewUser = await checkIfNewUser(userId);
         if (isNewUser) {
           setStep("profile");
         }
         return true;
       }
-
       throw new Error("Verifiering misslyckades");
     } catch (err: unknown) {
       console.error("Verify OTP error:", err);

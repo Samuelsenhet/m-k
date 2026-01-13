@@ -297,55 +297,77 @@ export default function Matches() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="shadow-card overflow-hidden">
-                    {/* Photo section */}
-                    {primaryPhoto ? (
-                      <div className="relative aspect-[4/3] bg-muted">
+                  <Card className="shadow-card overflow-hidden relative">
+                    {/* Photo section with overlay info and vertical actions */}
+                    <div className="relative aspect-[4/3] bg-muted">
+                      {primaryPhoto ? (
                         <img 
                           src={getPhotoUrl(primaryPhoto)} 
                           alt={match.matchedUser.displayName}
                           className="w-full h-full object-cover"
                         />
-                        {/* Photo count indicator */}
-                        {photos.length > 1 && (
-                          <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                            1/{photos.length}
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                          <div className="text-center">
+                            <div className="text-6xl mb-2">{archetypeInfo?.emoji || categoryInfo?.emoji || '💫'}</div>
+                            <p className="text-sm text-muted-foreground">Inga foton ännu</p>
                           </div>
+                        </div>
+                      )}
+                      {/* Overlay info (bottom left) */}
+                      <div className="absolute bottom-4 left-4 bg-black/60 text-white rounded-xl px-4 py-2 shadow-lg max-w-[70%]">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-lg">{match.matchedUser.displayName}</span>
+                          <span className="text-lg">{archetypeInfo?.emoji || categoryInfo?.emoji}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeClass(match.matchedUser.category)}`}>{archetypeInfo?.title || categoryInfo?.title}</span>
+                          <span className="text-xs text-white/80">{match.matchScore}% match</span>
+                        </div>
+                      </div>
+                      {/* Match type badge (top left) */}
+                      <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
+                        match.matchType === 'similar' 
+                          ? 'bg-primary/80 text-primary-foreground' 
+                          : 'bg-accent/80 text-accent-foreground'
+                      }`}>
+                        {match.matchType === 'similar' ? (
+                          <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Liknande</span>
+                        ) : (
+                          <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Kompletterande</span>
                         )}
-                        {/* Match type badge */}
-                        <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-                          match.matchType === 'similar' 
-                            ? 'bg-primary/80 text-primary-foreground' 
-                            : 'bg-accent/80 text-accent-foreground'
-                        }`}>
-                          {match.matchType === 'similar' ? (
-                            <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Liknande</span>
-                          ) : (
-                            <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Kompletterande</span>
-                          )}
-                        </div>
                       </div>
-                    ) : (
-                      <div className="relative aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-6xl mb-2">{archetypeInfo?.emoji || categoryInfo?.emoji || '💫'}</div>
-                          <p className="text-sm text-muted-foreground">Inga foton ännu</p>
+                      {/* Photo count indicator (top right, if >1) */}
+                      {photos.length > 1 && (
+                        <div className="absolute top-4 right-20 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                          1/{photos.length}
                         </div>
-                        <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-medium ${
-                          match.matchType === 'similar' 
-                            ? 'bg-primary/10 text-primary' 
-                            : 'bg-accent/10 text-accent'
-                        }`}>
-                          {match.matchType === 'similar' ? (
-                            <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Liknande</span>
-                          ) : (
-                            <span className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> Kompletterande</span>
-                          )}
-                        </div>
+                      )}
+                      {/* Vertical action buttons (top right) */}
+                      <div className="flex flex-col gap-3 items-end absolute top-4 right-4 z-10">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="rounded-full shadow-md bg-white/80 hover:bg-white"
+                          onClick={() => passMatch(match.id)}
+                          aria-label="Passa"
+                        >
+                          <X className="w-5 h-5 text-destructive" />
+                        </Button>
+                        <Button 
+                          asChild
+                          size="icon"
+                          className="rounded-full shadow-md gradient-primary text-primary-foreground border-0 mt-2"
+                          aria-label="Chatta"
+                        >
+                          <Link to={`/chat?match=${match.id}`}>
+                            <MessageCircle className="w-5 h-5" />
+                          </Link>
+                        </Button>
                       </div>
-                    )}
+                    </div>
 
-                    <CardContent className="p-5">
+                    <CardContent className="p-5 pt-6">
                       {/* Name and archetype */}
                       <div className="flex items-start justify-between mb-3">
                         <div>
