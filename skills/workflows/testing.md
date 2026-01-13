@@ -290,25 +290,7 @@ Testing strategies and procedures for ensuring MÄÄK quality and reliability.
   [ ] Filters work correctly
 ```
 
-## Test Demo Account
-
-### Credentials
-```
-Phone: 46762832139
-OTP Code: 123456 (DEV mode only)
-Email: 46762832139@maak.app
-Password: Maak46762832139Demo!2026
-```
-
-### Usage
-```bash
-# Test authentication flow
-1. Enter phone: 46762832139
-2. Enter OTP: 123456
-3. Set date of birth (20+ years)
-4. Complete personality test
-5. View matches
-```
+// ...existing code...
 
 ## Browser Testing Matrix
 

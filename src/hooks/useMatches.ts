@@ -1,16 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
-import { MatchResult, calculateDailyMatches } from '@/lib/matching';
-import { PersonalityCategory, DimensionKey } from '@/types/personality';
 
-interface Match {
+type Match = {
   id: string;
   matchedUser: {
     userId: string;
     displayName: string;
     avatarUrl?: string;
-    category: PersonalityCategory;
+    category: string;
     archetype?: string;
     bio?: string;
     photos?: string[];
@@ -22,7 +20,7 @@ interface Match {
   expiresAt: string;
   special_effects?: string[] | null;
   special_event_message?: string | null;
-}
+};
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error) {
@@ -37,29 +35,27 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-interface UseMatchesReturn {
-  matches: Match[];
-  loading: boolean;
-  error: string | null;
-  refreshMatches: () => Promise<void>;
-  fetchMoreMatches: () => Promise<void>;
-  hasMore: boolean;
-  likeMatch: (matchId: string) => Promise<void>;
-  passMatch: (matchId: string) => Promise<void>;
-}
+const mapMatch = (m: any): Match => ({
+  id: m.match_id,
+  matchedUser: {
+    userId: m.profile_id,
+    displayName: m.display_name,
+    avatarUrl: m.avatar_url,
+    category: m.category ?? undefined,
+    archetype: m.archetype ?? undefined,
+    bio: m.bio_preview,
+    photos: m.photo_urls || [],
+  },
+  matchType: m.match_reason?.includes('liknande') ? 'similar' : 'complementary',
+  matchScore: m.compatibility_percentage,
+  status: 'pending',
+  compatibilityFactors: [],
+  expiresAt: m.expires_at,
+  special_effects: m.special_effects,
+  special_event_message: m.special_event_message,
+});
 
-interface ProfileWithResults {
-  user_id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  personality_results: {
-    category: string;
-    scores: Record<DimensionKey, number>;
-  }[];
-}
-
-export const useMatches = (): UseMatchesReturn => {
+export function useMatches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +73,6 @@ export const useMatches = (): UseMatchesReturn => {
     setHasMore(true);
 
     try {
-      // Call the Edge Function for paginated matches
       const { data, error } = await supabase.functions.invoke('v1/match-daily', {
         body: {
           user_id: user.id,
@@ -91,25 +86,7 @@ export const useMatches = (): UseMatchesReturn => {
         setLoading(false);
         return;
       }
-      setMatches(data.matches.map((m: any) => ({
-        id: m.match_id,
-        matchedUser: {
-          userId: m.profile_id,
-          displayName: m.display_name,
-          avatarUrl: m.avatar_url,
-          category: m.category || 'DIPLOMAT',
-          archetype: m.archetype,
-          bio: m.bio_preview,
-          photos: m.photo_urls || [],
-        },
-        matchType: m.match_reason?.includes('liknande') ? 'similar' : 'complementary',
-        matchScore: m.compatibility_percentage,
-        status: 'pending',
-        compatibilityFactors: [],
-        expiresAt: m.expires_at,
-        special_effects: m.special_effects,
-        special_event_message: m.special_event_message,
-      })));
+      setMatches(data.matches.map(mapMatch));
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
@@ -142,25 +119,7 @@ export const useMatches = (): UseMatchesReturn => {
       }
       setMatches((prev) => [
         ...prev,
-        ...data.matches.map((m: any) => ({
-          id: m.match_id,
-          matchedUser: {
-            userId: m.profile_id,
-            displayName: m.display_name,
-            avatarUrl: m.avatar_url,
-            category: m.category || 'DIPLOMAT',
-            archetype: m.archetype,
-            bio: m.bio_preview,
-            photos: m.photo_urls || [],
-          },
-          matchType: m.match_reason?.includes('liknande') ? 'similar' : 'complementary',
-          matchScore: m.compatibility_percentage,
-          status: 'pending',
-          compatibilityFactors: [],
-          expiresAt: m.expires_at,
-          special_effects: m.special_effects,
-          special_event_message: m.special_event_message,
-        })),
+        ...data.matches.map(mapMatch),
       ]);
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
@@ -205,7 +164,7 @@ export const useMatches = (): UseMatchesReturn => {
       // Check if the other user also liked us
       const match = matches.find((m) => m.id === matchId);
       if (match) {
-        const { data: reverseMatch } = await supabase
+        const { data: reverseMatch, error: reverseError } = await supabase
           .from('matches')
           .select('*')
           .eq('user_id', match.matchedUser.userId)
@@ -213,47 +172,36 @@ export const useMatches = (): UseMatchesReturn => {
           .eq('status', 'liked')
           .maybeSingle();
 
+        if (reverseError) throw reverseError;
+
         if (reverseMatch) {
           // It's a mutual match!
           await supabase
             .from('matches')
             .update({ status: 'mutual' })
             .eq('id', matchId);
-          
           await supabase
             .from('matches')
             .update({ status: 'mutual' })
             .eq('id', reverseMatch.id);
 
-          // Get user's archetype for icebreaker generation
-          const { data: userResult } = await supabase
-            .from('personality_results')
-            .select('archetype')
-            .eq('user_id', user?.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          const { data: matchedUserResult } = await supabase
-            .from('personality_results')
-            .select('archetype')
-            .eq('user_id', match.matchedUser.userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          const { data: userProfile } = await supabase
+          // Get user's display name for icebreaker generation
+          const { data: userProfileResult, error: profileError } = await supabase
             .from('profiles')
-            .select('display_name')
-            .eq('user_id', user?.id)
+            .select('display_name, archetype')
+            .eq('id', user?.id)
             .single();
+          if (profileError) {
+            console.error('Profile fetch failed', profileError);
+            // Optionally report to Sentry or similar here
+          }
 
-          // Generate AI icebreakers for this mutual match
+          // Use dynamic archetype fallback
           generateIcebreakers(
             matchId,
-            userResult?.archetype || 'DIPLOMAT',
-            matchedUserResult?.archetype || 'DIPLOMAT',
-            userProfile?.display_name || 'Användare',
+            userProfileResult?.archetype ?? match.matchedUser.archetype ?? undefined,
+            match.matchedUser.archetype ?? undefined,
+            userProfileResult?.display_name || 'Användare',
             match.matchedUser.displayName
           );
 
@@ -309,4 +257,4 @@ export const useMatches = (): UseMatchesReturn => {
     likeMatch,
     passMatch,
   };
-};
+  }

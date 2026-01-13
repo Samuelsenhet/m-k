@@ -316,9 +316,7 @@ export default function PhoneAuth() {
                     </button>
                   </div>
 
-                  <p className="text-xs text-center text-muted-foreground">
-                    Tips: I demo-läge, använd koden <span className="font-mono font-bold">123456</span>
-                  </p>
+                  {/* Demo code tip removed */}
                 </motion.div>
               )}
 

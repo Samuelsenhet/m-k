@@ -141,7 +141,7 @@ Add these in Vercel dashboard → Settings → Environment Variables:
 ## Testing
 
 ### Manual Testing Checklist
-- [ ] Phone auth with demo code 123456
+// ...existing code...
 - [ ] Age verification (minimum 20 years)
 - [ ] Personality test (30 questions)
 - [ ] Results display with archetype
@@ -152,13 +152,7 @@ Add these in Vercel dashboard → Settings → Environment Variables:
 - [ ] PWA installation
 - [ ] Push notifications
 
-### Demo Account Testing
-```
-Phone: 46762832139
-OTP: 123456
-Email: 46762832139@maak.app
-Password: Maak46762832139Demo!2026
-```
+// ...existing code...
 
 ## Code Quality
 

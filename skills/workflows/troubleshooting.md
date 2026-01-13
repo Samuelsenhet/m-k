@@ -127,14 +127,14 @@ if (!profile.date_of_birth) {
 
 **Error:**
 ```
-Email address '46762832139@demo.maak.app' is invalid
+// ...existing code...
 ```
 
 **Solution:**
 ```typescript
 // Correct email format
 const cleanPhone = phone.replace(/\D/g, '');
-const demoEmail = `${cleanPhone}@maak.app`; // Not @demo.maak.app
+// ...existing code...
 ```
 
 ### Session Expired

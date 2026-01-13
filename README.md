@@ -7,7 +7,7 @@ Swedish personality-based dating platform with PRP compliance and user journey p
 - **Frontend**: React 18 + TypeScript + Vite
 - **Backend**: Supabase (PostgreSQL + Edge Functions)
 - **UI**: shadcn/ui + Tailwind CSS + Framer Motion
-- **Auth**: Phone-based authentication (demo mode)
+- **Auth**: Phone-based authentication
 - **PWA**: Service worker enabled
 
 ## Setup

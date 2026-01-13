@@ -68,6 +68,9 @@ export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseReal
     if (!channelRef.current) {
       throw new Error('Channel not initialized');
     }
+    if (!isConnected) {
+      throw new Error('Channel not subscribed yet');
+    }
 
     const { error } = await channelRef.current.send({
       type: 'broadcast',
