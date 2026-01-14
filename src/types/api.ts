@@ -26,6 +26,7 @@ export interface MatchDailyMatch {
   display_name: string;
   age: number;
   archetype: string;
+  category?: string;
   compatibility_percentage: number;
   dimension_score_breakdown: DimensionScoreBreakdown[];
   archetype_alignment_score: number;

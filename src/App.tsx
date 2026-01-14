@@ -11,7 +11,7 @@ import { GdprOnboarding } from "@/components/onboarding/GdprOnboarding";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import React from "react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
