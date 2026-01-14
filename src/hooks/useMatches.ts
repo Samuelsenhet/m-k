@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/useAuth';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/useAuth";
 
 type Match = {
   id: string;
@@ -13,9 +13,9 @@ type Match = {
     bio?: string;
     photos?: string[];
   };
-  matchType: 'similar' | 'complementary';
+  matchType: "similar" | "complementary";
   matchScore: number;
-  status: 'pending' | 'liked' | 'passed' | 'mutual';
+  status: "pending" | "liked" | "passed" | "mutual";
   compatibilityFactors: string[];
   expiresAt: string;
   special_effects?: string[] | null;
@@ -26,16 +26,16 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error) {
     return error.message || fallback;
   }
-  if (typeof error === 'object' && error && 'message' in error) {
+  if (typeof error === "object" && error && "message" in error) {
     const message = (error as { message?: string }).message;
-    if (typeof message === 'string' && message.length > 0) {
+    if (typeof message === "string" && message.length > 0) {
       return message;
     }
   }
   return fallback;
 };
 
-import type { MatchDailyMatch, DimensionScoreBreakdown } from '@/types/api';
+import type { MatchDailyMatch, DimensionScoreBreakdown } from "@/types/api";
 const mapMatch = (m: MatchDailyMatch): Match => ({
   id: m.match_id,
   matchedUser: {
@@ -47,9 +47,9 @@ const mapMatch = (m: MatchDailyMatch): Match => ({
     bio: m.bio_preview,
     photos: m.photo_urls || [],
   },
-  matchType: m.match_reason?.includes('liknande') ? 'similar' : 'complementary',
+  matchType: m.match_reason?.includes("liknande") ? "similar" : "complementary",
   matchScore: m.compatibility_percentage,
-  status: 'pending',
+  status: "pending",
   compatibilityFactors: [],
   expiresAt: m.expires_at,
   special_effects: m.special_effects,
@@ -74,7 +74,16 @@ export function useMatches() {
     setHasMore(true);
 
     try {
-      const { data, error }: { data: { matches: MatchDailyMatch[]; next_cursor?: string | null } | null, error: any } = await supabase.functions.invoke('v1/match-daily', {
+      const {
+        data,
+        error,
+      }: {
+        data: {
+          matches: MatchDailyMatch[];
+          next_cursor?: string | null;
+        } | null;
+        error: any;
+      } = await supabase.functions.invoke("v1/match-daily", {
         body: {
           user_id: user.id,
           page_size: PAGE_SIZE,
@@ -91,8 +100,8 @@ export function useMatches() {
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
-      console.error('Error fetching matches:', err);
-      setError(getErrorMessage(err, 'Kunde inte hämta matchningar'));
+      console.error("Error fetching matches:", err);
+      setError(getErrorMessage(err, "Kunde inte hämta matchningar"));
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -105,7 +114,16 @@ export function useMatches() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error }: { data: { matches: MatchDailyMatch[]; next_cursor?: string | null } | null, error: any } = await supabase.functions.invoke('v1/match-daily', {
+      const {
+        data,
+        error,
+      }: {
+        data: {
+          matches: MatchDailyMatch[];
+          next_cursor?: string | null;
+        } | null;
+        error: any;
+      } = await supabase.functions.invoke("v1/match-daily", {
         body: {
           user_id: user.id,
           page_size: PAGE_SIZE,
@@ -125,40 +143,49 @@ export function useMatches() {
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
-      console.error('Error fetching more matches:', err);
-      setError(getErrorMessage(err, 'Kunde inte hämta fler matchningar'));
+      console.error("Error fetching more matches:", err);
+      setError(getErrorMessage(err, "Kunde inte hämta fler matchningar"));
       setHasMore(false);
     } finally {
       setLoading(false);
     }
   }, [user, nextCursor, hasMore]);
 
-  const generateIcebreakers = async (matchId: string, userArchetype: string, matchedUserArchetype: string, userName: string, matchedUserName: string) => {
+  const generateIcebreakers = async (
+    matchId: string,
+    userArchetype: string,
+    matchedUserArchetype: string,
+    userName: string,
+    matchedUserName: string
+  ) => {
     try {
-      const { error } = await supabase.functions.invoke('generate-icebreakers', {
-        body: {
-          matchId,
-          userArchetype,
-          matchedUserArchetype,
-          userName,
-          matchedUserName,
-        },
-      });
-      
+      const { error } = await supabase.functions.invoke(
+        "generate-icebreakers",
+        {
+          body: {
+            matchId,
+            userArchetype,
+            matchedUserArchetype,
+            userName,
+            matchedUserName,
+          },
+        }
+      );
+
       if (error) {
-        console.error('Error generating icebreakers:', error);
+        console.error("Error generating icebreakers:", error);
       }
     } catch (err: unknown) {
-      console.error('Failed to generate icebreakers:', err);
+      console.error("Failed to generate icebreakers:", err);
     }
   };
 
   const likeMatch = async (matchId: string) => {
     try {
       const { error: updateError } = await supabase
-        .from('matches')
-        .update({ status: 'liked' })
-        .eq('id', matchId);
+        .from("matches")
+        .update({ status: "liked" })
+        .eq("id", matchId);
 
       if (updateError) throw updateError;
 
@@ -166,11 +193,11 @@ export function useMatches() {
       const match = matches.find((m) => m.id === matchId);
       if (match) {
         const { data: reverseMatch, error: reverseError } = await supabase
-          .from('matches')
-          .select('*')
-          .eq('user_id', match.matchedUser.userId)
-          .eq('matched_user_id', user?.id)
-          .eq('status', 'liked')
+          .from("matches")
+          .select("*")
+          .eq("user_id", match.matchedUser.userId)
+          .eq("matched_user_id", user?.id)
+          .eq("status", "liked")
           .maybeSingle();
 
         if (reverseError) throw reverseError;
@@ -178,69 +205,66 @@ export function useMatches() {
         if (reverseMatch) {
           // It's a mutual match!
           await supabase
-            .from('matches')
-            .update({ status: 'mutual' })
-            .eq('id', matchId);
+            .from("matches")
+            .update({ status: "mutual" })
+            .eq("id", matchId);
           await supabase
-            .from('matches')
-            .update({ status: 'mutual' })
-            .eq('id', reverseMatch.id);
+            .from("matches")
+            .update({ status: "mutual" })
+            .eq("id", reverseMatch.id);
 
           // Get user's display name for icebreaker generation
-          const { data: userProfileResult, error: profileError } = await supabase
-            .from('profiles')
-            .select('display_name, archetype')
-            .eq('id', user?.id)
-            .single();
+          const { data: userProfileResult, error: profileError } =
+            await supabase
+              .from("profiles")
+              .select("display_name, archetype")
+              .eq("id", user?.id)
+              .single();
           if (profileError) {
-            console.error('Profile fetch failed', profileError);
+            console.error("Profile fetch failed", profileError);
             // Optionally report to Sentry or similar here
           }
 
           // Use dynamic archetype fallback
           generateIcebreakers(
             matchId,
-            userProfileResult?.archetype ?? match.matchedUser.archetype ?? undefined,
+            userProfileResult?.archetype ??
+              match.matchedUser.archetype ??
+              undefined,
             match.matchedUser.archetype ?? undefined,
-            userProfileResult?.display_name || 'Användare',
+            userProfileResult?.display_name || "Användare",
             match.matchedUser.displayName
           );
 
           setMatches((prev) =>
-            prev.map((m) =>
-              m.id === matchId ? { ...m, status: 'mutual' } : m
-            )
+            prev.map((m) => (m.id === matchId ? { ...m, status: "mutual" } : m))
           );
           return;
         }
       }
 
       setMatches((prev) =>
-        prev.map((m) =>
-          m.id === matchId ? { ...m, status: 'liked' } : m
-        )
+        prev.map((m) => (m.id === matchId ? { ...m, status: "liked" } : m))
       );
     } catch (err: unknown) {
-      console.error('Error liking match:', err);
+      console.error("Error liking match:", err);
     }
   };
 
   const passMatch = async (matchId: string) => {
     try {
       const { error: updateError } = await supabase
-        .from('matches')
-        .update({ status: 'passed' })
-        .eq('id', matchId);
+        .from("matches")
+        .update({ status: "passed" })
+        .eq("id", matchId);
 
       if (updateError) throw updateError;
 
       setMatches((prev) =>
-        prev.map((m) =>
-          m.id === matchId ? { ...m, status: 'passed' } : m
-        )
+        prev.map((m) => (m.id === matchId ? { ...m, status: "passed" } : m))
       );
     } catch (err: unknown) {
-      console.error('Error passing match:', err);
+      console.error("Error passing match:", err);
     }
   };
 
@@ -258,4 +282,4 @@ export function useMatches() {
     likeMatch,
     passMatch,
   };
-  }
+}

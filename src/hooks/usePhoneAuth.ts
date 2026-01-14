@@ -1,6 +1,9 @@
 type SupabaseUser = { id: string };
 // Defensive parsing for Supabase responses
-const parseAuthResponse = <T>(response: { data?: T; error?: unknown }, context: string): T => {
+const parseAuthResponse = <T>(
+  response: { data?: T; error?: unknown },
+  context: string
+): T => {
   if (response.error) {
     console.error(`${context} error`, response.error);
     throw response.error;
@@ -63,17 +66,19 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       const formattedPhone = formatPhoneE164(phone);
 
       // Production: Send OTP via Twilio Edge Function
-      const jwt = supabase.auth.getSession().then((res) => res.data.session?.access_token);
+      const jwt = supabase.auth
+        .getSession()
+        .then((res) => res.data.session?.access_token);
       const response = await fetch("/functions/v1/twilio-send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${await jwt}`,
+          Authorization: `Bearer ${await jwt}`,
         },
         body: JSON.stringify({ phone: formattedPhone }),
       });
       let data: { success?: boolean; error?: string } = {};
-      let text = '';
+      let text = "";
       try {
         text = await response.text();
         data = JSON.parse(text) as { success?: boolean; error?: string };
@@ -82,7 +87,7 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       }
       if (!response.ok || !data.success) {
         // Log the raw response for debugging
-        console.error('OTP API error. Raw response:', text);
+        console.error("OTP API error. Raw response:", text);
         throw new Error(data.error || "Kunde inte skicka verifieringskod");
       }
       setStep("verify");
@@ -114,12 +119,14 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       const formattedPhone = formatPhoneE164(phone);
 
       // Production: Verify OTP via Twilio Edge Function
-      const jwt = supabase.auth.getSession().then((res) => res.data.session?.access_token);
+      const jwt = supabase.auth
+        .getSession()
+        .then((res) => res.data.session?.access_token);
       const response = await fetch("/functions/v1/twilio-verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${await jwt}`,
+          Authorization: `Bearer ${await jwt}`,
         },
         body: JSON.stringify({ phone: formattedPhone, code: token }),
       });
@@ -130,13 +137,13 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       // If Twilio verification succeeds, sign in/up with Supabase
       const supaData = parseAuthResponse(
         await supabase.auth.signInWithOtp({ phone: formattedPhone }),
-        'signInWithOtp'
+        "signInWithOtp"
       );
       if (
         supaData.session &&
-        typeof supaData.session.user === 'object' &&
+        typeof supaData.session.user === "object" &&
         supaData.session.user !== null &&
-        'id' in (supaData.session.user as object)
+        "id" in (supaData.session.user as object)
       ) {
         const userId = (supaData.session.user as SupabaseUser).id;
         const isNewUser = await checkIfNewUser(userId);

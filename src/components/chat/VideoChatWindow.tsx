@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useRealtime } from '@/hooks/useRealtime';
+import React, { useRef, useEffect, useState } from "react";
+import { useRealtime } from "@/hooks/useRealtime";
 
 interface VideoChatWindowProps {
   roomId: string;
@@ -7,10 +7,17 @@ interface VideoChatWindowProps {
   onEndCall: () => void;
 }
 
-export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebreakers, onEndCall }) => {
-  const localVideoRef: React.RefObject<HTMLVideoElement> = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef: React.RefObject<HTMLVideoElement> = useRef<HTMLVideoElement>(null);
-  const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
+export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({
+  roomId,
+  icebreakers,
+  onEndCall,
+}) => {
+  const localVideoRef: React.RefObject<HTMLVideoElement> =
+    useRef<HTMLVideoElement>(null);
+  const remoteVideoRef: React.RefObject<HTMLVideoElement> =
+    useRef<HTMLVideoElement>(null);
+  const [peerConnection, setPeerConnection] =
+    useState<RTCPeerConnection | null>(null);
   const [currentIcebreaker, setCurrentIcebreaker] = useState(0);
   const { sendMessage, isConnected } = useRealtime({ roomId });
   const [muted, setMuted] = useState(false);
@@ -21,28 +28,30 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
 
   useEffect(() => {
     // Get local media
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-      localStreamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-      // Setup peer connection
-      const pc = new RTCPeerConnection();
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-      setPeerConnection(pc);
-      // Handle remote stream
-      pc.ontrack = (event) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = event.streams[0];
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        localStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
         }
-      };
-      // Handle signaling
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          sendMessage({ type: 'ice', candidate: event.candidate });
-        }
-      };
-    });
+        // Setup peer connection
+        const pc = new RTCPeerConnection();
+        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        setPeerConnection(pc);
+        // Handle remote stream
+        pc.ontrack = (event) => {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = event.streams[0];
+          }
+        };
+        // Handle signaling
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            sendMessage({ type: "ice", candidate: event.candidate });
+          }
+        };
+      });
     // Cleanup
     return () => {
       if (peerConnection) peerConnection.close();
@@ -60,11 +69,12 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
     // if (msg.type === 'ice') peerConnection.addIceCandidate(new RTCIceCandidate(msg.candidate));
   }, [peerConnection]);
 
-  const handleNext = () => setCurrentIcebreaker((i) => Math.min(i + 1, icebreakers.length - 1));
+  const handleNext = () =>
+    setCurrentIcebreaker((i) => Math.min(i + 1, icebreakers.length - 1));
   const handlePrev = () => setCurrentIcebreaker((i) => Math.max(i - 1, 0));
   const toggleMute = () => {
     if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(track => {
+      localStreamRef.current.getAudioTracks().forEach((track) => {
         track.enabled = !muted;
       });
       setMuted(!muted);
@@ -72,7 +82,7 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
   };
   const toggleCamera = () => {
     if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach(track => {
+      localStreamRef.current.getVideoTracks().forEach((track) => {
         track.enabled = !cameraOn;
       });
       setCameraOn(!cameraOn);
@@ -80,12 +90,16 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
   };
   const startScreenShare = async () => {
     try {
-      const screenStream = (await (navigator.mediaDevices.getDisplayMedia({ video: true }) as Promise<MediaStream>));
+      const screenStream = await (navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      }) as Promise<MediaStream>);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = screenStream;
       }
       if (peerConnection) {
-        screenStream.getTracks().forEach(track => peerConnection.addTrack(track, screenStream));
+        screenStream
+          .getTracks()
+          .forEach((track) => peerConnection.addTrack(track, screenStream));
       }
       setScreenSharing(true);
       screenStream.getVideoTracks()[0].onended = () => {
@@ -96,17 +110,21 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
         setScreenSharing(false);
       };
     } catch (err: unknown) {
-      console.error('Screen share error:', err);
+      console.error("Screen share error:", err);
     }
   };
   const togglePiP = async () => {
     if (localVideoRef.current) {
       if (!pipActive) {
         try {
-          await (localVideoRef.current as HTMLVideoElement & { requestPictureInPicture: () => Promise<PictureInPictureWindow> }).requestPictureInPicture();
+          await (
+            localVideoRef.current as HTMLVideoElement & {
+              requestPictureInPicture: () => Promise<PictureInPictureWindow>;
+            }
+          ).requestPictureInPicture();
           setPipActive(true);
         } catch (err: unknown) {
-          console.error('PiP error:', err);
+          console.error("PiP error:", err);
         }
       } else {
         document.exitPictureInPicture();
@@ -119,11 +137,11 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
     const videoEl = localVideoRef.current;
     if (videoEl) {
       const handler = () => setPipActive(false);
-      videoEl.addEventListener('leavepictureinpicture', handler);
+      videoEl.addEventListener("leavepictureinpicture", handler);
       return () => {
         // Use a stable reference to the video element for cleanup
         const cleanupVideoEl = videoEl;
-        cleanupVideoEl.removeEventListener('leavepictureinpicture', handler);
+        cleanupVideoEl.removeEventListener("leavepictureinpicture", handler);
       };
     }
   }, []);
@@ -135,27 +153,51 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
       setPeerConnection(null);
     }
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
     }
     onEndCall();
   };
 
   return (
     <div className="video-chat-window">
-      <video ref={localVideoRef} autoPlay muted playsInline className="local-video" />
-      <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
+      <video
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        className="local-video"
+      />
+      <video
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
+        className="remote-video"
+      />
       <div className="controls">
-        <button onClick={toggleMute}>{muted ? 'Unmute' : 'Mute'}</button>
-        <button onClick={toggleCamera}>{cameraOn ? 'Turn Camera Off' : 'Turn Camera On'}</button>
-        <button onClick={startScreenShare}>{screenSharing ? 'Stop Sharing' : 'Share Screen'}</button>
-        <button onClick={togglePiP}>{pipActive ? 'Exit PiP' : 'Picture-in-Picture'}</button>
+        <button onClick={toggleMute}>{muted ? "Unmute" : "Mute"}</button>
+        <button onClick={toggleCamera}>
+          {cameraOn ? "Turn Camera Off" : "Turn Camera On"}
+        </button>
+        <button onClick={startScreenShare}>
+          {screenSharing ? "Stop Sharing" : "Share Screen"}
+        </button>
+        <button onClick={togglePiP}>
+          {pipActive ? "Exit PiP" : "Picture-in-Picture"}
+        </button>
         <button onClick={endCallForBoth}>End Call</button>
       </div>
       <div className="icebreakers">
-        <button onClick={handlePrev} disabled={currentIcebreaker === 0}>Previous</button>
+        <button onClick={handlePrev} disabled={currentIcebreaker === 0}>
+          Previous
+        </button>
         <span>{icebreakers[currentIcebreaker]}</span>
-        <button onClick={handleNext} disabled={currentIcebreaker === icebreakers.length - 1}>Next</button>
+        <button
+          onClick={handleNext}
+          disabled={currentIcebreaker === icebreakers.length - 1}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
-}
+};

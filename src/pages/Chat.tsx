@@ -1,20 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { MatchList } from '@/components/chat/MatchList';
-import { ChatWindow } from '@/components/chat/ChatWindow';
-import { VideoChatWindow } from '@/components/chat/VideoChatWindow';
-import { MessageCircle } from 'lucide-react';
-import { BottomNav } from '@/components/navigation/BottomNav';
-import { useRealtime } from '@/hooks/useRealtime';
-import { IncomingCallNotification } from '@/components/chat/IncomingCallNotification';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { MatchList } from "@/components/chat/MatchList";
+import { ChatWindow } from "@/components/chat/ChatWindow";
+import { VideoChatWindow } from "@/components/chat/VideoChatWindow";
+import { MessageCircle } from "lucide-react";
+import { BottomNav } from "@/components/navigation/BottomNav";
+import { useRealtime } from "@/hooks/useRealtime";
+import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
 // Removed problematic import - check if CallHistory exists
 // import { CallHistory, CallLogEntry } from '@/components/chat/CallHistory';
 
 // Define CallLogEntry locally if the import doesn't work
 interface CallLogEntry {
-  type: 'missed' | 'completed' | 'outgoing';
+  type: "missed" | "completed" | "outgoing";
   timestamp: string;
   callerName: string;
   duration?: number;
@@ -34,14 +34,21 @@ function CallHistoryDisplay({ logs }: { logs: CallLogEntry[] }) {
   if (logs.length === 0) return null;
   return (
     <div className="p-4 border-t border-border bg-card">
-      <h3 className="font-semibold text-sm mb-2 text-muted-foreground">Samtalshistorik</h3>
+      <h3 className="font-semibold text-sm mb-2 text-muted-foreground">
+        Samtalshistorik
+      </h3>
       <div className="space-y-2">
         {logs.slice(0, 3).map((log, index) => (
-          <div key={index} className="flex items-center justify-between text-sm">
+          <div
+            key={index}
+            className="flex items-center justify-between text-sm"
+          >
             <span className="truncate">{log.callerName}</span>
             <span className="text-muted-foreground text-xs">
-              {new Date(log.timestamp).toLocaleDateString('sv-SE')}
-              {log.type === 'completed' && log.duration && ` • ${Math.floor(log.duration / 60)} min`}
+              {new Date(log.timestamp).toLocaleDateString("sv-SE")}
+              {log.type === "completed" &&
+                log.duration &&
+                ` • ${Math.floor(log.duration / 60)} min`}
             </span>
           </div>
         ))}
@@ -54,19 +61,26 @@ export default function Chat() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(
+    null
+  );
   const [icebreakers, setIcebreakers] = useState<string[]>([]);
   const [loadingMatch, setLoadingMatch] = useState(false);
   const [videoCallActive, setVideoCallActive] = useState(false);
-  const [incomingCall, setIncomingCall] = useState<{ callerName: string; callerId: string } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{
+    callerName: string;
+    callerId: string;
+  } | null>(null);
   const [callLogs, setCallLogs] = useState<CallLogEntry[]>([]);
 
   // Add a dummy roomId for connection check (could be user.id or a global room)
-  const { isConnected: realtimeConnected } = useRealtime({ roomId: user?.id || 'global' });
+  const { isConnected: realtimeConnected } = useRealtime({
+    roomId: user?.id || "global",
+  });
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/phone-auth');
+      navigate("/phone-auth");
     }
   }, [user, loading, navigate]);
 
@@ -77,47 +91,52 @@ export default function Chat() {
     setIcebreakers([]);
   }, []);
 
-  const loadMatchFromUrl = useCallback(async (matchId: string) => {
-    setLoadingMatch(true);
-    try {
-      // Fetch the match
-      const { data: match, error } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('id', matchId)
-        .single();
+  const loadMatchFromUrl = useCallback(
+    async (matchId: string) => {
+      setLoadingMatch(true);
+      try {
+        // Fetch the match
+        const { data: match, error } = await supabase
+          .from("matches")
+          .select("*")
+          .eq("id", matchId)
+          .single();
 
-      if (error || !match) {
-        console.error('Match not found:', error);
-        return;
-      }
+        if (error || !match) {
+          console.error("Match not found:", error);
+          return;
+        }
 
-      // Determine the matched user ID
-      const matchedUserId = match.user_id === user?.id 
-        ? match.matched_user_id 
-        : match.user_id;
+        // Determine the matched user ID
+        const matchedUserId =
+          match.user_id === user?.id ? match.matched_user_id : match.user_id;
 
-      // Fetch the profile
+        // Fetch the profile
         // @ts-expect-error: Supabase client types cause deep instantiation error here
         const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('display_name, avatar_url')
-          .eq('user_id', matchedUserId)
+          .from("profiles")
+          .select("display_name, avatar_url")
+          .eq("user_id", matchedUserId)
           .single();
         // Type assertion to avoid deep type instantiation error
-        const safeProfile = (profile as { display_name: string; avatar_url: string | null }) ?? { display_name: 'Användare', avatar_url: null };
+        const safeProfile = (profile as {
+          display_name: string;
+          avatar_url: string | null;
+        }) ?? { display_name: "Användare", avatar_url: null };
         handleSelectMatch({
           id: matchId,
           matched_user_id: matchedUserId,
           matched_profile: safeProfile,
         });
-    } finally {
-      setLoadingMatch(false);
-    }
-  }, [handleSelectMatch, user]);
+      } finally {
+        setLoadingMatch(false);
+      }
+    },
+    [handleSelectMatch, user]
+  );
 
   useEffect(() => {
-    const matchId = searchParams.get('match');
+    const matchId = searchParams.get("match");
     if (matchId && user && !selectedMatch) {
       loadMatchFromUrl(matchId);
     }
@@ -126,7 +145,7 @@ export default function Chat() {
   const handleBack = () => {
     setSelectedMatch(null);
     // Clear the URL parameter
-    navigate('/chat', { replace: true });
+    navigate("/chat", { replace: true });
   };
 
   // Example signaling: listen for incoming call requests
@@ -135,7 +154,7 @@ export default function Chat() {
     // Subscribe to realtime for incoming calls
     const channel = supabase.channel(`calls:${user.id}`);
     channel
-      .on('broadcast', { event: 'call_request' }, (payload) => {
+      .on("broadcast", { event: "call_request" }, (payload) => {
         const { from, callerName } = payload.payload;
         if (from !== user.id) {
           setIncomingCall({ callerName, callerId: from });
@@ -151,16 +170,15 @@ export default function Chat() {
   const handleAcceptCall = () => {
     if (!incomingCall || !selectedMatch) return;
     // Send accept signal
-    supabase.channel(`calls:${incomingCall.callerId}`)
-      .send({
-        type: 'broadcast',
-        event: 'call_accepted',
-        payload: { 
-          to: incomingCall.callerId,
-          from: user?.id,
-          matchId: selectedMatch.id 
-        }
-      });
+    supabase.channel(`calls:${incomingCall.callerId}`).send({
+      type: "broadcast",
+      event: "call_accepted",
+      payload: {
+        to: incomingCall.callerId,
+        from: user?.id,
+        matchId: selectedMatch.id,
+      },
+    });
     setIncomingCall(null);
     setVideoCallActive(true);
   };
@@ -169,18 +187,17 @@ export default function Chat() {
       setCallLogs((logs) => [
         ...logs,
         {
-          type: 'missed',
+          type: "missed",
           timestamp: new Date().toISOString(),
           callerName: incomingCall.callerName,
         },
       ]);
       // Send decline signal
-      supabase.channel(`calls:${incomingCall.callerId}`)
-        .send({
-          type: 'broadcast',
-          event: 'call_declined',
-          payload: { to: incomingCall.callerId, from: user?.id }
-        });
+      supabase.channel(`calls:${incomingCall.callerId}`).send({
+        type: "broadcast",
+        event: "call_declined",
+        payload: { to: incomingCall.callerId, from: user?.id },
+      });
       setIncomingCall(null);
     }
   };
@@ -189,10 +206,10 @@ export default function Chat() {
     setCallLogs((logs) => [
       ...logs,
       {
-        type: 'completed',
+        type: "completed",
         timestamp: new Date().toISOString(),
         duration,
-        callerName: selectedMatch?.matched_profile?.display_name || 'Unknown',
+        callerName: selectedMatch?.matched_profile?.display_name || "Unknown",
       },
     ]);
     setVideoCallActive(false);
@@ -212,8 +229,13 @@ export default function Chat() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center text-muted-foreground">
-          <h2 className="font-semibold text-lg mb-2">Real-time chat är tillfälligt otillgängligt</h2>
-          <p>Du kan fortfarande läsa gamla meddelanden, men nya meddelanden visas inte direkt. Försök igen senare.</p>
+          <h2 className="font-semibold text-lg mb-2">
+            Real-time chat är tillfälligt otillgängligt
+          </h2>
+          <p>
+            Du kan fortfarande läsa gamla meddelanden, men nya meddelanden visas
+            inte direkt. Försök igen senare.
+          </p>
         </div>
       </div>
     );
@@ -246,8 +268,12 @@ export default function Chat() {
           <ChatWindow
             matchId={selectedMatch.id}
             matchedUserId={selectedMatch.matched_user_id}
-            matchedUserName={selectedMatch.matched_profile?.display_name || 'Användare'}
-            matchedUserAvatar={selectedMatch.matched_profile?.avatar_url || undefined}
+            matchedUserName={
+              selectedMatch.matched_profile?.display_name || "Användare"
+            }
+            matchedUserAvatar={
+              selectedMatch.matched_profile?.avatar_url || undefined
+            }
             icebreakers={icebreakers}
             onBack={handleBack}
           />
@@ -259,7 +285,7 @@ export default function Chat() {
               Starta videochatt
             </button>
           </div>
-            <CallHistoryDisplay logs={callLogs} />
+          <CallHistoryDisplay logs={callLogs} />
         </>
       ) : (
         <>
@@ -270,7 +296,7 @@ export default function Chat() {
             </div>
           </div>
           <div className="flex-1 overflow-auto p-4">
-            <MatchList 
+            <MatchList
               onSelectMatch={handleSelectMatch}
               selectedMatchId={selectedMatch?.id}
             />
