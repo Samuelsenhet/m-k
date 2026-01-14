@@ -82,7 +82,7 @@ export function useMatches() {
           matches: MatchDailyMatch[];
           next_cursor?: string | null;
         } | null;
-        error: any;
+        error: unknown;
       } = await supabase.functions.invoke("v1/match-daily", {
         body: {
           user_id: user.id,
@@ -122,7 +122,7 @@ export function useMatches() {
           matches: MatchDailyMatch[];
           next_cursor?: string | null;
         } | null;
-        error: any;
+        error: unknown;
       } = await supabase.functions.invoke("v1/match-daily", {
         body: {
           user_id: user.id,

@@ -36,7 +36,9 @@ export interface MatchDailyMatch {
   is_first_day_match: boolean;
   expires_at: string;
   special_effects?: string[] | null;
+  special_event_message?: string | null;
   photo_urls: string[];
   bio_preview: string;
+  avatar_url?: string;
   common_interests: string[];
 }
