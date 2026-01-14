@@ -98,7 +98,7 @@ export default function Chat() {
         : match.user_id;
 
       // Fetch the profile
-        // @ts-ignore: Supabase client types cause deep instantiation error here
+        // @ts-expect-error: Supabase client types cause deep instantiation error here
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('display_name, avatar_url')

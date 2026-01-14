@@ -35,7 +35,8 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-const mapMatch = (m: any): Match => ({
+import type { MatchDailyMatch, DimensionScoreBreakdown } from '@/types/api';
+const mapMatch = (m: MatchDailyMatch): Match => ({
   id: m.match_id,
   matchedUser: {
     userId: m.profile_id,
@@ -73,20 +74,20 @@ export function useMatches() {
     setHasMore(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('v1/match-daily', {
+      const { data, error }: { data: { matches: MatchDailyMatch[]; next_cursor?: string | null } | null, error: any } = await supabase.functions.invoke('v1/match-daily', {
         body: {
           user_id: user.id,
           page_size: PAGE_SIZE,
         },
       });
       if (error) throw error;
-      if (!data || !data.matches) {
+      if (!data || !Array.isArray(data.matches)) {
         setMatches([]);
         setHasMore(false);
         setLoading(false);
         return;
       }
-      setMatches(data.matches.map(mapMatch));
+      setMatches((data.matches as MatchDailyMatch[]).map(mapMatch));
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
@@ -104,7 +105,7 @@ export function useMatches() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('v1/match-daily', {
+      const { data, error }: { data: { matches: MatchDailyMatch[]; next_cursor?: string | null } | null, error: any } = await supabase.functions.invoke('v1/match-daily', {
         body: {
           user_id: user.id,
           page_size: PAGE_SIZE,
@@ -112,14 +113,14 @@ export function useMatches() {
         },
       });
       if (error) throw error;
-      if (!data || !data.matches) {
+      if (!data || !Array.isArray(data.matches)) {
         setHasMore(false);
         setLoading(false);
         return;
       }
       setMatches((prev) => [
         ...prev,
-        ...data.matches.map(mapMatch),
+        ...(data.matches as MatchDailyMatch[]).map(mapMatch),
       ]);
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);

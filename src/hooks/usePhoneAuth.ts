@@ -1,3 +1,4 @@
+type SupabaseUser = { id: string };
 // Defensive parsing for Supabase responses
 const parseAuthResponse = <T>(response: { data?: T; error?: unknown }, context: string): T => {
   if (response.error) {
@@ -71,11 +72,11 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
         },
         body: JSON.stringify({ phone: formattedPhone }),
       });
-      let data: any = {};
+      let data: { success?: boolean; error?: string } = {};
       let text = '';
       try {
         text = await response.text();
-        data = JSON.parse(text);
+        data = JSON.parse(text) as { success?: boolean; error?: string };
       } catch {
         data = {};
       }
@@ -122,7 +123,7 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
         },
         body: JSON.stringify({ phone: formattedPhone, code: token }),
       });
-      const data = await response.json();
+      const data: { success?: boolean; error?: string } = await response.json();
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Ogiltig verifieringskod");
       }
@@ -131,8 +132,13 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
         await supabase.auth.signInWithOtp({ phone: formattedPhone }),
         'signInWithOtp'
       );
-      if (supaData.session && (supaData.session as any).user && (supaData.session as any).user.id) {
-        const userId = (supaData.session as any).user.id;
+      if (
+        supaData.session &&
+        typeof supaData.session.user === 'object' &&
+        supaData.session.user !== null &&
+        'id' in (supaData.session.user as object)
+      ) {
+        const userId = (supaData.session.user as SupabaseUser).id;
         const isNewUser = await checkIfNewUser(userId);
         if (isNewUser) {
           setStep("profile");

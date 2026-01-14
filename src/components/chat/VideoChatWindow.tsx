@@ -8,8 +8,8 @@ interface VideoChatWindowProps {
 }
 
 export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebreakers, onEndCall }) => {
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localVideoRef: React.RefObject<HTMLVideoElement> = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef: React.RefObject<HTMLVideoElement> = useRef<HTMLVideoElement>(null);
   const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
   const [currentIcebreaker, setCurrentIcebreaker] = useState(0);
   const { sendMessage, isConnected } = useRealtime({ roomId });
@@ -80,7 +80,7 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
   };
   const startScreenShare = async () => {
     try {
-      const screenStream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true });
+      const screenStream = (await (navigator.mediaDevices.getDisplayMedia({ video: true }) as Promise<MediaStream>));
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = screenStream;
       }
@@ -95,17 +95,19 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
         }
         setScreenSharing(false);
       };
-    } catch (err) {
-      // Handle error
+    } catch (err: unknown) {
+      console.error('Screen share error:', err);
     }
   };
   const togglePiP = async () => {
     if (localVideoRef.current) {
       if (!pipActive) {
         try {
-          await (localVideoRef.current as any).requestPictureInPicture();
+          await (localVideoRef.current as HTMLVideoElement & { requestPictureInPicture: () => Promise<PictureInPictureWindow> }).requestPictureInPicture();
           setPipActive(true);
-        } catch (err) {}
+        } catch (err: unknown) {
+          console.error('PiP error:', err);
+        }
       } else {
         document.exitPictureInPicture();
         setPipActive(false);
@@ -114,14 +116,16 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({ roomId, icebre
   };
 
   useEffect(() => {
-    if (localVideoRef.current) {
-      localVideoRef.current.addEventListener('leavepictureinpicture', () => setPipActive(false));
+    const videoEl = localVideoRef.current;
+    if (videoEl) {
+      const handler = () => setPipActive(false);
+      videoEl.addEventListener('leavepictureinpicture', handler);
+      return () => {
+        // Use a stable reference to the video element for cleanup
+        const cleanupVideoEl = videoEl;
+        cleanupVideoEl.removeEventListener('leavepictureinpicture', handler);
+      };
     }
-    return () => {
-      if (localVideoRef.current) {
-        localVideoRef.current.removeEventListener('leavepictureinpicture', () => setPipActive(false));
-      }
-    };
   }, []);
 
   const endCallForBoth = () => {

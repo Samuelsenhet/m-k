@@ -1,3 +1,9 @@
+// Utility type guard for InsertedMatchRow[]
+function isInsertedMatchRowArray(arr: unknown): arr is InsertedMatchRow[] {
+  return Array.isArray(arr) && arr.every(
+    (item) => item && typeof item === 'object' && 'id' in item && 'matched_user_id' in item
+  );
+}
 // v1 match-daily Edge Function (copy of original for versioning)
 // See /supabase/functions/match-daily/index.ts for full logic
 
@@ -119,7 +125,10 @@ serve(async (req: Request) => {
   try {
     const body = await req.clone().json();
     userId = body.user_id;
-  } catch {}
+  } catch (err) {
+    userId = undefined;
+    console.error('Failed to parse user_id from request body:', err);
+  }
 
   // Rate limit: max 5 requests per user per hour
   if (userId) {
@@ -383,14 +392,15 @@ serve(async (req: Request) => {
 
     // Audit log: record match delivery
     if (insertedMatches && insertedMatches.length > 0) {
+      const insertedMatchRows = isInsertedMatchRowArray(insertedMatches) ? insertedMatches : [];
       await supabaseClient
         .from('logs')
         .insert({
           user_id: requestUserId,
           action: 'match_delivery',
           details: {
-            match_ids: insertedMatches.map((m: any) => m.id),
-            count: insertedMatches.length,
+            match_ids: insertedMatchRows.map((m) => m.id),
+            count: insertedMatchRows.length,
             date: today
           }
         });

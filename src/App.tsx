@@ -9,6 +9,8 @@ import { ConsentProvider } from "@/contexts/ConsentProvider";
 import { useConsent } from "@/contexts/useConsent";
 import { GdprOnboarding } from "@/components/onboarding/GdprOnboarding";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import React from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Index from "./pages/Index";
 import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
@@ -58,6 +60,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <SpeedInsights />
             <AppContent />
           </TooltipProvider>
         </AuthProvider>

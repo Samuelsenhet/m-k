@@ -1,3 +1,8 @@
+export interface DimensionScoreBreakdown {
+  personality_similarity: number;
+  archetype_alignment: number;
+  interest_overlap: number;
+}
 // Types for API contracts (Edge Functions)
 
 export interface MatchDailyRequest {
@@ -22,7 +27,7 @@ export interface MatchDailyMatch {
   age: number;
   archetype: string;
   compatibility_percentage: number;
-  dimension_score_breakdown: any[];
+  dimension_score_breakdown: DimensionScoreBreakdown[];
   archetype_alignment_score: number;
   conversation_anxiety_reduction_score: number;
   ai_icebreakers: string[];
