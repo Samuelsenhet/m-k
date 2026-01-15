@@ -1,4 +1,5 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 interface NotificationPayload {
   user_id: string;
@@ -15,7 +16,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req: Request) => {
+serve(async (req: Request) => {
   // handle cors preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -96,9 +97,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error) {
     console.error('Error sending notification:', error);
-    
+
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
