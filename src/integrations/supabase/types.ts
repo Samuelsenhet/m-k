@@ -7,225 +7,210 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
       achievements: {
         Row: {
-          achievement_type: string
+          category: string
+          code: string
           created_at: string
+          description_en: string
+          description_sv: string
+          icon: string
           id: string
-          unlocked_at: string
-          user_id: string
+          name_en: string
+          name_sv: string
+          points: number
         }
         Insert: {
-          achievement_type: string
+          category?: string
+          code: string
           created_at?: string
+          description_en: string
+          description_sv: string
+          icon?: string
           id?: string
-          unlocked_at?: string
-          user_id: string
+          name_en: string
+          name_sv: string
+          points?: number
         }
         Update: {
-          achievement_type?: string
+          category?: string
+          code?: string
           created_at?: string
+          description_en?: string
+          description_sv?: string
+          icon?: string
           id?: string
-          unlocked_at?: string
-          user_id?: string
+          name_en?: string
+          name_sv?: string
+          points?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "achievements_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      consents: {
+      daily_match_batches: {
         Row: {
-          consent_type: string
-          created_at: string
-          granted: boolean
-          granted_at: string | null
+          batch_size: number
+          date: string
+          generated_at: string | null
+          generated_by: string | null
           id: string
-          ip_address: string | null
-          revoked_at: string | null
-          updated_at: string
-          user_agent: string | null
-          user_id: string
+          special_event: string | null
+          special_event_message: string | null
         }
         Insert: {
-          consent_type: string
-          created_at?: string
-          granted?: boolean
-          granted_at?: string | null
+          batch_size?: number
+          date: string
+          generated_at?: string | null
+          generated_by?: string | null
           id?: string
-          ip_address?: string | null
-          revoked_at?: string | null
-          updated_at?: string
-          user_agent?: string | null
-          user_id: string
+          special_event?: string | null
+          special_event_message?: string | null
         }
         Update: {
-          consent_type?: string
-          created_at?: string
-          granted?: boolean
-          granted_at?: string | null
+          batch_size?: number
+          date?: string
+          generated_at?: string | null
+          generated_by?: string | null
           id?: string
-          ip_address?: string | null
-          revoked_at?: string | null
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string
+          special_event?: string | null
+          special_event_message?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "consents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      dealbreakers: {
+      daily_questions: {
+        Row: {
+          active_date: string
+          created_at: string
+          id: string
+          question_text: string
+        }
+        Insert: {
+          active_date: string
+          created_at?: string
+          id?: string
+          question_text: string
+        }
+        Update: {
+          active_date?: string
+          created_at?: string
+          id?: string
+          question_text?: string
+        }
+        Relationships: []
+      }
+      icebreakers: {
         Row: {
           created_at: string
-          gender_preferences: string[] | null
+          display_order: number
+          icebreaker_text: string
           id: string
-          max_age: number | null
-          max_distance_km: number | null
-          min_age: number | null
-          updated_at: string
-          user_id: string
+          match_id: string
+          used: boolean
         }
         Insert: {
           created_at?: string
-          gender_preferences?: string[] | null
+          display_order?: number
+          icebreaker_text: string
           id?: string
-          max_age?: number | null
-          max_distance_km?: number | null
-          min_age?: number | null
-          updated_at?: string
-          user_id: string
+          match_id: string
+          used?: boolean
         }
         Update: {
           created_at?: string
-          gender_preferences?: string[] | null
+          display_order?: number
+          icebreaker_text?: string
           id?: string
-          max_age?: number | null
-          max_distance_km?: number | null
-          min_age?: number | null
-          updated_at?: string
-          user_id?: string
+          match_id?: string
+          used?: boolean
         }
         Relationships: [
           {
-            foreignKeyName: "dealbreakers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
+            foreignKeyName: "icebreakers_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
             referencedColumns: ["id"]
           },
         ]
       }
       matches: {
         Row: {
-          compatibility_score: number
+          composite_score: number | null
           created_at: string
+          expires_at: string
           id: string
+          is_first_day_match: boolean | null
           match_date: string
+          match_score: number
+          match_type: string
           matched_user_id: string
-          status: string | null
+          special_effects: Json | null
+          status: string
           user_id: string
         }
         Insert: {
-          compatibility_score: number
+          composite_score?: number | null
           created_at?: string
+          expires_at?: string
           id?: string
+          is_first_day_match?: boolean | null
           match_date?: string
+          match_score?: number
+          match_type: string
           matched_user_id: string
-          status?: string | null
+          special_effects?: Json | null
+          status?: string
           user_id: string
         }
         Update: {
-          compatibility_score?: number
+          composite_score?: number | null
           created_at?: string
+          expires_at?: string
           id?: string
+          is_first_day_match?: boolean | null
           match_date?: string
+          match_score?: number
+          match_type?: string
           matched_user_id?: string
-          status?: string | null
+          special_effects?: Json | null
+          status?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "matches_matched_user_id_fkey"
-            columns: ["matched_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "matches_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       messages: {
         Row: {
           content: string
           created_at: string
           id: string
+          is_read: boolean
           match_id: string
-          read_at: string | null
+          message_type: string
           sender_id: string
-          updated_at: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          is_read?: boolean
           match_id: string
-          read_at?: string | null
+          message_type?: string
           sender_id: string
-          updated_at?: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          is_read?: boolean
           match_id?: string
-          read_at?: string | null
+          message_type?: string
           sender_id?: string
-          updated_at?: string
         }
         Relationships: [
           {
@@ -235,350 +220,434 @@ export type Database = {
             referencedRelation: "matches"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
-      notifications: {
+      personality_results: {
         Row: {
-          body: string
+          archetype: string | null
+          category: string
           created_at: string
-          data: Json | null
           id: string
-          read: boolean | null
-          title: string
-          type: string
+          scores: Json
           user_id: string
         }
         Insert: {
-          body: string
+          archetype?: string | null
+          category: string
           created_at?: string
-          data?: Json | null
           id?: string
-          read?: boolean | null
-          title: string
-          type: string
+          scores: Json
           user_id: string
         }
         Update: {
-          body?: string
+          archetype?: string | null
+          category?: string
           created_at?: string
-          data?: Json | null
           id?: string
-          read?: boolean | null
-          title?: string
-          type?: string
+          scores?: Json
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      personality_scores: {
+      profile_photos: {
         Row: {
-          agreeableness: number
-          conscientiousness: number
           created_at: string
-          extraversion: number
+          display_order: number
           id: string
-          neuroticism: number
-          openness: number
-          updated_at: string
+          prompt: string | null
+          storage_path: string
           user_id: string
         }
         Insert: {
-          agreeableness: number
-          conscientiousness: number
           created_at?: string
-          extraversion: number
+          display_order?: number
           id?: string
-          neuroticism: number
-          openness: number
-          updated_at?: string
+          prompt?: string | null
+          storage_path: string
           user_id: string
         }
         Update: {
-          agreeableness?: number
-          conscientiousness?: number
           created_at?: string
-          extraversion?: number
+          display_order?: number
           id?: string
-          neuroticism?: number
-          openness?: number
-          updated_at?: string
+          prompt?: string | null
+          storage_path?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "personality_scores_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      privacy_settings: {
-        Row: {
-          allow_analytics: boolean | null
-          created_at: string
-          id: string
-          show_online_status: boolean | null
-          show_read_receipts: boolean | null
-          show_typing_indicator: boolean | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          allow_analytics?: boolean | null
-          created_at?: string
-          id?: string
-          show_online_status?: boolean | null
-          show_read_receipts?: boolean | null
-          show_typing_indicator?: boolean | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          allow_analytics?: boolean | null
-          created_at?: string
-          id?: string
-          show_online_status?: boolean | null
-          show_read_receipts?: boolean | null
-          show_typing_indicator?: boolean | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "privacy_settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
+          alcohol: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
+          education: string | null
           gender: string | null
+          height: number | null
+          hometown: string | null
           id: string
+          interested_in: string | null
           looking_for: string | null
-          onboarding_completed: boolean | null
-          onboarding_completed_at: string | null
+          max_age: number | null
+          max_distance: number | null
+          min_age: number | null
+          onboarding_completed: boolean
           phone: string | null
           phone_verified_at: string | null
+          politics: string | null
+          profile_completion: number | null
+          pronouns: string | null
+          religion: string | null
+          sexuality: string | null
+          show_age: boolean
+          show_education: boolean
+          show_job: boolean
+          show_last_name: boolean
+          smoking: string | null
           updated_at: string
+          user_id: string
+          work: string | null
         }
         Insert: {
+          alcohol?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          education?: string | null
           gender?: string | null
-          id: string
+          height?: number | null
+          hometown?: string | null
+          id?: string
+          interested_in?: string | null
           looking_for?: string | null
-          onboarding_completed?: boolean | null
-          onboarding_completed_at?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
+          politics?: string | null
+          profile_completion?: number | null
+          pronouns?: string | null
+          religion?: string | null
+          sexuality?: string | null
+          show_age?: boolean
+          show_education?: boolean
+          show_job?: boolean
+          show_last_name?: boolean
+          smoking?: string | null
           updated_at?: string
+          user_id: string
+          work?: string | null
         }
         Update: {
+          alcohol?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          education?: string | null
           gender?: string | null
+          height?: number | null
+          hometown?: string | null
           id?: string
+          interested_in?: string | null
           looking_for?: string | null
-          onboarding_completed?: boolean | null
-          onboarding_completed_at?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          onboarding_completed?: boolean
           phone?: string | null
           phone_verified_at?: string | null
+          politics?: string | null
+          profile_completion?: number | null
+          pronouns?: string | null
+          religion?: string | null
+          sexuality?: string | null
+          show_age?: boolean
+          show_education?: boolean
+          show_job?: boolean
+          show_last_name?: boolean
+          smoking?: string | null
           updated_at?: string
+          user_id?: string
+          work?: string | null
         }
         Relationships: []
       }
-      push_subscriptions: {
+      question_responses: {
         Row: {
-          auth: string
           created_at: string
-          endpoint: string
           id: string
-          p256dh: string
+          question_id: string
+          response_text: string
           user_id: string
         }
         Insert: {
-          auth: string
           created_at?: string
-          endpoint: string
           id?: string
-          p256dh: string
+          question_id: string
+          response_text: string
           user_id: string
         }
         Update: {
-          auth?: string
           created_at?: string
-          endpoint?: string
           id?: string
-          p256dh?: string
+          question_id?: string
+          response_text?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "question_responses_question_id_fkey"
+            columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "daily_questions"
             referencedColumns: ["id"]
           },
         ]
       }
-      subscriptions: {
+      user_achievements: {
         Row: {
-          created_at: string
-          expires_at: string | null
+          achievement_id: string
+          earned_at: string
           id: string
-          plan_type: string
-          started_at: string
-          status: string
-          updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string
-          expires_at?: string | null
+          achievement_id: string
+          earned_at?: string
           id?: string
-          plan_type: string
-          started_at?: string
-          status: string
-          updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string
-          expires_at?: string | null
+          achievement_id?: string
+          earned_at?: string
           id?: string
-          plan_type?: string
-          started_at?: string
-          status?: string
-          updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
             referencedColumns: ["id"]
           },
         ]
       }
-      user_daily_match_pools: {
+      user_journey_state: {
         Row: {
-          candidates_data: Json
-          created_at: string
+          created_at: string | null
+          first_matches_delivered_at: string | null
+          id: string
+          journey_phase: string | null
+          registration_completed_at: string | null
+          total_matches_received: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          first_matches_delivered_at?: string | null
+          id?: string
+          journey_phase?: string | null
+          registration_completed_at?: string | null
+          total_matches_received?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          first_matches_delivered_at?: string | null
+          id?: string
+          journey_phase?: string | null
+          registration_completed_at?: string | null
+          total_matches_received?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_match_deliveries: {
+        Row: {
+          batch_id: string | null
+          date: string
           delivered_at: string | null
           id: string
-          is_delivered: boolean | null
-          pool_date: string
+          last_matched_profile_ids: string[] | null
+          matches_delivered: number
           user_id: string
         }
         Insert: {
-          candidates_data: Json
-          created_at?: string
+          batch_id?: string | null
+          date: string
           delivered_at?: string | null
           id?: string
-          is_delivered?: boolean | null
-          pool_date?: string
+          last_matched_profile_ids?: string[] | null
+          matches_delivered?: number
           user_id: string
         }
         Update: {
-          candidates_data?: Json
-          created_at?: string
+          batch_id?: string | null
+          date?: string
           delivered_at?: string | null
           id?: string
-          is_delivered?: boolean | null
-          pool_date?: string
+          last_matched_profile_ids?: string[] | null
+          matches_delivered?: number
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_daily_match_pools_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "user_match_deliveries_batch_id_fkey"
+            columns: ["batch_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "daily_match_batches"
             referencedColumns: ["id"]
           },
         ]
       }
-      user_match_delivery_status: {
+      user_roles: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
-          last_delivered_date: string | null
-          next_available_date: string | null
-          timezone: string | null
-          updated_at: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          last_delivered_date?: string | null
-          next_available_date?: string | null
-          timezone?: string | null
-          updated_at?: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          last_delivered_date?: string | null
-          next_available_date?: string | null
-          timezone?: string | null
-          updated_at?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_match_delivery_status_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          is_plus: boolean | null
+          subscription_tier: string | null
+          updated_at: string | null
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          is_plus?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          is_plus?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      match_candidate_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          display_name: string | null
+          education: string | null
+          gender: string | null
+          height: number | null
+          hometown: string | null
+          interested_in: string | null
+          looking_for: string | null
+          max_age: number | null
+          max_distance: number | null
+          min_age: number | null
+          onboarding_completed: boolean | null
+          show_age: boolean | null
+          show_education: boolean | null
+          show_job: boolean | null
+          user_id: string | null
+          work: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          education?: never
+          gender?: string | null
+          height?: number | null
+          hometown?: string | null
+          interested_in?: string | null
+          looking_for?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          onboarding_completed?: boolean | null
+          show_age?: boolean | null
+          show_education?: boolean | null
+          show_job?: boolean | null
+          user_id?: string | null
+          work?: never
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          education?: never
+          gender?: string | null
+          height?: number | null
+          hometown?: string | null
+          interested_in?: string | null
+          looking_for?: string | null
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          onboarding_completed?: boolean | null
+          show_age?: boolean | null
+          show_education?: boolean | null
+          show_job?: boolean | null
+          user_id?: string | null
+          work?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      can_view_profile_for_matching: {
+        Args: { _profile_user_id: string; _viewer_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -704,11 +773,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
-

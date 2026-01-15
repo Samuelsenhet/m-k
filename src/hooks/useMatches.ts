@@ -59,6 +59,7 @@ interface ProfileWithResults {
   }[];
 }
 
+export const useMatches = (): UseMatchesReturn => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,107 +172,6 @@ interface ProfileWithResults {
       setLoading(false);
     }
   }, [user, nextCursor, hasMore]);
-
-      // No matches for today, generate new ones
-      // Fetch all other users with personality results
-      const { data: allProfiles, error: allProfilesError } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, bio')
-        .neq('user_id', user.id);
-
-      if (allProfilesError) throw allProfilesError;
-
-      const { data: allResults, error: allResultsError } = await supabase
-        .from('personality_results')
-        .select('user_id, category, archetype, scores')
-        .neq('user_id', user.id);
-
-      if (allResultsError) throw allResultsError;
-
-      // Create candidates from profiles with results
-      const resultsMap = new Map(allResults?.map((r) => [r.user_id, r]));
-      const profilesMap = new Map(allProfiles?.map((p) => [p.user_id, p]));
-
-      const candidates = allResults
-        ?.filter((r) => profilesMap.has(r.user_id))
-        .map((r) => {
-          const profile = profilesMap.get(r.user_id);
-          return {
-            userId: r.user_id,
-            displayName: profile?.display_name || 'Anonym',
-            avatarUrl: profile?.avatar_url || undefined,
-            category: r.category as PersonalityCategory,
-            archetype: r.archetype || undefined,
-            scores: r.scores as Record<DimensionKey, number>,
-            bio: profile?.bio || undefined,
-          };
-        }) || [];
-
-      if (candidates.length === 0) {
-        setMatches([]);
-        setError('Inga matchningar tillgängliga just nu');
-        setLoading(false);
-        // Removed invalid return statement
-      }
-
-      // Calculate matches using our algorithm
-      const currentUser = {
-        userId: user.id,
-        displayName: '',
-        category: currentUserResult.category as PersonalityCategory,
-        scores: currentUserScores,
-      };
-
-      const matchResults = calculateDailyMatches(
-        currentUser,
-        candidates,
-        5, // Total matches (60% similar, 40% complementary)
-        [] // No previous matched IDs for now
-      );
-
-      // Save matches to database
-      const matchesToInsert = matchResults.map((m) => ({
-        user_id: user.id,
-        matched_user_id: m.user.userId,
-        match_type: m.matchType,
-        match_score: m.matchScore,
-        status: 'pending',
-        match_date: today,
-      }));
-
-      const { data: insertedMatches, error: insertError } = await supabase
-        .from('matches')
-        .insert(matchesToInsert)
-        .select();
-
-      if (insertError) throw insertError;
-
-      const formattedMatches: Match[] = matchResults.map((m, i) => ({
-        id: insertedMatches?.[i]?.id || `temp-${i}`,
-        matchedUser: {
-          userId: m.user.userId,
-          displayName: m.user.displayName,
-          avatarUrl: m.user.avatarUrl,
-          category: m.user.category,
-          archetype: m.user.archetype,
-          bio: m.user.bio,
-          photos: [],
-        },
-        matchType: m.matchType,
-        matchScore: m.matchScore,
-        status: 'pending' as const,
-        compatibilityFactors: m.compatibilityFactors,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      }));
-
-      setMatches(formattedMatches);
-    } catch (err: unknown) {
-      console.error('Error fetching matches:', err);
-      setError(getErrorMessage(err, 'Kunde inte hämta matchningar'));
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
 
   const generateIcebreakers = async (matchId: string, userArchetype: string, matchedUserArchetype: string, userName: string, matchedUserName: string) => {
     try {
