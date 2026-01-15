@@ -31,3 +31,14 @@ dist-ssr
 # Capacitor
 android/
 ios/
+
+# MCP/Tool configs (may contain secrets)
+.roo/
+mcp.json
+
+# Python (not used)
+*.py
+__pycache__/
+
+# Misc
+-
