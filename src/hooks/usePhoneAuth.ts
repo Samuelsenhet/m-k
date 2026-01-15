@@ -1,18 +1,3 @@
-type SupabaseUser = { id: string };
-// Defensive parsing for Supabase responses
-const parseAuthResponse = <T>(
-  response: { data?: T; error?: unknown },
-  context: string
-): T => {
-  if (response.error) {
-    console.error(`${context} error`, response.error);
-    throw response.error;
-  }
-  if (!response.data) {
-    throw new Error(`${context}: No data returned`);
-  }
-  return response.data;
-};
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,15 +50,16 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     try {
       const formattedPhone = formatPhoneE164(phone);
 
-      // Production: Send OTP via Twilio Edge Function
-      const jwt = supabase.auth
-        .getSession()
-        .then((res) => res.data.session?.access_token);
-      const response = await fetch("/functions/v1/twilio-send-otp", {
+      // Get Supabase URL and anon key from environment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      // Send OTP via Twilio Edge Function
+      const response = await fetch(`${supabaseUrl}/functions/v1/twilio-send-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${await jwt}`,
+          "Authorization": `Bearer ${supabaseAnonKey}`,
         },
         body: JSON.stringify({ phone: formattedPhone }),
       });
@@ -88,7 +74,26 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
       if (!response.ok || !data.success) {
         // Log the raw response for debugging
         console.error("OTP API error. Raw response:", text);
-        throw new Error(data.error || "Kunde inte skicka verifieringskod");
+
+        // Better error messages based on status code and error content
+        let userMessage = "Kunde inte skicka verifieringskod";
+
+        if (response.status === 429) {
+          userMessage = data.error || "För många försök. Vänta en stund och försök igen.";
+        } else if (response.status === 400) {
+          userMessage = "Ogiltigt telefonnummer. Kontrollera och försök igen.";
+        } else if (data.error) {
+          // Check for specific error messages from Twilio
+          if (data.error.includes("invalid")) {
+            userMessage = "Ogiltigt telefonnummer. Använd formatet: 070XXXXXXX";
+          } else if (data.error.includes("många försök")) {
+            userMessage = data.error; // Already in Swedish from edge function
+          } else {
+            userMessage = data.error;
+          }
+        }
+
+        throw new Error(userMessage);
       }
       setStep("verify");
       return true;
@@ -100,17 +105,6 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     }
   };
 
-  const checkIfNewUser = async (userId: string): Promise<boolean> => {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("date_of_birth")
-      .eq("id", userId)
-      .single();
-
-    // New user if no date_of_birth set
-    return !profile?.date_of_birth;
-  };
-
   const verifyOtp = async (phone: string, token: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -118,41 +112,75 @@ export const usePhoneAuth = (): UsePhoneAuthReturn => {
     try {
       const formattedPhone = formatPhoneE164(phone);
 
-      // Production: Verify OTP via Twilio Edge Function
-      const jwt = supabase.auth
-        .getSession()
-        .then((res) => res.data.session?.access_token);
-      const response = await fetch("/functions/v1/twilio-verify-otp", {
+      // Get Supabase URL and anon key from environment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      // Verify OTP via Twilio Edge Function
+      const response = await fetch(`${supabaseUrl}/functions/v1/twilio-verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${await jwt}`,
+          "Authorization": `Bearer ${supabaseAnonKey}`,
         },
         body: JSON.stringify({ phone: formattedPhone, code: token }),
       });
-      const data: { success?: boolean; error?: string } = await response.json();
+      const data: {
+        success?: boolean;
+        error?: string;
+        session?: { access_token: string; refresh_token: string };
+        isNewUser?: boolean;
+      } = await response.json();
+
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Ogiltig verifieringskod");
-      }
-      // If Twilio verification succeeds, sign in/up with Supabase
-      const supaData = parseAuthResponse(
-        await supabase.auth.signInWithOtp({ phone: formattedPhone }),
-        "signInWithOtp"
-      );
-      if (
-        supaData.session &&
-        typeof supaData.session.user === "object" &&
-        supaData.session.user !== null &&
-        "id" in (supaData.session.user as object)
-      ) {
-        const userId = (supaData.session.user as SupabaseUser).id;
-        const isNewUser = await checkIfNewUser(userId);
-        if (isNewUser) {
-          setStep("profile");
+        // Surface the actual server error for better debugging
+        const serverError = data.error || "";
+        let userMessage = "Ogiltig verifieringskod";
+
+        if (response.status === 429) {
+          userMessage = serverError || "För många försök. Vänta en stund och försök igen.";
+        } else if (response.status === 401) {
+          // OTP verification failed
+          if (serverError.includes("utgått") || serverError.includes("canceled")) {
+            userMessage = "Koden har utgått. Begär en ny kod.";
+          } else if (serverError.includes("Fel kod") || serverError.includes("pending")) {
+            userMessage = "Fel kod. Kontrollera och försök igen.";
+          } else {
+            userMessage = serverError || "Ogiltig kod. Kontrollera och försök igen.";
+          }
+        } else if (response.status === 500) {
+          // Server error - surface actual message for debugging
+          console.error("Server error during OTP verification:", serverError);
+          userMessage = serverError || "Ett serverfel uppstod. Försök igen senare.";
+        } else if (serverError) {
+          // Use server error directly if it's in Swedish
+          userMessage = serverError;
         }
-        return true;
+
+        throw new Error(userMessage);
       }
-      throw new Error("Verifiering misslyckades");
+
+      // Set the session returned from the backend
+      if (!data.session) {
+        throw new Error("Ingen session returnerades från servern");
+      }
+
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      if (sessionError) {
+        console.error("Error setting session:", sessionError);
+        throw new Error("Kunde inte skapa session");
+      }
+
+      // Check if new user needs to complete profile
+      if (data.isNewUser) {
+        setStep("profile");
+      }
+
+      return true;
     } catch (err: unknown) {
       console.error("Verify OTP error:", err);
       setError(getErrorMessage(err, "Ogiltig verifieringskod"));
