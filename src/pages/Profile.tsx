@@ -41,17 +41,15 @@ export default function Profile() {
 
   const fetchArchetype = useCallback(async () => {
     if (!user) return;
-    
+
     const { data } = await supabase
-      .from('personality_scores')
-      .select('id')
+      .from('personality_results')
+      .select('archetype')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    // personality_scores doesn't have archetype field
-    // This feature needs to be implemented with the correct table structure
-    if (data) {
-      setArchetype('explorer'); // Placeholder
+    if (data?.archetype) {
+      setArchetype(data.archetype);
     }
   }, [user]);
 
@@ -76,11 +74,10 @@ export default function Profile() {
       // Order matters due to foreign key constraints
       const deleteOperations = [
         supabase.from('messages').delete().eq('sender_id', user.id),
-        supabase.from('achievements').delete().eq('user_id', user.id),
-        supabase.from('notifications').delete().eq('user_id', user.id),
+        supabase.from('user_achievements').delete().eq('user_id', user.id),
         supabase.from('matches').delete().eq('user_id', user.id),
-        supabase.from('personality_scores').delete().eq('user_id', user.id),
-        supabase.from('dealbreakers').delete().eq('user_id', user.id),
+        supabase.from('personality_results').delete().eq('user_id', user.id),
+        supabase.from('profile_photos').delete().eq('user_id', user.id),
       ];
 
       // Execute all deletes and check for errors

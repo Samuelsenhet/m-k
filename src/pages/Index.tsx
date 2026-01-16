@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { PersonalityTest } from '@/components/personality/PersonalityTest';
 import { PersonalityResult } from '@/components/personality/PersonalityResult';
-import type { PersonalityTestResult, ArchetypeCode, DimensionKey } from '@/types/personality';
+import type { PersonalityTestResult, ArchetypeCode, DimensionKey, PersonalityCategory } from '@/types/personality';
 import { getCategoryFromArchetype } from '@/types/personality';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/useAuth';
@@ -28,22 +28,23 @@ const Index = () => {
       }
 
       const { data, error } = await supabase
-        .from('personality_scores')
+        .from('personality_results')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (data && !error) {
         // User already has a result - show it
-        const scores: Record<DimensionKey, number> = {
-          openness: data.openness || 0,
-          conscientiousness: data.conscientiousness || 0,
-          extraversion: data.extraversion || 0,
-          agreeableness: data.agreeableness || 0,
-          neuroticism: data.neuroticism || 0
+        const savedScores = data.scores as Record<DimensionKey, number> | null;
+        const scores: Record<DimensionKey, number> = savedScores || {
+          ei: 50,
+          sn: 50,
+          tf: 50,
+          jp: 50,
+          at: 50
         };
         const archetype = data.archetype as ArchetypeCode || 'INFJ';
-        const category = getCategoryFromArchetype(archetype);
+        const category = data.category as PersonalityCategory || getCategoryFromArchetype(archetype);
         
         setTestResult({
           scores,
@@ -78,7 +79,7 @@ const Index = () => {
     if (user) {
       // Double-check they don't already have a result
       const { data: existing } = await supabase
-        .from('personality_scores')
+        .from('personality_results')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -89,15 +90,13 @@ const Index = () => {
       }
 
       const { error } = await supabase
-        .from('personality_scores')
-        .upsert({
+        .from('personality_results')
+        .insert({
           user_id: user.id,
-          openness: result.scores.openness,
-          conscientiousness: result.scores.conscientiousness,
-          extraversion: result.scores.extraversion,
-          agreeableness: result.scores.agreeableness,
-          neuroticism: result.scores.neuroticism
-        }, { onConflict: 'user_id' });
+          scores: result.scores,
+          archetype: result.archetype,
+          category: result.category
+        });
       
       if (error) {
         toast.error('Kunde inte spara resultatet');

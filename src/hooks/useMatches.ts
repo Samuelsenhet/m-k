@@ -83,7 +83,7 @@ export function useMatches() {
           next_cursor?: string | null;
         } | null;
         error: unknown;
-      } = await supabase.functions.invoke("v1/match-daily", {
+      } = await supabase.functions.invoke("match-daily", {
         body: {
           user_id: user.id,
           page_size: PAGE_SIZE,
@@ -123,7 +123,7 @@ export function useMatches() {
           next_cursor?: string | null;
         } | null;
         error: unknown;
-      } = await supabase.functions.invoke("v1/match-daily", {
+      } = await supabase.functions.invoke("match-daily", {
         body: {
           user_id: user.id,
           page_size: PAGE_SIZE,
