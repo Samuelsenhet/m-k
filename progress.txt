@@ -1,0 +1,47 @@
+# Progress Log
+
+## Project Context
+- Tech: React 18 + TypeScript + Vite + Supabase + shadcn/ui
+- Run dev: `npm run dev` (port 8080)
+- Build: `npm run build`
+- Lint: `npm run lint`
+
+## Current Feature: Enhanced AI Icebreakers
+- PRD created: 2026-01-18
+- Stories: 11 total (US-001 through US-011)
+- Status: In progress
+
+## Story Progress
+- [x] US-001: Add icebreaker_analytics table
+- [x] US-002: Add icebreaker category enum
+- [x] US-003: Update generate-icebreakers for profile context
+- [ ] US-004: Add category selection to icebreaker generation
+- [ ] US-005: Create generate-followups edge function
+- [ ] US-006: Regenerate Supabase types
+- [ ] US-007: Create useIcebreakerAnalytics hook
+- [ ] US-008: Add category picker UI to chat
+- [ ] US-009: Add follow-up suggestions UI
+- [ ] US-010: Track icebreaker usage analytics
+- [ ] US-011: Add Swedish translations for icebreaker categories
+
+## Learnings
+- `types_new.ts` was an artifact from failed `supabase gen types` - deleted
+- Migrations follow idempotent pattern with `DROP POLICY IF EXISTS`
+- User references use `auth.users(id)` not a profiles table FK
+
+---
+
+## Iteration 3 - US-003: Update generate-icebreakers for profile context
+- What was implemented: Verified that US-003 was already fully implemented in previous work
+- Files changed: PRD.md (marked complete), progress.txt (updated)
+- Implementation details found in `supabase/functions/generate-icebreakers/index.ts`:
+  - Lines 99-133: Fetches both users' profiles with bio, looking_for, work, education, hometown
+  - Lines 147-149: Finds common interests between users
+  - Lines 152-181: `buildProfileContext()` builds rich context including interests, bio, etc.
+  - Lines 187-212: Enhanced AI prompt includes all profile context and shared interests
+  - Lines 303-340: `getFallbackIcebreakers()` provides personality-based fallback
+- Learnings for future iterations:
+  - Check existing code thoroughly before implementing - features may already exist
+  - The edge function uses LOVABLE_API_KEY for AI calls via `ai.gateway.lovable.dev`
+  - Profile data comes from `profiles` table, personality from `personality_results` table
+---
