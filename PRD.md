@@ -74,19 +74,19 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want to choose the style of icebreaker (funny, deep, activity-based) so that I can match my mood and personality.
 
 **Acceptance Criteria:**
-- [ ] Add `category` parameter to `generate-icebreakers` function
-- [ ] Update AI prompt with category-specific instructions:
+- [x] Add `category` parameter to `generate-icebreakers` function
+- [x] Update AI prompt with category-specific instructions:
   - `funny`: Light, humorous, playful
   - `deep`: Thoughtful, meaningful questions
   - `activity`: Suggest doing something together
   - `compliment`: Genuine, non-creepy compliments
   - `general`: Mix of styles (default)
-- [ ] Return `category` field in response
-- [ ] Store `category` in icebreakers table
-- [ ] Edge function returns 200 with categorized icebreakers
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] Test Edge Function locally or via Supabase dashboard
+- [x] Return `category` field in response
+- [x] Store `category` in icebreakers table
+- [x] Edge function returns 200 with categorized icebreakers
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
+- [x] Test Edge Function locally or via Supabase dashboard
 
 ---
 

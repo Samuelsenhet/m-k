@@ -15,7 +15,7 @@
 - [x] US-001: Add icebreaker_analytics table
 - [x] US-002: Add icebreaker category enum
 - [x] US-003: Update generate-icebreakers for profile context
-- [ ] US-004: Add category selection to icebreaker generation
+- [x] US-004: Add category selection to icebreaker generation
 - [ ] US-005: Create generate-followups edge function
 - [ ] US-006: Regenerate Supabase types
 - [ ] US-007: Create useIcebreakerAnalytics hook
@@ -44,4 +44,26 @@
   - Check existing code thoroughly before implementing - features may already exist
   - The edge function uses LOVABLE_API_KEY for AI calls via `ai.gateway.lovable.dev`
   - Profile data comes from `profiles` table, personality from `personality_results` table
+---
+
+## Iteration 4 - US-004: Add category selection to icebreaker generation
+- What was implemented: Verified that US-004 was already fully implemented in previous work
+- Files changed: PRD.md (marked complete), progress.txt (updated)
+- Implementation details found in `supabase/functions/generate-icebreakers/index.ts`:
+  - Line 13: `IcebreakerCategory` type defined locally in edge function
+  - Lines 15-21: `CATEGORY_PROMPTS` object with Swedish category-specific instructions
+  - Line 73: `category` parameter extracted from request body (defaults to 'general')
+  - Lines 83-86: Category validation against allowed values
+  - Line 202: Category-specific prompt added to AI request
+  - Line 275: Category stored in icebreakers table
+  - Line 288: Category returned in response
+- Also verified:
+  - `src/types/api.ts` line 8: `IcebreakerCategory` TypeScript type
+  - `src/types/api.ts` lines 22-32: `GenerateIcebreakersRequest` includes `category` field
+  - `src/types/api.ts` lines 34-37: `GenerateIcebreakersResponse` includes `category` field
+  - Migration `20260118_add_icebreaker_category.sql` adds category column to icebreakers table
+- Learnings for future iterations:
+  - US-004 was already implemented as part of US-003 or earlier work
+  - The edge function has comprehensive fallback icebreakers by category (lines 303-340)
+  - Always verify all acceptance criteria before marking complete
 ---
