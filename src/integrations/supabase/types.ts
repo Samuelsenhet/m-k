@@ -104,6 +104,50 @@ export type Database = {
         }
         Relationships: []
       }
+      icebreaker_analytics: {
+        Row: {
+          id: string
+          match_id: string
+          user_id: string
+          icebreaker_text: string
+          category: string | null
+          was_used: boolean
+          led_to_response: boolean | null
+          response_time_seconds: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          user_id: string
+          icebreaker_text: string
+          category?: string | null
+          was_used?: boolean
+          led_to_response?: boolean | null
+          response_time_seconds?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          user_id?: string
+          icebreaker_text?: string
+          category?: string | null
+          was_used?: boolean
+          led_to_response?: boolean | null
+          response_time_seconds?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icebreaker_analytics_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       icebreakers: {
         Row: {
           created_at: string
@@ -112,6 +156,7 @@ export type Database = {
           id: string
           match_id: string
           used: boolean
+          category: string | null
         }
         Insert: {
           created_at?: string
@@ -120,6 +165,7 @@ export type Database = {
           id?: string
           match_id: string
           used?: boolean
+          category?: string | null
         }
         Update: {
           created_at?: string
@@ -128,6 +174,7 @@ export type Database = {
           id?: string
           match_id?: string
           used?: boolean
+          category?: string | null
         }
         Relationships: [
           {

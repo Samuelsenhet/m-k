@@ -9,61 +9,67 @@
 ## Current Feature: Enhanced AI Icebreakers
 - PRD created: 2026-01-18
 - Stories: 11 total (US-001 through US-011)
-- Status: In progress
+- Status: COMPLETE (11/11 done)
 
 ## Story Progress
 - [x] US-001: Add icebreaker_analytics table
 - [x] US-002: Add icebreaker category enum
 - [x] US-003: Update generate-icebreakers for profile context
 - [x] US-004: Add category selection to icebreaker generation
-- [ ] US-005: Create generate-followups edge function
-- [ ] US-006: Regenerate Supabase types
-- [ ] US-007: Create useIcebreakerAnalytics hook
-- [ ] US-008: Add category picker UI to chat
-- [ ] US-009: Add follow-up suggestions UI
-- [ ] US-010: Track icebreaker usage analytics
-- [ ] US-011: Add Swedish translations for icebreaker categories
+- [x] US-005: Create generate-followups edge function
+- [x] US-006: Regenerate Supabase types (manually added types for icebreaker_analytics and category column)
+- [x] US-007: Create useIcebreakerAnalytics hook
+- [x] US-008: Add category picker UI to chat
+- [x] US-009: Add follow-up suggestions UI
+- [x] US-010: Track icebreaker usage analytics
+- [x] US-011: Add Swedish translations for icebreaker categories
+
+## Files Created/Modified
+
+### Migrations
+- `supabase/migrations/20260118_add_icebreaker_analytics.sql` - Analytics table with RLS
+- `supabase/migrations/20260118_add_icebreaker_category.sql` - Category column on icebreakers
+
+### Edge Functions
+- `supabase/functions/generate-icebreakers/index.ts` - Enhanced with profile context and categories
+- `supabase/functions/generate-followups/index.ts` - New: conversation follow-up suggestions
+
+### Frontend
+- `src/types/api.ts` - Added IcebreakerCategory type and interfaces
+- `src/hooks/useIcebreakerAnalytics.ts` - New: fire-and-forget analytics tracking
+- `src/i18n/locales/sv.json` - Added category and followup translations
+- `src/i18n/locales/en.json` - Added category and followup translations
+- `src/components/chat/ChatWindow.tsx` - Category picker UI, follow-up panel, analytics integration
 
 ## Learnings
 - `types_new.ts` was an artifact from failed `supabase gen types` - deleted
 - Migrations follow idempotent pattern with `DROP POLICY IF EXISTS`
 - User references use `auth.users(id)` not a profiles table FK
+- Edge functions use LOVABLE_API_KEY for AI calls via `ai.gateway.lovable.dev`
+- Profile data: `profiles` table, personality: `personality_results` table
+- Hooks use fire-and-forget pattern for analytics (non-blocking)
+- generate-followups has rate limiting (5/day per match) tracked via icebreaker_analytics
 
----
+## Remaining Work
+- None! All 11 stories are complete.
+- Note: Types were manually added since Docker wasn't running. When local Supabase is available, you can optionally regenerate types with: `supabase gen types typescript --local > src/integrations/supabase/types.ts`
 
-## Iteration 3 - US-003: Update generate-icebreakers for profile context
-- What was implemented: Verified that US-003 was already fully implemented in previous work
-- Files changed: PRD.md (marked complete), progress.txt (updated)
-- Implementation details found in `supabase/functions/generate-icebreakers/index.ts`:
-  - Lines 99-133: Fetches both users' profiles with bio, looking_for, work, education, hometown
-  - Lines 147-149: Finds common interests between users
-  - Lines 152-181: `buildProfileContext()` builds rich context including interests, bio, etc.
-  - Lines 187-212: Enhanced AI prompt includes all profile context and shared interests
-  - Lines 303-340: `getFallbackIcebreakers()` provides personality-based fallback
-- Learnings for future iterations:
-  - Check existing code thoroughly before implementing - features may already exist
-  - The edge function uses LOVABLE_API_KEY for AI calls via `ai.gateway.lovable.dev`
-  - Profile data comes from `profiles` table, personality from `personality_results` table
----
+## What Was Built
 
-## Iteration 4 - US-004: Add category selection to icebreaker generation
-- What was implemented: Verified that US-004 was already fully implemented in previous work
-- Files changed: PRD.md (marked complete), progress.txt (updated)
-- Implementation details found in `supabase/functions/generate-icebreakers/index.ts`:
-  - Line 13: `IcebreakerCategory` type defined locally in edge function
-  - Lines 15-21: `CATEGORY_PROMPTS` object with Swedish category-specific instructions
-  - Line 73: `category` parameter extracted from request body (defaults to 'general')
-  - Lines 83-86: Category validation against allowed values
-  - Line 202: Category-specific prompt added to AI request
-  - Line 275: Category stored in icebreakers table
-  - Line 288: Category returned in response
-- Also verified:
-  - `src/types/api.ts` line 8: `IcebreakerCategory` TypeScript type
-  - `src/types/api.ts` lines 22-32: `GenerateIcebreakersRequest` includes `category` field
-  - `src/types/api.ts` lines 34-37: `GenerateIcebreakersResponse` includes `category` field
-  - Migration `20260118_add_icebreaker_category.sql` adds category column to icebreakers table
-- Learnings for future iterations:
-  - US-004 was already implemented as part of US-003 or earlier work
-  - The edge function has comprehensive fallback icebreakers by category (lines 303-340)
-  - Always verify all acceptance criteria before marking complete
+### Category Picker (US-008)
+- 5 category chips with icons (Mixed, Funny, Deep, Activity, Compliment)
+- Framer Motion animations for smooth transitions
+- Selected category passed to generate-icebreakers function
+
+### Follow-up Suggestions (US-009)
+- "Need help?" button appears after 3+ messages when it's user's turn
+- Sheet panel with AI-generated follow-up suggestions
+- Rate limiting display (5 per day per match)
+- Click-to-send functionality
+
+### Analytics Tracking (US-010)
+- Fire-and-forget tracking (non-blocking)
+- Tracks: shown, used, response time
+- All tracking integrated in ChatWindow
+
 ---

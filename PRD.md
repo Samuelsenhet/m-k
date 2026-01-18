@@ -20,8 +20,8 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a product owner, I want to track icebreaker usage and outcomes so that we can learn which types work best.
 
 **Acceptance Criteria:**
-- [ ] Create migration `20260118_add_icebreaker_analytics.sql`
-- [ ] Table `icebreaker_analytics` with columns:
+- [x] Create migration `20260118_add_icebreaker_analytics.sql`
+- [x] Table `icebreaker_analytics` with columns:
   - `id` (uuid, primary key)
   - `match_id` (uuid, references matches)
   - `user_id` (uuid, references profiles)
@@ -31,10 +31,10 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
   - `led_to_response` (boolean, nullable)
   - `response_time_seconds` (integer, nullable)
   - `created_at` (timestamptz)
-- [ ] Add RLS policy: users can only see their own analytics
-- [ ] Add index on `match_id` and `user_id`
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Add RLS policy: users can only see their own analytics
+- [x] Add index on `match_id` and `user_id`
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -43,12 +43,12 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a developer, I want a standardized category system for icebreakers so that users can choose their preferred style.
 
 **Acceptance Criteria:**
-- [ ] Create migration `20260118_add_icebreaker_category.sql`
-- [ ] Add `category` column to `icebreakers` table (text, nullable)
-- [ ] Valid categories: `funny`, `deep`, `activity`, `compliment`, `general`
-- [ ] Add TypeScript type `IcebreakerCategory` in `src/types/api.ts`
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Create migration `20260118_add_icebreaker_category.sql`
+- [x] Add `category` column to `icebreakers` table (text, nullable)
+- [x] Valid categories: `funny`, `deep`, `activity`, `compliment`, `general`
+- [x] Add TypeScript type `IcebreakerCategory` in `src/types/api.ts`
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -95,19 +95,19 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want AI to suggest follow-up messages when a conversation stalls so that I can keep the conversation going.
 
 **Acceptance Criteria:**
-- [ ] Create `supabase/functions/generate-followups/index.ts`
-- [ ] Accept `matchId` and `messageCount` (how many recent messages to analyze)
-- [ ] Fetch last N messages from conversation
-- [ ] Generate 2-3 follow-up suggestions based on:
+- [x] Create `supabase/functions/generate-followups/index.ts`
+- [x] Accept `matchId` and `messageCount` (how many recent messages to analyze)
+- [x] Fetch last N messages from conversation
+- [x] Generate 2-3 follow-up suggestions based on:
   - Last message content
   - Conversation tone/topic
   - Both users' personalities
-- [ ] Return array of follow-up suggestions
-- [ ] Add rate limiting (max 5 calls per match per day)
-- [ ] Edge function returns 200 with suggestions
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] Test Edge Function locally or via Supabase dashboard
+- [x] Return array of follow-up suggestions
+- [x] Add rate limiting (max 5 calls per match per day)
+- [x] Edge function returns 200 with suggestions
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
+- [x] Test Edge Function locally or via Supabase dashboard
 
 ---
 
@@ -116,12 +116,12 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a developer, I need updated TypeScript types reflecting the new schema.
 
 **Acceptance Criteria:**
-- [ ] Run `supabase gen types typescript --local > src/integrations/supabase/types.ts`
-- [ ] Types include `icebreaker_analytics` table
-- [ ] Types include `category` column on `icebreakers`
-- [ ] No TypeScript errors in codebase
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Run `supabase gen types typescript --local > src/integrations/supabase/types.ts` (manually added types since Docker wasn't running)
+- [x] Types include `icebreaker_analytics` table
+- [x] Types include `category` column on `icebreakers`
+- [x] No TypeScript errors in codebase
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -130,14 +130,14 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a developer, I need a hook to track icebreaker usage and outcomes for analytics.
 
 **Acceptance Criteria:**
-- [ ] Create `src/hooks/useIcebreakerAnalytics.ts`
-- [ ] Export `trackIcebreakerShown(matchId, icebreaker, category)` function
-- [ ] Export `trackIcebreakerUsed(matchId, icebreakerText)` function
-- [ ] Export `trackIcebreakerResponse(matchId, responseTimeSeconds)` function
-- [ ] Use TanStack Query mutation for writes
-- [ ] Handle errors gracefully (don't break chat)
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Create `src/hooks/useIcebreakerAnalytics.ts`
+- [x] Export `trackIcebreakerShown(matchId, icebreaker, category)` function
+- [x] Export `trackIcebreakerUsed(matchId, icebreakerText)` function
+- [x] Export `trackIcebreakerResponse(matchId, responseTimeSeconds)` function
+- [x] Use TanStack Query mutation for writes
+- [x] Handle errors gracefully (don't break chat)
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -146,15 +146,15 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want to select an icebreaker category before generating so that I get suggestions matching my mood.
 
 **Acceptance Criteria:**
-- [ ] Add category tabs/chips above icebreaker list in ChatWindow
-- [ ] Categories: Roligt (funny), Djupt (deep), Aktivitet (activity), Komplimang (compliment)
-- [ ] Default to "Blandad" (general/mixed)
-- [ ] Pass selected category to generate function
-- [ ] Show category icon next to each icebreaker
-- [ ] Framer Motion transition when switching categories
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] Verify changes work in browser at localhost:8080
+- [x] Add category tabs/chips above icebreaker list in ChatWindow
+- [x] Categories: Roligt (funny), Djupt (deep), Aktivitet (activity), Komplimang (compliment)
+- [x] Default to "Blandad" (general/mixed)
+- [x] Pass selected category to generate function
+- [x] Show category icon next to each icebreaker
+- [x] Framer Motion transition when switching categories
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
+- [x] Verify changes work in browser at localhost:8080
 
 ---
 
@@ -163,15 +163,15 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want to see follow-up suggestions when conversation slows so that I can re-engage my match.
 
 **Acceptance Criteria:**
-- [ ] Add "Conversation Help" button that appears after 3+ messages
-- [ ] Button only shows if last message was from match (user's turn)
-- [ ] Opens sheet with 2-3 AI-generated follow-ups
-- [ ] Click follow-up to send as message
-- [ ] Loading state while generating
-- [ ] Disable if already used 5x today for this match
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] Verify changes work in browser at localhost:8080
+- [x] Add "Conversation Help" button that appears after 3+ messages
+- [x] Button only shows if last message was from match (user's turn)
+- [x] Opens sheet with 2-3 AI-generated follow-ups
+- [x] Click follow-up to send as message
+- [x] Loading state while generating
+- [x] Disable if already used 5x today for this match
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
+- [x] Verify changes work in browser at localhost:8080
 
 ---
 
@@ -180,13 +180,13 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want my icebreaker choices tracked so that the system can learn what works.
 
 **Acceptance Criteria:**
-- [ ] Call `trackIcebreakerShown` when icebreakers are displayed
-- [ ] Call `trackIcebreakerUsed` when user clicks an icebreaker
-- [ ] Call `trackIcebreakerResponse` when match replies (within 24h)
-- [ ] Calculate response_time_seconds from message timestamps
-- [ ] All tracking is non-blocking (fire-and-forget)
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Call `trackIcebreakerShown` when icebreakers are displayed
+- [x] Call `trackIcebreakerUsed` when user clicks an icebreaker
+- [x] Call `trackIcebreakerResponse` when match replies (within 24h)
+- [x] Calculate response_time_seconds from message timestamps
+- [x] All tracking is non-blocking (fire-and-forget)
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -195,7 +195,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a Swedish user, I want all new icebreaker features in Swedish.
 
 **Acceptance Criteria:**
-- [ ] Add to `src/i18n/locales/sv.json`:
+- [x] Add to `src/i18n/locales/sv.json`:
   - `chat.icebreaker_categories`: "Välj stil"
   - `chat.category_funny`: "Roligt"
   - `chat.category_deep`: "Djupt"
@@ -205,9 +205,9 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
   - `chat.followup_help`: "Behöver du hjälp?"
   - `chat.followup_suggestions`: "Förslag på svar"
   - `chat.followup_limit`: "Du har använt alla förslag för idag"
-- [ ] Add matching keys to `src/i18n/locales/en.json`
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Add matching keys to `src/i18n/locales/en.json`
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 

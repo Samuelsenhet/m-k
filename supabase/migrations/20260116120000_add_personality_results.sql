@@ -23,8 +23,14 @@ CREATE INDEX IF NOT EXISTS idx_personality_results_user_id ON public.personality
 ALTER TABLE public.personality_results ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- 3. RLS POLICIES
+-- 3. RLS POLICIES (idempotent - drop if exists)
 -- ============================================
+-- Drop existing policies to allow re-running migration
+DROP POLICY IF EXISTS "Users can view their own personality results" ON public.personality_results;
+DROP POLICY IF EXISTS "Users can insert their own personality results" ON public.personality_results;
+DROP POLICY IF EXISTS "Users can update their own personality results" ON public.personality_results;
+DROP POLICY IF EXISTS "Users can delete their own personality results" ON public.personality_results;
+
 -- Users can view their own results
 CREATE POLICY "Users can view their own personality results"
   ON public.personality_results
@@ -38,10 +44,12 @@ CREATE POLICY "Users can insert their own personality results"
   WITH CHECK (user_id = (SELECT auth.uid()));
 
 -- Users can update their own results (though typically not allowed after first save)
+-- WITH CHECK ensures user_id cannot be changed to another user's ID
 CREATE POLICY "Users can update their own personality results"
   ON public.personality_results
   FOR UPDATE
-  USING (user_id = (SELECT auth.uid()));
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
 
 -- Users can delete their own results (for account deletion)
 CREATE POLICY "Users can delete their own personality results"

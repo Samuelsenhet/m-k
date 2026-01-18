@@ -32,6 +32,15 @@ serve(async (req) => {
     });
   }
 
+  // Validate Twilio configuration
+  if (!TWILIO_VERIFY_SERVICE_SID || !TWILIO_VERIFY_SERVICE_SID.startsWith("VA")) {
+    console.error("Invalid TWILIO_VERIFY_SERVICE_SID:", TWILIO_VERIFY_SERVICE_SID);
+    return new Response(
+      JSON.stringify({ error: "Server configuration error: Invalid Verify Service SID" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   // Enhanced rate limiting by phone number (primary) and IP (secondary)
   // 3 OTP requests per hour per phone number
   const phoneRateLimitCheck = checkRateLimit(`otp-send-phone:${phone}`, {

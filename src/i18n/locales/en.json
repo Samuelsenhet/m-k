@@ -66,7 +66,18 @@
     "generating": "Generating suggestions...",
     "generate_new": "Generate new suggestions",
     "generate_icebreakers": "Generate icebreakers",
-    "personalized_starters": "Personalized conversation starters based on your profiles"
+    "personalized_starters": "Personalized conversation starters based on your profiles",
+    "icebreaker_categories": "Choose style",
+    "category_funny": "Funny",
+    "category_deep": "Deep",
+    "category_activity": "Activity",
+    "category_compliment": "Compliment",
+    "category_general": "Mixed",
+    "followup_help": "Need help?",
+    "followup_suggestions": "Reply suggestions",
+    "followup_limit": "You've used all suggestions for today",
+    "followup_generating": "Generating suggestions...",
+    "followup_error": "Could not generate suggestions"
   },
   "profile": {
     "title": "My Profile",

@@ -3,6 +3,39 @@ export interface DimensionScoreBreakdown {
   archetype_alignment: number;
   interest_overlap: number;
 }
+
+// Icebreaker category types
+export type IcebreakerCategory = 'funny' | 'deep' | 'activity' | 'compliment' | 'general';
+
+export interface IcebreakerAnalytics {
+  id: string;
+  match_id: string;
+  user_id: string;
+  icebreaker_text: string;
+  category: IcebreakerCategory | null;
+  was_used: boolean;
+  led_to_response: boolean | null;
+  response_time_seconds: number | null;
+  created_at: string;
+}
+
+export interface GenerateIcebreakersRequest {
+  matchId: string;
+  userArchetype?: string;
+  matchedUserArchetype?: string;
+  userName?: string;
+  matchedUserName?: string;
+  matchedUserId?: string;
+  category?: IcebreakerCategory;
+  userInterests?: string[];
+  matchedUserInterests?: string[];
+}
+
+export interface GenerateIcebreakersResponse {
+  icebreakers: string[];
+  category?: IcebreakerCategory;
+}
+
 // Types for API contracts (Edge Functions)
 
 export interface MatchDailyRequest {
