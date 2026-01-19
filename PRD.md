@@ -6,6 +6,8 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 
 ## Goals
 
+- fixing the errors in usePhoneAuth both with twillio and supabase
+- The frontend and backend
 - Generate icebreakers using full profile context (interests, hobbies, photos, profile prompts)
 - Offer categorized icebreakers (funny, deep, activity-based, compliment-based)
 - Provide AI-powered follow-up suggestions based on conversation history
@@ -20,6 +22,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a product owner, I want to track icebreaker usage and outcomes so that we can learn which types work best.
 
 **Acceptance Criteria:**
+
 - [x] Create migration `20260118_add_icebreaker_analytics.sql`
 - [x] Table `icebreaker_analytics` with columns:
   - `id` (uuid, primary key)
@@ -43,6 +46,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a developer, I want a standardized category system for icebreakers so that users can choose their preferred style.
 
 **Acceptance Criteria:**
+
 - [x] Create migration `20260118_add_icebreaker_category.sql`
 - [x] Add `category` column to `icebreakers` table (text, nullable)
 - [x] Valid categories: `funny`, `deep`, `activity`, `compliment`, `general`
@@ -57,6 +61,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want icebreakers that reference my match's actual interests so that conversations feel more personal and relevant.
 
 **Acceptance Criteria:**
+
 - [x] Fetch both users' profiles (interests, bio, looking_for) in edge function
 - [x] Include interests array in AI prompt
 - [x] Include any shared interests as "connection points"
@@ -74,6 +79,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want to choose the style of icebreaker (funny, deep, activity-based) so that I can match my mood and personality.
 
 **Acceptance Criteria:**
+
 - [x] Add `category` parameter to `generate-icebreakers` function
 - [x] Update AI prompt with category-specific instructions:
   - `funny`: Light, humorous, playful
@@ -95,6 +101,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want AI to suggest follow-up messages when a conversation stalls so that I can keep the conversation going.
 
 **Acceptance Criteria:**
+
 - [x] Create `supabase/functions/generate-followups/index.ts`
 - [x] Accept `matchId` and `messageCount` (how many recent messages to analyze)
 - [x] Fetch last N messages from conversation
@@ -116,6 +123,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a developer, I need updated TypeScript types reflecting the new schema.
 
 **Acceptance Criteria:**
+
 - [x] Run `supabase gen types typescript --local > src/integrations/supabase/types.ts` (manually added types since Docker wasn't running)
 - [x] Types include `icebreaker_analytics` table
 - [x] Types include `category` column on `icebreakers`
@@ -130,6 +138,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a developer, I need a hook to track icebreaker usage and outcomes for analytics.
 
 **Acceptance Criteria:**
+
 - [x] Create `src/hooks/useIcebreakerAnalytics.ts`
 - [x] Export `trackIcebreakerShown(matchId, icebreaker, category)` function
 - [x] Export `trackIcebreakerUsed(matchId, icebreakerText)` function
@@ -146,6 +155,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want to select an icebreaker category before generating so that I get suggestions matching my mood.
 
 **Acceptance Criteria:**
+
 - [x] Add category tabs/chips above icebreaker list in ChatWindow
 - [x] Categories: Roligt (funny), Djupt (deep), Aktivitet (activity), Komplimang (compliment)
 - [x] Default to "Blandad" (general/mixed)
@@ -163,6 +173,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want to see follow-up suggestions when conversation slows so that I can re-engage my match.
 
 **Acceptance Criteria:**
+
 - [x] Add "Conversation Help" button that appears after 3+ messages
 - [x] Button only shows if last message was from match (user's turn)
 - [x] Opens sheet with 2-3 AI-generated follow-ups
@@ -180,6 +191,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a MÄÄK user, I want my icebreaker choices tracked so that the system can learn what works.
 
 **Acceptance Criteria:**
+
 - [x] Call `trackIcebreakerShown` when icebreakers are displayed
 - [x] Call `trackIcebreakerUsed` when user clicks an icebreaker
 - [x] Call `trackIcebreakerResponse` when match replies (within 24h)
@@ -195,6 +207,7 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 **Description:** As a Swedish user, I want all new icebreaker features in Swedish.
 
 **Acceptance Criteria:**
+
 - [x] Add to `src/i18n/locales/sv.json`:
   - `chat.icebreaker_categories`: "Välj stil"
   - `chat.category_funny`: "Roligt"
@@ -223,26 +236,32 @@ Upgrade MÄÄK's AI icebreaker system from basic personality-based suggestions t
 ## Technical Considerations
 
 ### Existing Code to Extend
+
 - `supabase/functions/generate-icebreakers/index.ts` - Add profile fetching and categories
 - `src/components/chat/ChatWindow.tsx` - Add category picker and follow-up UI
 - `src/i18n/locales/sv.json` and `en.json` - New translation keys
 
 ### New Files to Create
+
 - `supabase/migrations/20260118_add_icebreaker_analytics.sql`
 - `supabase/migrations/20260118_add_icebreaker_category.sql`
 - `supabase/functions/generate-followups/index.ts`
 - `src/hooks/useIcebreakerAnalytics.ts`
 
 ### shadcn/ui Components to Use
+
 - `Tabs` or `ToggleGroup` for category selection
 - `Sheet` for follow-up suggestions panel
 - `Button` with icons for category chips
 
 ### RLS Policies Needed
+
 - `icebreaker_analytics`: Users can INSERT/SELECT their own rows only
 
 ### AI Prompt Structure
+
 The enhanced prompt should include:
+
 ```
 User A: {name} ({archetype})
 - Intressen: {interests array}
@@ -258,6 +277,7 @@ Generera 3 {category} isbrytare på svenska...
 ```
 
 ### Rate Limiting
+
 - `generate-followups`: Max 5 calls per match per day
 - Track via `icebreaker_analytics` table count
 
