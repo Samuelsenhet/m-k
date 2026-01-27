@@ -410,16 +410,16 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 
 **Acceptance Criteria:**
 
-- [ ] Add to `src/i18n/locales/sv.json`:
+- [x] Add to `src/i18n/locales/sv.json`:
   - `profile.photos.title`: "Dina foton"
   - `profile.photos.upload`: "Ladda upp foto"
   - `profile.photos.delete_confirm`: "Ta bort detta foto?"
   - `profile.photos.max_reached`: "Du har laddat upp max antal foton"
   - `profile.photos.reorder_hint`: "Dra för att ändra ordning"
   - `profile.photos.uploading`: "Laddar upp..."
-- [ ] Add matching keys to `src/i18n/locales/en.json`
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Add matching keys to `src/i18n/locales/en.json`
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -435,3 +435,341 @@ US-016 (translations)
 ```
 
 Execute in order: US-012 → US-013 → US-014 → US-015 → US-016
+
+---
+
+# PRD: App Completion & Polish
+
+## Introduction
+
+Complete all remaining work to make MÄÄK production-ready, including verification of completed features, translations, testing, and code quality improvements.
+
+## Goals
+
+- Complete all incomplete user stories
+- Verify all features work end-to-end
+- Ensure consistent mobile app design
+- Fix any remaining bugs
+- Improve error handling
+- Optimize performance
+- Complete i18n translations
+
+---
+
+### US-017: Verify photo upload progress works in browser
+
+**Description:** As a developer, I need to verify that photo upload progress displays correctly.
+
+**Acceptance Criteria:**
+
+- [ ] Navigate to Profile → Edit Profile → Photos section
+- [ ] Click "Ladda upp foton" button
+- [ ] Select a photo file
+- [ ] Verify progress bar appears with percentage
+- [ ] Verify file name displays during upload
+- [ ] Verify progress updates smoothly (0% → 100%)
+- [ ] Verify success animation appears when complete
+- [ ] Test with multiple photos (verify queue works)
+- [ ] Test with invalid file type (verify error message)
+- [ ] Test with file > 5MB (verify error message)
+- [ ] Test on mobile viewport (Chrome DevTools)
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-018: Verify photo count limits work correctly
+
+**Description:** As a developer, I need to verify photo count limits function properly.
+
+**Acceptance Criteria:**
+
+- [ ] Navigate to Profile → Edit Profile → Photos section
+- [ ] Verify "X/6 photos" indicator displays
+- [ ] Upload photos until reaching 6 photos
+- [ ] Verify upload button disables at 6 photos
+- [ ] Verify tooltip shows when hovering disabled button
+- [ ] Verify "Komplett" badge with sparkle icon appears at max
+- [ ] Verify toast error if trying to upload at limit
+- [ ] Test on mobile viewport
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-019: Verify photo reordering works in browser
+
+**Description:** As a developer, I need to verify drag-to-reorder photos works correctly.
+
+**Acceptance Criteria:**
+
+- [ ] Navigate to Profile → Edit Profile → Photos section
+- [ ] Upload at least 3 photos
+- [ ] Drag a photo to a new position
+- [ ] Verify visual feedback during drag
+- [ ] Verify photo order updates after drop
+- [ ] Verify "Huvudfoto" badge appears on first photo
+- [ ] Verify order persists after page reload
+- [ ] Test on mobile viewport (touch drag)
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-020: Verify photo deletion works in browser
+
+**Description:** As a developer, I need to verify photo deletion works correctly.
+
+**Acceptance Criteria:**
+
+- [ ] Navigate to Profile → Edit Profile → Photos section
+- [ ] Upload at least 2 photos
+- [ ] Click delete button (trash icon) on a photo
+- [ ] Verify confirmation dialog appears
+- [ ] Click "Ta bort" in dialog
+- [ ] Verify photo is removed from UI
+- [ ] Verify remaining photos reorder correctly
+- [ ] Verify cannot delete last photo (shows error)
+- [ ] Test on mobile viewport
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-021: Verify phone authentication flow end-to-end
+
+**Description:** As a developer, I need to ensure phone authentication works correctly.
+
+**Acceptance Criteria:**
+
+- [ ] Test new user flow:
+  - [ ] Enter Swedish phone number (07X XXX XX XX)
+  - [ ] Receive OTP (or use demo code 123456 in dev)
+  - [ ] Enter OTP code
+  - [ ] Complete age verification
+  - [ ] Verify profile created in database
+  - [ ] Verify redirect to onboarding
+- [ ] Test returning user flow:
+  - [ ] Enter phone number
+  - [ ] Enter OTP
+  - [ ] Verify redirect to matches (if onboarding complete)
+  - [ ] Verify redirect to onboarding (if incomplete)
+- [ ] Test error cases:
+  - [ ] Invalid phone format (shows error)
+  - [ ] Wrong OTP code (shows error)
+  - [ ] Expired OTP (shows error)
+- [ ] Verify session persists after page reload
+- [ ] Verify no navigation loops
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-022: Verify match profile viewing works end-to-end
+
+**Description:** As a developer, I need to ensure users can view match profiles correctly.
+
+**Acceptance Criteria:**
+
+- [ ] Navigate to Matches page
+- [ ] Click on a match card
+- [ ] Verify MatchProfileView opens full-screen
+- [ ] Verify match's photos display
+- [ ] Verify info overlay shows (name, age, height, work, location)
+- [ ] Verify personality badge displays if available
+- [ ] Verify swipe navigation between photos works
+- [ ] Verify action buttons (like, pass, chat) are functional
+- [ ] Verify back button returns to matches
+- [ ] Test on mobile viewport
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-023: Verify user's own profile displays all information
+
+**Description:** As a developer, I need to ensure the user's profile shows complete information.
+
+**Acceptance Criteria:**
+
+- [ ] Navigate to Profile page
+- [ ] Verify full-screen photo displays
+- [ ] Verify user info overlay (name, age, height, work, location)
+- [ ] Click "Visa mer" button
+- [ ] Verify expandable section opens smoothly
+- [ ] Verify bio displays if available
+- [ ] Verify personality section displays:
+  - [ ] Archetype emoji and title
+  - [ ] Archetype description
+  - [ ] Strengths badges
+  - [ ] Love style information
+- [ ] Verify additional info grid (work, location, age, height)
+- [ ] Verify "Redigera profil" button works
+- [ ] Test on mobile viewport
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-024: Ensure consistent mobile app design across all pages
+
+**Description:** As a developer, I need to ensure all pages follow modern mobile app design.
+
+**Acceptance Criteria:**
+
+- [ ] Review all main pages for design consistency:
+  - [ ] LandingPage - mobile-first, premium design
+  - [ ] Matches - card-based, full-screen profile option
+  - [ ] Chat - mobile chat interface
+  - [ ] Profile - full-screen design
+  - [ ] Onboarding - mobile-optimized flow
+- [ ] Verify all pages use:
+  - [ ] Consistent color scheme (primary: rose/pink, accent: purple)
+  - [ ] Consistent typography (DM Sans body, Playfair Display headers)
+  - [ ] Consistent spacing and padding
+  - [ ] Touch targets min 44px
+  - [ ] Safe area handling
+  - [ ] Smooth animations
+- [ ] Verify BottomNav appears on all main pages
+- [ ] Test on mobile viewport
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-025: Fix TypeScript errors and improve type safety
+
+**Description:** As a developer, I need to ensure zero TypeScript errors.
+
+**Acceptance Criteria:**
+
+- [ ] Run `npm run build` and fix all TypeScript errors
+- [ ] Run `npm run lint` and fix all linting errors
+- [ ] Replace all `any` types with proper types
+- [ ] Ensure all imports use `@/` alias correctly
+- [ ] Verify Supabase types are up-to-date
+- [ ] Remove unused imports
+- [ ] Wrap console.logs in DEV checks
+- [ ] `npm run build` passes with zero errors
+- [ ] `npm run lint` passes with zero errors
+
+---
+
+### US-026: Test complete user journey end-to-end
+
+**Description:** As a QA, I need to verify the complete user journey works.
+
+**Acceptance Criteria:**
+
+- [ ] **New User Journey:**
+  - [ ] Land on homepage
+  - [ ] Click "Kom igång"
+  - [ ] Complete phone auth
+  - [ ] Complete age verification
+  - [ ] Complete onboarding wizard
+  - [ ] Take personality test
+  - [ ] View personality results
+  - [ ] Upload profile photos
+  - [ ] Fill profile information
+  - [ ] View matches
+  - [ ] View match profile
+  - [ ] Start chat
+  - [ ] Use icebreakers
+  - [ ] View own profile
+- [ ] **Returning User Journey:**
+  - [ ] Login with phone
+  - [ ] Verify correct redirect
+  - [ ] Verify data persists
+- [ ] All flows work without errors
+- [ ] No infinite loops
+- [ ] `npm run build` passes
+
+---
+
+### US-027: Add error boundaries and improve error handling
+
+**Description:** As a developer, I need graceful error handling throughout the app.
+
+**Acceptance Criteria:**
+
+- [ ] Create ErrorBoundary component with premium design
+- [ ] Wrap main app routes in ErrorBoundary
+- [ ] Add error fallback UI (Swedish text, retry button)
+- [ ] Ensure all async operations have try/catch
+- [ ] Verify all Supabase queries handle errors
+- [ ] Verify all edge function calls handle errors
+- [ ] Add user-friendly error messages (Swedish)
+- [ ] Test error scenarios:
+  - [ ] Network offline
+  - [ ] Invalid API responses
+  - [ ] Database errors
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+### US-028: Optimize bundle size and performance
+
+**Description:** As a developer, I need to ensure fast load times.
+
+**Acceptance Criteria:**
+
+- [ ] Run `npm run build` and check bundle sizes
+- [ ] Verify main bundle < 600 KB (gzipped)
+- [ ] Verify vendor chunks properly split
+- [ ] Check for duplicate dependencies
+- [ ] Verify images optimized
+- [ ] Check Lighthouse scores:
+  - [ ] Performance > 85
+  - [ ] Accessibility > 90
+  - [ ] Best Practices > 90
+- [ ] Add lazy loading for heavy components
+- [ ] `npm run build` passes
+
+---
+
+### US-029: Verify PWA functionality
+
+**Description:** As a developer, I need to ensure PWA features work.
+
+**Acceptance Criteria:**
+
+- [ ] Verify service worker registers
+- [ ] Verify app can be installed (Add to Home Screen)
+- [ ] Verify offline fallback page
+- [ ] Verify manifest.json is correct
+- [ ] Verify icons generated (192x192, 512x512)
+- [ ] Test on mobile device
+- [ ] `npm run build` passes
+
+---
+
+## Updated Story Dependency Graph
+
+```
+US-012 (reordering) ──┐
+US-013 (deletion)     │
+US-014 (upload progress) ──┐
+US-015 (photo limits)     │
+    ↓                     │
+US-016 (translations)     │
+    ↓                     │
+US-017 (verify upload)    │
+US-018 (verify limits)    │
+US-019 (verify reorder)   │
+US-020 (verify delete)    │
+    ↓                     │
+US-021 (phone auth verify)│
+US-022 (match profile verify)
+US-023 (own profile verify)
+    ↓
+US-024 (design consistency)
+US-025 (TypeScript cleanup)
+    ↓
+US-026 (end-to-end testing)
+US-027 (error handling)
+US-028 (performance)
+US-029 (PWA verification)
+```
+
+Execute in order: US-016 → US-017 → US-018 → US-019 → US-020 → US-021 → US-022 → US-023 → US-024 → US-025 → US-026 → US-027 → US-028 → US-029
