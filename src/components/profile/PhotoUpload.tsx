@@ -15,7 +15,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Loader2, ImageIcon, GripVertical, Crown, Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Loader2, ImageIcon, GripVertical, Crown, Upload, CheckCircle, AlertCircle, Info, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -712,25 +719,58 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
   // Check if we have upload activity for any slot
   const hasActiveUploads = uploadQueue.length > 0;
 
-  return (
-    <div className="space-y-4">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-        multiple
-        className="hidden"
-        onChange={(e) => selectedSlot !== null && handleUpload(e, selectedSlot)}
-      />
+  // Determine if at max photos
+  const isAtMaxPhotos = photoCount >= maxPhotos;
 
-      <DndContext
+  return (
+    <TooltipProvider>
+      <div className="space-y-4">
+        {/* Photo count indicator header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium">Dina foton</h3>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted hover:bg-muted/80 transition-colors">
+                  <Info className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[200px] text-center">
+                <p>Du kan ladda upp max {maxPhotos} foton. Det första fotot blir ditt huvudfoto.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAtMaxPhotos ? (
+              <Badge className="gradient-rose-glow text-white border-0 flex items-center gap-1 shadow-glow-rose/30">
+                <Sparkles className="w-3 h-3" />
+                Komplett
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="font-mono">
+                {photoCount}/{maxPhotos}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          onChange={(e) => selectedSlot !== null && handleUpload(e, selectedSlot)}
+        />
+
+        <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 p-3 rounded-xl glass-dark">
             {photos.slice(0, maxPhotos).map((photo, index) => {
               const uploadItem = getUploadForSlot(index);
               return (
@@ -762,27 +802,48 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
 
       {/* Upload button - ShimmerButton */}
       <div className="flex justify-center">
-        <ShimmerButton
-          variant="primary"
-          size="default"
-          icon={Upload}
-          loading={hasActiveUploads}
-          onClick={() => {
-            // Find first empty slot
-            const emptySlotIndex = photos.findIndex(p => !p.storage_path);
-            if (emptySlotIndex !== -1) {
-              triggerUpload(emptySlotIndex);
-            } else if (photoCount < maxPhotos) {
-              triggerUpload(photoCount);
-            } else {
-              toast.error('Alla fotoutrymmen är fulla');
-            }
-          }}
-          disabled={photoCount >= maxPhotos && !photos.some(p => !p.storage_path)}
-          className="w-full max-w-xs"
-        >
-          {hasActiveUploads ? 'Laddar upp...' : 'Ladda upp foton'}
-        </ShimmerButton>
+        {isAtMaxPhotos ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full max-w-xs">
+                <ShimmerButton
+                  variant="secondary"
+                  size="default"
+                  icon={Sparkles}
+                  disabled
+                  className="w-full opacity-70"
+                >
+                  Max antal foton uppnått
+                </ShimmerButton>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Du har laddat upp max antal foton ({maxPhotos}). Ta bort ett foto för att ladda upp fler.</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <ShimmerButton
+            variant="primary"
+            size="default"
+            icon={Upload}
+            loading={hasActiveUploads}
+            onClick={() => {
+              // Find first empty slot
+              const emptySlotIndex = photos.findIndex(p => !p.storage_path);
+              if (emptySlotIndex !== -1) {
+                triggerUpload(emptySlotIndex);
+              } else if (photoCount < maxPhotos) {
+                triggerUpload(photoCount);
+              } else {
+                toast.error('Du har laddat upp max antal foton');
+              }
+            }}
+            disabled={hasActiveUploads}
+            className="w-full max-w-xs"
+          >
+            {hasActiveUploads ? 'Laddar upp...' : 'Ladda upp foton'}
+          </ShimmerButton>
+        )}
       </div>
 
       <div className="text-center space-y-1">
@@ -792,6 +853,12 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         <p className="text-xs text-primary/70">
           Det första fotot blir ditt huvudfoto. Dra för att ändra ordning.
         </p>
+        {isAtMaxPhotos && (
+          <p className="text-xs text-emerald-600 font-medium flex items-center justify-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            Grattis! Du har laddat upp alla foton.
+          </p>
+        )}
       </div>
 
       {saving && (
@@ -801,28 +868,29 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteConfirmIndex !== null} onOpenChange={(open) => !open && handleDeleteCancel()}>
-        <AlertDialogContent className="glass max-w-[90vw] sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ta bort detta foto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Är du säker på att du vill ta bort detta foto? Åtgärden kan inte ångras.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="touch-manipulation active:scale-95">
-              Avbryt
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 touch-manipulation active:scale-95"
-            >
-              Ta bort
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteConfirmIndex !== null} onOpenChange={(open) => !open && handleDeleteCancel()}>
+          <AlertDialogContent className="glass max-w-[90vw] sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ta bort detta foto?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Är du säker på att du vill ta bort detta foto? Åtgärden kan inte ångras.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="touch-manipulation active:scale-95">
+                Avbryt
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 touch-manipulation active:scale-95"
+              >
+                Ta bort
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 }

@@ -392,14 +392,14 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 
 **Acceptance Criteria:**
 
-- [ ] Show "X/6 photos" indicator in ProfileEditor
-- [ ] Disable upload button when at max (6 photos)
-- [ ] Show premium badge when at max photos
-- [ ] Add tooltip explaining photo limit
-- [ ] Show warning if user tries to upload when at limit
-- [ ] Use premium card styling for photo grid
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Show "X/6 photos" indicator in ProfileEditor
+- [x] Disable upload button when at max (6 photos)
+- [x] Show premium badge when at max photos
+- [x] Add tooltip explaining photo limit
+- [x] Show warning if user tries to upload when at limit
+- [x] Use premium card styling for photo grid
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 - [ ] Verify changes work in browser at localhost:8080
 
 ---
