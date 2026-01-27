@@ -371,17 +371,17 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 
 **Acceptance Criteria:**
 
-- [ ] Add upload progress bar (premium gradient styling)
-- [ ] Show percentage and file name during upload
-- [ ] Validate file size (max 5MB per photo)
-- [ ] Validate file type (jpg, jpeg, png, webp only)
-- [ ] Show error message for invalid files
-- [ ] Allow multiple file selection
-- [ ] Queue uploads (max 2 concurrent)
-- [ ] Show success animation when upload completes
-- [ ] Use premium ShimmerButton for upload trigger
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Add upload progress bar (premium gradient styling)
+- [x] Show percentage and file name during upload
+- [x] Validate file size (max 5MB per photo)
+- [x] Validate file type (jpg, jpeg, png, webp only)
+- [x] Show error message for invalid files
+- [x] Allow multiple file selection
+- [x] Queue uploads (max 2 concurrent)
+- [x] Show success animation when upload completes
+- [x] Use premium ShimmerButton for upload trigger
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 - [ ] Verify changes work in browser at localhost:8080
 
 ---

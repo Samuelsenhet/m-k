@@ -128,3 +128,28 @@
   - `disabled` prop on Button prevents accidental clicks during deletion
   - Premium design: use `.glass` class on AlertDialogContent for glassmorphism
 ---
+
+## Iteration 3 - US-014: Enhance photo upload with progress indicator
+- What was implemented:
+  - Upload progress bar with premium gradient styling (gradient-rose-glow)
+  - Real-time progress percentage and file name display during upload
+  - File validation: max 5MB, JPG/JPEG/PNG/WebP only
+  - Toast error messages for invalid files (Swedish text)
+  - Multiple file selection support
+  - Upload queue with max 2 concurrent uploads
+  - Success animation (CheckCircle with gradient-emerald-glow)
+  - Error state display (AlertCircle with destructive color)
+  - ShimmerButton with Upload icon for upload trigger
+  - XHR-based upload with progress events (Supabase SDK doesn't expose progress)
+- Files changed:
+  - `src/components/profile/PhotoUpload.tsx` - Complete upload system overhaul
+- Learnings for future iterations:
+  - Supabase JS SDK's `storage.from().upload()` doesn't expose upload progress
+  - Use XMLHttpRequest with `xhr.upload.onprogress` for real progress tracking
+  - Supabase Storage API endpoint: `{supabaseUrl}/storage/v1/object/{bucket}/{path}`
+  - Need `Authorization: Bearer {accessToken}` and `Content-Type: {file.type}` headers
+  - Use `useCallback` with proper dependencies when functions are used in other callbacks
+  - Upload queue pattern: store items with status (pending/uploading/success/error)
+  - Use refs (queueRef) to access current queue state in callbacks without stale closures
+  - Success animation delay (1500ms) before removing from queue gives good UX feedback
+---

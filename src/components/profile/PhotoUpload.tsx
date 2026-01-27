@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { ShimmerButton } from '@/components/ui/shimmer-button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Loader2, ImageIcon, GripVertical, Crown } from 'lucide-react';
+import { Plus, Trash2, Loader2, ImageIcon, GripVertical, Crown, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -43,6 +45,36 @@ interface PhotoSlot {
   prompt?: string;
 }
 
+// Upload queue types and constants
+interface UploadQueueItem {
+  file: File;
+  slotIndex: number;
+  progress: number;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+}
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_CONCURRENT_UPLOADS = 2;
+
+function validateFile(file: File): { valid: boolean; error?: string } {
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return {
+      valid: false,
+      error: `Ogiltigt format. Endast JPG, PNG och WebP tillåtna.`
+    };
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      valid: false,
+      error: `Filen är för stor (${sizeMB}MB). Max 5MB.`
+    };
+  }
+  return { valid: true };
+}
+
 const PHOTO_PROMPTS = [
   '📸 Ditt bästa leende',
   '🎯 Gör något du älskar',
@@ -67,6 +99,9 @@ interface SortablePhotoCardProps {
   photo: PhotoSlot;
   index: number;
   isUploading: boolean;
+  uploadProgress: number;
+  uploadFileName?: string;
+  uploadStatus?: 'pending' | 'uploading' | 'success' | 'error';
   isDragging: boolean;
   isDeleting: boolean;
   canDelete: boolean;
@@ -78,6 +113,9 @@ function SortablePhotoCard({
   photo,
   index,
   isUploading,
+  uploadProgress,
+  uploadFileName,
+  uploadStatus,
   isDragging,
   isDeleting,
   canDelete,
@@ -124,8 +162,42 @@ function SortablePhotoCard({
       onClick={() => !hasPhoto && !isUploading && onUpload(index)}
     >
       {isUploading ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted glass">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/90 glass p-3">
+          {uploadStatus === 'success' ? (
+            <div className="flex flex-col items-center animate-scale-in">
+              <div className="w-10 h-10 rounded-full gradient-emerald-glow flex items-center justify-center mb-2 shadow-glow-emerald">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <p className="text-xs text-emerald-600 font-medium">Klart!</p>
+            </div>
+          ) : uploadStatus === 'error' ? (
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center mb-2">
+                <AlertCircle className="w-5 h-5 text-destructive" />
+              </div>
+              <p className="text-xs text-destructive font-medium">Fel</p>
+            </div>
+          ) : (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
+              <div className="w-full px-2">
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary/50">
+                  <div
+                    className="h-full transition-all duration-300 ease-out gradient-rose-glow"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-[10px] text-muted-foreground truncate max-w-[60%]">
+                    {uploadFileName || 'Laddar upp...'}
+                  </p>
+                  <p className="text-[10px] font-medium text-primary">
+                    {Math.round(uploadProgress)}%
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       ) : hasPhoto ? (
         <>
@@ -217,7 +289,7 @@ function DragOverlayCard({ photo, index }: { photo: PhotoSlot; index: number }) 
 
 export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUploadProps) {
   const { user } = useAuth();
-  const [uploading, setUploading] = useState<number | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
@@ -305,22 +377,71 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
     }
   }, [photos, onPhotosChange, user]);
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
-    if (!user || !event.target.files || event.target.files.length === 0) return;
+  // Helper to get upload status for a specific slot
+  const getUploadForSlot = (slotIndex: number) => {
+    return uploadQueue.find(item => item.slotIndex === slotIndex);
+  };
 
-    const file = event.target.files[0];
+  // Upload a single file with progress tracking
+  const uploadSingleFile = useCallback(async (queueItem: UploadQueueItem) => {
+    if (!user) return;
+
+    const { file, slotIndex } = queueItem;
     const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${Date.now()}-${slotIndex}.${fileExt}`;
 
-    setUploading(slotIndex);
+    // Mark as uploading
+    setUploadQueue(prev =>
+      prev.map(item =>
+        item.slotIndex === slotIndex
+          ? { ...item, status: 'uploading' as const, progress: 0 }
+          : item
+      )
+    );
 
     try {
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('profile-photos')
-        .upload(filePath, file);
+      // Get the Supabase storage URL for direct XHR upload with progress
+      const { data: session } = await supabase.auth.getSession();
+      const accessToken = session?.session?.access_token;
 
-      if (uploadError) throw uploadError;
+      if (!accessToken) {
+        throw new Error('Not authenticated');
+      }
+
+      // Upload with progress using XMLHttpRequest
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/profile-photos/${filePath}`;
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+        xhr.setRequestHeader('Content-Type', file.type);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setUploadQueue(prev =>
+              prev.map(item =>
+                item.slotIndex === slotIndex
+                  ? { ...item, progress }
+                  : item
+              )
+            );
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(file);
+      });
 
       // Update or insert photo metadata
       const existingPhoto = photos[slotIndex];
@@ -338,6 +459,16 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
           .eq('id', existingPhoto.id);
 
         if (updateError) throw updateError;
+
+        // Update local state
+        const newPhotos = [...photos];
+        newPhotos[slotIndex] = {
+          ...newPhotos[slotIndex],
+          storage_path: filePath,
+          display_order: slotIndex,
+          prompt: PHOTO_PROMPTS[slotIndex],
+        };
+        onPhotosChange(newPhotos);
       } else {
         // Insert new record
         const { data: insertData, error: insertError } = await supabase
@@ -363,30 +494,116 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
           prompt: PHOTO_PROMPTS[slotIndex],
         };
         onPhotosChange(newPhotos);
-        toast.success('Foto uppladdat!');
-        return;
       }
 
-      // Refresh photos for update case
-      const newPhotos = [...photos];
-      newPhotos[slotIndex] = {
-        ...newPhotos[slotIndex],
-        storage_path: filePath,
-        display_order: slotIndex,
-        prompt: PHOTO_PROMPTS[slotIndex],
-      };
-      onPhotosChange(newPhotos);
+      // Mark as success
+      setUploadQueue(prev =>
+        prev.map(item =>
+          item.slotIndex === slotIndex
+            ? { ...item, status: 'success' as const, progress: 100 }
+            : item
+        )
+      );
 
-      toast.success('Foto uppladdat!');
+      // Remove from queue after showing success animation
+      setTimeout(() => {
+        setUploadQueue(prev => prev.filter(item => item.slotIndex !== slotIndex));
+      }, 1500);
+
     } catch (error) {
       console.error('Upload error:', error);
+
+      // Mark as error
+      setUploadQueue(prev =>
+        prev.map(item =>
+          item.slotIndex === slotIndex
+            ? { ...item, status: 'error' as const, error: 'Uppladdning misslyckades' }
+            : item
+        )
+      );
+
       toast.error('Kunde inte ladda upp foto');
-    } finally {
-      setUploading(null);
-      setSelectedSlot(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+
+      // Remove from queue after showing error
+      setTimeout(() => {
+        setUploadQueue(prev => prev.filter(item => item.slotIndex !== slotIndex));
+      }, 2000);
+    }
+  }, [user, photos, onPhotosChange]);
+
+  // Effect to process queue when it changes
+  const queueRef = useRef(uploadQueue);
+  queueRef.current = uploadQueue;
+
+  // Manual trigger to start processing
+  const startProcessing = useCallback(() => {
+    const activeUploads = queueRef.current.filter(item => item.status === 'uploading');
+    const pendingUploads = queueRef.current.filter(item => item.status === 'pending');
+
+    if (activeUploads.length >= MAX_CONCURRENT_UPLOADS || pendingUploads.length === 0) return;
+
+    const toStart = pendingUploads.slice(0, MAX_CONCURRENT_UPLOADS - activeUploads.length);
+    for (const item of toStart) {
+      uploadSingleFile(item);
+    }
+  }, [uploadSingleFile]);
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
+    if (!user || !event.target.files || event.target.files.length === 0) return;
+
+    const files = Array.from(event.target.files);
+
+    // Find available slots starting from selected slot
+    const availableSlots: number[] = [];
+    for (let i = 0; i < maxPhotos && availableSlots.length < files.length; i++) {
+      // Check if slot is empty or is the originally selected slot
+      const idx = (slotIndex + i) % maxPhotos;
+      if (!photos[idx]?.storage_path || idx === slotIndex) {
+        if (!uploadQueue.find(q => q.slotIndex === idx)) {
+          availableSlots.push(idx);
+        }
       }
+    }
+
+    // If no available slots, just try to replace the selected one
+    if (availableSlots.length === 0) {
+      if (!uploadQueue.find(q => q.slotIndex === slotIndex)) {
+        availableSlots.push(slotIndex);
+      }
+    }
+
+    // Validate and add files to queue
+    const newQueueItems: UploadQueueItem[] = [];
+
+    for (let i = 0; i < Math.min(files.length, availableSlots.length); i++) {
+      const file = files[i];
+      const targetSlot = availableSlots[i];
+
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error);
+        continue;
+      }
+
+      newQueueItems.push({
+        file,
+        slotIndex: targetSlot,
+        progress: 0,
+        status: 'pending',
+      });
+    }
+
+    if (newQueueItems.length > 0) {
+      setUploadQueue(prev => [...prev, ...newQueueItems]);
+
+      // Trigger processing after state update
+      setTimeout(() => startProcessing(), 0);
+    }
+
+    // Reset file input
+    setSelectedSlot(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -492,12 +709,16 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
     ? photos.findIndex((p, i) => (p.id || `empty-${i}`) === activeId)
     : -1;
 
+  // Check if we have upload activity for any slot
+  const hasActiveUploads = uploadQueue.length > 0;
+
   return (
     <div className="space-y-4">
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+        multiple
         className="hidden"
         onChange={(e) => selectedSlot !== null && handleUpload(e, selectedSlot)}
       />
@@ -510,19 +731,25 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       >
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-3 gap-3">
-            {photos.slice(0, maxPhotos).map((photo, index) => (
-              <SortablePhotoCard
-                key={photo.id || `slot-${index}`}
-                photo={photo}
-                index={index}
-                isUploading={uploading === index}
-                isDragging={activeId === (photo.id || `empty-${index}`)}
-                isDeleting={deleting === index}
-                canDelete={canDeletePhotos}
-                onDeleteClick={handleDeleteClick}
-                onUpload={triggerUpload}
-              />
-            ))}
+            {photos.slice(0, maxPhotos).map((photo, index) => {
+              const uploadItem = getUploadForSlot(index);
+              return (
+                <SortablePhotoCard
+                  key={photo.id || `slot-${index}`}
+                  photo={photo}
+                  index={index}
+                  isUploading={!!uploadItem}
+                  uploadProgress={uploadItem?.progress ?? 0}
+                  uploadFileName={uploadItem?.file.name}
+                  uploadStatus={uploadItem?.status}
+                  isDragging={activeId === (photo.id || `empty-${index}`)}
+                  isDeleting={deleting === index}
+                  canDelete={canDeletePhotos}
+                  onDeleteClick={handleDeleteClick}
+                  onUpload={triggerUpload}
+                />
+              );
+            })}
           </div>
         </SortableContext>
 
@@ -533,12 +760,37 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         </DragOverlay>
       </DndContext>
 
+      {/* Upload button - ShimmerButton */}
+      <div className="flex justify-center">
+        <ShimmerButton
+          variant="primary"
+          size="default"
+          icon={Upload}
+          loading={hasActiveUploads}
+          onClick={() => {
+            // Find first empty slot
+            const emptySlotIndex = photos.findIndex(p => !p.storage_path);
+            if (emptySlotIndex !== -1) {
+              triggerUpload(emptySlotIndex);
+            } else if (photoCount < maxPhotos) {
+              triggerUpload(photoCount);
+            } else {
+              toast.error('Alla fotoutrymmen är fulla');
+            }
+          }}
+          disabled={photoCount >= maxPhotos && !photos.some(p => !p.storage_path)}
+          className="w-full max-w-xs"
+        >
+          {hasActiveUploads ? 'Laddar upp...' : 'Ladda upp foton'}
+        </ShimmerButton>
+      </div>
+
       <div className="text-center space-y-1">
         <p className="text-xs text-muted-foreground">
-          Ladda upp 4-6 foton. Dra för att ändra ordning.
+          Ladda upp 4-6 foton. Max 5MB per bild. JPG, PNG eller WebP.
         </p>
         <p className="text-xs text-primary/70">
-          Det första fotot blir ditt huvudfoto.
+          Det första fotot blir ditt huvudfoto. Dra för att ändra ordning.
         </p>
       </div>
 
