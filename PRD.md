@@ -305,3 +305,133 @@ US-011 (translations)
 ```
 
 Execute in order: US-001 → US-002 → US-003 → US-004 → US-005 → US-006 → US-007 → US-008 → US-009 → US-010 → US-011
+
+---
+
+# PRD: Profile Photo Management
+
+## Introduction
+
+Enhance MÄÄK's profile photo system to allow users to upload, reorder, and delete photos with a premium mobile-first interface. Currently, users can upload photos but cannot easily manage them. This feature will provide drag-to-reorder, photo deletion, and better upload UX with progress indicators.
+
+## Goals
+
+- Allow users to upload up to 6 profile photos
+- Enable drag-to-reorder photos (primary photo is first)
+- Allow photo deletion with confirmation
+- Show upload progress with premium UI
+- Validate image size and format before upload
+- Optimize images for mobile viewing
+- Use premium design system (glassmorphism, gradients)
+
+## User Stories
+
+### US-012: Add photo reordering functionality
+
+**Description:** As a MÄÄK user, I want to reorder my photos by dragging so that I can choose which photo appears first.
+
+**Acceptance Criteria:**
+
+- [x] Add `display_order` column to `profile_photos` table (if not exists)
+- [x] Create migration `20260126_add_photo_reordering.sql`
+- [x] Add `updatePhotoOrder` function in Supabase (or edge function)
+- [x] Implement drag-and-drop in ProfileEditor using `@dnd-kit/core`
+- [x] Show visual feedback during drag (premium card styling)
+- [x] Update `display_order` for all photos when reordered
+- [x] Primary photo (first in order) is marked visually
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
+- [ ] Verify changes work in browser at localhost:8080
+
+---
+
+### US-013: Add photo deletion with confirmation
+
+**Description:** As a MÄÄK user, I want to delete photos I don't like so that my profile shows only my best photos.
+
+**Acceptance Criteria:**
+
+- [ ] Add delete button (trash icon) to each photo in ProfileEditor
+- [ ] Show confirmation dialog before deletion (use shadcn/ui AlertDialog)
+- [ ] Delete photo from Supabase storage bucket
+- [ ] Delete photo record from `profile_photos` table
+- [ ] Reorder remaining photos to fill gaps
+- [ ] Show success toast after deletion
+- [ ] Handle errors gracefully (show error toast)
+- [ ] Prevent deletion if only one photo remains
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+- [ ] Verify changes work in browser at localhost:8080
+
+---
+
+### US-014: Enhance photo upload with progress indicator
+
+**Description:** As a MÄÄK user, I want to see upload progress so that I know my photos are uploading correctly.
+
+**Acceptance Criteria:**
+
+- [ ] Add upload progress bar (premium gradient styling)
+- [ ] Show percentage and file name during upload
+- [ ] Validate file size (max 5MB per photo)
+- [ ] Validate file type (jpg, jpeg, png, webp only)
+- [ ] Show error message for invalid files
+- [ ] Allow multiple file selection
+- [ ] Queue uploads (max 2 concurrent)
+- [ ] Show success animation when upload completes
+- [ ] Use premium ShimmerButton for upload trigger
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+- [ ] Verify changes work in browser at localhost:8080
+
+---
+
+### US-015: Add photo count indicator and limits
+
+**Description:** As a MÄÄK user, I want to know how many photos I can upload so that I can plan my profile.
+
+**Acceptance Criteria:**
+
+- [ ] Show "X/6 photos" indicator in ProfileEditor
+- [ ] Disable upload button when at max (6 photos)
+- [ ] Show premium badge when at max photos
+- [ ] Add tooltip explaining photo limit
+- [ ] Show warning if user tries to upload when at limit
+- [ ] Use premium card styling for photo grid
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+- [ ] Verify changes work in browser at localhost:8080
+
+---
+
+### US-016: Add Swedish translations for photo management
+
+**Description:** As a Swedish user, I want all photo management features in Swedish.
+
+**Acceptance Criteria:**
+
+- [ ] Add to `src/i18n/locales/sv.json`:
+  - `profile.photos.title`: "Dina foton"
+  - `profile.photos.upload`: "Ladda upp foto"
+  - `profile.photos.delete_confirm`: "Ta bort detta foto?"
+  - `profile.photos.max_reached`: "Du har laddat upp max antal foton"
+  - `profile.photos.reorder_hint`: "Dra för att ändra ordning"
+  - `profile.photos.uploading`: "Laddar upp..."
+- [ ] Add matching keys to `src/i18n/locales/en.json`
+- [ ] `npm run build` passes
+- [ ] `npm run lint` passes
+
+---
+
+## Story Dependency Graph
+
+```
+US-012 (reordering)
+US-013 (deletion)
+US-014 (upload progress)
+US-015 (photo limits)
+    ↓
+US-016 (translations)
+```
+
+Execute in order: US-012 → US-013 → US-014 → US-015 → US-016

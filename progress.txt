@@ -11,6 +11,11 @@
 - Stories: 11 total (US-001 through US-011)
 - Status: COMPLETE (11/11 done)
 
+## New Feature: Profile Photo Management
+- PRD created: 2026-01-26
+- Stories: 5 total (US-012 through US-016)
+- Status: IN PROGRESS (1/5 done)
+
 ## Story Progress
 - [x] US-001: Add icebreaker_analytics table
 - [x] US-002: Add icebreaker category enum
@@ -50,8 +55,15 @@
 - Hooks use fire-and-forget pattern for analytics (non-blocking)
 - generate-followups has rate limiting (5/day per match) tracked via icebreaker_analytics
 
+## New Story Progress (Profile Photo Management)
+- [x] US-012: Add photo reordering functionality
+- [ ] US-013: Add photo deletion with confirmation
+- [ ] US-014: Enhance photo upload with progress indicator
+- [ ] US-015: Add photo count indicator and limits
+- [ ] US-016: Add Swedish translations for photo management
+
 ## Remaining Work
-- None! All 11 stories are complete.
+- Complete Profile Photo Management feature (5 stories)
 - Note: Types were manually added since Docker wasn't running. When local Supabase is available, you can optionally regenerate types with: `supabase gen types typescript --local > src/integrations/supabase/types.ts`
 
 ## What Was Built
@@ -72,4 +84,25 @@
 - Tracks: shown, used, response time
 - All tracking integrated in ChatWindow
 
+---
+
+## Iteration 1 - US-012: Photo Reordering
+- What was implemented:
+  - Drag-and-drop photo reordering using @dnd-kit/core and @dnd-kit/sortable
+  - Premium visual feedback during drag (card styling, shadows, scale effects)
+  - Primary photo badge with crown icon ("Huvudfoto")
+  - GripVertical drag handle on each photo
+  - Supabase RPC function `update_photo_order` for atomic order updates
+- Files changed:
+  - `supabase/migrations/20260126_add_photo_reordering.sql` - New: RPC function for photo order
+  - `src/components/profile/PhotoUpload.tsx` - Enhanced with dnd-kit drag-and-drop
+  - `package.json` - Added @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities
+- Learnings for future iterations:
+  - `profile_photos` table already had `display_order` column - no schema change needed
+  - @dnd-kit works well with existing Card components
+  - Use `useSortable` hook for individual draggable items
+  - `CSS.Transform.toString()` from @dnd-kit/utilities handles transform styling
+  - DragOverlay provides smooth visual feedback during drag
+  - Use `rectSortingStrategy` for grid layouts
+  - Disable sortable for empty slots with `disabled: !hasPhoto`
 ---
