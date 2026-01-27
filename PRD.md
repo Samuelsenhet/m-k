@@ -341,7 +341,7 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 - [x] Primary photo (first in order) is marked visually
 - [x] `npm run build` passes
 - [x] `npm run lint` passes
-- [ ] Verify changes work in browser at localhost:8080
+- [x] Verify changes work in browser at localhost:8080
 
 ---
 
@@ -361,7 +361,7 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 - [x] Prevent deletion if only one photo remains
 - [x] `npm run build` passes
 - [x] `npm run lint` passes
-- [ ] Verify changes work in browser at localhost:8080
+- [x] Verify changes work in browser at localhost:8080
 
 ---
 
@@ -382,7 +382,7 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 - [x] Use premium ShimmerButton for upload trigger
 - [x] `npm run build` passes
 - [x] `npm run lint` passes
-- [ ] Verify changes work in browser at localhost:8080
+- [x] Verify changes work in browser at localhost:8080
 
 ---
 
@@ -400,7 +400,7 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 - [x] Use premium card styling for photo grid
 - [x] `npm run build` passes
 - [x] `npm run lint` passes
-- [ ] Verify changes work in browser at localhost:8080
+- [x] Verify changes work in browser at localhost:8080
 
 ---
 
