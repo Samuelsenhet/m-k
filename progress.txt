@@ -153,3 +153,38 @@
   - Use refs (queueRef) to access current queue state in callbacks without stale closures
   - Success animation delay (1500ms) before removing from queue gives good UX feedback
 ---
+
+## Iteration 4 - US-015: Add photo count indicator and limits
+- What was implemented:
+  - Photo count indicator header with "X/6 photos" badge
+  - Info tooltip explaining photo limit rules
+  - Premium "Komplett" badge with sparkle icon when at max photos
+  - Disabled upload button with tooltip when at limit
+  - Premium glass-dark styling on photo grid
+  - Congratulatory message when all photos uploaded
+  - Toast error when user tries to upload at limit (defensive)
+- Files changed:
+  - `src/components/profile/PhotoUpload.tsx` - Added photo count indicator, tooltips, premium badges
+  - `PRD.md` - Marked US-015 code criteria complete
+- Learnings for future iterations:
+  - Use `TooltipProvider` wrapper when using Tooltip components from shadcn/ui
+  - Radix Tooltip requires `asChild` on TooltipTrigger to wrap custom elements
+  - Premium badge: combine `gradient-rose-glow` with `shadow-glow-rose/30` for glow effect
+  - `glass-dark` class provides darker glassmorphism for containing photo grid
+  - Use `Badge` component with `variant="secondary"` for subtle counters
+---
+
+## Iteration 5 - US-016: Add Swedish translations for photo management
+- What was implemented:
+  - Verified that all Swedish photo translations were already in place from previous iterations
+  - Translations already existed in `sv.json` at `profile.photos.*` (lines 92-121)
+  - Matching English translations in `en.json` at `profile.photos.*` (lines 92-121)
+  - Keys present: title, upload, delete_confirm, max_reached, reorder_hint, uploading, and many more
+- Files changed:
+  - `PRD.md` - Marked US-016 acceptance criteria complete
+- Learnings for future iterations:
+  - Translations were added incrementally during feature implementation (US-012 through US-015)
+  - Always check if acceptance criteria are already met before implementing
+  - The i18n structure uses nested objects (e.g., `profile.photos.title`) for organization
+  - Both `sv.json` and `en.json` have comprehensive photo management translations with 29 keys
+---
