@@ -351,16 +351,16 @@ Enhance MÄÄK's profile photo system to allow users to upload, reorder, and del
 
 **Acceptance Criteria:**
 
-- [ ] Add delete button (trash icon) to each photo in ProfileEditor
-- [ ] Show confirmation dialog before deletion (use shadcn/ui AlertDialog)
-- [ ] Delete photo from Supabase storage bucket
-- [ ] Delete photo record from `profile_photos` table
-- [ ] Reorder remaining photos to fill gaps
-- [ ] Show success toast after deletion
-- [ ] Handle errors gracefully (show error toast)
-- [ ] Prevent deletion if only one photo remains
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Add delete button (trash icon) to each photo in ProfileEditor
+- [x] Show confirmation dialog before deletion (use shadcn/ui AlertDialog)
+- [x] Delete photo from Supabase storage bucket
+- [x] Delete photo record from `profile_photos` table
+- [x] Reorder remaining photos to fill gaps
+- [x] Show success toast after deletion
+- [x] Handle errors gracefully (show error toast)
+- [x] Prevent deletion if only one photo remains
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 - [ ] Verify changes work in browser at localhost:8080
 
 ---

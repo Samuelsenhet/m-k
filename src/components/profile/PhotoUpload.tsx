@@ -3,7 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, X, Loader2, ImageIcon, GripVertical, Crown } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, Trash2, Loader2, ImageIcon, GripVertical, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -58,7 +68,9 @@ interface SortablePhotoCardProps {
   index: number;
   isUploading: boolean;
   isDragging: boolean;
-  onDelete: (index: number) => void;
+  isDeleting: boolean;
+  canDelete: boolean;
+  onDeleteClick: (index: number) => void;
   onUpload: (index: number) => void;
 }
 
@@ -67,7 +79,9 @@ function SortablePhotoCard({
   index,
   isUploading,
   isDragging,
-  onDelete,
+  isDeleting,
+  canDelete,
+  onDeleteClick,
   onUpload,
 }: SortablePhotoCardProps) {
   const hasPhoto = photo?.storage_path;
@@ -142,13 +156,18 @@ function SortablePhotoCard({
           <Button
             variant="destructive"
             size="icon"
-            className="absolute top-1 right-1 w-6 h-6 min-h-[24px] touch-manipulation active:scale-95"
+            className="absolute top-1 right-1 w-6 h-6 min-h-[24px] touch-manipulation active:scale-95 disabled:opacity-50"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(index);
+              onDeleteClick(index);
             }}
+            disabled={!canDelete || isDeleting}
           >
-            <X className="w-3 h-3" />
+            {isDeleting ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Trash2 className="w-3 h-3" />
+            )}
           </Button>
 
           {/* Photo prompt overlay */}
@@ -200,9 +219,15 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
   const { user } = useAuth();
   const [uploading, setUploading] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Count photos with content to determine if deletion is allowed
+  const photoCount = photos.filter(p => p.storage_path).length;
+  const canDeletePhotos = photoCount > 1;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -365,29 +390,93 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
     }
   };
 
-  const handleDelete = async (slotIndex: number) => {
-    const photo = photos[slotIndex];
-    if (!photo?.storage_path) return;
+  const handleDeleteClick = (slotIndex: number) => {
+    if (!canDeletePhotos) {
+      toast.error('Du måste ha minst ett foto');
+      return;
+    }
+    setDeleteConfirmIndex(slotIndex);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirmIndex === null) return;
+
+    const slotToDelete = deleteConfirmIndex;
+    const photo = photos[slotToDelete];
+    if (!photo?.storage_path) {
+      setDeleteConfirmIndex(null);
+      return;
+    }
+
+    setDeleting(slotToDelete);
+    setDeleteConfirmIndex(null);
 
     try {
       // Delete from storage
-      await supabase.storage.from('profile-photos').remove([photo.storage_path]);
+      const { error: storageError } = await supabase.storage
+        .from('profile-photos')
+        .remove([photo.storage_path]);
+
+      if (storageError) {
+        console.error('Storage delete error:', storageError);
+        // Continue anyway - photo might already be deleted from storage
+      }
 
       // Delete metadata if exists
       if (photo.id) {
-        await supabase.from('profile_photos').delete().eq('id', photo.id);
+        const { error: dbError } = await supabase
+          .from('profile_photos')
+          .delete()
+          .eq('id', photo.id);
+
+        if (dbError) throw dbError;
       }
 
-      // Update local state
-      const newPhotos = [...photos];
-      newPhotos[slotIndex] = { storage_path: '', display_order: slotIndex };
-      onPhotosChange(newPhotos);
+      // Reorder remaining photos to fill gaps
+      const remainingPhotos = photos.filter((p, idx) => idx !== slotToDelete && p?.storage_path);
+      const newPhotos: PhotoSlot[] = [];
 
+      // Fill slots with remaining photos in order
+      for (let i = 0; i < maxPhotos; i++) {
+        if (i < remainingPhotos.length) {
+          newPhotos.push({
+            ...remainingPhotos[i],
+            display_order: i,
+          });
+        } else {
+          newPhotos.push({ storage_path: '', display_order: i });
+        }
+      }
+
+      // Update display_order in database for remaining photos
+      if (user) {
+        const photoOrders = newPhotos
+          .filter(p => p.id)
+          .map(p => ({
+            id: p.id,
+            display_order: p.display_order,
+          }));
+
+        if (photoOrders.length > 0) {
+          await supabase.rpc('update_photo_order', {
+            p_user_id: user.id,
+            p_photo_orders: photoOrders,
+          });
+        }
+      }
+
+      onPhotosChange(newPhotos);
       toast.success('Foto borttaget');
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Kunde inte ta bort foto');
+    } finally {
+      setDeleting(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmIndex(null);
   };
 
   const triggerUpload = (slotIndex: number) => {
@@ -428,7 +517,9 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
                 index={index}
                 isUploading={uploading === index}
                 isDragging={activeId === (photo.id || `empty-${index}`)}
-                onDelete={handleDelete}
+                isDeleting={deleting === index}
+                canDelete={canDeletePhotos}
+                onDeleteClick={handleDeleteClick}
                 onUpload={triggerUpload}
               />
             ))}
@@ -457,6 +548,29 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
           Sparar ordning...
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmIndex !== null} onOpenChange={(open) => !open && handleDeleteCancel()}>
+        <AlertDialogContent className="glass max-w-[90vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ta bort detta foto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Är du säker på att du vill ta bort detta foto? Åtgärden kan inte ångras.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="touch-manipulation active:scale-95">
+              Avbryt
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 touch-manipulation active:scale-95"
+            >
+              Ta bort
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -14,7 +14,7 @@
 ## New Feature: Profile Photo Management
 - PRD created: 2026-01-26
 - Stories: 5 total (US-012 through US-016)
-- Status: IN PROGRESS (1/5 done)
+- Status: IN PROGRESS (2/5 done)
 
 ## Story Progress
 - [x] US-001: Add icebreaker_analytics table
@@ -57,7 +57,7 @@
 
 ## New Story Progress (Profile Photo Management)
 - [x] US-012: Add photo reordering functionality
-- [ ] US-013: Add photo deletion with confirmation
+- [x] US-013: Add photo deletion with confirmation
 - [ ] US-014: Enhance photo upload with progress indicator
 - [ ] US-015: Add photo count indicator and limits
 - [ ] US-016: Add Swedish translations for photo management
@@ -105,4 +105,26 @@
   - DragOverlay provides smooth visual feedback during drag
   - Use `rectSortingStrategy` for grid layouts
   - Disable sortable for empty slots with `disabled: !hasPhoto`
+---
+
+## Iteration 2 - US-013: Photo Deletion with Confirmation
+- What was implemented:
+  - AlertDialog confirmation before photo deletion (Swedish text)
+  - Trash2 icon (replaced X) with loading spinner during deletion
+  - Delete from Supabase storage bucket
+  - Delete photo record from `profile_photos` table
+  - Automatic reordering: remaining photos shift up to fill gaps
+  - Database update via existing `update_photo_order` RPC for reordered photos
+  - Prevention of deletion when only one photo remains (shows toast error)
+  - Premium glassmorphism styling on AlertDialog
+  - Mobile-optimized touch targets with active:scale-95
+- Files changed:
+  - `src/components/profile/PhotoUpload.tsx` - Added AlertDialog, delete confirmation flow, reordering logic
+- Learnings for future iterations:
+  - AlertDialog from shadcn/ui uses Radix primitives with open/onOpenChange pattern
+  - Store index to delete before clearing state to avoid closure issues
+  - Reordering after deletion: filter out deleted photo, then fill remaining slots
+  - Use `canDeletePhotos = photoCount > 1` to disable delete on last photo
+  - `disabled` prop on Button prevents accidental clicks during deletion
+  - Premium design: use `.glass` class on AlertDialogContent for glassmorphism
 ---
