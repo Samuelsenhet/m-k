@@ -16,7 +16,10 @@ Swedish personality-based dating platform with PRP compliance and user journey p
 2. Copy `.env.example` to `.env`
 3. Add your Supabase credentials from https://supabase.com/dashboard
 4. Install dependencies: `npm install`
-5. Run dev server: `npm run dev`
+5. **Supabase one-time setup** (fixes 400 on profiles, 404 on personality_results, "Bucket not found" on photo upload):
+   - Option A: Run migrations: `npx supabase db push`
+   - Option B: In [Supabase Dashboard](https://supabase.com/dashboard) → SQL Editor, run the script `supabase/ONE_TIME_SETUP.sql`
+6. Run dev server: `npm run dev`
 
 ## Available Scripts
 

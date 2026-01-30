@@ -42,28 +42,31 @@ interface MessageBubbleProps {
 
 const MessageBubble = memo(function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   return (
-    <div
-      className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      className={cn('flex mb-2', isOwn ? 'justify-end' : 'justify-start')}
       role="listitem"
     >
       <div
         className={cn(
-          'max-w-[75%] rounded-2xl px-4 py-2',
+          'max-w-[80%] rounded-3xl px-4 py-3 shadow-lg transition-premium',
           isOwn
-            ? 'bg-primary text-primary-foreground rounded-br-md'
-            : 'bg-muted text-foreground rounded-bl-md'
+            ? 'bg-gradient-rose-glow text-white rounded-br-md shadow-glow-rose'
+            : 'bg-white text-gray-900 rounded-bl-md border border-gray-100 shadow-sm'
         )}
       >
-        <p className="text-sm">{message.content}</p>
+        <p className="text-sm leading-relaxed font-medium">{message.content}</p>
         <div
           className={cn(
-            'flex items-center gap-1 mt-1',
+            'flex items-center gap-1.5 mt-1.5',
             isOwn ? 'justify-end' : ''
           )}
         >
           <span
             className={cn(
-              'text-xs',
+              'text-xs font-medium',
               isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
             )}
           >
@@ -71,14 +74,14 @@ const MessageBubble = memo(function MessageBubble({ message, isOwn }: MessageBub
           </span>
           {isOwn && (
             message.is_read ? (
-              <CheckCheck className="w-3 h-3 text-primary-foreground/70" aria-label="Läst" />
+              <CheckCheck className="w-3.5 h-3.5 text-white/70" aria-label="Läst" />
             ) : (
-              <Check className="w-3 h-3 text-primary-foreground/50" aria-label="Skickat" />
+              <Check className="w-3.5 h-3.5 text-white/50" aria-label="Skickat" />
             )
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 });
 
@@ -384,23 +387,32 @@ export function ChatWindow({
     messages[messages.length - 1]?.sender_id !== user?.id;
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border bg-card">
-        <Button variant="ghost" size="icon" onClick={onBack} aria-label={t('common.back')}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={matchedUserAvatar} alt={matchedUserName} />
-          <AvatarFallback className="bg-primary/10 text-primary">
-            {matchedUserName.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <h2 className="font-semibold text-foreground">{matchedUserName}</h2>
-        </div>
-        
-        {/* AI Icebreaker Button */}
+    <div className="flex flex-col h-full bg-gradient-premium">
+      {/* Premium Header */}
+      <div className="glass border-b border-white/20 px-4 py-3 safe-area-top">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onBack} 
+            className="p-2 hover:bg-white/20 rounded-xl transition-premium active:scale-95 touch-manipulation"
+            aria-label={t('common.back')}
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <Avatar className="w-11 h-11 ring-2 ring-white/50 shadow-lg">
+            <AvatarImage src={matchedUserAvatar} alt={matchedUserName} />
+            <AvatarFallback className="bg-gradient-rose-glow text-white font-bold">
+              {matchedUserName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <h2 className="font-bold text-foreground text-base">{matchedUserName}</h2>
+            <p className="text-xs text-primary font-semibold flex items-center gap-1">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              Online
+            </p>
+          </div>
+          
+          {/* AI Icebreaker Button */}
         <Sheet open={showAIPanel} onOpenChange={setShowAIPanel}>
           <SheetTrigger asChild>
             <Button 
@@ -623,42 +635,49 @@ export function ChatWindow({
             </SheetContent>
           </Sheet>
         )}
+        </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      {/* Premium Messages Area */}
+      <ScrollArea className="flex-1 px-4 py-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground font-medium">Laddar meddelanden...</p>
+            </div>
           </div>
         ) : messages.length === 0 && showIcebreakers && icebreakers.length > 0 ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-4 px-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary" />
+          <div className="flex flex-col items-center justify-center h-full space-y-6 px-4 animate-scale-in">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-rose-glow flex items-center justify-center shadow-glow-rose animate-bounce-gentle">
+              <Sparkles className="w-10 h-10 text-white" />
             </div>
             <div className="text-center">
-              <h3 className="font-serif font-semibold text-foreground mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 Ny match! 🎉
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-gray-600 font-medium mb-6">
                 Välj en konversationsstartare eller skriv ditt eget meddelande
               </p>
             </div>
-            <div className="w-full space-y-2">
+            <div className="w-full max-w-md space-y-3">
               {icebreakers.map((icebreaker, index) => (
-                <button
+                <motion.button
                   key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                   onClick={() => handleIcebreakerClick(icebreaker)}
-                  className="w-full p-3 text-left text-sm bg-primary/5 hover:bg-primary/10 rounded-lg border border-primary/20 transition-colors"
+                  className="w-full p-4 text-left text-sm bg-card rounded-2xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-premium active:scale-95 touch-manipulation font-medium shadow-sm text-foreground"
                 >
                   {icebreaker}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
         ) : (
-          <div className="space-y-4" role="list" aria-label={t('chat.messages')}>
-            {messages.map((message) => (
+          <div className="space-y-3 pb-4" role="list" aria-label={t('chat.messages')}>
+            {messages.map((message, index) => (
               <MessageBubble
                 key={message.id}
                 message={message}
@@ -675,27 +694,30 @@ export function ChatWindow({
         )}
       </ScrollArea>
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-border bg-card">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={handleInputChange}
-            placeholder="Skriv ett meddelande..."
-            disabled={sending}
-            className="flex-1"
-          />
-          <Button
+      {/* Premium Input Area */}
+      <form onSubmit={handleSubmit} className="glass border-t border-white/20 p-4 safe-area-bottom">
+        <div className="flex items-end gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={handleInputChange}
+              placeholder="Skriv ett meddelande..."
+              disabled={sending}
+              className="w-full px-5 py-3.5 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-200 focus:outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100 transition-premium text-sm font-medium placeholder:text-gray-400 disabled:opacity-50"
+            />
+          </div>
+          <button
             type="submit"
             disabled={!newMessage.trim() || sending}
-            className="gradient-primary text-primary-foreground"
+            className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground shadow-glow-primary hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-bounce active:scale-95 touch-manipulation flex items-center justify-center"
           >
             {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             )}
-          </Button>
+          </button>
         </div>
       </form>
     </div>

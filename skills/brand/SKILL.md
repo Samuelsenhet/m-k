@@ -4,20 +4,21 @@ description: Official brand colors, typography, and design system for MÄÄK dat
 ---
 
 ## Overview
-MÄÄK uses a modern psychological design system with personality-driven colors and a custom mascot character. The design emphasizes emotional connection through warm colors and playful animations.
+MÄÄK uses a modern psychological design system aligned with **Material Design 3** token principles and the **Eucalyptus Grove** palette: grounded, peaceful, and authentic. Primary, secondary, tertiary, and surface roles use "on" variants for WCAG 2.1 AA contrast. The system includes personality-driven colors, a custom mascot, and consistent motion (100–300ms for UI feedback).
 
-## Colors
+## Colors (Eucalyptus Grove)
 
 ### Primary Colors
-- **Primary**: `hsl(350, 75%, 55%)` `#e95d7b` - Warm Coral/Rose for CTAs
-- **Primary Foreground**: `hsl(0, 0%, 100%)` `#ffffff` - Text on primary
-- **Primary Glow**: `hsl(350, 80%, 65%)` `#f17a93` - Highlight effects
+- **Primary**: `#4B6E48` – Forest green for CTAs (trust, growth)
+- **Primary Foreground**: `#ffffff` – Text on primary
+- **Primary Glow**: Slightly lighter green for highlights
 
-### Secondary Colors
-- **Secondary**: `hsl(220, 15%, 20%)` `#2b3440` - Dark neutral
-- **Accent**: `hsl(280, 60%, 55%)` `#a856d8` - Purple for secondary actions
-- **Background**: `hsl(220, 20%, 98%)` `#f9fafb` - Light base
-- **Foreground**: `hsl(220, 25%, 12%)` `#171c24` - Primary text
+### Secondary & Accent
+- **Secondary**: Sage tint `hsl(45 18% 88%)` – Soft emphasis
+- **Accent**: Sage `#B2AC88` – Links, badges, complementary actions
+- **Background**: Off-white `#F2F0EF` – Light base
+- **Foreground**: Dark forest `#253D2C` – Primary text
+- **Muted**: Gray `#898989` – Body text, secondary content
 
 ### Personality Type Colors
 - **Diplomat**: `hsl(280, 60%, 50%)` `#9933cc` - Purple (INFJ, INFP, ENFJ, ENFP)
@@ -32,8 +33,14 @@ MÄÄK uses a modern psychological design system with personality-driven colors 
 - **J/P**: `hsl(145, 55%, 42%)` - Green for Judging/Perceiving
 - **A/T**: `hsl(45, 95%, 50%)` - Gold for Assertive/Turbulent
 
+### Token Roles (Material Design 3–aligned)
+- **Surface**: Elevated containers (`--surface`, `--surface-foreground`)
+- **Tertiary**: Subtle emphasis (`--tertiary`, `--tertiary-foreground`)
+- **Shape**: `--radius`, `--radius-sm` through `--radius-2xl` (4px–28px scale)
+- **Motion**: `--duration-fast` (100ms), `--duration-normal` (200ms), `--duration-slow` (300ms) for UI feedback
+
 ### Dark Mode
-All colors have dark mode variants defined in `src/index.css` with adjusted brightness and saturation for optimal contrast.
+All colors have dark mode variants defined in `src/index.css` with adjusted brightness and saturation for optimal contrast. Use design tokens (e.g. `text-foreground`, `bg-card`, `border-border`) instead of raw grays so themes stay consistent.
 
 ## Typography
 

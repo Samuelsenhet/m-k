@@ -59,7 +59,7 @@ const getCategoryBadgeClass = (category: string) => {
 </Card>
 ```
 
-### Accessibility
-- All color combinations meet WCAG AA contrast ratios
+### Accessibility (WCAG 2.1 AA)
+- All color combinations meet WCAG AA contrast ratios (4.5:1 normal text, 3:1 large text)
 - Dark mode colors adjusted for readability
-- Focus states use ring colors with sufficient contrast
+- Focus states: use `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` on interactive elements; color is never the only indicator of information

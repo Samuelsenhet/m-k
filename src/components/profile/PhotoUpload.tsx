@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
@@ -65,18 +66,18 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_CONCURRENT_UPLOADS = 2;
 
-function validateFile(file: File): { valid: boolean; error?: string } {
+function validateFile(file: File, t: (key: string, options?: Record<string, unknown>) => string): { valid: boolean; error?: string } {
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `Ogiltigt format. Endast JPG, PNG och WebP tillåtna.`
+      error: t('profile.photos.invalid_format')
     };
   }
   if (file.size > MAX_FILE_SIZE) {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
     return {
       valid: false,
-      error: `Filen är för stor (${sizeMB}MB). Max 5MB.`
+      error: t('profile.photos.file_too_large', { size: sizeMB })
     };
   }
   return { valid: true };
@@ -114,6 +115,7 @@ interface SortablePhotoCardProps {
   canDelete: boolean;
   onDeleteClick: (index: number) => void;
   onUpload: (index: number) => void;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 function SortablePhotoCard({
@@ -128,6 +130,7 @@ function SortablePhotoCard({
   canDelete,
   onDeleteClick,
   onUpload,
+  t,
 }: SortablePhotoCardProps) {
   const hasPhoto = photo?.storage_path;
   const sortableId = photo.id || `empty-${index}`;
@@ -175,14 +178,14 @@ function SortablePhotoCard({
               <div className="w-10 h-10 rounded-full gradient-emerald-glow flex items-center justify-center mb-2 shadow-glow-emerald">
                 <CheckCircle className="w-5 h-5 text-white" />
               </div>
-              <p className="text-xs text-emerald-600 font-medium">Klart!</p>
+              <p className="text-xs text-emerald-600 font-medium">{t('profile.photos.upload_complete')}</p>
             </div>
           ) : uploadStatus === 'error' ? (
             <div className="flex flex-col items-center">
               <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center mb-2">
                 <AlertCircle className="w-5 h-5 text-destructive" />
               </div>
-              <p className="text-xs text-destructive font-medium">Fel</p>
+              <p className="text-xs text-destructive font-medium">{t('profile.photos.upload_error')}</p>
             </div>
           ) : (
             <>
@@ -196,7 +199,7 @@ function SortablePhotoCard({
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-[10px] text-muted-foreground truncate max-w-[60%]">
-                    {uploadFileName || 'Laddar upp...'}
+                    {uploadFileName || t('profile.photos.uploading')}
                   </p>
                   <p className="text-[10px] font-medium text-primary">
                     {Math.round(uploadProgress)}%
@@ -218,17 +221,18 @@ function SortablePhotoCard({
           {isPrimary && (
             <div className="absolute top-1 left-1 bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
               <Crown className="w-3 h-3" />
-              Huvudfoto
+              {t('profile.photos.primary_photo')}
             </div>
           )}
 
-          {/* Drag handle */}
+          {/* Drag handle - larger touch target for "dra för att ändra ordning" */}
           <div
             {...attributes}
             {...listeners}
-            className="absolute top-1 right-8 w-6 h-6 flex items-center justify-center bg-black/50 rounded-full cursor-grab active:cursor-grabbing touch-manipulation"
+            className="absolute top-1 right-8 min-w-[44px] min-h-[44px] w-10 h-10 flex items-center justify-center bg-black/50 hover:bg-black/70 rounded-full cursor-grab active:cursor-grabbing touch-manipulation -m-2"
+            title={t('profile.photos.reorder_hint')}
           >
-            <GripVertical className="w-3 h-3 text-white" />
+            <GripVertical className="w-4 h-4 text-white pointer-events-none" />
           </div>
 
           {/* Delete button */}
@@ -271,7 +275,7 @@ function SortablePhotoCard({
 }
 
 // Overlay component for dragging state
-function DragOverlayCard({ photo, index }: { photo: PhotoSlot; index: number }) {
+function DragOverlayCard({ photo, index, t }: { photo: PhotoSlot; index: number; t: (key: string) => string }) {
   const isPrimary = index === 0;
 
   return (
@@ -284,7 +288,7 @@ function DragOverlayCard({ photo, index }: { photo: PhotoSlot; index: number }) 
       {isPrimary && (
         <div className="absolute top-1 left-1 bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
           <Crown className="w-3 h-3" />
-          Huvudfoto
+          {t('profile.photos.primary_photo')}
         </div>
       )}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
@@ -295,6 +299,7 @@ function DragOverlayCard({ photo, index }: { photo: PhotoSlot; index: number }) 
 }
 
 export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUploadProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [saving, setSaving] = useState(false);
@@ -333,9 +338,9 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
 
     if (!over || active.id === over.id) return;
 
-    // Find the indices
-    const oldIndex = photos.findIndex(p => (p.id || `empty-${photos.indexOf(p)}`) === active.id);
-    const newIndex = photos.findIndex(p => (p.id || `empty-${photos.indexOf(p)}`) === over.id);
+    // Find the indices (use index i from findIndex so empty-${i} matches)
+    const oldIndex = photos.findIndex((p, i) => (p.id || `empty-${i}`) === active.id);
+    const newIndex = photos.findIndex((p, i) => (p.id || `empty-${i}`) === over.id);
 
     if (oldIndex === -1 || newIndex === -1) return;
     if (!photos[oldIndex]?.storage_path) return; // Can't move empty slots
@@ -370,19 +375,19 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
 
           if (error) {
             console.error('Error updating photo order:', error);
-            toast.error('Kunde inte spara ordningen');
+            toast.error(t('profile.photos.order_failed'));
           } else {
-            toast.success('Fotoordning uppdaterad!');
+            toast.success(t('profile.photos.order_updated'));
           }
         }
       } catch (error) {
         console.error('Error saving photo order:', error);
-        toast.error('Kunde inte spara ordningen');
+        toast.error(t('profile.photos.order_failed'));
       } finally {
         setSaving(false);
       }
     }
-  }, [photos, onPhotosChange, user]);
+  }, [photos, onPhotosChange, user, t]);
 
   // Helper to get upload status for a specific slot
   const getUploadForSlot = (slotIndex: number) => {
@@ -407,48 +412,23 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
     );
 
     try {
-      // Get the Supabase storage URL for direct XHR upload with progress
-      const { data: session } = await supabase.auth.getSession();
-      const accessToken = session?.session?.access_token;
+      // Upload using Supabase client (handles auth and correct endpoint)
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type,
+        });
 
-      if (!accessToken) {
-        throw new Error('Not authenticated');
-      }
+      if (uploadError) throw uploadError;
 
-      // Upload with progress using XMLHttpRequest
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const uploadUrl = `${supabaseUrl}/storage/v1/object/profile-photos/${filePath}`;
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', uploadUrl, true);
-        xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
-        xhr.setRequestHeader('Content-Type', file.type);
-
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const progress = Math.round((event.loaded / event.total) * 100);
-            setUploadQueue(prev =>
-              prev.map(item =>
-                item.slotIndex === slotIndex
-                  ? { ...item, progress }
-                  : item
-              )
-            );
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        };
-
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.send(file);
-      });
+      // Simulate progress for UI (client upload doesn't expose progress)
+      setUploadQueue(prev =>
+        prev.map(item =>
+          item.slotIndex === slotIndex ? { ...item, progress: 100 } : item
+        )
+      );
 
       // Update or insert photo metadata
       const existingPhoto = photos[slotIndex];
@@ -520,23 +500,32 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
     } catch (error) {
       console.error('Upload error:', error);
 
-      // Mark as error
+      const isBucketNotFound =
+        error &&
+        typeof error === 'object' &&
+        (String((error as { message?: string }).message ?? '').toLowerCase().includes('bucket not found') ||
+         String((error as { error?: string }).error ?? '').toLowerCase().includes('bucket not found'));
+
+      const errorMessage = isBucketNotFound
+        ? 'Fotouppladdning kräver att storage är konfigurerad. Kör supabase db push eller kör ONE_TIME_SETUP.sql i Supabase Dashboard.'
+        : t('profile.photos.upload_failed');
+
       setUploadQueue(prev =>
         prev.map(item =>
           item.slotIndex === slotIndex
-            ? { ...item, status: 'error' as const, error: 'Uppladdning misslyckades' }
+            ? { ...item, status: 'error' as const, error: errorMessage }
             : item
         )
       );
 
-      toast.error('Kunde inte ladda upp foto');
+      toast.error(errorMessage, isBucketNotFound ? { duration: 8000 } : undefined);
 
       // Remove from queue after showing error
       setTimeout(() => {
         setUploadQueue(prev => prev.filter(item => item.slotIndex !== slotIndex));
       }, 2000);
     }
-  }, [user, photos, onPhotosChange]);
+  }, [user, photos, onPhotosChange, t]);
 
   // Effect to process queue when it changes
   const queueRef = useRef(uploadQueue);
@@ -586,7 +575,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       const file = files[i];
       const targetSlot = availableSlots[i];
 
-      const validation = validateFile(file);
+      const validation = validateFile(file, t);
       if (!validation.valid) {
         toast.error(validation.error);
         continue;
@@ -616,7 +605,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
 
   const handleDeleteClick = (slotIndex: number) => {
     if (!canDeletePhotos) {
-      toast.error('Du måste ha minst ett foto');
+      toast.error(t('profile.photos.min_one_required'));
       return;
     }
     setDeleteConfirmIndex(slotIndex);
@@ -690,10 +679,10 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       }
 
       onPhotosChange(newPhotos);
-      toast.success('Foto borttaget');
+      toast.success(t('profile.photos.deleted'));
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error('Kunde inte ta bort foto');
+      toast.error(t('profile.photos.delete_failed'));
     } finally {
       setDeleting(null);
     }
@@ -728,7 +717,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         {/* Photo count indicator header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium">Dina foton</h3>
+            <h3 className="text-sm font-medium">{t('profile.photos.title')}</h3>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted hover:bg-muted/80 transition-colors">
@@ -787,6 +776,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
                   canDelete={canDeletePhotos}
                   onDeleteClick={handleDeleteClick}
                   onUpload={triggerUpload}
+                  t={t}
                 />
               );
             })}
@@ -795,7 +785,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
 
         <DragOverlay>
           {activePhoto?.storage_path && activeIndex !== -1 && (
-            <DragOverlayCard photo={activePhoto} index={activeIndex} />
+            <DragOverlayCard photo={activePhoto} index={activeIndex} t={t} />
           )}
         </DragOverlay>
       </DndContext>

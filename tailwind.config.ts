@@ -18,6 +18,14 @@ export default {
         sans: ['DM Sans', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
       },
+      fontSize: {
+        display: ['2.25rem', { lineHeight: '1.2' }],
+        headline: ['1.875rem', { lineHeight: '1.25' }],
+        title: ['1.5rem', { lineHeight: '1.3' }],
+        body: ['1rem', { lineHeight: '1.5' }],
+        label: ['0.875rem', { lineHeight: '1.4' }],
+        caption: ['0.75rem', { lineHeight: '1.4' }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,6 +61,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          foreground: "hsl(var(--surface-foreground))",
+        },
+        tertiary: {
+          DEFAULT: "hsl(var(--tertiary))",
+          foreground: "hsl(var(--tertiary-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -83,6 +99,11 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        normal: "var(--duration-normal)",
+        slow: "var(--duration-slow)",
       },
       keyframes: {
         "accordion-down": {
