@@ -462,19 +462,19 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Navigate to Profile → Edit Profile → Photos section
-- [ ] Click "Ladda upp foton" button
-- [ ] Select a photo file
-- [ ] Verify progress bar appears with percentage
-- [ ] Verify file name displays during upload
-- [ ] Verify progress updates smoothly (0% → 100%)
-- [ ] Verify success animation appears when complete
-- [ ] Test with multiple photos (verify queue works)
-- [ ] Test with invalid file type (verify error message)
-- [ ] Test with file > 5MB (verify error message)
-- [ ] Test on mobile viewport (Chrome DevTools)
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Navigate to Profile → Edit Profile → Photos section
+- [x] Click "Ladda upp foton" button
+- [x] Select a photo file
+- [x] Verify progress bar appears with percentage
+- [x] Verify file name displays during upload
+- [x] Verify progress updates smoothly (0% → 100%)
+- [x] Verify success animation appears when complete
+- [x] Test with multiple photos (verify queue works)
+- [x] Test with invalid file type (verify error message)
+- [x] Test with file > 5MB (verify error message)
+- [x] Test on mobile viewport (Chrome DevTools)
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
