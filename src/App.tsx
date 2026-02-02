@@ -27,6 +27,7 @@ import ReportHistory from "./pages/ReportHistory";
 import AdminReports from "./pages/AdminReports";
 import Appeal from "./pages/Appeal";
 import DemoSeed from "./pages/DemoSeed";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const AppContent = () => {
           <Route path="/personality-guide" element={<PersonalityGuide />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Terms />} />
+          <Route path="/about" element={<About />} />
           <Route path="/reporting" element={<Reporting />} />
           <Route path="/report" element={<Report />} />
           <Route path="/report-history" element={<ReportHistory />} />
