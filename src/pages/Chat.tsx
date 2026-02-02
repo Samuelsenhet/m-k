@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MatchList } from "@/components/chat/MatchList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { VideoChatWindow } from "@/components/chat/VideoChatWindow";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ArrowLeft, Search } from "lucide-react";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
 import { getProfilesAuthKey } from "@/lib/profiles";
@@ -76,6 +76,7 @@ export default function Chat() {
     callerId: string;
   } | null>(null);
   const [callLogs, setCallLogs] = useState<CallLogEntry[]>([]);
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -250,9 +251,9 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 msn-chat">
+    <div className="min-h-screen flex flex-col bg-background pb-16">
       {selectedMatch ? (
-        <>
+        <div className="flex flex-1 flex-col min-h-0 msn-chat">
           <ChatWindow
             matchId={selectedMatch.id}
             matchedUserId={selectedMatch.matched_user_id}
@@ -271,18 +272,48 @@ export default function Chat() {
             showPostVideoCard={showPostVideoCard}
             onDismissPostVideoCard={() => setShowPostVideoCard(false)}
           />
-          <CallHistoryDisplay logs={callLogs} className="msn-list-card border-t border-border mx-2 mb-2 rounded p-3 text-sm" />
-        </>
+          <CallHistoryDisplay logs={callLogs} className="msn-list-card border-t border-border mx-2 mb-2 rounded p-3 text-sm shrink-0" />
+        </div>
       ) : (
         <>
-          <div className="msn-list-header flex items-center gap-2 px-4 py-3 safe-area-top">
-            <MessageCircle className="w-5 h-5 text-primary-foreground" />
-            <h1 className="font-semibold text-base text-primary-foreground">{t('chat.conversations')}</h1>
+          {/* Chat list header: back + centered Chats */}
+          <div className="flex items-center justify-between px-3 py-3 safe-area-top bg-background border-b border-border">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="p-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+              aria-label={t("common.back")}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-semibold text-lg text-foreground absolute left-1/2 -translate-x-1/2">
+              {t("chat.chats")}
+            </h1>
+            <Link
+              to="/demo-seed"
+              className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 text-xs font-medium"
+            >
+              Demo
+            </Link>
           </div>
-          <div className="flex-1 overflow-auto p-3 bg-background">
+          {/* Search bar */}
+          <div className="px-3 py-2 bg-background border-b border-border shrink-0">
+            <div className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-muted/30 px-3 py-2.5 focus-within:border-primary/60 focus-within:bg-background transition-colors">
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <input
+                type="search"
+                value={chatSearchQuery}
+                onChange={(e) => setChatSearchQuery(e.target.value)}
+                placeholder={t("chat.search")}
+                className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto bg-background">
             <MatchList
               onSelectMatch={handleSelectMatch}
               selectedMatchId={selectedMatch?.id}
+              searchQuery={chatSearchQuery}
             />
           </div>
         </>
