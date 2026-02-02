@@ -84,9 +84,6 @@
     "vite-plugin-pwa": "^1.2.0",
     "zod": "^3.25.76"
   },
-  "engines": {
-    "node": ">=20.0.0 <21.0.0"
-  },
   "devDependencies": {
     "@cspell/dict-sv": "^2.3.2",
     "@eslint/js": "^9.32.0",
