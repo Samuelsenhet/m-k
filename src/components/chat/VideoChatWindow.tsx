@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useRealtime } from "@/hooks/useRealtime";
+import { useTranslation } from "react-i18next";
 
 interface VideoChatWindowProps {
   roomId: string;
@@ -160,6 +161,10 @@ export const VideoChatWindow: React.FC<VideoChatWindowProps> = ({
 
   return (
     <div className="video-chat-window">
+      <div className="bg-primary text-primary-foreground px-4 py-2 text-center safe-area-top">
+        <h2 className="font-semibold text-base">{t('chat.kemiCheck')}</h2>
+        <p className="text-xs opacity-90">{t('chat.kemiCheckSubtitle')}</p>
+      </div>
       <video
         ref={localVideoRef}
         autoPlay

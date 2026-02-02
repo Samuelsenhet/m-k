@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 import { ACHIEVEMENT_DEFINITIONS, getLocalizedAchievement } from '@/constants/achievements';
+import type { Tables } from '@/integrations/supabase/types';
 
 export interface Achievement {
   id: string;
@@ -21,7 +22,7 @@ interface UseAchievementsReturn {
   unearnedAchievements: Achievement[];
   totalPoints: number;
   loading: boolean;
-  checkAndAwardAchievement: (code: string) => Promise<boolean>;
+  checkAndAwardAchievement: (code: string) => Promise<Achievement | null>;
   refreshAchievements: () => Promise<void>;
 }
 
@@ -32,6 +33,9 @@ export const useAchievements = (): UseAchievementsReturn => {
   const [earnedIds, setEarnedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
+  type UserAchievementRow = Tables<'user_achievements'>;
+  type AchievementRow = Tables<'achievements'>;
+
   const fetchAchievements = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -39,17 +43,27 @@ export const useAchievements = (): UseAchievementsReturn => {
     }
 
     try {
-      // Fetch earned achievements from existing table
-      const { data: earnedData, error } = await supabase
-        .from('achievements')
-        .select('achievement_type, unlocked_at')
+      // Earned achievements: fetch user_achievements then resolve achievement codes (avoids join if achievements.code missing)
+      const { data: earnedRows, error: earnedError } = await supabase
+        .from('user_achievements')
+        .select('earned_at, achievement_id')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (earnedError) throw earnedError;
 
-      const earnedMap = new Map<string, string>(
-        (earnedData || []).map((row) => [row.achievement_type, row.unlocked_at])
-      );
+      const earnedMap = new Map<string, string>();
+      if (earnedRows?.length) {
+        const ids = [...new Set(earnedRows.map((r) => r.achievement_id))];
+        const { data: achRows } = await supabase
+          .from('achievements')
+          .select('id, code')
+          .in('id', ids);
+        const idToCode = new Map((achRows || []).map((a) => [a.id, (a as { code?: string }).code]));
+        earnedRows.forEach((r) => {
+          const code = idToCode.get(r.achievement_id);
+          if (code && r.earned_at) earnedMap.set(code, r.earned_at);
+        });
+      }
 
       // Map definitions with i18n and earned status
       const mergedAchievements: Achievement[] = ACHIEVEMENT_DEFINITIONS.map((def) => {
@@ -79,46 +93,58 @@ export const useAchievements = (): UseAchievementsReturn => {
     fetchAchievements();
   }, [fetchAchievements]);
 
-  const checkAndAwardAchievement = async (code: string): Promise<boolean> => {
-    if (!user) return false;
+  const checkAndAwardAchievement = async (code: string): Promise<Achievement | null> => {
+    if (!user) return null;
 
     const achievement = achievements.find((a) => a.code === code);
     if (!achievement || earnedIds.has(achievement.code)) {
-      return false;
+      return null;
     }
 
     try {
-      const { data, error } = await supabase
+      // Find the achievement row by code to get its DB id
+      const { data: achievementRow, error: achError } = await supabase
         .from('achievements')
+        .select('id')
+        .eq('code', achievement.code)
+        .maybeSingle();
+
+      if (achError) throw achError;
+      if (!achievementRow?.id) {
+        console.warn('Achievement code not found in DB:', achievement.code);
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('user_achievements')
         .insert({
           user_id: user.id,
-          achievement_type: achievement.code,
+          achievement_id: achievementRow.id,
         })
-        .select('achievement_type, unlocked_at')
+        .select('earned_at')
         .single();
 
       if (error) {
         if ((error as { code?: string }).code === '23505') {
-          return false;
+          return null;
         }
         throw error;
       }
 
-      const earnedAt = data?.unlocked_at ?? new Date().toISOString();
+      const earnedAt = (data as { earned_at?: string } | null)?.earned_at ?? new Date().toISOString();
+      const awarded: Achievement = { ...achievement, earned_at: earnedAt };
 
       setEarnedIds((prev) => new Set([...prev, achievement.code]));
       setAchievements((prev) =>
         prev.map((a) =>
-          a.code === achievement.code
-            ? { ...a, earned_at: earnedAt }
-            : a
+          a.code === achievement.code ? awarded : a
         )
       );
 
-      return true;
+      return awarded;
     } catch (error) {
       console.error('Error awarding achievement:', error);
-      return false;
+      return null;
     }
   };
 

@@ -19,6 +19,7 @@ Swedish personality-based dating platform with PRP compliance and user journey p
 5. **Supabase one-time setup** (fixes 400 on profiles, 404 on personality_results, "Bucket not found" on photo upload):
    - Option A: Run migrations: `npx supabase db push`
    - Option B: In [Supabase Dashboard](https://supabase.com/dashboard) → SQL Editor, run the script `supabase/ONE_TIME_SETUP.sql`
+   - If you see **"Could not find the 'alcohol' column"** or **"Kunde inte spara profilen"** after onboarding, run `supabase/ADD_PROFILE_COLUMNS.sql` in the SQL Editor once.
 6. Run dev server: `npm run dev`
 
 ## Available Scripts
@@ -27,6 +28,14 @@ Swedish personality-based dating platform with PRP compliance and user journey p
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+
+### Live preview (VS Code / Cursor)
+
+This is a **Vite + React** app, so the **Live Server** extension will not work (it serves static files; this app needs Vite to compile TypeScript/JSX). Use the **Vite dev server** instead:
+
+- **Command Palette**: `F1` or `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`) → type **Tasks: Run Task** → choose **Start dev server (Vite)**.
+- **Keyboard**: Run the default build task (often `Ctrl+Shift+B` / `Cmd+Shift+B`).
+- **Terminal**: `npm run dev`, then open http://localhost:8080
 
 ## Deployment
 

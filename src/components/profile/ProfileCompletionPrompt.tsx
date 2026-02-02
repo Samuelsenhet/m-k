@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Camera, Heart, Sparkles, X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getProfilesAuthKey } from '@/lib/profiles';
 
 interface ProfileCompletionPromptProps {
   onDismiss?: () => void;
@@ -21,22 +22,34 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
   const checkProfileCompletion = useCallback(async () => {
     if (!user) return;
 
-    const [profileRes, photosRes, personalityRes] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('display_name, bio, gender, looking_for, hometown, work, education, height')
-        .eq('id', user.id)
-        .single(),
-      supabase
-        .from('profile_photos')
-        .select('id')
-        .eq('user_id', user.id),
-      supabase
-        .from('personality_results')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1)
-    ]);
+    try {
+      const profileKey = await getProfilesAuthKey(user.id);
+      if (!profileKey) {
+        console.error('ProfileCompletionPrompt: Failed to get profile key');
+        return;
+      }
+
+      const [profileRes, photosRes, personalityRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('display_name, bio, gender, looking_for, hometown, work, education, height')
+          .eq(profileKey, user.id)
+          .maybeSingle(),
+        supabase
+          .from('profile_photos')
+          .select('id')
+          .eq('user_id', user.id),
+        supabase
+          .from('personality_results')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+      ]);
+
+      if (profileRes.error) {
+        console.error('ProfileCompletionPrompt: Error fetching profile', profileRes.error);
+        return;
+      }
 
     const profile = profileRes.data;
     const photoCount = photosRes.data?.length || 0;
@@ -58,6 +71,9 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
 
     setCompletion(Math.round((filled / total) * 100));
     setMissingItems(missing.slice(0, 3));
+    } catch (error) {
+      console.error('ProfileCompletionPrompt: Error checking completion', error);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -126,8 +142,8 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
               </div>
             )}
 
-            <Button asChild size="sm" className="w-full">
-              <Link to="/profile">
+            <Button asChild size="sm" className="w-full bg-primary text-white hover:bg-primary/90 border-primary [&_svg]:text-white">
+              <Link to="/profile" className="text-white">
                 Redigera profil
               </Link>
             </Button>

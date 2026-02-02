@@ -7,6 +7,7 @@ const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 const corsHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 // Max follow-up requests per match per day
@@ -158,7 +159,7 @@ serve(async (req) => {
       supabase
         .from('profiles')
         .select('display_name, bio')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single(),
       supabase
         .from('personality_results')
@@ -168,7 +169,7 @@ serve(async (req) => {
       supabase
         .from('profiles')
         .select('display_name, bio')
-        .eq('user_id', matchedUserId)
+        .eq('id', matchedUserId)
         .single(),
       supabase
         .from('personality_results')

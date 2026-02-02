@@ -17,6 +17,7 @@ import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { WaitingPhase, FirstMatchCelebration } from '@/components/journey';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
 
 function getPhotoUrl(storagePath: string) {
   if (!storagePath) return '';
@@ -44,6 +45,7 @@ export default function Matches() {
   const { user, loading: authLoading } = useAuth();
   const { matches, loading, error, refreshMatches, likeMatch, passMatch } = useMatches();
   const { status: matchStatus, isLoading: statusLoading } = useMatchStatus();
+  const achievementsCtx = useAchievementsContextOptional();
   const navigate = useNavigate();
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -56,7 +58,7 @@ export default function Matches() {
     }
   }, [user, authLoading, navigate]);
 
-  // Check for first match celebration
+  // Check for first match celebration and first_match achievement
   useEffect(() => {
     if (matches.length > 0) {
       const firstMatch = matches[0];
@@ -67,14 +69,23 @@ export default function Matches() {
       }
     }
   }, [matches]);
+  useEffect(() => {
+    const mutualCount = matches.filter((m) => m.status === 'mutual').length;
+    if (mutualCount >= 1 && achievementsCtx) {
+      achievementsCtx.checkAndAwardAchievement('first_match');
+    }
+  }, [matches, achievementsCtx]);
 
-  // Show waiting phase if user is in WAITING journey phase
+  // Show waiting phase if user is in WAITING journey phase (with nav so user can leave)
   if (matchStatus?.journey_phase === 'WAITING') {
     return (
-      <WaitingPhase 
-        timeRemaining={matchStatus.time_remaining}
-        nextMatchAvailable={matchStatus.next_reset_time}
-      />
+      <>
+        <WaitingPhase
+          timeRemaining={matchStatus.time_remaining}
+          nextMatchAvailable={matchStatus.next_reset_time}
+        />
+        <BottomNav />
+      </>
     );
   }
 

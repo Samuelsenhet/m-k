@@ -12,11 +12,14 @@ import { PersonalityTest } from '@/components/personality/PersonalityTest';
 import { PersonalityResult } from '@/components/personality/PersonalityResult';
 import { 
   Heart, ArrowRight, ArrowLeft, Check, Sparkles, User, Camera, 
-  Users, Brain, Briefcase, SkipForward, ChevronRight, Shield
+  Users, Brain, Briefcase, SkipForward, ChevronRight, Shield, ShieldCheck
 } from 'lucide-react';
+import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { type PersonalityTestResult, ARCHETYPE_INFO, type ArchetypeCode } from '@/types/personality';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
 
 interface OnboardingWizardProps {
   onComplete: () => void;
@@ -35,6 +38,7 @@ interface ProfileData {
   pronouns: string;
   gender: string;
   height: string;
+  instagram: string;
   sexuality: string;
   lookingFor: string;
   hometown: string;
@@ -59,6 +63,7 @@ const STEPS = [
   { id: 'background', title: 'Bakgrund', icon: Briefcase, required: false },
   { id: 'photos', title: 'Foton', icon: Camera, required: true },
   { id: 'privacy', title: 'Integritet', icon: Shield, required: true },
+  { id: 'id_verification', title: 'ID-verifiering', icon: ShieldCheck, required: false },
   { id: 'complete', title: 'Klart', icon: Sparkles, required: true },
 ];
 
@@ -77,6 +82,12 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [saving, setSaving] = useState(false);
   const [direction, setDirection] = useState(1);
   
+  // Helper function to get photo URL
+  const getPhotoUrl = (storagePath: string) => {
+    const { data } = supabase.storage.from('profile-photos').getPublicUrl(storagePath);
+    return data?.publicUrl || '';
+  };
+  
   // Profile data state
   const [profile, setProfile] = useState<ProfileData>({
     firstName: '',
@@ -84,6 +95,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     pronouns: '',
     gender: '',
     height: '',
+    instagram: '',
+    linkedin: '',
     sexuality: '',
     lookingFor: '',
     hometown: '',
@@ -183,7 +196,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         return photoCount >= 1;
       case 4: // Privacy
         return true;
-      case 5: // Complete
+      case 5: // ID Verification (optional – can skip)
+        return true;
+      case 6: // Complete
         return true;
       default:
         return false;
@@ -223,6 +238,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         category: result.category,
         archetype: result.archetype,
       });
+      if (achievementsCtx) {
+        achievementsCtx.checkAndAwardAchievement('personality_test');
+      }
     }
   };
 
@@ -236,6 +254,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     setSaving(true);
 
     try {
+      const profileKey = await getProfilesAuthKey(user.id);
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -248,6 +267,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           hometown: profile.hometown || null,
           work: profile.work || null,
           education: profile.education || null,
+          instagram: profile.instagram || null,
+          linkedin: profile.linkedin || null,
           religion: profile.religion || null,
           politics: profile.politics || null,
           alcohol: profile.alcohol || null,
@@ -260,7 +281,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           show_education: privacy.showEducation,
           show_last_name: privacy.showLastName,
         })
-        .eq('user_id', user.id);
+        .eq(profileKey, user.id);
 
       if (error) throw error;
 
@@ -430,6 +451,27 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                         className="py-5"
                         min={100}
                         max={250}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Instagram</Label>
+                      <Input
+                        value={profile.instagram}
+                        onChange={(e) => updateProfile('instagram', e.target.value)}
+                        placeholder="@användarnamn"
+                        className="py-5"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">LinkedIn</Label>
+                      <Input
+                        value={profile.linkedin}
+                        onChange={(e) => updateProfile('linkedin', e.target.value)}
+                        placeholder="@användarnamn"
+                        className="py-5"
                       />
                     </div>
                   </div>
@@ -736,8 +778,15 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               </div>
             )}
 
-            {/* Step 5: Complete */}
+            {/* Step 5: ID Verification */}
             {currentStep === 5 && (
+              <IdVerificationStep
+                onSubmit={() => setCurrentStep((prev) => prev + 1)}
+              />
+            )}
+
+            {/* Step 6: Complete */}
+            {currentStep === 6 && (
               <div className="space-y-6">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow animate-pulse">
@@ -757,7 +806,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                     <div className="flex items-center gap-3">
                       {photos[0]?.storage_path && (
                         <img 
-                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${photos[0].storage_path}`}
+                          src={getPhotoUrl(photos[0].storage_path)}
                           alt="Profile"
                           className="w-16 h-16 rounded-xl object-cover"
                         />
@@ -824,8 +873,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
             </Button>
           )}
           
-          {/* Skip button for optional step */}
-          {currentStep === 2 && (
+          {/* Skip button for optional steps */}
+          {(currentStep === 2 || currentStep === 5) && (
             <Button
               variant="ghost"
               onClick={handleSkip}

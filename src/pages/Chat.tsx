@@ -7,8 +7,9 @@ import { ChatWindow } from "@/components/chat/ChatWindow";
 import { VideoChatWindow } from "@/components/chat/VideoChatWindow";
 import { MessageCircle } from "lucide-react";
 import { BottomNav } from "@/components/navigation/BottomNav";
-import { useRealtime } from "@/hooks/useRealtime";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
+import { getProfilesAuthKey } from "@/lib/profiles";
+import { useTranslation } from "react-i18next";
 // Removed problematic import - check if CallHistory exists
 // import { CallHistory, CallLogEntry } from '@/components/chat/CallHistory';
 
@@ -26,15 +27,16 @@ interface SelectedMatch {
   matched_profile?: {
     display_name: string;
     avatar_url: string | null;
+    id_verification_status?: string | null;
   };
 }
 
 // Move CallHistoryDisplay outside parent for performance
-function CallHistoryDisplay({ logs }: { logs: CallLogEntry[] }) {
+function CallHistoryDisplay({ logs, className }: { logs: CallLogEntry[]; className?: string }) {
   if (logs.length === 0) return null;
   return (
-    <div className="p-4 border-t border-border bg-card">
-      <h3 className="font-semibold text-sm mb-2 text-muted-foreground">
+    <div className={className ?? "p-4 border-t border-border bg-card"}>
+      <h3 className="font-semibold text-sm mb-2 text-gray-600">
         Samtalshistorik
       </h3>
       <div className="space-y-2">
@@ -59,6 +61,7 @@ function CallHistoryDisplay({ logs }: { logs: CallLogEntry[] }) {
 
 export default function Chat() {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(
@@ -67,16 +70,12 @@ export default function Chat() {
   const [icebreakers, setIcebreakers] = useState<string[]>([]);
   const [loadingMatch, setLoadingMatch] = useState(false);
   const [videoCallActive, setVideoCallActive] = useState(false);
+  const [showPostVideoCard, setShowPostVideoCard] = useState(false);
   const [incomingCall, setIncomingCall] = useState<{
     callerName: string;
     callerId: string;
   } | null>(null);
   const [callLogs, setCallLogs] = useState<CallLogEntry[]>([]);
-
-  // Add a dummy roomId for connection check (could be user.id or a global room)
-  const { isConnected: realtimeConnected } = useRealtime({
-    roomId: user?.id || "global",
-  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -103,7 +102,9 @@ export default function Chat() {
           .single();
 
         if (error || !match) {
-          console.error("Match not found:", error);
+          if (import.meta.env.DEV) {
+            console.error("Match not found:", error);
+          }
           return;
         }
 
@@ -111,13 +112,16 @@ export default function Chat() {
         const matchedUserId =
           match.user_id === user?.id ? match.matched_user_id : match.user_id;
 
-        // Fetch the profile
-        // @ts-expect-error: Supabase client types cause deep instantiation error here
-        const { data: profile, error: profileError } = await supabase
+        const profileKey = await getProfilesAuthKey(matchedUserId);
+        // Fetch the profile (cast to avoid deep instantiation issues)
+        const { data: profile, error: profileError } = (await supabase
           .from("profiles")
           .select("display_name, avatar_url")
-          .eq("user_id", matchedUserId)
-          .single();
+          .eq(profileKey, matchedUserId)
+          .single()) as unknown as {
+          data: { display_name: string; avatar_url: string | null } | null;
+          error: unknown;
+        };
         // Type assertion to avoid deep type instantiation error
         const safeProfile = (profile as {
           display_name: string;
@@ -225,22 +229,6 @@ export default function Chat() {
 
   if (!user) return null;
 
-  if (!realtimeConnected) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center text-muted-foreground">
-          <h2 className="font-semibold text-lg mb-2">
-            Real-time chat är tillfälligt otillgängligt
-          </h2>
-          <p>
-            Du kan fortfarande läsa gamla meddelanden, men nya meddelanden visas
-            inte direkt. Försök igen senare.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (videoCallActive && selectedMatch) {
     return (
       <VideoChatWindow
@@ -262,7 +250,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16">
+    <div className="min-h-screen flex flex-col bg-background pb-16 msn-chat">
       {selectedMatch ? (
         <>
           <ChatWindow
@@ -274,28 +262,24 @@ export default function Chat() {
             matchedUserAvatar={
               selectedMatch.matched_profile?.avatar_url || undefined
             }
+            matchedUserVerified={
+              selectedMatch.matched_profile?.id_verification_status === "approved"
+            }
             icebreakers={icebreakers}
             onBack={handleBack}
+            onStartVideo={() => setVideoCallActive(true)}
+            showPostVideoCard={showPostVideoCard}
+            onDismissPostVideoCard={() => setShowPostVideoCard(false)}
           />
-          <div className="p-4 flex justify-center">
-            <button
-              className="bg-primary text-white px-4 py-2 rounded-full shadow hover:bg-primary/90 transition-colors"
-              onClick={() => setVideoCallActive(true)}
-            >
-              Starta videochatt
-            </button>
-          </div>
-          <CallHistoryDisplay logs={callLogs} />
+          <CallHistoryDisplay logs={callLogs} className="msn-list-card border-t border-border mx-2 mb-2 rounded p-3 text-sm" />
         </>
       ) : (
         <>
-          <div className="p-4 border-b border-border bg-card">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-primary" />
-              <h1 className="font-serif font-semibold text-lg">Meddelanden</h1>
-            </div>
+          <div className="msn-list-header flex items-center gap-2 px-4 py-3 safe-area-top">
+            <MessageCircle className="w-5 h-5 text-primary-foreground" />
+            <h1 className="font-semibold text-base text-primary-foreground">{t('chat.conversations')}</h1>
           </div>
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-3 bg-background">
             <MatchList
               onSelectMatch={handleSelectMatch}
               selectedMatchId={selectedMatch?.id}

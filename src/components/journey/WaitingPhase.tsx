@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Clock, Heart, Sparkles } from 'lucide-react';
+import { Clock, Heart, Sparkles, ArrowRight } from 'lucide-react';
 import { MaakMascot } from '@/components/mascot';
 
 interface WaitingPhaseProps {
@@ -10,6 +12,7 @@ interface WaitingPhaseProps {
 }
 
 export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhaseProps) {
+  const navigate = useNavigate();
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
   const tips = [
@@ -114,6 +117,16 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
                 })}
               </time>
             </div>
+
+            {/* Continue button – lets user leave waiting screen */}
+            <Button
+              className="w-full mt-2"
+              size="lg"
+              onClick={() => navigate('/profile')}
+            >
+              Fortsätt utforska appen
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
           </CardContent>
         </Card>
 

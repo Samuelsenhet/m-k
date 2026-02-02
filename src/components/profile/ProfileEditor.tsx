@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Save, User, Heart, Info, Sparkles, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
 
 interface ProfileData {
   display_name: string;
@@ -22,15 +24,12 @@ interface ProfileData {
   work: string;
   education: string;
   hometown: string;
+  instagram: string;
   religion: string;
   politics: string;
   smoking: string;
   alcohol: string;
   pronouns: string;
-  instagram?: string;
-  snapchat?: string;
-  tiktok?: string;
-  personality_result?: string; // MBTI code or similar
 }
 
 interface PrivacySettings {
@@ -65,15 +64,13 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     work: '',
     education: '',
     hometown: '',
+    instagram: '',
+    linkedin: '',
     religion: '',
     politics: '',
     smoking: '',
     alcohol: '',
     pronouns: '',
-    instagram: '',
-    snapchat: '',
-    tiktok: '',
-    personality_result: '',
   });
   const [privacy, setPrivacy] = useState<PrivacySettings>({
     show_age: true,
@@ -86,11 +83,12 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
   const fetchProfile = useCallback(async () => {
     if (!user) return;
     
+    const profileKey = await getProfilesAuthKey(user.id);
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, bio, gender, looking_for, height, work, education, hometown, religion, politics, smoking, alcohol, pronouns, instagram, snapchat, tiktok, personality_result, show_age, show_job, show_education, show_last_name')
-      .eq('user_id', user.id)
-      .single();
+      .select('display_name, bio, gender, looking_for, height, work, education, hometown, instagram, linkedin, religion, politics, smoking, alcohol, pronouns, show_age, show_job, show_education, show_last_name')
+      .eq(profileKey, user.id)
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching profile:', error);
@@ -104,15 +102,13 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         work: data.work || '',
         education: data.education || '',
         hometown: data.hometown || '',
+        instagram: data.instagram || '',
+        linkedin: data.linkedin || '',
         religion: data.religion || '',
         politics: data.politics || '',
         smoking: data.smoking || '',
         alcohol: data.alcohol || '',
         pronouns: data.pronouns || '',
-        instagram: data.instagram || '',
-        snapchat: data.snapchat || '',
-        tiktok: data.tiktok || '',
-        personality_result: data.personality_result || '',
       });
       setPrivacy({
         show_age: data.show_age ?? true,
@@ -155,20 +151,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     if (!user) return;
     setSaving(true);
 
-
-    // Fetch personality test result (MBTI code) from personality_results
-    let personalityResult = profile.personality_result;
-    if (!personalityResult) {
-      const { data: pData } = await supabase
-        .from('personality_results')
-        .select('archetype')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (pData?.archetype) {
-        personalityResult = pData.archetype;
-      }
-    }
-
+    const profileKey = await getProfilesAuthKey(user.id);
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -180,28 +163,35 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         work: profile.work || null,
         education: profile.education || null,
         hometown: profile.hometown || null,
+        instagram: profile.instagram || null,
         religion: profile.religion || null,
         politics: profile.politics || null,
         smoking: profile.smoking || null,
         alcohol: profile.alcohol || null,
         pronouns: profile.pronouns || null,
-        instagram: profile.instagram || null,
-        snapchat: profile.snapchat || null,
-        tiktok: profile.tiktok || null,
-        personality_result: personalityResult || null,
         show_age: privacy.show_age,
         show_job: privacy.show_job,
         show_education: privacy.show_education,
         show_last_name: privacy.show_last_name,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', user.id);
+      .eq(profileKey, user.id);
 
     if (error) {
       toast.error('Kunde inte spara profilen');
     } else {
       toast.success('Profil sparad!');
       onComplete?.();
+      // Award achievements when criteria are met
+      if (achievementsCtx) {
+        const hasKeyFields = !!(profile.display_name?.trim() && profile.bio?.trim() && profile.gender);
+        if (hasKeyFields && photos.length >= 1) {
+          achievementsCtx.checkAndAwardAchievement('profile_complete');
+        }
+        if (photos.length >= 1) {
+          achievementsCtx.checkAndAwardAchievement('photo_upload');
+        }
+      }
     }
     setSaving(false);
   };
@@ -323,68 +313,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         </CardContent>
       </Card>
 
-      {/* Social Media */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-serif text-base flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            Sociala medier
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="instagram" className="text-xs">Instagram</Label>
-              <Input
-                id="instagram"
-                value={profile.instagram}
-                onChange={(e) => updateField('instagram', e.target.value)}
-                placeholder="@dittnamn"
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="snapchat" className="text-xs">Snapchat</Label>
-              <Input
-                id="snapchat"
-                value={profile.snapchat}
-                onChange={(e) => updateField('snapchat', e.target.value)}
-                placeholder="@dittnamn"
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tiktok" className="text-xs">TikTok</Label>
-              <Input
-                id="tiktok"
-                value={profile.tiktok}
-                onChange={(e) => updateField('tiktok', e.target.value)}
-                placeholder="@dittnamn"
-                className="h-9"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* More About Me */}
-            {/* Personality Test Result */}
-            {profile.personality_result && (
-              <Card className="shadow-soft">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-serif text-base flex items-center gap-2">
-                    <Brain className="w-4 h-4 text-primary" />
-                    Personlighetstest
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg">{profile.personality_result}</span>
-                    <span className="text-xs text-muted-foreground">(MBTI/Arketyp)</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
       <Card className="shadow-soft">
         <CardHeader className="pb-2">
           <CardTitle className="font-serif text-base flex items-center gap-2">
@@ -412,6 +341,29 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                 value={profile.hometown}
                 onChange={(e) => updateField('hometown', e.target.value)}
                 placeholder="Stockholm"
+                className="h-9"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="instagram" className="text-xs">Instagram</Label>
+              <Input
+                id="instagram"
+                value={profile.instagram}
+                onChange={(e) => updateField('instagram', e.target.value)}
+                placeholder="@användarnamn"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="linkedin" className="text-xs">LinkedIn</Label>
+              <Input
+                id="linkedin"
+                value={profile.linkedin}
+                onChange={(e) => updateField('linkedin', e.target.value)}
+                placeholder="@användarnamn"
                 className="h-9"
               />
             </div>

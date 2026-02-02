@@ -1,12 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { LogOut, Settings, X, Trophy, Sparkles, Trash2 } from 'lucide-react';
+import { LogOut, Settings, X, Trophy, Sparkles, Trash2, ShieldCheck, ChevronDown, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -14,24 +15,36 @@ import { AchievementsPanel } from '@/components/achievements/AchievementsPanel';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { LanguageToggle } from '@/components/settings/LanguageToggle';
 import { MatchingSettings } from '@/components/settings/MatchingSettings';
+import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { getProfilesAuthKey } from '@/lib/profiles';
 
 interface PersonalityResultRow {
   id: string;
   archetype?: string;
 }
 
+const SETTINGS_SUBPAGES = ['/terms', '/privacy', '/reporting', '/report', '/report-history', '/appeal', '/admin/reports'];
+
 export default function Profile() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const prevPathRef = useRef(location.pathname);
   const [archetype, setArchetype] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [verifyIdOpen, setVerifyIdOpen] = useState(false);
+  const [notificationsManageOpen, setNotificationsManageOpen] = useState(false);
+  const [privacyManageOpen, setPrivacyManageOpen] = useState(false);
+  const [isModerator, setIsModerator] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -39,12 +52,23 @@ export default function Profile() {
     }
   }, [user, loading, navigate]);
 
+  // When navigating back to Profile with openSettings state (from Terms, Report, etc.), open Inställningar.
+  useEffect(() => {
+    const state = location.state as { openSettings?: boolean } | null;
+    if (location.pathname === '/profile' && state?.openSettings) {
+      setSettingsOpen(true);
+      // Clear state so refresh doesn't reopen the sheet
+      window.history.replaceState({ ...state, openSettings: undefined }, '');
+    }
+    prevPathRef.current = location.pathname;
+  }, [location.pathname, location.state]);
+
   const fetchArchetype = useCallback(async () => {
     if (!user) return;
 
     const { data } = await supabase
       .from('personality_results')
-      .select('archetype')
+      .select('archetype, scores')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -85,12 +109,18 @@ export default function Profile() {
       const errors = results.filter(r => r.error).map(r => r.error);
       
       if (errors.length > 0) {
-        console.error('Errors during account deletion:', errors);
+        if (import.meta.env.DEV) {
+          console.error('Errors during account deletion:', errors);
+        }
         // Continue anyway - some tables might not exist or be empty
       }
 
       // Delete profile last (has foreign key constraints)
-      const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
+      const profileKey = await getProfilesAuthKey(user.id);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq(profileKey, user.id);
       if (profileError) {
         console.error('Error deleting profile:', profileError);
         throw new Error(t('profile.error_saving'));
@@ -102,7 +132,9 @@ export default function Profile() {
       toast.success(t('settings.delete_account_title'));
       navigate('/');
     } catch (error) {
-      console.error('Error deleting account:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error deleting account:', error);
+      }
       toast.error(t('common.error') + '. ' + t('common.retry'));
     } finally {
       setIsDeleting(false);
@@ -120,116 +152,231 @@ export default function Profile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen gradient-hero">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute top-1/2 -left-20 w-60 h-60 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="relative container max-w-lg mx-auto px-4 py-4 pb-24">
-        {/* Header */}
-        <nav className="flex justify-between items-center mb-4">
-          <h1 className="font-serif font-bold text-lg">{t('profile.my_profile')}</h1>
-          <div className="flex items-center gap-1">
-            <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Settings className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle className="font-serif">{t('settings.title')}</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">{t('settings.account')}</CardTitle>
-                      <CardDescription className="text-sm">{user.email}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">{t('settings.language')}</span>
-                        <LanguageToggle />
-                      </div>
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">{t('settings.notifications')}</span>
-                        <Button variant="ghost" size="sm">{t('settings.manage')}</Button>
-                      </div>
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">{t('settings.privacy')}</span>
-                        <Button variant="ghost" size="sm">{t('settings.manage')}</Button>
-                      </div>
-                      <button 
-                        onClick={() => { setSettingsOpen(false); setShowAchievements(true); }}
-                        className="flex items-center justify-between py-2 border-b border-border w-full text-left"
-                      >
-                        <span className="text-sm flex items-center gap-2">
-                          <Trophy className="w-4 h-4" />
-                          {t('settings.achievements')}
-                        </span>
-                        <Button variant="ghost" size="sm">{t('settings.view')}</Button>
-                      </button>
-                    </CardContent>
-                  </Card>
-                  <Button 
-                    variant="destructive" 
-                    className="w-full"
-                    onClick={handleSignOut}
+    <div className="min-h-screen bg-black">
+      {/* Settings Sheet - Accessible from ProfileView action buttons */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent aria-describedby="settings-description" className="flex flex-col p-0 h-full overflow-hidden min-h-0">
+          <SheetHeader className="shrink-0 border-b border-border px-6 py-4">
+            <SheetTitle className="font-serif">{t('settings.title')}</SheetTitle>
+            <SheetDescription id="settings-description" className="sr-only">
+              {t('settings.account')} {t('settings.language')} {t('settings.notifications')} {t('settings.privacy')} {t('settings.achievements')}
+            </SheetDescription>
+          </SheetHeader>
+          <ScrollArea className="flex-1 min-h-0 max-h-[70vh] w-full">
+            <div className="px-6 py-4 space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">{t('settings.account')}</CardTitle>
+                  {displayName && (
+                    <p className="text-sm font-medium text-primary">
+                      @{displayName.toLowerCase().replace(/\s+/g, '_')}
+                    </p>
+                  )}
+                  <CardDescription className="text-sm">{user.email}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/personality-guide'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/personality-guide'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {t('settings.logout')}
+                    <span className="text-sm flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      {t('settings.learn_personality', 'Läs om personlighet & arketyper')}
+                    </span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm">{t('settings.language')}</span>
+                    <LanguageToggle />
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm">{t('settings.notifications')}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setNotificationsManageOpen(true)}>
+                      {t('settings.manage')}
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm">{t('settings.privacy')}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setPrivacyManageOpen(true)}>
+                      {t('settings.manage')}
+                    </Button>
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); setShowAchievements(true); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); setShowAchievements(true); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm"
+                  >
+                    <span className="text-sm flex items-center gap-2">
+                      <Trophy className="w-4 h-4" />
+                      {t('settings.achievements')}
+                    </span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </div>
+                  <Link to="/terms" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
+                    <span className="text-sm">Användarvillkor</span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </Link>
+                  <Link to="/terms#integritet" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
+                    <span className="text-sm">Integritetspolicy</span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </Link>
+                  <Link to="/reporting" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
+                    <span className="text-sm">Rapportering</span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </Link>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">{t('settings.support_and_reports')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-0">
+                  <Link to="/report-history" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
+                    <span className="text-sm">{t('report.history_title')}</span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </Link>
+                  <Link to="/report" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
+                    <span className="text-sm">{t('report.report_problem')}</span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </Link>
+                  <Link to="/appeal" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
+                    <span className="text-sm">{t('appeal.title')}</span>
+                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                  </Link>
+                  {isModerator === true && (
+                    <Link to="/admin/reports" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 w-full text-left hover:bg-muted/50 rounded-sm">
+                      <span className="text-sm">{t('admin.reports_title')}</span>
+                      <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={handleSignOut}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                {t('settings.logout')}
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('settings.delete_account')}
                   </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('settings.delete_account')}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('settings.delete_account_title')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('settings.delete_account_description')}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDeleteAccount}
-                          disabled={isDeleting}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {isDeleting ? t('settings.deleting') : t('settings.delete_account_confirm')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </nav>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('settings.delete_account_title')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('settings.delete_account_description')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? t('settings.deleting') : t('settings.delete_account_confirm')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
-        {/* Profile Content */}
+      {/* Verify ID Sheet - for users who skipped during onboarding */}
+      <Sheet open={verifyIdOpen} onOpenChange={setVerifyIdOpen}>
+        <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-serif">{t('settings.verify_id')}</SheetTitle>
+            <SheetDescription id="verify-id-description" className="sr-only">
+              Upload your ID to verify your account
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 pb-8">
+            <IdVerificationStep onSubmit={() => setVerifyIdOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Notifications manage sheet */}
+      <Sheet open={notificationsManageOpen} onOpenChange={setNotificationsManageOpen}>
+        <SheetContent side="bottom" className="h-auto max-h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-serif">{t('settings.notifications')}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {t('settings.notifications')} – {t('settings.manage')}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 pb-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Här kan du styra pushnotiser och e-post. Mer alternativ kommer snart.
+            </p>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm">Nya matchningar</span>
+              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm">Meddelanden</span>
+              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Privacy manage sheet */}
+      <Sheet open={privacyManageOpen} onOpenChange={setPrivacyManageOpen}>
+        <SheetContent side="bottom" className="h-auto max-h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-serif">{t('settings.privacy')}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {t('settings.privacy')} – {t('settings.manage')}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 pb-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Hantera vilka som ser din profil, dina foton och dina aktiviteter. Mer alternativ kommer snart.
+            </p>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm">Profilsynlighet</span>
+              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm">Deldata</span>
+              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <div className="relative w-full h-screen">
         {showAIAssistant ? (
-          <div className="space-y-4">
+          <div className="absolute inset-0 bg-black z-30 p-4">
             <AIAssistantPanel onClose={() => setShowAIAssistant(false)} />
           </div>
         ) : showAchievements ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif font-bold text-xl">{t('achievements.title')}</h2>
+          <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif font-bold text-xl text-white">{t('achievements.title')}</h2>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setShowAchievements(false)}
+                className="text-white"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -237,13 +384,14 @@ export default function Profile() {
             <AchievementsPanel />
           </div>
         ) : isEditing ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif font-bold text-xl">{t('profile.edit_profile')}</h2>
+          <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif font-bold text-xl text-white">{t('profile.edit_profile')}</h2>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setIsEditing(false)}
+                className="text-white"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -251,24 +399,11 @@ export default function Profile() {
             <ProfileEditor onComplete={() => setIsEditing(false)} />
           </div>
         ) : (
-          <div className="space-y-4">
-            <ProfileView 
-              onEdit={() => setIsEditing(true)} 
-              archetype={archetype}
-            />
-            
-            {/* Matching Settings */}
-            <MatchingSettings />
-            
-            {/* AI Assistant Quick Access */}
-            <Button
-              onClick={() => setShowAIAssistant(true)}
-              className="w-full gradient-primary text-primary-foreground border-0 shadow-glow gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              {t('ai_assistant.title')}
-            </Button>
-          </div>
+          <ProfileView 
+            onEdit={() => setIsEditing(true)} 
+            archetype={archetype}
+            onSettings={() => setSettingsOpen(true)}
+          />
         )}
       </div>
       <BottomNav />

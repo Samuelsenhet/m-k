@@ -23,8 +23,8 @@ export function AchievementToast({ achievement, onClose }: AchievementToastProps
 
   if (!achievement) return null;
 
-  const name = isSwedish ? achievement.name_sv : achievement.name_en;
-  const description = isSwedish ? achievement.description_sv : achievement.description_en;
+  const name = achievement.name;
+  const description = achievement.description;
 
   return (
     <AnimatePresence>
@@ -37,7 +37,7 @@ export function AchievementToast({ achievement, onClose }: AchievementToastProps
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl shadow-2xl p-4 border border-primary-foreground/20">
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-              <Trophy className="w-6 h-6" />
+              <span className="text-2xl leading-none">{achievement.icon}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium opacity-80 uppercase tracking-wide">

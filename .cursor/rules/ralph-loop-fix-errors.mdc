@@ -1,0 +1,26 @@
+---
+description: Ralph loop – always fix errors, debug, and resolve issues in the app first
+alwaysApply: true
+---
+
+# Ralph loop – Fix errors and issues first
+
+When working on this app, **always prioritize** fixing errors, debugging, and resolving problems before adding new features or refactoring.
+
+## Default behavior
+
+1. **Errors first**: If the user reports a runtime error, console error, or build error, address it immediately. Fix the root cause (e.g. missing import, undefined variable, wrong prop name) and verify the fix.
+2. **Lint and type errors**: After editing files, run the linter/type-checker for changed paths and fix any reported issues.
+3. **Debug before extend**: When something is broken (e.g. 401s, 404s, "X is not defined", React error boundary), debug and fix it before implementing new behavior in the same area.
+4. **One fix, then re-check**: After a fix, re-check the same flow (e.g. run dev, open the affected route) or run relevant tests to ensure the error is gone and no new ones appear.
+
+## What to fix proactively
+
+- **ReferenceError / undefined**: Add missing imports or correct variable names (e.g. `authLoading` → `loading` from the actual hook).
+- **Failed requests (401, 404, 400)**: Check auth headers, RLS policies, table/column names, and Edge Function wiring.
+- **React component errors**: Fix missing or incorrect props, hooks usage, and context consumption.
+- **Type and lint errors**: Resolve TypeScript and ESLint issues in the files you touch.
+
+## Scope
+
+This applies to the whole app (frontend, Supabase Edge Functions, and SQL/config). When the user says "fix errors" or "debug" or describes a problem, treat that as the main task and loop until the reported issue is resolved.

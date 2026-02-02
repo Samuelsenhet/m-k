@@ -7,6 +7,7 @@ const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 const corsHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 // Valid icebreaker categories
@@ -18,6 +19,15 @@ const CATEGORY_PROMPTS: Record<IcebreakerCategory, string> = {
   activity: 'Föreslå aktiviteter att göra tillsammans baserat på gemensamma intressen, som "Ska vi testa X tillsammans?"',
   compliment: 'Skapa genuina, respektfulla komplimanger baserade på personens profil eller intressen (inte utseende).',
   general: 'Skapa en blandning av olika stilar - lite humor, lite djup, lite aktivitetsförslag.',
+};
+
+// Optional situation context for when icebreakers are used
+type IcebreakerSituation = 'default' | 'after_video' | 'before_date';
+
+const SITUATION_PROMPTS: Record<IcebreakerSituation, string> = {
+  default: '',
+  after_video: '\n**Situation:** Användaren har precis avslutat ett kort videomöte (Kemi-Check) med sin match. Isbrytarna ska vara lämpliga för att fortsätta konversationen i chatt – referera gärna till något från videomötet eller föreslå ämnen att fördjupa.',
+  before_date: '\n**Situation:** Användaren ska snart träffas på en dejt. Isbrytarna ska vara lämpliga för att bekräfta planer, visa entusiasm eller föreslå konkreta aktiviteter/platser inför träffan.',
 };
 
 interface ProfileData {
@@ -71,13 +81,14 @@ serve(async (req) => {
       matchedUserName,
       matchedUserId,
       category = 'general',
+      situation = 'default',
       // Optional: pre-provided interests (from match data)
       userInterests = [],
       matchedUserInterests = [],
     } = await req.json();
 
     console.log('Generating icebreakers for match:', matchId, 'by user:', user.id);
-    console.log('Category:', category);
+    console.log('Category:', category, 'Situation:', situation);
 
     // Validate category
     const validCategory: IcebreakerCategory =
@@ -101,7 +112,7 @@ serve(async (req) => {
       supabase
         .from('profiles')
         .select('display_name, bio, looking_for, work, education, hometown')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single(),
       supabase
         .from('personality_results')
@@ -119,7 +130,7 @@ serve(async (req) => {
         supabase
           .from('profiles')
           .select('display_name, bio, looking_for, work, education, hometown')
-          .eq('user_id', matchedUserId)
+          .eq('id', matchedUserId)
           .single(),
         supabase
           .from('personality_results')
@@ -199,7 +210,7 @@ ${matchedContext}
     }
 
     // Add category-specific instructions
-    prompt += `\n**Stil:** ${CATEGORY_PROMPTS[validCategory]}
+    prompt += `\n**Stil:** ${CATEGORY_PROMPTS[validCategory]}${SITUATION_PROMPTS[validSituation]}
 
 Skapa tre unika isbrytare som:
 1. Är vänliga och respektfulla
@@ -286,6 +297,7 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
     return new Response(JSON.stringify({
       icebreakers,
       category: validCategory,
+      situation: validSituation,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

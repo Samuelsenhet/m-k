@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Users, MessageCircle } from 'lucide-react';
+import { Logo } from '@/components/Logo';
 import { cn } from '@/lib/utils';
 
 interface WelcomeScreenProps {
@@ -44,8 +45,8 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
           transition={{ duration: 0.5, type: 'spring' }}
           className="mb-8"
         >
-          <div className="w-20 h-20 gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-glow">
-            <Heart className="w-10 h-10 text-primary-foreground" fill="currentColor" />
+          <div className="flex justify-center mb-6">
+            <Logo size={80} variant="icon-only" />
           </div>
           
           <motion.h1

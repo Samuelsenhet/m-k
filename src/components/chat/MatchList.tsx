@@ -7,8 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MessageCircle, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { formatDistanceToNow } from 'date-fns';
 import { sv, enUS } from 'date-fns/locale';
+import { getProfilesAuthKey } from '@/lib/profiles';
 
 interface Match {
   id: string;
@@ -20,6 +22,7 @@ interface Match {
   matched_profile?: {
     display_name: string;
     avatar_url: string | null;
+    id_verification_status?: string | null;
   };
   last_message?: {
     content: string;
@@ -32,6 +35,11 @@ interface MatchListProps {
   onSelectMatch: (match: Match) => void;
   selectedMatchId?: string;
 }
+
+type ProfileLookupRow = {
+  display_name: string | null;
+  avatar_url: string | null;
+} & Record<string, unknown>;
 
 export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
   const { user } = useAuth();
@@ -71,10 +79,11 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
       const matchIds = matchesData.map(m => m.id);
 
       // Batch fetch all profiles at once
+      const profileKey = await getProfilesAuthKey(user.id);
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', matchedUserIds);
+        .select(`${profileKey}, display_name, avatar_url, id_verification_status`)
+        .in(profileKey, matchedUserIds);
 
       // Batch fetch last messages for all matches (using a subquery approach)
       const { data: lastMessagesData } = await supabase
@@ -92,7 +101,13 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
         .eq('is_read', false);
 
       // Create lookup maps
-      const profileMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+      const profileMap = new Map<string, ProfileLookupRow>();
+      (profilesData as unknown as ProfileLookupRow[] | null | undefined)?.forEach((p) => {
+        const keyValue = p?.[profileKey];
+        if (typeof keyValue === 'string') {
+          profileMap.set(keyValue, p);
+        }
+      });
       
       // Get last message per match (first occurrence since ordered desc)
       const lastMessageMap = new Map<string, { content: string; created_at: string }>();
@@ -176,7 +191,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
           key={match.id}
           onClick={() => onSelectMatch(match)}
           className={cn(
-            'p-3 cursor-pointer transition-all hover:shadow-md',
+            'msn-list-card p-3 cursor-pointer transition-all',
             selectedMatchId === match.id && 'ring-2 ring-primary bg-primary/5'
           )}
         >
@@ -189,8 +204,11 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-foreground truncate">
+                <h4 className="font-semibold text-foreground truncate flex items-center gap-1.5">
                   {match.matched_profile?.display_name || 'Användare'}
+                  {match.matched_profile?.id_verification_status === 'approved' && (
+                    <VerifiedBadge size="sm" className="shrink-0" />
+                  )}
                 </h4>
                 {match.last_message && (
                   <span className="text-xs text-muted-foreground">

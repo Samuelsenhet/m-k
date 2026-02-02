@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import { getProfilesAuthKey } from '@/lib/profiles';
 
 export type JourneyPhase = 'ONBOARDING' | 'WAITING' | 'READY' | 'ACTIVE';
 
@@ -92,43 +93,39 @@ export const useUserJourney = () => {
 
     try {
       // Check profile for onboarding status
+      const profileKey = await getProfilesAuthKey(user.id);
       const { data: profile } = await supabase
         .from('profiles')
         .select('onboarding_completed, created_at')
-        .eq('id', user.id)
+        .eq(profileKey, user.id)
         .maybeSingle();
 
       const isOnboardingComplete = profile?.onboarding_completed ?? false;
 
-      // Check for match delivery status
-      const { data: deliveryStatus } = await supabase
-        .from('user_match_delivery_status')
-        .select('*')
+      // Read journey state from user_journey_state (current schema)
+      const { data: journey } = await supabase
+        .from('user_journey_state')
+        .select('journey_phase, registration_completed_at, first_matches_delivered_at, total_matches_received')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const firstDelivered = deliveryStatus?.last_delivered_date ?? null;
+      const firstDelivered = journey?.first_matches_delivered_at ?? null;
       const isFirstDay = !firstDelivered;
 
-      const { count: matchesCount, error: matchesError } = await supabase
-        .from('matches')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      if (matchesError) {
-        throw matchesError;
-      }
+      const matchesCount = journey?.total_matches_received ?? 0;
 
       const journeyPhase = determineJourneyPhase({
         isOnboardingComplete,
         firstDeliveryDate: firstDelivered,
-        nextAvailableDate: deliveryStatus?.next_available_date ?? null,
+        nextAvailableDate: null,
         isFirstDay,
       });
 
       setJourneyState({
         journeyPhase,
-        registrationCompletedAt: profile?.created_at ? new Date(profile.created_at) : null,
+        registrationCompletedAt: journey?.registration_completed_at
+          ? new Date(journey.registration_completed_at)
+          : (profile?.created_at ? new Date(profile.created_at) : null),
         firstMatchesDeliveredAt: firstDelivered ? new Date(firstDelivered) : null,
         totalMatchesReceived: matchesCount ?? 0,
         timeUntilNextReset: calculateTimeUntilReset(),
@@ -165,11 +162,24 @@ export const useUserJourney = () => {
     try {
       // Update onboarding_completed in profiles if transitioning to ACTIVE
       if (newPhase === 'ACTIVE') {
+        const profileKey = await getProfilesAuthKey(user.id);
         await supabase
           .from('profiles')
-          .update({ onboarding_completed: true, onboarding_completed_at: new Date().toISOString() })
-          .eq('id', user.id);
+          .update({ onboarding_completed: true })
+          .eq(profileKey, user.id);
       }
+
+      // Persist journey phase in user_journey_state (best-effort)
+      await supabase
+        .from('user_journey_state')
+        .upsert(
+          {
+            user_id: user.id,
+            journey_phase: newPhase,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
 
       setJourneyState(prev => ({
         ...prev,
@@ -187,19 +197,35 @@ export const useUserJourney = () => {
       const now = new Date();
       const todayIso = now.toISOString();
 
-      const { error } = await supabase
-        .from('user_match_delivery_status')
-        .upsert(
-          {
-            user_id: user.id,
-            last_delivered_date: todayIso,
-            updated_at: todayIso,
-          },
-          { onConflict: 'user_id' }
-        );
+      // Preserve original first_matches_delivered_at if it exists
+      const firstDeliveredAt = journeyState.firstMatchesDeliveredAt
+        ? journeyState.firstMatchesDeliveredAt.toISOString()
+        : todayIso;
 
-      if (error) {
-        throw error;
+      // Use atomic increment via RPC or raw SQL to avoid race conditions
+      // For now, we send the delta and let the server handle it atomically
+      const { error: rpcError } = await supabase.rpc('increment_matches_received', {
+        p_user_id: user.id,
+        p_increment: _count,
+        p_first_delivered_at: firstDeliveredAt,
+      });
+
+      // Fallback to upsert if RPC doesn't exist
+      if (rpcError && rpcError.code === 'PGRST202') {
+        // RPC not found, use upsert with current state
+        await supabase
+          .from('user_journey_state')
+          .upsert(
+            {
+              user_id: user.id,
+              first_matches_delivered_at: firstDeliveredAt,
+              total_matches_received: journeyState.totalMatchesReceived + _count,
+              updated_at: todayIso,
+            },
+            { onConflict: 'user_id' }
+          );
+      } else if (rpcError) {
+        console.error('Error in increment RPC:', rpcError);
       }
 
       await fetchJourneyState();

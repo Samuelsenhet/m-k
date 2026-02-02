@@ -8,6 +8,7 @@ const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 const corsHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 type MatchType = 'similar' | 'complementary'
@@ -106,25 +107,39 @@ serve(async (req: Request) => {
       }
     )
 
-    // Get the user from auth
+    // Get the user from auth (REQUIRED for this function)
     const {
       data: { user },
+      error: authError
     } = await supabaseClient.auth.getUser()
 
-    if (!user) {
-      throw new Error('Not authenticated')
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Not authenticated' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
     }
 
-    const { user_id } = await req.json()
+    const body = await req.json().catch(() => ({}));
+    const { user_id } = body;
     const requestUserId = user_id || user.id
 
-    // Verify user matches
+    // Verify user matches (security: users can only query their own matches)
     if (requestUserId !== user.id) {
-      throw new Error('Unauthorized')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
     }
 
-    // Use CET timezone for date (Europe/Stockholm)
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' })
+    // Use CET timezone for date (Europe/Stockholm) – YYYY-MM-DD for DB
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Stockholm' })
 
     // 1. Check if user has completed onboarding (required for matching)
     const { data: profile, error: profileError } = await supabaseClient
@@ -134,8 +149,15 @@ serve(async (req: Request) => {
       .single()
 
     if (profileError || !profile) {
-      throw new Error('Profile not found')
+      return new Response(
+        JSON.stringify({ error: 'Profile not found', message: 'Complete your profile first' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      )
     }
+
+    const subscriptionTier = (profile as { subscription_tier?: string }).subscription_tier
+    const isPlus = subscriptionTier === 'plus' || subscriptionTier === 'premium'
+    const userLimit = isPlus ? null : 5
 
     if (!profile.onboarding_completed) {
       return new Response(
@@ -176,17 +198,26 @@ serve(async (req: Request) => {
       }
     }
 
-    // 3. Get or create today's match pool for user
+    // 3. Get today's match pool for user (table: user_daily_match_pools, column: pool_date)
     const { data: matchPool, error: poolError } = await supabaseClient
-      .from('user_daily_match_pool')
+      .from('user_daily_match_pools')
       .select('*')
       .eq('user_id', requestUserId)
-      .eq('date', today)
+      .eq('pool_date', today)
       .maybeSingle()
 
     if (poolError) {
       console.error('Pool fetch error:', poolError)
-      throw poolError
+      return new Response(
+        JSON.stringify({
+          date: today,
+          batch_size: 0,
+          user_limit: 5,
+          matches: [],
+          message: 'Match pool not available yet. Try again later.'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
     }
 
     // If no pool exists, it means batch hasn't been generated yet
@@ -195,26 +226,19 @@ serve(async (req: Request) => {
         JSON.stringify({
           date: today,
           batch_size: 0,
-          user_limit: profile.subscription_tier === 'plus' || profile.subscription_tier === 'premium' ? null : 5,
+          user_limit: userLimit,
           matches: [],
           message: 'Match pool not yet generated for today. Please check back later.'
         }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
-    const candidates: MatchPoolCandidate[] = Array.isArray(matchPool.candidates)
-      ? matchPool.candidates as MatchPoolCandidate[]
+    const rawCandidates = matchPool.candidates_data ?? (matchPool as { candidates?: unknown }).candidates
+    const candidates: MatchPoolCandidate[] = Array.isArray(rawCandidates)
+      ? (rawCandidates as MatchPoolCandidate[])
       : []
-    
-    // 3. Determine delivery count based on subscription tier
-    // Free users: capped at 5 (not guaranteed, just max limit)
-    // Plus users: uncapped, receive full batch size
-    const isPlus = profile.subscription_tier === 'plus' || profile.subscription_tier === 'premium'
-    const userLimit = isPlus ? null : 5
+
     const deliveryCount = isPlus ? candidates.length : Math.min(5, candidates.length)
     
     // If pool has fewer than 5, deliver what's available (no error)
@@ -254,7 +278,7 @@ serve(async (req: Request) => {
       const formattedMatches = existingDetailedRows.map((m, index) => ({
         match_id: m.id,
         profile_id: m.matched_user_id,
-        display_name: m.profiles?.display_name || 'Anonym',
+        display_name: 'Anonym',
         age: m.match_age || 25,
         archetype: m.match_archetype || 'INFJ',
         compatibility_percentage: m.match_score || 85,
@@ -312,19 +336,28 @@ serve(async (req: Request) => {
 
     if (insertError) {
       console.error('Insert error:', insertError)
-      throw insertError
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to insert matches',
+          message: 'Internal server error'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
 
-    // 8. Update last_daily_matches for repeat prevention
+    // 8. Update last_daily_matches for repeat prevention (table must exist; see RLS_AND_SCHEMA_ALIGNMENT.sql)
     const insertedMatchRows: InsertedMatchRow[] = (insertedMatches ?? []) as InsertedMatchRow[]
     const matchIds = insertedMatchRows.map((m) => m.id)
-    await supabaseClient
+    const { error: lastMatchErr } = await supabaseClient
       .from('last_daily_matches')
       .upsert({
         user_id: requestUserId,
         date: today,
         match_ids: matchIds
-      })
+      }, { onConflict: 'user_id,date' })
+    if (lastMatchErr) {
+      console.warn('last_daily_matches upsert failed (table may be missing):', lastMatchErr.message)
+    }
 
     // 10. Check if this is user's first match ever (for celebration)
     const { data: allUserMatches } = await supabaseClient

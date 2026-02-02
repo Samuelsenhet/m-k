@@ -7,6 +7,7 @@ import { User, Calendar, Navigation } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { getProfilesAuthKey } from '@/lib/profiles';
 
 interface MatchingPreferences {
   min_age: number;
@@ -27,11 +28,12 @@ export function MatchingSettings() {
   const fetchPreferences = useCallback(async () => {
     if (!user) return;
 
+    const profileKey = await getProfilesAuthKey(user.id);
     const { data, error } = await supabase
       .from('profiles')
       .select('min_age, max_age, max_distance')
-      .eq('user_id', user.id)
-      .single();
+      .eq(profileKey, user.id)
+      .maybeSingle();
 
     if (data && !error) {
       setPreferences({
@@ -50,6 +52,7 @@ export function MatchingSettings() {
     if (!user) return;
 
     setLoading(true);
+    const profileKey = await getProfilesAuthKey(user.id);
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -57,7 +60,7 @@ export function MatchingSettings() {
         max_age: preferences.max_age,
         max_distance: preferences.max_distance,
       })
-      .eq('user_id', user.id);
+      .eq(profileKey, user.id);
 
     setLoading(false);
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/useAuth";
+import { getProfilesAuthKey } from "@/lib/profiles";
 
 type Match = {
   id: string;
@@ -35,7 +36,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-import type { MatchDailyMatch, DimensionScoreBreakdown } from "@/types/api";
+import type { MatchDailyMatch } from "@/types/api";
 const mapMatch = (m: MatchDailyMatch): Match => ({
   id: m.match_id,
   matchedUser: {
@@ -67,28 +68,39 @@ export function useMatches() {
 
   const fetchMatches = useCallback(async () => {
     if (!user) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      setError("Du måste vara inloggad för att se matchningar");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setMatches([]);
     setNextCursor(null);
     setHasMore(true);
 
-    try {
-      const {
-        data,
-        error,
-      }: {
-        data: {
-          matches: MatchDailyMatch[];
-          next_cursor?: string | null;
-        } | null;
-        error: unknown;
-      } = await supabase.functions.invoke("match-daily", {
-        body: {
-          user_id: user.id,
-          page_size: PAGE_SIZE,
-        },
+    const invokeMatchDaily = async (accessToken: string) => {
+      const result = await supabase.functions.invoke("match-daily", {
+        body: { user_id: user.id, page_size: PAGE_SIZE },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
+      return result;
+    };
+
+    try {
+      let result = await invokeMatchDaily(token);
+      if (result.error) {
+        // Retry once after refresh (helps 401) and short delay (helps 429)
+        await new Promise((r) => setTimeout(r, 1000));
+        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+        const retryToken = refreshed?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
+        if (retryToken) result = await invokeMatchDaily(retryToken);
+      }
+      const { data, error } = result;
       if (error) throw error;
       if (!data || !Array.isArray(data.matches)) {
         setMatches([]);
@@ -100,8 +112,10 @@ export function useMatches() {
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
-      console.error("Error fetching matches:", err);
-      setError(getErrorMessage(err, "Kunde inte hämta matchningar"));
+      if (import.meta.env.DEV) {
+        console.error("Error fetching matches:", err);
+      }
+      setError(getErrorMessage(err, "Kunde inte hämta matchningar. Kontrollera att du är inloggad."));
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -111,6 +125,9 @@ export function useMatches() {
   // Fetch more matches using cursor
   const fetchMoreMatches = useCallback(async () => {
     if (!user || !nextCursor || !hasMore) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
     setLoading(true);
     setError(null);
     try {
@@ -129,6 +146,7 @@ export function useMatches() {
           page_size: PAGE_SIZE,
           cursor: nextCursor,
         },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (error) throw error;
       if (!data || !Array.isArray(data.matches)) {
@@ -153,30 +171,38 @@ export function useMatches() {
 
   const generateIcebreakers = async (
     matchId: string,
-    userArchetype: string,
-    matchedUserArchetype: string,
+    userArchetype: string | undefined,
+    matchedUserArchetype: string | undefined,
     userName: string,
     matchedUserName: string
   ) => {
     try {
+      const session = (await supabase.auth.getSession()).data.session;
       const { error } = await supabase.functions.invoke(
         "generate-icebreakers",
         {
           body: {
             matchId,
-            userArchetype,
-            matchedUserArchetype,
+            userArchetype: userArchetype ?? null,
+            matchedUserArchetype: matchedUserArchetype ?? null,
             userName,
             matchedUserName,
           },
+          headers: session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : undefined,
         }
       );
 
       if (error) {
-        console.error("Error generating icebreakers:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error generating icebreakers:", error);
+        }
       }
     } catch (err: unknown) {
-      console.error("Failed to generate icebreakers:", err);
+      if (import.meta.env.DEV) {
+        console.error("Failed to generate icebreakers:", err);
+      }
     }
   };
 
@@ -214,11 +240,14 @@ export function useMatches() {
             .eq("id", reverseMatch.id);
 
           // Get user's display name for icebreaker generation
+          const userId = user?.id;
+          if (!userId) return;
+          const profileKey = await getProfilesAuthKey(userId);
           const { data: userProfileResult, error: profileError } =
             await supabase
               .from("profiles")
-              .select("display_name, archetype")
-              .eq("id", user?.id)
+              .select("display_name")
+              .eq(profileKey, userId)
               .single();
           if (profileError) {
             console.error("Profile fetch failed", profileError);
@@ -228,9 +257,7 @@ export function useMatches() {
           // Use dynamic archetype fallback
           generateIcebreakers(
             matchId,
-            userProfileResult?.archetype ??
-              match.matchedUser.archetype ??
-              undefined,
+            match.matchedUser.archetype ?? undefined,
             match.matchedUser.archetype ?? undefined,
             userProfileResult?.display_name || "Användare",
             match.matchedUser.displayName
@@ -264,7 +291,9 @@ export function useMatches() {
         prev.map((m) => (m.id === matchId ? { ...m, status: "passed" } : m))
       );
     } catch (err: unknown) {
-      console.error("Error passing match:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error passing match:", err);
+      }
     }
   };
 
