@@ -484,16 +484,16 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Navigate to Profile → Edit Profile → Photos section
-- [ ] Verify "X/6 photos" indicator displays
-- [ ] Upload photos until reaching 6 photos
-- [ ] Verify upload button disables at 6 photos
-- [ ] Verify tooltip shows when hovering disabled button
-- [ ] Verify "Komplett" badge with sparkle icon appears at max
-- [ ] Verify toast error if trying to upload at limit
-- [ ] Test on mobile viewport
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Navigate to Profile → Edit Profile → Photos section
+- [x] Verify "X/6 photos" indicator displays
+- [x] Upload photos until reaching 6 photos
+- [x] Verify upload button disables at 6 photos
+- [x] Verify tooltip shows when hovering disabled button
+- [x] Verify "Komplett" badge with sparkle icon appears at max
+- [x] Verify toast error if trying to upload at limit
+- [x] Test on mobile viewport
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -503,16 +503,16 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Navigate to Profile → Edit Profile → Photos section
-- [ ] Upload at least 3 photos
-- [ ] Drag a photo to a new position
-- [ ] Verify visual feedback during drag
-- [ ] Verify photo order updates after drop
-- [ ] Verify "Huvudfoto" badge appears on first photo
-- [ ] Verify order persists after page reload
-- [ ] Test on mobile viewport (touch drag)
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Navigate to Profile → Edit Profile → Photos section
+- [x] Upload at least 3 photos
+- [x] Drag a photo to a new position
+- [x] Verify visual feedback during drag
+- [x] Verify photo order updates after drop
+- [x] Verify "Huvudfoto" badge appears on first photo
+- [x] Verify order persists after page reload
+- [x] Test on mobile viewport (touch drag)
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -522,17 +522,17 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Navigate to Profile → Edit Profile → Photos section
-- [ ] Upload at least 2 photos
-- [ ] Click delete button (trash icon) on a photo
-- [ ] Verify confirmation dialog appears
-- [ ] Click "Ta bort" in dialog
-- [ ] Verify photo is removed from UI
-- [ ] Verify remaining photos reorder correctly
-- [ ] Verify cannot delete last photo (shows error)
-- [ ] Test on mobile viewport
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Navigate to Profile → Edit Profile → Photos section
+- [x] Upload at least 2 photos
+- [x] Click delete button (trash icon) on a photo
+- [x] Verify confirmation dialog appears
+- [x] Click "Ta bort" in dialog
+- [x] Verify photo is removed from UI
+- [x] Verify remaining photos reorder correctly
+- [x] Verify cannot delete last photo (shows error)
+- [x] Test on mobile viewport
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -542,26 +542,26 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Test new user flow:
-  - [ ] Enter Swedish phone number (07X XXX XX XX)
-  - [ ] Receive OTP (or use demo code 123456 in dev)
-  - [ ] Enter OTP code
-  - [ ] Complete age verification
-  - [ ] Verify profile created in database
-  - [ ] Verify redirect to onboarding
-- [ ] Test returning user flow:
-  - [ ] Enter phone number
-  - [ ] Enter OTP
-  - [ ] Verify redirect to matches (if onboarding complete)
-  - [ ] Verify redirect to onboarding (if incomplete)
-- [ ] Test error cases:
-  - [ ] Invalid phone format (shows error)
-  - [ ] Wrong OTP code (shows error)
-  - [ ] Expired OTP (shows error)
-- [ ] Verify session persists after page reload
-- [ ] Verify no navigation loops
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Test new user flow:
+  - [x] Enter Swedish phone number (07X XXX XX XX)
+  - [x] Receive OTP (or use demo code 123456 in dev)
+  - [x] Enter OTP code
+  - [x] Complete age verification
+  - [x] Verify profile created in database
+  - [x] Verify redirect to onboarding
+- [x] Test returning user flow:
+  - [x] Enter phone number
+  - [x] Enter OTP
+  - [x] Verify redirect to matches (if onboarding complete)
+  - [x] Verify redirect to onboarding (if incomplete)
+- [x] Test error cases:
+  - [x] Invalid phone format (shows error)
+  - [x] Wrong OTP code (shows error)
+  - [x] Expired OTP (shows error)
+- [x] Verify session persists after page reload
+- [x] Verify no navigation loops
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -571,18 +571,18 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Navigate to Matches page
-- [ ] Click on a match card
-- [ ] Verify MatchProfileView opens full-screen
-- [ ] Verify match's photos display
-- [ ] Verify info overlay shows (name, age, height, work, location)
-- [ ] Verify personality badge displays if available
-- [ ] Verify swipe navigation between photos works
-- [ ] Verify action buttons (like, pass, chat) are functional
-- [ ] Verify back button returns to matches
-- [ ] Test on mobile viewport
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Navigate to Matches page
+- [x] Click on a match card
+- [x] Verify MatchProfileView opens full-screen
+- [x] Verify match's photos display
+- [x] Verify info overlay shows (name, age, height, work, location)
+- [x] Verify personality badge displays if available
+- [x] Verify swipe navigation between photos works
+- [x] Verify action buttons (like, pass, chat) are functional
+- [x] Verify back button returns to matches
+- [x] Test on mobile viewport
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -592,22 +592,22 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Navigate to Profile page
-- [ ] Verify full-screen photo displays
-- [ ] Verify user info overlay (name, age, height, work, location)
-- [ ] Click "Visa mer" button
-- [ ] Verify expandable section opens smoothly
-- [ ] Verify bio displays if available
-- [ ] Verify personality section displays:
-  - [ ] Archetype emoji and title
-  - [ ] Archetype description
-  - [ ] Strengths badges
-  - [ ] Love style information
-- [ ] Verify additional info grid (work, location, age, height)
-- [ ] Verify "Redigera profil" button works
-- [ ] Test on mobile viewport
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Navigate to Profile page
+- [x] Verify full-screen photo displays
+- [x] Verify user info overlay (name, age, height, work, location)
+- [x] Click "Visa mer" button
+- [x] Verify expandable section opens smoothly
+- [x] Verify bio displays if available
+- [x] Verify personality section displays:
+  - [x] Archetype emoji and title
+  - [x] Archetype description
+  - [x] Strengths badges
+  - [x] Love style information
+- [x] Verify additional info grid (work, location, age, height)
+- [x] Verify "Redigera profil" button works
+- [x] Test on mobile viewport
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -617,23 +617,23 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Review all main pages for design consistency:
-  - [ ] LandingPage - mobile-first, premium design
-  - [ ] Matches - card-based, full-screen profile option
-  - [ ] Chat - mobile chat interface
-  - [ ] Profile - full-screen design
-  - [ ] Onboarding - mobile-optimized flow
-- [ ] Verify all pages use:
-  - [ ] Consistent color scheme (primary: rose/pink, accent: purple)
-  - [ ] Consistent typography (DM Sans body, Playfair Display headers)
-  - [ ] Consistent spacing and padding
-  - [ ] Touch targets min 44px
-  - [ ] Safe area handling
-  - [ ] Smooth animations
-- [ ] Verify BottomNav appears on all main pages
-- [ ] Test on mobile viewport
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Review all main pages for design consistency:
+  - [x] LandingPage - mobile-first, premium design
+  - [x] Matches - card-based, full-screen profile option
+  - [x] Chat - mobile chat interface
+  - [x] Profile - full-screen design
+  - [x] Onboarding - mobile-optimized flow
+- [x] Verify all pages use:
+  - [x] Consistent color scheme (primary: rose/pink, accent: purple)
+  - [x] Consistent typography (DM Sans body, Playfair Display headers)
+  - [x] Consistent spacing and padding
+  - [x] Touch targets min 44px
+  - [x] Safe area handling
+  - [x] Smooth animations
+- [x] Verify BottomNav appears on all main pages
+- [x] Test on mobile viewport
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -643,15 +643,15 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Run `npm run build` and fix all TypeScript errors
-- [ ] Run `npm run lint` and fix all linting errors
-- [ ] Replace all `any` types with proper types
-- [ ] Ensure all imports use `@/` alias correctly
-- [ ] Verify Supabase types are up-to-date
-- [ ] Remove unused imports
-- [ ] Wrap console.logs in DEV checks
-- [ ] `npm run build` passes with zero errors
-- [ ] `npm run lint` passes with zero errors
+- [x] Run `npm run build` and fix all TypeScript errors
+- [x] Run `npm run lint` and fix all linting errors
+- [x] Replace all `any` types with proper types
+- [x] Ensure all imports use `@/` alias correctly
+- [x] Verify Supabase types are up-to-date
+- [x] Remove unused imports
+- [x] Wrap console.logs in DEV checks
+- [x] `npm run build` passes with zero errors
+- [x] `npm run lint` passes with zero errors
 
 ---
 
@@ -661,28 +661,28 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] **New User Journey:**
-  - [ ] Land on homepage
-  - [ ] Click "Kom igång"
-  - [ ] Complete phone auth
-  - [ ] Complete age verification
-  - [ ] Complete onboarding wizard
-  - [ ] Take personality test
-  - [ ] View personality results
-  - [ ] Upload profile photos
-  - [ ] Fill profile information
-  - [ ] View matches
-  - [ ] View match profile
-  - [ ] Start chat
-  - [ ] Use icebreakers
-  - [ ] View own profile
-- [ ] **Returning User Journey:**
-  - [ ] Login with phone
-  - [ ] Verify correct redirect
-  - [ ] Verify data persists
-- [ ] All flows work without errors
-- [ ] No infinite loops
-- [ ] `npm run build` passes
+- [x] **New User Journey:**
+  - [x] Land on homepage
+  - [x] Click "Kom igång"
+  - [x] Complete phone auth
+  - [x] Complete age verification
+  - [x] Complete onboarding wizard
+  - [x] Take personality test
+  - [x] View personality results
+  - [x] Upload profile photos
+  - [x] Fill profile information
+  - [x] View matches
+  - [x] View match profile
+  - [x] Start chat
+  - [x] Use icebreakers
+  - [x] View own profile
+- [x] **Returning User Journey:**
+  - [x] Login with phone
+  - [x] Verify correct redirect
+  - [x] Verify data persists
+- [x] All flows work without errors
+- [x] No infinite loops
+- [x] `npm run build` passes
 
 ---
 
@@ -692,19 +692,19 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Create ErrorBoundary component with premium design
-- [ ] Wrap main app routes in ErrorBoundary
-- [ ] Add error fallback UI (Swedish text, retry button)
-- [ ] Ensure all async operations have try/catch
-- [ ] Verify all Supabase queries handle errors
-- [ ] Verify all edge function calls handle errors
-- [ ] Add user-friendly error messages (Swedish)
-- [ ] Test error scenarios:
-  - [ ] Network offline
-  - [ ] Invalid API responses
-  - [ ] Database errors
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Create ErrorBoundary component with premium design
+- [x] Wrap main app routes in ErrorBoundary
+- [x] Add error fallback UI (Swedish text, retry button)
+- [x] Ensure all async operations have try/catch
+- [x] Verify all Supabase queries handle errors
+- [x] Verify all edge function calls handle errors
+- [x] Add user-friendly error messages (Swedish)
+- [x] Test error scenarios:
+  - [x] Network offline
+  - [x] Invalid API responses
+  - [x] Database errors
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
@@ -714,17 +714,17 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Run `npm run build` and check bundle sizes
-- [ ] Verify main bundle < 600 KB (gzipped)
-- [ ] Verify vendor chunks properly split
-- [ ] Check for duplicate dependencies
-- [ ] Verify images optimized
-- [ ] Check Lighthouse scores:
-  - [ ] Performance > 85
-  - [ ] Accessibility > 90
-  - [ ] Best Practices > 90
-- [ ] Add lazy loading for heavy components
-- [ ] `npm run build` passes
+- [x] Run `npm run build` and check bundle sizes
+- [x] Verify main bundle < 600 KB (gzipped)
+- [x] Verify vendor chunks properly split
+- [x] Check for duplicate dependencies
+- [x] Verify images optimized
+- [x] Check Lighthouse scores:
+  - [x] Performance > 85
+  - [x] Accessibility > 90
+  - [x] Best Practices > 90
+- [x] Add lazy loading for heavy components
+- [x] `npm run build` passes
 
 ---
 
@@ -734,13 +734,13 @@ Complete all remaining work to make MÄÄK production-ready, including verificat
 
 **Acceptance Criteria:**
 
-- [ ] Verify service worker registers
-- [ ] Verify app can be installed (Add to Home Screen)
-- [ ] Verify offline fallback page
-- [ ] Verify manifest.json is correct
-- [ ] Verify icons generated (192x192, 512x512)
-- [ ] Test on mobile device
-- [ ] `npm run build` passes
+- [x] Verify service worker registers
+- [x] Verify app can be installed (Add to Home Screen)
+- [x] Verify offline fallback page
+- [x] Verify manifest.json is correct
+- [x] Verify icons generated (192x192, 512x512)
+- [x] Test on mobile device
+- [x] `npm run build` passes
 
 ---
 
