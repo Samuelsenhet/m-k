@@ -53,6 +53,7 @@ const mapMatch = (m: MatchDailyMatch): Match => ({
   status: "pending",
   compatibilityFactors: [],
   expiresAt: m.expires_at,
+  personalityInsight: m.personality_insight ?? null,
   special_effects: m.special_effects,
   special_event_message: m.special_event_message,
 });

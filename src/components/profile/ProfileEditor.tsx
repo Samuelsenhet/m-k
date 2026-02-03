@@ -30,6 +30,10 @@ interface ProfileData {
   smoking: string;
   alcohol: string;
   pronouns: string;
+  dating_intention: string;
+  dating_intention_extra: string;
+  relationship_type: string;
+  relationship_type_extra: string;
 }
 
 interface PrivacySettings {
@@ -71,6 +75,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     smoking: '',
     alcohol: '',
     pronouns: '',
+    dating_intention: '',
+    dating_intention_extra: '',
+    relationship_type: '',
+    relationship_type_extra: '',
   });
   const [privacy, setPrivacy] = useState<PrivacySettings>({
     show_age: true,
@@ -86,7 +94,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     const profileKey = await getProfilesAuthKey(user.id);
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, bio, gender, looking_for, height, work, education, hometown, instagram, linkedin, religion, politics, smoking, alcohol, pronouns, show_age, show_job, show_education, show_last_name')
+      .select('display_name, bio, gender, looking_for, height, work, education, hometown, instagram, linkedin, religion, politics, smoking, alcohol, pronouns, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra, show_age, show_job, show_education, show_last_name')
       .eq(profileKey, user.id)
       .maybeSingle();
 
@@ -109,6 +117,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         smoking: data.smoking || '',
         alcohol: data.alcohol || '',
         pronouns: data.pronouns || '',
+        dating_intention: data.dating_intention || '',
+        dating_intention_extra: data.dating_intention_extra || '',
+        relationship_type: data.relationship_type || '',
+        relationship_type_extra: data.relationship_type_extra || '',
       });
       setPrivacy({
         show_age: data.show_age ?? true,
@@ -169,6 +181,10 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         smoking: profile.smoking || null,
         alcohol: profile.alcohol || null,
         pronouns: profile.pronouns || null,
+        dating_intention: profile.dating_intention || null,
+        dating_intention_extra: profile.dating_intention_extra || null,
+        relationship_type: profile.relationship_type || null,
+        relationship_type_extra: profile.relationship_type_extra || null,
         show_age: privacy.show_age,
         show_job: privacy.show_job,
         show_education: privacy.show_education,
@@ -309,6 +325,59 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Dejtingavsikter */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">{t('profile.dating_intention_title')}</Label>
+            <Select
+              value={profile.dating_intention}
+              onValueChange={(value) => updateField('dating_intention', value)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder={t('profile.select_placeholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="livspartner">{t('profile.dating_livspartner')}</SelectItem>
+                <SelectItem value="langsiktigt_forhallande">{t('profile.dating_langsiktigt')}</SelectItem>
+                <SelectItem value="langsiktigt_oppen_kort">{t('profile.dating_langsiktigt_oppen_kort')}</SelectItem>
+                <SelectItem value="kortvarigt_oppen_lang">{t('profile.dating_kortvarigt_oppen_lang')}</SelectItem>
+                <SelectItem value="kortvarigt">{t('profile.dating_kortvarigt')}</SelectItem>
+                <SelectItem value="klura_ut">{t('profile.dating_klura_ut')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={profile.dating_intention_extra}
+              onChange={(e) => updateField('dating_intention_extra', e.target.value)}
+              placeholder={t('profile.dating_intention_placeholder')}
+              rows={2}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Relationstyper */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">{t('profile.relationship_type_title')}</Label>
+            <Select
+              value={profile.relationship_type}
+              onValueChange={(value) => updateField('relationship_type', value)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder={t('profile.select_placeholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monogam">{t('profile.relation_monogam')}</SelectItem>
+                <SelectItem value="icke_monogami">{t('profile.relation_icke_monogami')}</SelectItem>
+                <SelectItem value="ta_reda_pa">{t('profile.relation_ta_reda_pa')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={profile.relationship_type_extra}
+              onChange={(e) => updateField('relationship_type_extra', e.target.value)}
+              placeholder={t('profile.relationship_type_placeholder')}
+              rows={2}
+              className="resize-none"
+            />
           </div>
         </CardContent>
       </Card>

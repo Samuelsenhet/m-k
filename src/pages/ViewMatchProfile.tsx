@@ -9,18 +9,22 @@ export default function ViewMatchProfile() {
   const [searchParams] = useSearchParams();
   const matchId = searchParams.get('match');
   const navigate = useNavigate();
-  const { likeMatch, passMatch } = useMatches();
+  const { matches, likeMatch, passMatch } = useMatches();
   const [matchedUserId, setMatchedUserId] = useState<string | null>(null);
+  const [personalityInsight, setPersonalityInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const matchFromList = matchId ? matches.find((m) => m.id === matchId) : undefined;
+  const matchScore = matchFromList?.matchScore;
 
   useEffect(() => {
     if (matchId && !userId) {
       setLoading(true);
-      // If we have a matchId but no userId, fetch the matched user ID
+      // If we have a matchId but no userId, fetch the matched user ID and AI comment (personality_insight)
       const fetchMatchedUserId = async () => {
         const { data: match } = await supabase
           .from('matches')
-          .select('user_id, matched_user_id')
+          .select('user_id, matched_user_id, personality_insight')
           .eq('id', matchId)
           .single();
 
@@ -31,17 +35,19 @@ export default function ViewMatchProfile() {
             ? match.matched_user_id 
             : match.user_id;
           setMatchedUserId(matchedId);
+          setPersonalityInsight((match as { personality_insight?: string | null }).personality_insight ?? null);
         }
         setLoading(false);
       };
       fetchMatchedUserId();
     } else if (userId) {
       setMatchedUserId(userId);
+      setPersonalityInsight(matchFromList?.personalityInsight ?? null);
       setLoading(false);
     } else {
       setLoading(false);
     }
-  }, [matchId, userId]);
+  }, [matchId, userId, matchFromList]);
 
   const handleLike = async () => {
     if (matchId) {
@@ -65,10 +71,14 @@ export default function ViewMatchProfile() {
     );
   }
 
+  const comment = personalityInsight ?? matchFromList?.personalityInsight ?? null;
+
   return (
     <MatchProfileView
       userId={matchedUserId}
       matchId={matchId || undefined}
+      matchScore={matchScore}
+      personalityInsight={comment}
       onBack={() => navigate(-1)}
       onLike={handleLike}
       onPass={handlePass}

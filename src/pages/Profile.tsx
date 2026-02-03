@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ interface PersonalityResultRow {
   archetype?: string;
 }
 
-const SETTINGS_SUBPAGES = ['/terms', '/privacy', '/reporting', '/report', '/report-history', '/appeal', '/admin/reports'];
+const SETTINGS_SUBPAGES = ['/terms', '/privacy', '/reporting', '/about', '/report', '/report-history', '/appeal', '/admin/reports'];
 
 export default function Profile() {
   const { user, loading, signOut } = useAuth();
@@ -42,7 +42,6 @@ export default function Profile() {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [verifyIdOpen, setVerifyIdOpen] = useState(false);
-  const [notificationsManageOpen, setNotificationsManageOpen] = useState(false);
   const [privacyManageOpen, setPrivacyManageOpen] = useState(false);
   const [isModerator, setIsModerator] = useState<boolean | null>(null);
 
@@ -180,23 +179,27 @@ export default function Profile() {
                     tabIndex={0}
                     onClick={() => { setSettingsOpen(false); navigate('/personality-guide'); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/personality-guide'); } }}
-                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm"
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
                   >
-                    <span className="text-sm flex items-center gap-2">
+                    <span className="text-sm flex items-center gap-2 font-normal">
                       <BookOpen className="w-4 h-4" />
                       {t('settings.learn_personality', 'Läs om personlighet & arketyper')}
                     </span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-sm">{t('settings.language')}</span>
                     <LanguageToggle />
                   </div>
-                  <div className="flex items-center justify-between py-2 border-b border-border">
-                    <span className="text-sm">{t('settings.notifications')}</span>
-                    <Button variant="ghost" size="sm" onClick={() => setNotificationsManageOpen(true)}>
-                      {t('settings.manage')}
-                    </Button>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/notifications'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/notifications'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.notifications')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-sm">{t('settings.privacy')}</span>
@@ -209,26 +212,60 @@ export default function Profile() {
                     tabIndex={0}
                     onClick={() => { setSettingsOpen(false); setShowAchievements(true); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); setShowAchievements(true); } }}
-                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm"
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
                   >
-                    <span className="text-sm flex items-center gap-2">
+                    <span className="text-sm flex items-center gap-2 font-normal">
                       <Trophy className="w-4 h-4" />
                       {t('settings.achievements')}
                     </span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
-                  <Link to="/terms" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
-                    <span className="text-sm">Användarvillkor</span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                  </Link>
-                  <Link to="/terms#integritet" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
-                    <span className="text-sm">Integritetspolicy</span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                  </Link>
-                  <Link to="/reporting" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
-                    <span className="text-sm">Rapportering</span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                  </Link>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/terms'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/terms'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.terms')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/terms#integritet'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/terms#integritet'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.privacy_policy')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/reporting'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/reporting'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.reporting')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/about'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/about'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.about_us')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Matching settings – Age & Distance sliders + Submit */}
+              <Card className="rounded-2xl overflow-hidden">
+                <CardContent className="p-0">
+                  <MatchingSettings />
                 </CardContent>
               </Card>
               <Card>
@@ -236,23 +273,47 @@ export default function Profile() {
                   <CardTitle className="text-base">{t('settings.support_and_reports')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-0">
-                  <Link to="/report-history" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
-                    <span className="text-sm">{t('report.history_title')}</span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                  </Link>
-                  <Link to="/report" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
-                    <span className="text-sm">{t('report.report_problem')}</span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                  </Link>
-                  <Link to="/appeal" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 border-b border-border w-full text-left hover:bg-muted/50 rounded-sm">
-                    <span className="text-sm">{t('appeal.title')}</span>
-                    <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                  </Link>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/report-history'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/report-history'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('report.history_title')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/report'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/report'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('report.report_problem')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/appeal'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/appeal'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('appeal.title')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
                   {isModerator === true && (
-                    <Link to="/admin/reports" onClick={() => setSettingsOpen(false)} className="flex items-center justify-between py-2 w-full text-left hover:bg-muted/50 rounded-sm">
-                      <span className="text-sm">{t('admin.reports_title')}</span>
-                      <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
-                    </Link>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => { setSettingsOpen(false); navigate('/admin/reports'); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/admin/reports'); } }}
+                      className="flex items-center justify-between py-2 w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                    >
+                      <span className="text-sm font-normal">{t('admin.reports_title')}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -309,31 +370,6 @@ export default function Profile() {
           </SheetHeader>
           <div className="mt-6 pb-8">
             <IdVerificationStep onSubmit={() => setVerifyIdOpen(false)} />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Notifications manage sheet */}
-      <Sheet open={notificationsManageOpen} onOpenChange={setNotificationsManageOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[85vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="font-serif">{t('settings.notifications')}</SheetTitle>
-            <SheetDescription className="sr-only">
-              {t('settings.notifications')} – {t('settings.manage')}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4 pb-6 space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Här kan du styra pushnotiser och e-post. Mer alternativ kommer snart.
-            </p>
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm">Nya matchningar</span>
-              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm">Meddelanden</span>
-              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
-            </div>
           </div>
         </SheetContent>
       </Sheet>

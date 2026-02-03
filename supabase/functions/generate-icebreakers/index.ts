@@ -194,6 +194,76 @@ serve(async (req) => {
     const userContext = buildProfileContext(userDisplayName, userArch, userProfile, userInterests);
     const matchedContext = buildProfileContext(matchedDisplayName, matchedArch, matchedProfile, matchedUserInterests);
 
+    // Deeper likhet/motsats explanation for every user (why they are similar or complementary)
+    const CATEGORY_TITLES: Record<string, string> = {
+      DIPLOMAT: 'Diplomaten',
+      STRATEGER: 'Strategen',
+      BYGGARE: 'Byggaren',
+      UPPTÄCKARE: 'Upptäckaren',
+    };
+    const CATEGORY_SHORT: Record<string, string> = {
+      DIPLOMAT: 'empatisk och värdesätter djupa relationer och harmoni',
+      STRATEGER: 'analytisk och målinriktad med förmåga att se helheten',
+      BYGGARE: 'praktisk och pålitlig med stark känsla för ansvar och lojalitet',
+      UPPTÄCKARE: 'spontan och äventyrlig med passion för nya upplevelser',
+    };
+    // Why this pair complements each other (user category -> matched category -> insight)
+    const COMPLEMENTARY_INSIGHT: Record<string, Record<string, string>> = {
+      DIPLOMAT: {
+        STRATEGER: 'Din empati och värme kan mjuka upp deras analytiska sida, medan deras tydlighet kan hjälpa dig att sätta gränser.',
+        BYGGARE: 'Din känslighet för relationer och deras stabilitet skapar en trygg bas – ni kan ge varandra både djup och tillförlitlighet.',
+        UPPTÄCKARE: 'Du bidrar med djup och närhet medan de bidrar med energi och nya perspektiv – tillsammans får ni både ro och äventyr.',
+      },
+      STRATEGER: {
+        DIPLOMAT: 'Din analytiska förmåga och deras empati kompletterar varandra – ni kan ge varandra både struktur och känslomässig förståelse.',
+        BYGGARE: 'Ni kombinerar vision med praktik: du ser helheten medan de gör saker verklighet – ett starkt team för att nå mål.',
+        UPPTÄCKARE: 'Din strategiska tänkande och deras spontanitet kan balansera varandra – planering möter äventyr.',
+      },
+      BYGGARE: {
+        DIPLOMAT: 'Din stabilitet ger trygghet medan de ger relationen djup och värme – ni skapar en balans mellan ordning och känsla.',
+        STRATEGER: 'Du gör saker till verklighet medan de ser helheten – tillsammans kan ni nå långsiktiga mål med förankring i vardagen.',
+        UPPTÄCKARE: 'Din pålitlighet och deras spontanitet – du ger grunden, de ger glädjen och de nya impulserna.',
+      },
+      UPPTÄCKARE: {
+        DIPLOMAT: 'Din energi och deras djup – ni kan ge varandra både äventyr och meningsfulla samtal.',
+        STRATEGER: 'Din spontanitet och deras strategiska sinne – ni kan inspirera varandra att både planera och leva i nuet.',
+        BYGGARE: 'Du bidrar med fart och nyfikethet medan de ger stabilitet och trygghet – en balans mellan äventyr och hem.',
+      },
+    };
+    const userCategory = userPersonality?.category ?? null;
+    const matchedCategory = matchedPersonality?.category ?? null;
+    const matchType: 'similar' | 'complementary' =
+      userCategory && matchedCategory && userCategory === matchedCategory ? 'similar' : 'complementary';
+    const userCategoryTitle = userCategory ? CATEGORY_TITLES[userCategory] ?? userCategory : 'samma stil';
+    const matchedCategoryTitle = matchedCategory ? CATEGORY_TITLES[matchedCategory] ?? matchedCategory : 'samma stil';
+    const userShort = userCategory ? CATEGORY_SHORT[userCategory] ?? '' : '';
+    const matchedShort = matchedCategory ? CATEGORY_SHORT[matchedCategory] ?? '' : '';
+
+    let matchTypeExplanation: string;
+    if (matchType === 'similar') {
+      if (userCategory && userShort) {
+        matchTypeExplanation =
+          `Du och ${matchedDisplayName} är båda ${userCategoryTitle} – ni är ${userShort}. ` +
+          `Som likhetsmatch delar ni samma personlighetskategori, vilket ofta gör det lättare att förstå varandras behov och värdesätta samma saker i en relation.`;
+      } else {
+        matchTypeExplanation =
+          `Ni är en likhetsmatch – ni delar liknande personlighetsdrag och värderingar, vilket ofta gör det lättare att känna samhörighet i en relation.`;
+      }
+    } else {
+      const pairInsight =
+        userCategory && matchedCategory && COMPLEMENTARY_INSIGHT[userCategory]?.[matchedCategory]
+          ? COMPLEMENTARY_INSIGHT[userCategory][matchedCategory]
+          : 'Era olika styrkor kan komplettera varandra och ge nya perspektiv i förhållandet.';
+      if (userCategory && matchedCategory && userShort && matchedShort) {
+        matchTypeExplanation =
+          `Du är ${userCategoryTitle} – du är ${userShort}. ${matchedDisplayName} är ${matchedCategoryTitle} – hen är ${matchedShort}. ` +
+          `Som motsatsmatch kompletterar ni varandra: ${pairInsight}`;
+      } else {
+        matchTypeExplanation =
+          `Ni är en motsatsmatch – era personligheter kompletterar varandra. ${pairInsight}`;
+      }
+    }
+
     // Build the enhanced prompt
     let prompt = `Du är en expert på dejting och personlighetstyper. Generera 3 kreativa, personliga och engagerande konversationsstartare för en match mellan två personer på en dejtingapp.
 
@@ -294,10 +364,23 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
       console.error('Failed to insert icebreakers:', insertError);
     }
 
+    // Save AI explanation as a comment on this matching (so it shows on every match card/profile)
+    if (matchId && matchTypeExplanation) {
+      const { error: updateErr } = await supabase
+        .from('matches')
+        .update({ personality_insight: matchTypeExplanation })
+        .eq('id', matchId);
+      if (updateErr) {
+        console.error('Failed to save match type explanation:', updateErr);
+      }
+    }
+
     return new Response(JSON.stringify({
       icebreakers,
       category: validCategory,
       situation: validSituation,
+      matchType,
+      matchTypeExplanation,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

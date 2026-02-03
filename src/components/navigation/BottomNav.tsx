@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, MessageCircle, User } from 'lucide-react';
+import { Heart, MessageCircle, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { path: '/matches', label: 'Matchning', icon: Heart },
   { path: '/chat', label: 'Chatt', icon: MessageCircle },
+  { path: '/demo-seed', label: 'Demo', icon: Sparkles },
   { path: '/profile', label: 'Profil', icon: User },
 ];
 
@@ -41,7 +42,7 @@ export function BottomNav() {
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-3 items-center justify-items-center h-[72px] px-2">
+        <div className="grid grid-cols-4 items-center justify-items-center h-[72px] px-2">
           {navItems.map((item, index) => {
             const itemActive = index === activeIndex;
 

@@ -76,7 +76,7 @@ export default function Chat() {
     callerId: string;
   } | null>(null);
   const [callLogs, setCallLogs] = useState<CallLogEntry[]>([]);
-  const [chatSearchQuery, setChatSearchQuery] = useState("");
+  const [chatSearchQuery, setChatSearchQuery] = useState(""); // chat list search (used in input + MatchList)
 
   useEffect(() => {
     if (!loading && !user) {

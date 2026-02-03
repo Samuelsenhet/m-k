@@ -5,6 +5,8 @@
     "saving": "Sparar...",
     "cancel": "Avbryt",
     "confirm": "Bekräfta",
+    "no": "Nej",
+    "yes": "Ja",
     "back": "Tillbaka",
     "next": "Nästa",
     "done": "Klar",
@@ -18,6 +20,17 @@
     "matches": "Matchningar",
     "chat": "Chatt",
     "profile": "Profil"
+  },
+  "notifications": {
+    "title": "Notifikationer",
+    "today": "Idag",
+    "your_view_this": "tittade på dig",
+    "your_love_this": "är intresserad av dig",
+    "profile_matched_with": "Din profil matchade med {{name}}!",
+    "accept": "Acceptera",
+    "reject": "Avvisa",
+    "minutes_ago": "{{count}} min sedan",
+    "no_notifications": "Inga notifikationer"
   },
   "auth": {
     "phoneTitle": "Ange ditt telefonnummer",
@@ -67,6 +80,7 @@
     "generate_new": "Generera nya förslag",
     "generate_icebreakers": "Generera isbrytare",
     "personalized_starters": "Personliga konversationsstartare baserade på era profiler",
+    "why_you_matched": "Varför ni matchade",
     "icebreaker_categories": "Välj stil",
     "category_funny": "Roligt",
     "category_deep": "Djupt",
@@ -80,6 +94,9 @@
     "followup_error": "Kunde inte generera förslag",
     "chatWith": "Chatt med",
     "online": "Online",
+    "activeNow": "Aktiv nu",
+    "writeYourMessage": "Skriv ditt meddelande",
+    "voiceCall": "Rostsamtal",
     "myMatch": "Din match",
     "you": "Du",
     "send": "Skicka",
@@ -90,8 +107,11 @@
     "voiceMsg": "Röst",
     "icebreakers": "Isbrytare",
     "aiSuggestions": "AI-förslag",
-    "footerTagline": "MÄÄK – Personlighetstest för relationer · Hitta din match",
+    "footerTagline": "MÄÄK – FaceTime-first dejtingplattform · Hitta din match",
     "conversations": "Dina konversationer",
+    "chats": "Chatt",
+    "recentMatch": "Senaste match",
+    "noResults": "Inga träffar",
     "kemiCheck": "Kemi-Check",
     "kemiCheckSubtitle": "Snabbvideo 5–10 min",
     "kemiCheckTooltip": "Kemi-Check – kort video för att testa kemi",
@@ -100,7 +120,15 @@
     "postVideoTitle": "Efter Kemi-Check – AI-förslag",
     "postVideoGenerating": "Genererar förslag...",
     "postVideoDismiss": "Stäng",
-    "postVideoError": "Kunde inte hämta förslag. Försök igen senare."
+    "postVideoError": "Kunde inte hämta förslag. Försök igen senare.",
+    "block_user": "Blockera användare",
+    "delete_person": "Ta bort person",
+    "block_user_confirm": "Är du säker på att du vill blockera denna användare?",
+    "delete_person_confirm": "Är du säker på att du vill ta bort denna person?",
+    "more_options": "Fler alternativ",
+    "incomingCall": "Inkommande samtal",
+    "slideToAnswer": "Svep för att svara",
+    "decline": "Avbryt"
   },
   "profile": {
     "title": "Min profil",
@@ -155,7 +183,20 @@
     "error_loading": "Kunde inte hämta profil",
     "error_saving": "Kunde inte spara profil",
     "profile_saved": "Profil sparad!",
-    "changes_saved": "Dina ändringar har sparats"
+    "changes_saved": "Dina ändringar har sparats",
+    "dating_intention_title": "Vad har du för avsikt med att dejta?",
+    "dating_intention_placeholder": "Berätta mer med egna ord om vad du söker.",
+    "dating_livspartner": "Livspartner",
+    "dating_langsiktigt": "Långsiktigt förhållande",
+    "dating_langsiktigt_oppen_kort": "Långsiktigt förhållande, öppen för kortvarigt",
+    "dating_kortvarigt_oppen_lang": "Kortsiktigt förhållande, öppen för långvarigt",
+    "dating_kortvarigt": "Kortsiktigt förhållande",
+    "dating_klura_ut": "Håller på att klura ut mina dejtingsmål",
+    "relationship_type_title": "Vilken typ av relation söker du?",
+    "relationship_type_placeholder": "Berätta mer med egna ord om vad du söker.",
+    "relation_monogam": "Monogam",
+    "relation_icke_monogami": "Icke-monogami",
+    "relation_ta_reda_pa": "Ta reda på min relationstyp"
   },
   "settings": {
     "title": "Inställningar",
@@ -178,7 +219,19 @@
     "verify_id": "Verifiera ID",
     "support_and_reports": "Support & rapporter",
     "terms": "Användarvillkor",
-    "privacy_policy": "Integritetspolicy"
+    "privacy_policy": "Integritetspolicy",
+    "reporting": "Rapportering",
+    "about_us": "Om oss",
+    "matching_settings": "Matchningsinställningar",
+    "age": "Ålder",
+    "distance": "Avstånd",
+    "submit": "Spara"
+  },
+  "about": {
+    "title": "Om oss",
+    "about_maak": "Om MÄÄK",
+    "intro": "MÄÄK är en dejtingapp som fokuserar på äkta kemi och meningsfulla förbindelser.",
+    "placeholder": "Här kan du lägga till mer information om företaget, teamet och vad MÄÄK står för."
   },
   "personality": {
     "testTitle": "Personlighetstest",

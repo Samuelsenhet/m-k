@@ -309,25 +309,88 @@ serve(async (req: Request) => {
       )
     }
 
-    // 7. Insert new matches into database
-    const matchInserts = newMatchesToDeliver.map((match) => ({
-      user_id: requestUserId,
-      matched_user_id: match.user.userId,
-      match_type: match.matchType,
-      match_score: match.matchScore,
-      match_date: today,
-      status: 'pending',
-      dimension_breakdown: match.dimensionBreakdown || [],
-      archetype_score: match.archetypeScore || 80,
-      anxiety_reduction_score: match.anxietyScore || 75,
-      icebreakers: match.icebreakers?.slice(0, 3) || ['Hej!', 'Hur mår du?', 'Vad gör du?'], // Always exactly 3
-      personality_insight: match.personalityInsight || 'Match insight',
-      match_age: match.user.age || 25,
-      match_archetype: match.user.archetype || 'INFJ',
-      photo_urls: match.user.photos || [],
-      bio_preview: match.user.bio || '',
-      common_interests: match.commonInterests || []
-    }))
+    // 6b. Fetch current user's personality (for likhet/motsatt explanation on every match)
+    const { data: userPersonality } = await supabaseClient
+      .from('personality_results')
+      .select('archetype, category')
+      .eq('user_id', requestUserId)
+      .maybeSingle()
+
+    const userCategory = (userPersonality as { category?: string } | null)?.category ?? null
+
+    // Archetype code -> category (same as frontend ARCHETYPE_INFO)
+    const ARCHETYPE_CATEGORY: Record<string, string> = {
+      INFJ: 'DIPLOMAT', INFP: 'DIPLOMAT', ENFJ: 'DIPLOMAT', ENFP: 'DIPLOMAT',
+      INTJ: 'STRATEGER', INTP: 'STRATEGER', ENTJ: 'STRATEGER', ENTP: 'STRATEGER',
+      ISTJ: 'BYGGARE', ISFJ: 'BYGGARE', ESTJ: 'BYGGARE', ESFJ: 'BYGGARE',
+      ISTP: 'UPPTÄCKARE', ISFP: 'UPPTÄCKARE', ESTP: 'UPPTÄCKARE', ESFP: 'UPPTÄCKARE',
+    }
+    const CATEGORY_TITLES: Record<string, string> = {
+      DIPLOMAT: 'Diplomaten', STRATEGER: 'Strategen', BYGGARE: 'Byggaren', UPPTÄCKARE: 'Upptäckaren',
+    }
+    const CATEGORY_SHORT: Record<string, string> = {
+      DIPLOMAT: 'empatisk och värdesätter djupa relationer och harmoni',
+      STRATEGER: 'analytisk och målinriktad med förmåga att se helheten',
+      BYGGARE: 'praktisk och pålitlig med stark känsla för ansvar och lojalitet',
+      UPPTÄCKARE: 'spontan och äventyrlig med passion för nya upplevelser',
+    }
+    const COMPLEMENTARY_INSIGHT: Record<string, Record<string, string>> = {
+      DIPLOMAT: { STRATEGER: 'Din empati och värme kan mjuka upp deras analytiska sida, medan deras tydlighet kan hjälpa dig att sätta gränser.', BYGGARE: 'Din känslighet för relationer och deras stabilitet skapar en trygg bas – ni kan ge varandra både djup och tillförlitlighet.', UPPTÄCKARE: 'Du bidrar med djup och närhet medan de bidrar med energi och nya perspektiv – tillsammans får ni både ro och äventyr.' },
+      STRATEGER: { DIPLOMAT: 'Din analytiska förmåga och deras empati kompletterar varandra – ni kan ge varandra både struktur och känslomässig förståelse.', BYGGARE: 'Ni kombinerar vision med praktik: du ser helheten medan de gör saker verklighet – ett starkt team för att nå mål.', UPPTÄCKARE: 'Din strategiska tänkande och deras spontanitet kan balansera varandra – planering möter äventyr.' },
+      BYGGARE: { DIPLOMAT: 'Din stabilitet ger trygghet medan de ger relationen djup och värme – ni skapar en balans mellan ordning och känsla.', STRATEGER: 'Du gör saker till verklighet medan de ser helheten – tillsammans kan ni nå långsiktiga mål med förankring i vardagen.', UPPTÄCKARE: 'Din pålitlighet och deras spontanitet – du ger grunden, de ger glädjen och de nya impulserna.' },
+      UPPTÄCKARE: { DIPLOMAT: 'Din energi och deras djup – ni kan ge varandra både äventyr och meningsfulla samtal.', STRATEGER: 'Din spontanitet och deras strategiska sinne – ni kan inspirera varandra att både planera och leva i nuet.', BYGGARE: 'Du bidrar med fart och nyfikethet medan de ger stabilitet och trygghet – en balans mellan äventyr och hem.' },
+    }
+
+    function buildMatchTypeExplanation(
+      uCat: string | null,
+      mCat: string | null,
+      matchedName: string,
+      matchType: MatchType
+    ): string {
+      const userCategoryTitle = uCat ? CATEGORY_TITLES[uCat] ?? uCat : 'samma stil'
+      const matchedCategoryTitle = mCat ? CATEGORY_TITLES[mCat] ?? mCat : 'samma stil'
+      const userShort = uCat ? CATEGORY_SHORT[uCat] ?? '' : ''
+      const matchedShort = mCat ? CATEGORY_SHORT[mCat] ?? '' : ''
+      if (matchType === 'similar') {
+        if (uCat && userShort) {
+          return `Du och ${matchedName} är båda ${userCategoryTitle} – ni är ${userShort}. Som likhetsmatch delar ni samma personlighetskategori, vilket ofta gör det lättare att förstå varandras behov och värdesätta samma saker i en relation.`
+        }
+        return 'Ni är en likhetsmatch – ni delar liknande personlighetsdrag och värderingar, vilket ofta gör det lättare att känna samhörighet i en relation.'
+      }
+      const pairInsight = uCat && mCat && COMPLEMENTARY_INSIGHT[uCat]?.[mCat]
+        ? COMPLEMENTARY_INSIGHT[uCat][mCat]
+        : 'Era olika styrkor kan komplettera varandra och ge nya perspektiv i förhållandet.'
+      if (uCat && mCat && userShort && matchedShort) {
+        return `Du är ${userCategoryTitle} – du är ${userShort}. ${matchedName} är ${matchedCategoryTitle} – hen är ${matchedShort}. Som motsatsmatch kompletterar ni varandra: ${pairInsight}`
+      }
+      return `Ni är en motsatsmatch – era personligheter kompletterar varandra. ${pairInsight}`
+    }
+
+    // 7. Insert new matches into database (with explanation for every match so it shows directly in profile)
+    const matchInserts = newMatchesToDeliver.map((match) => {
+      const matchedArchetype = match.user.archetype || 'INFJ'
+      const matchedCategory = ARCHETYPE_CATEGORY[matchedArchetype] ?? null
+      const matchedDisplayName = match.user.displayName || 'Match'
+      const explanation = buildMatchTypeExplanation(userCategory, matchedCategory, matchedDisplayName, match.matchType)
+      return {
+        user_id: requestUserId,
+        matched_user_id: match.user.userId,
+        match_type: match.matchType,
+        match_score: match.matchScore,
+        match_date: today,
+        status: 'pending',
+        dimension_breakdown: match.dimensionBreakdown || [],
+        archetype_score: match.archetypeScore || 80,
+        anxiety_reduction_score: match.anxietyScore || 75,
+        icebreakers: match.icebreakers?.slice(0, 3) || ['Hej!', 'Hur mår du?', 'Vad gör du?'],
+        personality_insight: match.personalityInsight || explanation,
+        match_age: match.user.age || 25,
+        match_archetype: matchedArchetype,
+        photo_urls: match.user.photos || [],
+        bio_preview: match.user.bio || '',
+        common_interests: match.commonInterests || []
+      }
+    })
 
     const { data: insertedMatches, error: insertError } = await supabaseClient
       .from('matches')

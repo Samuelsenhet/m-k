@@ -140,6 +140,11 @@ export default function Matches() {
               </p>
             </div>
             <div className="flex gap-1">
+              <Button asChild variant="ghost" size="icon" className="text-primary" title="Se demo">
+                <Link to="/demo-seed">
+                  <Sparkles className="w-5 h-5" />
+                </Link>
+              </Button>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -147,11 +152,11 @@ export default function Matches() {
                 className={cn(showAIPanel && "bg-primary/10 text-primary")}
               >
                 <Brain className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={refreshMatches}>
-              <RefreshCw className="w-5 h-5" />
-            </Button>
-          </div>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={refreshMatches}>
+                <RefreshCw className="w-5 h-5" />
+              </Button>
+            </div>
         </div>
 
         {/* Premium Matching System Info Card */}
@@ -209,15 +214,24 @@ export default function Matches() {
         )}
 
         {mutualMatches.length > 0 && (
-          <div className="mb-8 animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
-            <h2 className="text-2xl font-bold mb-5 flex items-center gap-2.5">
+          <motion.div
+            className="mb-8"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+          >
+            <motion.h2
+              className="text-2xl font-bold mb-5 flex items-center gap-2.5"
+              variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="w-8 h-8 rounded-xl bg-gradient-rose-glow flex items-center justify-center shadow-glow-rose">
                 <Heart className="w-5 h-5 text-white" fill="white" />
               </div>
               <span className="bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
                 Ömsesidiga matchningar ({mutualMatches.length})
               </span>
-            </h2>
+            </motion.h2>
             <div className="space-y-3">
               {mutualMatches.map((match, index) => {
                 const archetype = match.matchedUser.archetype as ArchetypeCode | undefined;
@@ -226,10 +240,13 @@ export default function Matches() {
                 const primaryPhoto = match.matchedUser.photos?.[0];
 
                 return (
-                  <div 
-                    key={match.id} 
-                    className="card-premium p-4 bg-card/90 border-border animate-scale-in"
-                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  <motion.div
+                    key={match.id}
+                    variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="card-premium p-4 bg-card/90 border-border rounded-2xl vibe-card-hover"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -266,11 +283,11 @@ export default function Matches() {
                         </Link>
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {pendingMatches.length > 0 && (
@@ -451,6 +468,19 @@ export default function Matches() {
                         </p>
                       )}
 
+                      {/* AI comment: why likhet/motsatt – attractive card */}
+                      {match.personalityInsight && (
+                        <div className="mb-5 rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/10 to-primary/5 p-4 shadow-card">
+                          <p className="flex items-center gap-2 text-sm font-bold text-primary mb-2">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                              <Sparkles className="h-3.5 w-3.5" />
+                            </span>
+                            Varför ni matchade
+                          </p>
+                          <p className="text-sm text-muted-foreground leading-relaxed pl-9">{match.personalityInsight}</p>
+                        </div>
+                      )}
+
                       {/* Premium Match score bar */}
                       <div className="mb-5">
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner">
@@ -505,13 +535,28 @@ export default function Matches() {
         )}
 
         {!error && pendingMatches.length === 0 && mutualMatches.length === 0 && (
-          <div className="card-premium text-center py-16 animate-scale-in">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-3xl gradient-primary flex items-center justify-center shadow-glow-primary">
+          <motion.div
+            className="card-premium text-center py-16 rounded-2xl"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+          >
+            <motion.div
+              className="w-16 h-16 mx-auto mb-6 rounded-3xl gradient-primary flex items-center justify-center shadow-glow-primary"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
               <Heart className="w-8 h-8 text-primary-foreground" />
-            </div>
+            </motion.div>
             <p className="text-lg font-bold text-foreground mb-2">Inga matchningar just nu</p>
-            <p className="text-sm text-muted-foreground font-medium">Kom tillbaka imorgon för nya matchningar! ✨</p>
-          </div>
+            <p className="text-sm text-muted-foreground font-medium mb-6">Kom tillbaka imorgon för nya matchningar! ✨</p>
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/demo-seed">
+                <Sparkles className="w-4 h-4" />
+                Se demo – matchningar & chatt
+              </Link>
+            </Button>
+          </motion.div>
         )}
         </div>
       </div>

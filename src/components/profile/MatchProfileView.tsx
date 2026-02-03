@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Camera, MapPin, ArrowLeft, Send, MoreVertical, ChevronUp, AlertCircle } from 'lucide-react';
+import { Camera, MapPin, ArrowLeft, Send, MoreVertical, ChevronUp, AlertCircle, Sparkles } from 'lucide-react';
 import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
-import { ARCHETYPE_INFO, ArchetypeCode } from '@/types/personality';
+import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -24,6 +24,13 @@ interface MatchProfileData {
   height: string | null;
   education?: string | null;
   gender?: string | null;
+  instagram?: string | null;
+  linkedin?: string | null;
+  id_verification_status?: string | null;
+  dating_intention?: string | null;
+  dating_intention_extra?: string | null;
+  relationship_type?: string | null;
+  relationship_type_extra?: string | null;
 }
 
 interface PhotoSlot {
@@ -35,22 +42,36 @@ interface PhotoSlot {
 interface MatchProfileViewProps {
   userId: string;
   matchId?: string;
+  matchScore?: number;
+  /** AI explanation for why this match is likhet/motsatt – shown as comment on matching */
+  personalityInsight?: string | null;
   onBack?: () => void;
   onLike?: () => void;
   onPass?: () => void;
 }
 
+const CATEGORY_STYLES: Record<string, { className: string; label: string }> = {
+  DIPLOMAT: { className: 'badge-diplomat', label: 'Diplomat' },
+  STRATEGER: { className: 'badge-strateger', label: 'Strateg' },
+  BYGGARE: { className: 'badge-byggare', label: 'Byggare' },
+  UPPTÄCKARE: { className: 'badge-upptackare', label: 'Upptäckare' },
+};
+
 export function MatchProfileView({ 
   userId, 
   matchId,
+  matchScore,
   onBack
 }: MatchProfileViewProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<MatchProfileData | null>(null);
   const [photos, setPhotos] = useState<PhotoSlot[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [archetype, setArchetype] = useState<string | null>(null);
+  const [showFullInfo, setShowFullInfo] = useState(false);
+  const sheetTouchStartY = useRef<number>(0);
 
   const fetchData = useCallback(async () => {
     if (!userId) return;
@@ -60,7 +81,7 @@ export function MatchProfileView({
       const [profileRes, photosRes, archetypeRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin, education, gender, id_verification_status')
+          .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin, education, gender, id_verification_status, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra')
           .eq(profileKey, userId)
           .single(),
         supabase
@@ -134,12 +155,6 @@ export function MatchProfileView({
     const cm = parseInt(height);
     if (isNaN(cm)) return null;
     return `${cm} cm`;
-  };
-
-  const getUsername = () => {
-    const name = profile?.display_name || '';
-    if (!name) return '@user';
-    return `@${name.toLowerCase().replace(/\s+/g, '_')}`;
   };
 
   const archetypeInfo = archetype ? ARCHETYPE_INFO[archetype as ArchetypeCode] : null;
@@ -250,19 +265,33 @@ export function MatchProfileView({
                   <span className="text-xl text-white/90">{age}</span>
                 )}
               </div>
-              
-              <p className="text-sm text-blue-400 font-medium">
-                {getUsername()}
-              </p>
+
               {(profile?.instagram || profile?.linkedin) && (
-                <p className="text-sm text-white/80 font-medium">
-                  {[
-                    profile?.instagram && `Instagram ${profile.instagram.startsWith('@') ? profile.instagram : `@${profile.instagram}`}`,
-                    profile?.linkedin && `LinkedIn ${profile.linkedin.startsWith('@') ? profile.linkedin : `@${profile.linkedin}`}`,
-                  ].filter(Boolean).join(' · ')}
+                <p className="text-sm text-white/80 font-medium flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                  {profile?.instagram && (
+                    <a
+                      href={`https://instagram.com/${getInstagramUsername(profile.instagram)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline"
+                    >
+                      Instagram {profile.instagram.startsWith('@') ? profile.instagram : `@${profile.instagram}`}
+                    </a>
+                  )}
+                  {profile?.instagram && profile?.linkedin && <span>·</span>}
+                  {profile?.linkedin && (
+                    <a
+                      href={`https://linkedin.com/in/${getLinkedInUsername(profile.linkedin)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline"
+                    >
+                      LinkedIn {profile.linkedin.startsWith('@') ? profile.linkedin : `@${profile.linkedin}`}
+                    </a>
+                  )}
                 </p>
               )}
-              
+
               {profile?.work && (
                 <p className="text-base text-white/90 font-medium">
                   {profile.work}
@@ -276,12 +305,36 @@ export function MatchProfileView({
                 </p>
               )}
 
-              {/* Personality Badge */}
+              {/* Personality Badge – same as ProfileView: category + archetype style */}
               {archetypeInfo && (
                 <div className="mt-2">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30">
-                    {archetypeInfo.emoji} {archetypeInfo.title}
+                  <span className={cn(
+                    "inline-block px-3 py-1 rounded-full text-xs font-semibold border border-white/30",
+                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/20 text-white'
+                  )}>
+                    {CATEGORY_INFO[archetypeInfo.category].emoji} {CATEGORY_INFO[archetypeInfo.category].title}
                   </span>
+                </div>
+              )}
+
+              {/* Matchning – match score (keep in matching profile) */}
+              {matchScore != null && (
+                <div className="mt-3 flex items-center justify-between p-3 rounded-xl bg-white/10 border border-white/20">
+                  <span className="text-sm font-medium text-white/80">Matchning</span>
+                  <span className="text-xl font-bold text-rose-400">{matchScore}%</span>
+                </div>
+              )}
+
+              {/* AI explanation: why likhet/motsatt – visible directly in profile (no need to open "Visa mer") */}
+              {personalityInsight && (
+                <div className="mt-3 p-4 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 border border-white/25 shadow-lg shadow-black/10 backdrop-blur-sm">
+                  <p className="flex items-center gap-2 text-sm font-bold text-white mb-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/30 text-primary-foreground">
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </span>
+                    {t('chat.why_you_matched', 'Varför ni matchade')}
+                  </p>
+                  <p className="text-xs text-white/90 leading-relaxed line-clamp-3 pl-9">{personalityInsight}</p>
                 </div>
               )}
 
@@ -304,13 +357,30 @@ export function MatchProfileView({
           </div>
         </div>
 
-        {/* Scrollable Info Section - Expandable */}
+        {/* Scrollable Info Section – same structure and behaviour as ProfileView */}
         {showFullInfo && (
-          <div className="absolute bottom-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl rounded-t-3xl max-h-[70vh] overflow-y-auto overflow-x-hidden animate-slide-up overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div
+            className="absolute bottom-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl rounded-t-3xl max-h-[70vh] overflow-y-auto overflow-x-hidden animate-slide-up overscroll-contain"
+            style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+          >
             <div className="p-6 space-y-6 pb-safe-bottom">
-              {/* Drag indicator */}
-              <div className="flex justify-center pt-2 pb-4">
-                <div className="w-12 h-1 bg-white/30 rounded-full" />
+              {/* Drag handle – tap or swipe down to close (same as ProfileView) */}
+              <div
+                className="flex justify-center pt-2 pb-4 cursor-grab active:cursor-grabbing touch-manipulation"
+                onClick={() => setShowFullInfo(false)}
+                onTouchStart={(e) => {
+                  sheetTouchStartY.current = e.touches[0].clientY;
+                }}
+                onTouchEnd={(e) => {
+                  const endY = e.changedTouches[0].clientY;
+                  if (endY - sheetTouchStartY.current > 50) setShowFullInfo(false);
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Dra ner för att stänga"
+                onKeyDown={(e) => e.key === 'Enter' && setShowFullInfo(false)}
+              >
+                <div className="w-12 h-1 bg-white/30 rounded-full pointer-events-none" />
               </div>
 
               {/* Bio Section */}
@@ -321,12 +391,124 @@ export function MatchProfileView({
                 </div>
               )}
 
-              {/* Personality Section */}
+              {/* Dejtingavsikter & Relationstyper */}
+              {(profile?.dating_intention || profile?.relationship_type || profile?.dating_intention_extra || profile?.relationship_type_extra) && (
+                <div className="space-y-3">
+                  {profile.dating_intention && (
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-1">{t('profile.dating_intention_title')}</h2>
+                      <p className="text-white/90 font-medium">
+                        {t(('profile.dating_' + profile.dating_intention) as 'profile.dating_livspartner')}
+                      </p>
+                      {profile.dating_intention_extra && (
+                        <p className="text-white/80 text-sm mt-1">{profile.dating_intention_extra}</p>
+                      )}
+                    </div>
+                  )}
+                  {profile.relationship_type && (
+                    <div>
+                      <h2 className="text-xl font-bold text-white mb-1">{t('profile.relationship_type_title')}</h2>
+                      <p className="text-white/90 font-medium">
+                        {t(('profile.relation_' + profile.relationship_type) as 'profile.relation_monogam')}
+                      </p>
+                      {profile.relationship_type_extra && (
+                        <p className="text-white/80 text-sm mt-1">{profile.relationship_type_extra}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* AI comment: why likhet/motsatt – attractive card */}
+              {personalityInsight && (
+                <div className="rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/10 to-primary/5 p-4 shadow-card">
+                  <p className="flex items-center gap-2 text-base font-bold text-primary mb-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/20 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                    </span>
+                    {t('chat.why_you_matched', 'Varför ni matchade')}
+                  </p>
+                  <p className="text-sm text-foreground/90 leading-relaxed pl-10">{personalityInsight}</p>
+                </div>
+              )}
+
+              {/* Matchning – match score (keep this in matching profile) */}
+              {matchScore != null && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-white/10">
+                  <span className="text-sm font-medium text-muted-foreground">Matchning</span>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
+                    {matchScore}%
+                  </span>
+                </div>
+              )}
+
+              {/* Personality Section – same order as ProfileView: 1. Main category, 2. Four archetypes grid, 3. Their archetype card */}
               {archetypeInfo && (
                 <div className="space-y-4">
+                  {/* 1. En huvudkategori */}
                   <div>
-                    <h2 className="text-xl font-bold text-white mb-3">Personlighetstyp</h2>
-                    <div className="p-4 rounded-2xl border bg-white/10 border-white/20">
+                    <h2 className="text-xl font-bold text-white mb-2">{t('personality.main_category_label', '1. En huvudkategori')}</h2>
+                    <p className="text-sm text-white/70 mb-2">{t('personality.main_category_sub', 'Din primära förbindelsestil')}</p>
+                    <div className={cn(
+                      "p-4 rounded-2xl border flex items-center gap-3",
+                      CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/10 border-white/20'
+                    )}>
+                      <span className="text-4xl">{CATEGORY_INFO[archetypeInfo.category].emoji}</span>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">{CATEGORY_INFO[archetypeInfo.category].title}</h3>
+                        <p className="text-sm text-white/80">{CATEGORY_INFO[archetypeInfo.category].description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Fyra arketyper – grid with their type highlighted */}
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-2">{t('personality.four_archetypes_label', 'Fyra arketyper')}</h2>
+                    <p className="text-sm text-white/70 mb-3">{t('personality.four_archetypes_sub', 'Olika sidor av personligheten – deras typ är markerad')}</p>
+                    <p className="text-sm text-white/90 mb-3 font-medium">
+                      {t('personality.test_result_line', 'Deras typ: {{title}} ({{code}}) – 1 av 4 i {{category}}.', {
+                        title: archetypeInfo.title,
+                        code: archetypeInfo.name,
+                        category: CATEGORY_INFO[archetypeInfo.category].title,
+                      })}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {ARCHETYPE_CODES_BY_CATEGORY[archetypeInfo.category as PersonalityCategory].map((code) => {
+                        const info = ARCHETYPE_INFO[code];
+                        const style = CATEGORY_STYLES[archetypeInfo.category];
+                        const isMatchArchetype = archetype === code;
+                        return (
+                          <div
+                            key={code}
+                            className={cn(
+                              'p-3 rounded-xl border flex items-center gap-2',
+                              style?.className || 'bg-white/10 border-white/20',
+                              isMatchArchetype && 'ring-2 ring-white/50'
+                            )}
+                          >
+                            <span className="text-2xl">{info.emoji}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-white truncate">
+                                {info.title}
+                                {isMatchArchetype && (
+                                  <span className="ml-1 text-xs font-normal text-white/80">({t('personality.their_type', 'deras typ')})</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-white/70">{info.name}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3. Deras arketyp – full card (same as "Din arketyp" in ProfileView) */}
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-3">{t('personality.their_archetype_card', 'Deras arketyp')}</h2>
+                    <div className={cn(
+                      "p-4 rounded-2xl border",
+                      CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/10 border-white/20'
+                    )}>
                       <div className="flex items-center gap-3 mb-3">
                         <span className="text-4xl">{archetypeInfo.emoji}</span>
                         <div>
@@ -335,10 +517,8 @@ export function MatchProfileView({
                         </div>
                       </div>
                       <p className="text-white/80 mb-4">{archetypeInfo.description}</p>
-                      
-                      {/* Strengths */}
                       <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-white/90 mb-2">Stärkor</h4>
+                        <h4 className="text-sm font-semibold text-white/90 mb-2">{t('profile.strengths', 'Styrkor')}</h4>
                         <div className="flex flex-wrap gap-2">
                           {archetypeInfo.strengths.map((strength, index) => (
                             <span
@@ -350,8 +530,6 @@ export function MatchProfileView({
                           ))}
                         </div>
                       </div>
-
-                      {/* Love Style */}
                       <div className="pt-3 border-t border-white/10">
                         <p className="text-sm text-white/70">
                           <span className="font-semibold text-white">I relationer:</span> {archetypeInfo.loveStyle}
@@ -430,6 +608,17 @@ export function MatchProfileView({
                   </div>
                 )}
               </div>
+
+              {/* Chatta CTA – same position as "Redigera profil" in ProfileView */}
+              {matchId && (
+                <Button
+                  onClick={() => navigate(`/chat?match=${matchId}`)}
+                  className="w-full bg-primary text-white hover:bg-primary/90 h-12 rounded-full font-medium [&_svg]:text-white gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Chatta
+                </Button>
+              )}
             </div>
           </div>
         )}

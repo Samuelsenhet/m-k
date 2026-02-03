@@ -22,6 +22,10 @@ interface ProfileData {
   education?: string | null;
   gender?: string | null;
   id_verification_status?: string | null;
+  dating_intention?: string | null;
+  dating_intention_extra?: string | null;
+  relationship_type?: string | null;
+  relationship_type_extra?: string | null;
 }
 
 interface PhotoSlot {
@@ -321,13 +325,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                 </div>
               )}
 
-              {/* Progress indicator */}
-              <div className="flex gap-1 mt-3">
-                <div className="h-1 flex-1 bg-white rounded-full" />
-                <div className="h-1 flex-1 bg-white/40 rounded-full" />
-                <div className="h-1 flex-1 bg-white/40 rounded-full" />
-              </div>
-
               {/* Edit profile + Expand */}
               <div className="mt-3 flex flex-col gap-2">
                 <Button
@@ -384,6 +381,34 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               <div>
                 <h2 className="text-xl font-bold text-white mb-2">Om mig</h2>
                 <p className="text-white/80 leading-relaxed">{profile.bio}</p>
+              </div>
+            )}
+
+            {/* Dejtingavsikter & Relationstyper */}
+            {(profile?.dating_intention || profile?.relationship_type || profile?.dating_intention_extra || profile?.relationship_type_extra) && (
+              <div className="space-y-3">
+                {profile.dating_intention && (
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-1">{t('profile.dating_intention_title')}</h2>
+                    <p className="text-white/90 font-medium">
+                      {t(('profile.dating_' + profile.dating_intention) as 'profile.dating_livspartner')}
+                    </p>
+                    {profile.dating_intention_extra && (
+                      <p className="text-white/80 text-sm mt-1">{profile.dating_intention_extra}</p>
+                    )}
+                  </div>
+                )}
+                {profile.relationship_type && (
+                  <div>
+                    <h2 className="text-xl font-bold text-white mb-1">{t('profile.relationship_type_title')}</h2>
+                    <p className="text-white/90 font-medium">
+                      {t(('profile.relation_' + profile.relationship_type) as 'profile.relation_monogam')}
+                    </p>
+                    {profile.relationship_type_extra && (
+                      <p className="text-white/80 text-sm mt-1">{profile.relationship_type_extra}</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

@@ -62,6 +62,7 @@ const AppContent = () => {
           <Route path="/match/:userId" element={<ViewMatchProfile />} />
           <Route path="/view-match" element={<ViewMatchProfile />} />
           <Route path="/demo-seed" element={<DemoSeed />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/personality-guide" element={<PersonalityGuide />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Terms />} />
