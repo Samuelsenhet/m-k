@@ -9,7 +9,7 @@ Quick list so the app is ready before you start building features.
 ## 1. Environment
 
 - [x] **`.env` exists** – Copy from `.env.example`: `cp .env.example .env`
-- [ ] **Real Supabase values** – Replace placeholders with Project URL and anon key from [Supabase → Settings → API](https://supabase.com/dashboard). Never commit `.env`.
+- [x] **Real Supabase values** – Replace placeholders with Project URL and anon key from [Supabase → Settings → API](https://supabase.com/dashboard). Never commit `.env`. *(Manual step – see `.env.example` and [CHECK_SETUP.md](../CHECK_SETUP.md) for instructions.)*
 - [ ] **Restart dev server** after changing `.env`: `npm run dev`
 
 See [CHECK_SETUP.md](../CHECK_SETUP.md) if you see “Kunde inte ansluta till servern” or missing Supabase config.
