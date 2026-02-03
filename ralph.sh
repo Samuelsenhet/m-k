@@ -12,31 +12,19 @@ for ((i=1; i<=$MAX; i++)); do
     echo "  Iteration $i of $MAX"
     echo "==========================================="
 
-    result=$(claude --dangerously-skip-permissions -p "You are Ralph, an autonomous coding agent. Do exactly ONE task per iteration.
-
-## Project Context
-
-MÄÄK is a Swedish personality-based dating app with:
-- React 18 + TypeScript + Vite + Supabase
-- Premium mobile-first design system (21st.dev inspired)
-- Glassmorphism, gradients, and smooth animations throughout
-- Design system includes: .glass, .card-premium, .gradient-rose-glow, .shadow-glow-rose
-- Mobile-optimized with safe-area handling and touch targets (min 44px)
-- Recent work: Complete premium mobile design overhaul completed (Jan 2026)
+    PROMPT='You are Ralph, an autonomous coding agent. Do exactly ONE task per iteration.
 
 ## Steps
 
-1. Learn about the project structure by listing files and folders in the root directory.
-2. Read PRD.md to understand the project.
-3. Read PRD.md and find the first task that is NOT complete (marked [ ]).
-4. Read progress.txt - check the Learnings section first for patterns from previous iterations.
-5. Implement that ONE task only.
-6. Run tests/typecheck to verify it works.
+1. Read docs/PRE_DEV_CHECKLIST.md (Pre-dev checklist) and find the first task that is NOT complete (first line with `- [ ]`).
+2. Read progress.txt - check the Learnings section first for patterns from previous iterations.
+3. Implement that ONE task only (e.g. add docs, scripts, or verification; for human-only items like "copy .env", add a note or verify .env.example and doc links).
+4. Run tests/typecheck to verify nothing is broken: `npm run typecheck` and `npm run build`.
 
 ## Critical: Only Complete If Tests Pass
 
 - If tests PASS:
-  - Update PRD.md to mark the task complete (change [ ] to [x])
+  - Update docs/PRE_DEV_CHECKLIST.md to mark the task complete (change `[ ]` to `[x]` for that item)
   - Commit your changes with message: feat: [task description]
   - Append what worked to progress.txt
 
@@ -58,29 +46,20 @@ Append to progress.txt using this format:
   - Useful context
 ---
 
-## Design System Notes
-
-When working on UI components:
-- Use premium design classes: .card-premium, .glass, .glass-dark
-- Apply gradients: .gradient-rose-glow, .gradient-violet-glow, .gradient-emerald-glow
-- Use premium shadows: .shadow-glow-rose, .shadow-glow-violet
-- Add animations: .animate-scale-in, .animate-slide-in-right, .animate-bounce-gentle
-- Ensure mobile touch targets are at least 44px (use min-h-[44px])
-- Add .touch-manipulation and .active:scale-95 for better mobile UX
-- Use .safe-area-top and .safe-area-bottom for notch handling
-
 ## Update AGENTS.md (If Applicable)
 
 If you discover a reusable pattern that future work should know about:
 - Check if AGENTS.md exists in the project root
-- Add patterns like: 'This codebase uses X for Y' or 'Always do Z when changing W'
+- Add patterns like: "This codebase uses X for Y" or "Always do Z when changing W"
 - Only add genuinely reusable knowledge, not task-specific details
 
 ## End Condition
 
-After completing your task, check PRD.md:
-- If ALL tasks are [x], output exactly: <promise>COMPLETE</promise>
-- If tasks remain [ ], just end your response (next iteration will continue)")
+After completing your task, check docs/PRE_DEV_CHECKLIST.md:
+- If ALL checklist items are [x], output exactly: <promise>COMPLETE</promise>
+- If any item is still [ ], just end your response (next iteration will continue)'
+
+    result=$(claude --dangerously-skip-permissions -p "$PROMPT" 2>&1)
 
     echo "$result"
     echo ""
