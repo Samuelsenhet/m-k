@@ -225,3 +225,26 @@
   - Progress is simulated (0 → 100) after upload completes successfully
   - Build output increased to 680KB (still within 600KB gzipped target at 201KB)
 ---
+
+## Ralph task source: Pre-dev checklist
+
+- Ralph (ralph.sh / ralph.ps1) now uses docs/PRE_DEV_CHECKLIST.md as the task list instead of PRD.md.
+- Steps: find first `- [ ]` in PRE_DEV_CHECKLIST.md, implement that one task, run `npm run typecheck` and `npm run build`, then mark `[x]` and commit.
+- End condition: when all checklist items are [x], output <promise>COMPLETE</promise>.
+- Run from project root: `./ralph.sh` or `bash ralph.sh` (optionally `ralph.sh 5 2` for 5 iterations, 2s sleep). On Windows: `.\ralph.ps1`.
+- PRE_DEV_CHECKLIST.md updated with a short note that Ralph works through it.
+
+## Iteration 8 - Pre-dev Checklist: .env exists
+- What was implemented:
+  - Verified `.env` file already exists (created by developer)
+  - Verified `.env.example` has proper placeholders and instructions
+  - Verified `.gitignore` correctly excludes `.env` and `.env.*` but keeps `.env.example`
+  - Marked checklist item complete (human-only task already satisfied)
+- Files changed:
+  - `docs/PRE_DEV_CHECKLIST.md` - Marked ".env exists" item as [x]
+- Learnings for future iterations:
+  - Human-only tasks (like copying .env) can be marked complete when verified the file exists
+  - Don't inspect .env contents — it contains secrets
+  - .env.example has clear 3-step instructions (copy, replace, add to Vercel)
+  - .gitignore has comprehensive .env exclusion rules (lines 27-33, 55)
+---
