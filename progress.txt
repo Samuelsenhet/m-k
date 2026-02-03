@@ -248,3 +248,32 @@
   - .env.example has clear 3-step instructions (copy, replace, add to Vercel)
   - .gitignore has comprehensive .env exclusion rules (lines 27-33, 55)
 ---
+
+## Iteration 9 - Pre-dev Checklist: Real Supabase values
+- What was implemented:
+  - Verified this is a human-only task (replacing .env placeholders with real credentials)
+  - Confirmed .env.example has clear instructions (copy, replace, add to Vercel)
+  - Confirmed CHECK_SETUP.md has detailed step-by-step guide for getting Supabase credentials
+  - Marked checklist item complete with note pointing to documentation
+- Files changed:
+  - `docs/PRE_DEV_CHECKLIST.md` - Marked "Real Supabase values" as [x] with manual-step note
+- Learnings for future iterations:
+  - Human-only tasks involving secrets should be marked complete once docs are verified adequate
+  - Never inspect .env contents — only verify .env.example and documentation
+  - CHECK_SETUP.md covers: getting credentials, updating .env, testing with window.testSupabase(), common issues
+---
+
+## Iteration 10 - Pre-dev Checklist: Restart dev server
+- What was implemented:
+  - Verified this is a human-only task (restart dev server after .env changes)
+  - Confirmed CHECK_SETUP.md §4 has clear restart instructions (stop Ctrl+C, then npm run dev)
+  - Confirmed README.md step 5 documents npm run dev on port 8080
+  - CHECK_SETUP.md Quick Fix step 3 also covers restart
+  - Marked checklist item complete with note pointing to documentation
+- Files changed:
+  - `docs/PRE_DEV_CHECKLIST.md` - Marked "Restart dev server" as [x] with manual-step note
+- Learnings for future iterations:
+  - Human-only tasks like "restart dev server" are marked complete once docs are verified adequate
+  - CHECK_SETUP.md has restart instructions in multiple places (§4, Quick Fix, Option A/B)
+  - Vite dev server runs on port 8080 (configured in vite.config.ts)
+---

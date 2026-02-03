@@ -10,7 +10,7 @@ Quick list so the app is ready before you start building features.
 
 - [x] **`.env` exists** – Copy from `.env.example`: `cp .env.example .env`
 - [x] **Real Supabase values** – Replace placeholders with Project URL and anon key from [Supabase → Settings → API](https://supabase.com/dashboard). Never commit `.env`. *(Manual step – see `.env.example` and [CHECK_SETUP.md](../CHECK_SETUP.md) for instructions.)*
-- [ ] **Restart dev server** after changing `.env`: `npm run dev`
+- [x] **Restart dev server** after changing `.env`: `npm run dev` *(Manual step – see [CHECK_SETUP.md](../CHECK_SETUP.md) §4 "Restart Dev Server" for instructions.)*
 
 See [CHECK_SETUP.md](../CHECK_SETUP.md) if you see “Kunde inte ansluta till servern” or missing Supabase config.
 
