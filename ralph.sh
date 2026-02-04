@@ -16,15 +16,15 @@ for ((i=1; i<=$MAX; i++)); do
 
 ## Steps
 
-1. Read docs/PRE_DEV_CHECKLIST.md (Pre-dev checklist) and find the first task that is NOT complete (first line with `- [ ]`).
+1. Read PRD.md and find the first task that is NOT complete (marked [ ]).
 2. Read progress.txt - check the Learnings section first for patterns from previous iterations.
-3. Implement that ONE task only (e.g. add docs, scripts, or verification; for human-only items like "copy .env", add a note or verify .env.example and doc links).
-4. Run tests/typecheck to verify nothing is broken: `npm run typecheck` and `npm run build`.
+3. Implement that ONE task only.
+4. Run tests/typecheck to verify it works.
 
 ## Critical: Only Complete If Tests Pass
 
 - If tests PASS:
-  - Update docs/PRE_DEV_CHECKLIST.md to mark the task complete (change `[ ]` to `[x]` for that item)
+  - Update PRD.md to mark the task complete (change [ ] to [x])
   - Commit your changes with message: feat: [task description]
   - Append what worked to progress.txt
 
@@ -55,9 +55,9 @@ If you discover a reusable pattern that future work should know about:
 
 ## End Condition
 
-After completing your task, check docs/PRE_DEV_CHECKLIST.md:
-- If ALL checklist items are [x], output exactly: <promise>COMPLETE</promise>
-- If any item is still [ ], just end your response (next iteration will continue)'
+After completing your task, check PRD.md:
+- If ALL tasks are [x], output exactly: <promise>COMPLETE</promise>
+- If tasks remain [ ], just end your response (next iteration will continue)'
 
     result=$(claude --dangerously-skip-permissions -p "$PROMPT" 2>&1)
 
