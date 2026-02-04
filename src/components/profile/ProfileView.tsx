@@ -3,12 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Camera, MapPin, ImagePlus, HelpCircle, User, Pencil, ChevronUp, Settings } from 'lucide-react';
+import { Camera, MapPin, ImagePlus, HelpCircle, User, Pencil, ChevronUp, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { useTranslation } from 'react-i18next';
 import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { toast } from 'sonner';
 
 interface ProfileData {
   display_name: string | null;
@@ -26,6 +27,7 @@ interface ProfileData {
   dating_intention_extra?: string | null;
   relationship_type?: string | null;
   relationship_type_extra?: string | null;
+  interested_in?: string | null;
 }
 
 interface PhotoSlot {
@@ -76,39 +78,48 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
   const fetchData = useCallback(async () => {
     if (!user) return;
 
-    const profileKey = await getProfilesAuthKey(user.id);
-    const [profileRes, photosRes, matchesRes] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin')
-        .eq(profileKey, user.id)
-        .maybeSingle(),
-      supabase
-        .from('profile_photos')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('display_order'),
-      supabase
-        .from('matches')
-        .select('id', { count: 'exact' })
-        .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
-        .eq('status', 'mutual')
-    ]);
+    try {
+      const profileKey = await getProfilesAuthKey(user.id);
+      const [profileRes, photosRes, matchesRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin, education, gender, id_verification_status, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra')
+          .eq(profileKey, user.id)
+          .maybeSingle(),
+        supabase
+          .from('profile_photos')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('display_order'),
+        supabase
+          .from('matches')
+          .select('id', { count: 'exact' })
+          .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
+          .eq('status', 'mutual')
+      ]);
 
-    if (profileRes.data) {
-      setProfile(profileRes.data);
+      if (profileRes.error) {
+        throw profileRes.error;
+      }
+
+      if (profileRes.data) {
+        setProfile(profileRes.data);
+      }
+
+      if (photosRes.data) {
+        setPhotos(photosRes.data.filter(p => p.storage_path));
+      }
+
+      if (matchesRes.count !== null) {
+        setMatchCount(matchesRes.count);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast.error(t('common.error') + '. ' + t('common.retry'));
+    } finally {
+      setLoading(false);
     }
-
-    if (photosRes.data) {
-      setPhotos(photosRes.data.filter(p => p.storage_path));
-    }
-
-    if (matchesRes.count !== null) {
-      setMatchCount(matchesRes.count);
-    }
-
-    setLoading(false);
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     if (user) {
@@ -220,21 +231,37 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               </div>
             )}
 
-            {/* Navigation areas for swiping */}
+            {/* Navigation: visible arrows + tap zones */}
             {photos.length > 1 && (
               <>
                 <button
                   type="button"
                   onClick={prevPhoto}
-                  className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
-                  aria-label="Föregående foto"
+                  className="absolute left-0 top-0 bottom-0 w-1/3 z-10 min-w-0"
+                  aria-label={t('profile.prev_photo', 'Föregående foto')}
                 />
                 <button
                   type="button"
                   onClick={nextPhoto}
-                  className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
-                  aria-label="Nästa foto"
+                  className="absolute right-0 top-0 bottom-0 w-1/3 z-10 min-w-0"
+                  aria-label={t('profile.next_photo', 'Nästa foto')}
                 />
+                <button
+                  type="button"
+                  onClick={prevPhoto}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 border border-white/30 flex items-center justify-center text-white shadow-lg"
+                  aria-label={t('profile.prev_photo', 'Föregående foto')}
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  type="button"
+                  onClick={nextPhoto}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 border border-white/30 flex items-center justify-center text-white shadow-lg"
+                  aria-label={t('profile.next_photo', 'Nästa foto')}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
               </>
             )}
           </>
@@ -381,6 +408,14 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               <div>
                 <h2 className="text-xl font-bold text-white mb-2">Om mig</h2>
                 <p className="text-white/80 leading-relaxed">{profile.bio}</p>
+              </div>
+            )}
+
+            {/* Intressen */}
+            {profile?.interested_in && (
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">{t('profile.interests_title', 'Intressen')}</h2>
+                <p className="text-white/80 leading-relaxed">{profile.interested_in}</p>
               </div>
             )}
 

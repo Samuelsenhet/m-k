@@ -298,3 +298,23 @@
   - pg_cron setup is Dashboard-only (enable extension, add scheduled job)
   - All 8 edge functions are now deployed and ACTIVE
 ---
+
+## Iteration 12 - US-030: Show toast when profile data fails to load
+- What was implemented:
+  - Added toast.error() on fetch failure in ProfileView.tsx (wrapped fetchData in try/catch)
+  - Added toast.error() on fetch failure in ProfileEditor.tsx (fetchProfile and fetchPhotos)
+  - Added toast.error() on fetch failure in MatchProfileView.tsx (existing catch block)
+  - Toast message uses existing i18n keys: common.error + common.retry ("Ett fel uppstod. Försök igen.")
+  - Toasts only fire on error, not during loading state
+  - Added `t` to useCallback dependency arrays to fix lint warnings
+- Files changed:
+  - `src/components/profile/ProfileView.tsx` - Added toast import, try/catch/finally in fetchData
+  - `src/components/profile/ProfileEditor.tsx` - Added toast.error in fetchProfile and fetchPhotos error branches
+  - `src/components/profile/MatchProfileView.tsx` - Added toast import and toast.error in catch block
+  - `PRD.md` - Marked US-030 acceptance criteria complete
+- Learnings for future iterations:
+  - Toast library is `sonner`, imported as `import { toast } from 'sonner'`
+  - Existing i18n keys `common.error` and `common.retry` cover generic error messages
+  - Adding `t` to useCallback deps is safe — react-i18next `t` is stable
+  - ProfileView had no try/catch at all, ProfileEditor used if/else on error, MatchProfileView had try/catch
+---

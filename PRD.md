@@ -773,3 +773,80 @@ US-029 (PWA verification)
 ```
 
 Execute in order: US-016 → US-017 → US-018 → US-019 → US-020 → US-021 → US-022 → US-023 → US-024 → US-025 → US-026 → US-027 → US-028 → US-029
+
+---
+
+# PRD: Phase 2 – Post-launch
+
+## Introduction
+
+Post-launch improvements: polish, observability, and small features. Pick the first unchecked story and implement it; then run `npm run typecheck` and `npm run build` before marking complete.
+
+## Goals
+
+- Improve error feedback and loading states
+- Reduce console noise and fix remaining warnings
+- Add lightweight observability (e.g. error reporting hook)
+- Small UX improvements from real usage
+
+---
+
+### US-030: Show toast when profile data fails to load
+
+**Description:** As a user, I want to see a clear message when my profile or personality data fails to load instead of a silent failure.
+
+**Acceptance Criteria:**
+
+- [x] In Profile page (or wherever `useProfileData` or profile fetch is used), when fetch fails, show a toast with a user-friendly message (e.g. "Kunde inte ladda profilen. Försök igen.")
+- [x] Include a retry action in the toast or on the error state if appropriate
+- [x] Do not show toast for loading state, only for error
+- [x] `npm run typecheck` passes
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
+
+---
+
+### US-031: Resolve remaining ESLint/React warnings
+
+**Description:** As a developer, I want zero ESLint and React warnings in the default run so the console is clean.
+
+**Acceptance Criteria:**
+
+- [ ] Run `npm run lint` and list all current warnings (e.g. react-refresh/only-export-components, exhaustive-deps)
+- [ ] Fix or explicitly disable with a short comment for each remaining warning
+- [ ] `npm run lint` passes with no warnings (or only agreed exceptions documented in a lint comment)
+- [ ] `npm run build` passes
+- [ ] No new warnings introduced
+
+---
+
+### US-032: Add loading skeleton for Matches page
+
+**Description:** As a user, I want to see a loading skeleton on the Matches page while daily matches are being fetched instead of a blank screen or spinner only.
+
+**Acceptance Criteria:**
+
+- [ ] When `useMatches()` (or match-daily) is loading, show a skeleton that mirrors the match cards layout (e.g. 3–5 card-shaped placeholders)
+- [ ] Use existing design system (e.g. Skeleton from shadcn/ui, same card size as real cards)
+- [ ] Replace with real content or empty/error state when request completes
+- [ ] `npm run typecheck` passes
+- [ ] `npm run build` passes
+- [ ] Verify in browser at localhost
+
+---
+
+### US-033: Document Phase 2 and how to run Ralph on it
+
+**Description:** As a developer, I want to know how to run Ralph (or manual work) on Phase 2 stories.
+
+**Acceptance Criteria:**
+
+- [ ] Add a short "Phase 2" section to README or docs (e.g. "Post-launch: see PRD.md Phase 2 (US-030+). Pick first [ ] story, implement, then typecheck/build.")
+- [ ] Optionally: add a note in ralph.sh/ralph.ps1 or progress.txt that Ralph can be pointed at PRD again for Phase 2 (first `- [ ]` in PRD.md)
+- [ ] `npm run build` passes
+
+---
+
+## Phase 2 dependency order
+
+Execute in order: US-030 → US-031 → US-032 → US-033 (or in any order; they are independent).

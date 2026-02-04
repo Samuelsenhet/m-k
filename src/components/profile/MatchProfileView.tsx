@@ -6,6 +6,7 @@ import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -81,7 +82,7 @@ export function MatchProfileView({
       const [profileRes, photosRes, archetypeRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin, education, gender, id_verification_status, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra')
+          .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin, education, gender, id_verification_status, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra, interested_in')
           .eq(profileKey, userId)
           .single(),
         supabase
@@ -111,9 +112,10 @@ export function MatchProfileView({
       setLoading(false);
     } catch (error) {
       console.error('Error fetching match profile:', error);
+      toast.error(t('common.error') + '. ' + t('common.retry'));
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, t]);
 
   useEffect(() => {
     if (userId) {
@@ -388,6 +390,14 @@ export function MatchProfileView({
                 <div>
                   <h2 className="text-xl font-bold text-white mb-2">Om mig</h2>
                   <p className="text-white/80 leading-relaxed">{profile.bio}</p>
+                </div>
+              )}
+
+              {/* Intressen */}
+              {profile?.interested_in && (
+                <div>
+                  <h2 className="text-xl font-bold text-white mb-1">{t('profile.interests_title', 'Intressen')}</h2>
+                  <p className="text-white/80 leading-relaxed">{profile.interested_in}</p>
                 </div>
               )}
 

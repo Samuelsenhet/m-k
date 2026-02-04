@@ -79,6 +79,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     dating_intention_extra: '',
     relationship_type: '',
     relationship_type_extra: '',
+    interested_in: '',
   });
   const [privacy, setPrivacy] = useState<PrivacySettings>({
     show_age: true,
@@ -100,6 +101,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
 
     if (error) {
       console.error('Error fetching profile:', error);
+      toast.error(t('common.error') + '. ' + t('common.retry'));
     } else if (data) {
       setProfile({
         display_name: data.display_name || '',
@@ -121,6 +123,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         dating_intention_extra: data.dating_intention_extra || '',
         relationship_type: data.relationship_type || '',
         relationship_type_extra: data.relationship_type_extra || '',
+        interested_in: data.interested_in || '',
       });
       setPrivacy({
         show_age: data.show_age ?? true,
@@ -130,7 +133,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       });
     }
     setLoading(false);
-  }, [user]);
+  }, [user, t]);
 
   const fetchPhotos = useCallback(async () => {
     if (!user) return;
@@ -143,6 +146,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
 
     if (error) {
       console.error('Error fetching photos:', error);
+      toast.error(t('common.error') + '. ' + t('common.retry'));
     } else {
       const photoSlots: PhotoSlot[] = Array.from({ length: 6 }, (_, i) => {
         const photo = data?.find(p => p.display_order === i);
@@ -150,7 +154,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       });
       setPhotos(photoSlots);
     }
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     if (user) {
@@ -391,6 +395,17 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="interested_in" className="text-xs">{t('profile.interests_title', 'Intressen')}</Label>
+            <Textarea
+              id="interested_in"
+              value={profile.interested_in}
+              onChange={(e) => updateField('interested_in', e.target.value)}
+              placeholder={t('profile.interests_placeholder', 't.ex. konst, resor, matlagning, träning...')}
+              rows={2}
+              className="resize-none"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="height" className="text-xs">Längd (cm)</Label>
