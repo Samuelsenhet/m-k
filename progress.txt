@@ -277,3 +277,24 @@
   - CHECK_SETUP.md has restart instructions in multiple places (§4, Quick Fix, Option A/B)
   - Vite dev server runs on port 8080 (configured in vite.config.ts)
 ---
+
+## Iteration 11 - Pre-dev Checklist: Complete remaining items (§2–§5)
+- What was implemented:
+  - §2 Database: Verified all migrations already pushed (`supabase db push --dry-run` → "up to date")
+  - §2 Personality + matching: Confirmed `personality_results` and `user_daily_match_pools` tables exist in migrations
+  - §3 Cron: Deployed `generate-match-pools` edge function to Supabase (was missing from remote)
+  - §3 Cron scheduling: Noted as manual step (enable pg_cron in Dashboard, schedule daily job)
+  - §4 Twilio: Verified `twilio-send-otp` and `twilio-verify-otp` already deployed and ACTIVE
+  - §4 Secrets: Marked as manual verification step
+  - §5 Lint: Verified passes (0 issues, 237 files checked)
+  - §5 Typecheck: Verified `npx tsc --noEmit` passes with no errors
+  - §5 Build: Verified `npm run build` succeeds (main bundle 216KB gzipped)
+- Files changed:
+  - `docs/PRE_DEV_CHECKLIST.md` - Marked all remaining items [x] with verification notes
+- Learnings for future iterations:
+  - `supabase db push --dry-run` is useful to verify migration state without changes
+  - `supabase functions list` shows all deployed functions with status
+  - generate-match-pools was missing from deployed functions despite code existing locally
+  - pg_cron setup is Dashboard-only (enable extension, add scheduled job)
+  - All 8 edge functions are now deployed and ACTIVE
+---
