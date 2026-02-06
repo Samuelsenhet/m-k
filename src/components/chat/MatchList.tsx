@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageCircle, Heart } from 'lucide-react';
+import { Loader2, MessageCircle, Heart, CheckCheck, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { format } from 'date-fns';
@@ -35,6 +35,8 @@ interface Match {
 interface MatchListProps {
   onSelectMatch: (match: Match) => void;
   selectedMatchId?: string;
+  /** Filter conversations by display name (from main Chat page search) */
+  searchQuery?: string;
 }
 
 type ProfileLookupRow = {
@@ -281,7 +283,7 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
                           {match.unread_count}
                         </span>
                       ) : lastMsg ? (
-                        <CheckCheck className="w-5 h-5 text-destructive" aria-label={t('chat.messages')} />
+                        <CheckCheck className="w-5 h-5 shrink-0 text-destructive" aria-label={t('chat.messages')} />
                       ) : null}
                     </div>
                   </div>

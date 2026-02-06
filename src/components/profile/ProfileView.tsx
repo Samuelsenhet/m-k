@@ -3,13 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Camera, MapPin, ImagePlus, HelpCircle, User, Pencil, ChevronUp, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Camera, MapPin, ImagePlus, HelpCircle, User, Pencil, ChevronUp, Settings } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { useTranslation } from 'react-i18next';
 import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
-import { toast } from 'sonner';
 
 interface ProfileData {
   display_name: string | null;
@@ -27,7 +26,6 @@ interface ProfileData {
   dating_intention_extra?: string | null;
   relationship_type?: string | null;
   relationship_type_extra?: string | null;
-  interested_in?: string | null;
 }
 
 interface PhotoSlot {
@@ -78,48 +76,39 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
   const fetchData = useCallback(async () => {
     if (!user) return;
 
-    try {
-      const profileKey = await getProfilesAuthKey(user.id);
-      const [profileRes, photosRes, matchesRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin, education, gender, id_verification_status, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra')
-          .eq(profileKey, user.id)
-          .maybeSingle(),
-        supabase
-          .from('profile_photos')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('display_order'),
-        supabase
-          .from('matches')
-          .select('id', { count: 'exact' })
-          .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
-          .eq('status', 'mutual')
-      ]);
+    const profileKey = await getProfilesAuthKey(user.id);
+    const [profileRes, photosRes, matchesRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin')
+        .eq(profileKey, user.id)
+        .maybeSingle(),
+      supabase
+        .from('profile_photos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('display_order'),
+      supabase
+        .from('matches')
+        .select('id', { count: 'exact' })
+        .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
+        .eq('status', 'mutual')
+    ]);
 
-      if (profileRes.error) {
-        throw profileRes.error;
-      }
-
-      if (profileRes.data) {
-        setProfile(profileRes.data);
-      }
-
-      if (photosRes.data) {
-        setPhotos(photosRes.data.filter(p => p.storage_path));
-      }
-
-      if (matchesRes.count !== null) {
-        setMatchCount(matchesRes.count);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error(t('common.error') + '. ' + t('common.retry'));
-    } finally {
-      setLoading(false);
+    if (profileRes.data) {
+      setProfile(profileRes.data);
     }
-  }, [user, t]);
+
+    if (photosRes.data) {
+      setPhotos(photosRes.data.filter(p => p.storage_path));
+    }
+
+    if (matchesRes.count !== null) {
+      setMatchCount(matchesRes.count);
+    }
+
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -231,37 +220,21 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               </div>
             )}
 
-            {/* Navigation: visible arrows + tap zones */}
+            {/* Navigation areas for swiping */}
             {photos.length > 1 && (
               <>
                 <button
                   type="button"
                   onClick={prevPhoto}
-                  className="absolute left-0 top-0 bottom-0 w-1/3 z-10 min-w-0"
-                  aria-label={t('profile.prev_photo', 'Föregående foto')}
+                  className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
+                  aria-label="Föregående foto"
                 />
                 <button
                   type="button"
                   onClick={nextPhoto}
-                  className="absolute right-0 top-0 bottom-0 w-1/3 z-10 min-w-0"
-                  aria-label={t('profile.next_photo', 'Nästa foto')}
+                  className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
+                  aria-label="Nästa foto"
                 />
-                <button
-                  type="button"
-                  onClick={prevPhoto}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 border border-white/30 flex items-center justify-center text-white shadow-lg"
-                  aria-label={t('profile.prev_photo', 'Föregående foto')}
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextPhoto}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 border border-white/30 flex items-center justify-center text-white shadow-lg"
-                  aria-label={t('profile.next_photo', 'Nästa foto')}
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
               </>
             )}
           </>
@@ -367,7 +340,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                   onClick={() => setShowFullInfo(!showFullInfo)}
                   className="w-full flex items-center justify-center gap-2 text-white/80 hover:text-white transition-colors py-2"
                 >
-                  <ChevronUp className={cn("w-5 h-5 transition-transform", showFullInfo && "rotate-180")} />
+                  <ChevronUp className={cn("w-5 h-5 shrink-0 transition-transform", showFullInfo && "rotate-180")} />
                   <span className="text-sm font-medium">{showFullInfo ? 'Dölj' : 'Visa mer'}</span>
                 </button>
               </div>
@@ -408,14 +381,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               <div>
                 <h2 className="text-xl font-bold text-white mb-2">Om mig</h2>
                 <p className="text-white/80 leading-relaxed">{profile.bio}</p>
-              </div>
-            )}
-
-            {/* Intressen */}
-            {profile?.interested_in && (
-              <div>
-                <h2 className="text-xl font-bold text-white mb-1">{t('profile.interests_title', 'Intressen')}</h2>
-                <p className="text-white/80 leading-relaxed">{profile.interested_in}</p>
               </div>
             )}
 
@@ -514,6 +479,56 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                     "p-4 rounded-2xl border",
                     CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/10 border-white/20'
                   )}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-4xl">{archetypeInfo.emoji}</span>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">{archetypeInfo.title}</h3>
+                        <p className="text-sm text-white/70">{archetypeInfo.name}</p>
+                      </div>
+                    </div>
+                    <p className="text-white/80 mb-4">{archetypeInfo.description}</p>
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-white/90 mb-2">{t('profile.strengths', 'Styrkor')}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {archetypeInfo.strengths.map((strength, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white border border-white/20"
+                          >
+                            {strength}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t border-white/10">
+                      <p className="text-sm text-white/70">
+                        <span className="font-semibold text-white">I relationer:</span> {archetypeInfo.loveStyle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Additional Info */}
+            <div className="grid grid-cols-2 gap-4">
+              {profile?.work && (
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Jobb</p>
+                  <p className="text-white font-medium">{profile.work}</p>
+                </div>
+              )}
+              {profile?.education && (
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Utbildning</p>
+                  <p className="text-white font-medium">{profile.education}</p>
+                </div>
+              )}
+              {profile?.hometown && (
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Plats</p>
+                  <p className="text-white font-medium flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5" />
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-4xl">{archetypeInfo.emoji}</span>
                       <div>

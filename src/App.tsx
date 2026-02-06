@@ -28,6 +28,7 @@ import AdminReports from "./pages/AdminReports";
 import Appeal from "./pages/Appeal";
 import DemoSeed from "./pages/DemoSeed";
 import About from "./pages/About";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

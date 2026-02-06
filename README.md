@@ -1,133 +1,92 @@
-# MÄÄK - Personality Test Dating App
+# MÄÄK – Personality-based dating app
 
-Swedish personality-based dating platform with PRP compliance and user journey phases.
+A Swedish personality-based dating platform with phone auth, daily matches (similar & complementary), real-time chat, video calls (Kemi-Check), and a design system built around the **Eucalyptus Grove** palette (forest green, sage, off-white). PRP-compliant with user journey phases and GDPR onboarding.
 
-## Tech Stack
+## Tech stack
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Supabase (PostgreSQL + Edge Functions)
-- **UI**: shadcn/ui + Tailwind CSS + Framer Motion
-- **Auth**: Phone-based authentication
-- **PWA**: Service worker enabled
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: shadcn/ui, Tailwind CSS, Framer Motion, Playfair Display + DM Sans
+- **Backend**: Supabase (PostgreSQL, Realtime, Edge Functions)
+- **Auth**: Phone (SMS OTP via Twilio)
+- **i18n**: react-i18next (Swedish + English)
+- **PWA**: Service worker, install prompt
 
 ## Setup
 
-1. Clone the repository
-2. Copy `.env.example` to `.env`
-3. Add your Supabase credentials from https://supabase.com/dashboard
-4. Install dependencies: `npm install`
-5. **Supabase one-time setup** (fixes 400 on profiles, 404 on personality_results, "Bucket not found" on photo upload):
-   - Option A: Run migrations: `npx supabase db push`
-   - Option B: In [Supabase Dashboard](https://supabase.com/dashboard) → SQL Editor, run the script `supabase/ONE_TIME_SETUP.sql`
-   - If you see **"Could not find the 'alcohol' column"** or **"Kunde inte spara profilen"** after onboarding, run `supabase/ADD_PROFILE_COLUMNS.sql` in the SQL Editor once.
-6. Run dev server: `npm run dev`
+1. Clone the repo.
+2. Copy `.env.example` to `.env` and add your Supabase and Twilio credentials (see [Supabase Dashboard](https://supabase.com/dashboard)).
+3. Install dependencies: `npm install`
+4. **Supabase one-time setup**
+   - Option A: `npx supabase db push`
+   - Option B: In Supabase → SQL Editor, run `supabase/ONE_TIME_SETUP.sql`
+   - If you hit “Could not find the 'alcohol' column” or profile save errors after onboarding, run `supabase/ADD_PROFILE_COLUMNS.sql` once.
+5. Start dev server: `npm run dev` (default port 8080)
 
-## Available Scripts
+## Scripts
 
-- `npm run dev` - Start development server (port 8080)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+| Command           | Description                    |
+|-------------------|--------------------------------|
+| `npm run dev`     | Start dev server (Vite)        |
+| `npm run build`   | Production build               |
+| `npm run preview` | Preview production build      |
+| `npm run lint`    | ESLint + spellcheck            |
 
-### Live preview (VS Code / Cursor)
+**Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
 
-This is a **Vite + React** app, so the **Live Server** extension will not work (it serves static files; this app needs Vite to compile TypeScript/JSX). Use the **Vite dev server** instead:
-
-- **Command Palette**: `F1` or `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`) → type **Tasks: Run Task** → choose **Start dev server (Vite)**.
-- **Keyboard**: Run the default build task (often `Ctrl+Shift+B` / `Cmd+Shift+B`).
-- **Terminal**: `npm run dev`, then open http://localhost:8080
-
-## Deployment
-
-Built for deployment on Vercel with Supabase backend.
-
-## Project Structure
+## Project structure
 
 ```
 src/
-├── components/     # React components (17+ folders)
-├── contexts/       # React contexts (Auth, Consent)
-├── hooks/          # Custom hooks (12 hooks)
-├── pages/          # Route pages (9 pages)
-├── integrations/   # Supabase integration
-└── lib/           # Utilities
+├── components/     # UI and feature components (chat, profile, matches, settings, etc.)
+├── contexts/       # Auth, Consent, Achievements
+├── hooks/          # useMatches, useAuth, usePushNotifications, etc.
+├── pages/          # Route-level pages (see Routes below)
+├── i18n/           # Locales (en.json, sv.json)
+├── integrations/   # Supabase client and types
+└── lib/            # Utils, profiles, matching helpers
 ```
+
+## Main routes
+
+| Path | Description |
+|------|-------------|
+| `/` | Landing / home |
+| `/phone-auth` | Phone number + OTP login |
+| `/onboarding` | Profile + personality test |
+| `/profile` | Profile view, edit, settings (Inställningar) |
+| `/matches` | Daily matches (similar/complementary), mutual list |
+| `/chat` | Chat list + conversation (with Kemi-Check video entry) |
+| `/match/:userId` | View match profile |
+| `/notifications` | Notifications feed (view / interest + Accept/Reject) |
+| `/demo-seed` | Demo: matches + chat without backend |
+| `/personality-guide` | Personality types and archetypes |
+| `/terms`, `/privacy` | Terms and privacy |
+| `/about` | About the app |
+| `/reporting`, `/report`, `/report-history`, `/appeal` | Reporting and appeals |
+| `/admin/reports` | Moderator report queue |
 
 ## Features
 
-- 🔐 Phone-based authentication
-- 🎭 Personality test & matching algorithm
-- 💬 Real-time chat
-- 🎉 Achievement system
-- 🤖 AI assistant
-- 📱 PWA support
-- 🌍 i18n (Swedish)
-- 🛡️ GDPR compliant
+- **Auth**: Phone-based sign-in (SMS OTP)
+- **Personality**: 30-question test, 16 archetypes, 4 categories (Diplomat, Strateg, Byggare, Upptäckare)
+- **Matching**: Daily match pool; filters for similar vs complementary; match score and AI-style explanation; “Se profil” and Chatta from cards
+- **Chat**: Real-time messages, icebreakers (incl. AI-generated), read receipts, search, “Recent match” strip; per-conversation Block / Delete / Report and Kemi-Check (video) when 10+ messages
+- **Notifications**: Feed with “viewed you” and “interested in you” items; Accept/Reject on interest (Määk styling: primary green, cards)
+- **Profile**: View/edit profile, matching settings (age, distance), language, achievements, AI assistant, terms, reporting, delete account
+- **Design**: Eucalyptus Grove (primary green, sage, off-white), serif titles (Playfair), soft shadows and card layout
+- **Other**: Achievements, AI assistant panel, PWA, i18n (sv/en), GDPR consent onboarding
 
-## How can I edit this code?
+## Deployment
 
-There are several ways of editing your application.
+The app is built for deployment on **Vercel** with a Supabase backend. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (and optional `VITE_SUPABASE_PROJECT_ID`) in your Vercel project. Use `npm run vercel:env` to add env vars from the CLI if needed.
 
-**Use Lovable**
+## Editing the code
 
-Simply visit the Lovable Project and start prompting.
+- **Local IDE**: Clone the repo, run `npm i` and `npm run dev`. Node.js 22+ recommended (see `.nvmrc`).
+- **Lovable**: If this project is connected to Lovable, you can edit there; changes can be committed back to this repo.
+- **GitHub**: Edit files in the GitHub UI and commit.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Design reference
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Colors**: `--primary` (forest), `--secondary` (sage), `--background` (off-white). See `src/index.css` for full tokens.
+- **Notifications**: Määk version uses primary green, card list, “Today” section, and Accept/Reject actions (no “like” wording).

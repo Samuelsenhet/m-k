@@ -301,10 +301,13 @@ export default function Chat() {
             <div className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-muted/30 px-3 py-2.5 focus-within:border-primary/60 focus-within:bg-background transition-colors">
               <Search className="w-4 h-4 text-muted-foreground shrink-0" />
               <input
+                id="chat-search"
+                name="chatSearch"
                 type="search"
                 value={chatSearchQuery}
                 onChange={(e) => setChatSearchQuery(e.target.value)}
                 placeholder={t("chat.search")}
+                aria-label={t("chat.search")}
                 className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
             </div>

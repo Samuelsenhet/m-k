@@ -14,6 +14,16 @@ for ((i=1; i<=$MAX; i++)); do
 
     PROMPT='You are Ralph, an autonomous coding agent. Do exactly ONE task per iteration.
 
+## Project Context
+
+MÄÄK is a Swedish personality-based dating app with:
+- React 18 + TypeScript + Vite + Supabase
+- Premium mobile-first design system (21st.dev inspired)
+- Glassmorphism, gradients, and smooth animations throughout
+- Design system includes: .glass, .card-premium, .gradient-rose-glow, .shadow-glow-rose
+- Mobile-optimized with safe-area handling and touch targets (min 44px)
+- Recent work: Complete premium mobile design overhaul completed (Jan 2026)
+
 ## Steps
 
 1. Read PRD.md and find the first task that is NOT complete (marked [ ]).
@@ -45,6 +55,17 @@ Append to progress.txt using this format:
   - Gotchas encountered
   - Useful context
 ---
+
+## Design System Notes
+
+When working on UI components:
+- Use premium design classes: .card-premium, .glass, .glass-dark
+- Apply gradients: .gradient-rose-glow, .gradient-violet-glow, .gradient-emerald-glow
+- Use premium shadows: .shadow-glow-rose, .shadow-glow-violet
+- Add animations: .animate-scale-in, .animate-slide-in-right, .animate-bounce-gentle
+- Ensure mobile touch targets are at least 44px (use min-h-[44px])
+- Add .touch-manipulation and .active:scale-95 for better mobile UX
+- Use .safe-area-top and .safe-area-bottom for notch handling
 
 ## Update AGENTS.md (If Applicable)
 

@@ -747,12 +747,15 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         </div>
 
         <input
+          id="photo-upload-input"
+          name="profilePhotos"
           ref={fileInputRef}
           type="file"
           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
           multiple
           className="hidden"
           onChange={(e) => selectedSlot !== null && handleUpload(e, selectedSlot)}
+          aria-label="Ladda upp profilbilder"
         />
 
         <DndContext

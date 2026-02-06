@@ -550,12 +550,12 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Politik</Label>
+              <Label htmlFor="profile-politics" className="text-xs">Politik</Label>
               <Select
                 value={profile.politics}
                 onValueChange={(value) => updateField('politics', value)}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger id="profile-politics" className="h-9">
                   <SelectValue placeholder="Välj..." />
                 </SelectTrigger>
                 <SelectContent>

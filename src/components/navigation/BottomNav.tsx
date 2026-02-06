@@ -29,9 +29,9 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/30 safe-area-bottom shadow-[0_-8px_32px_rgba(0,0,0,0.08)]">
       <div className="max-w-lg mx-auto relative">
         {/* Indicator row: same grid as links so bar is centered above each tab */}
-        <div className="absolute top-0 left-0 right-0 grid grid-cols-3 px-2 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 grid grid-cols-4 px-2 pointer-events-none">
           {navItems.map((_, index) => (
-            <div key={index} className="flex justify-center">
+            <div key={index} className="flex justify-center items-start">
               {index === activeIndex && (
                 <motion.div
                   layoutId="bottomNavIndicator"
@@ -51,31 +51,31 @@ export function BottomNav() {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "relative flex flex-col items-center justify-center w-full h-full min-h-[44px] transition-bounce active:scale-90 touch-manipulation",
-                  itemActive ? "text-rose-500" : "text-gray-500"
+                  "relative flex flex-col items-center justify-center gap-1 w-full h-full min-h-[44px] transition-bounce active:scale-90 touch-manipulation",
+                  itemActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <div
                   className={cn(
-                    "relative flex flex-col items-center transition-all",
+                    "relative flex items-center justify-center shrink-0 transition-transform",
                     itemActive && "scale-110"
                   )}
                 >
                   <item.icon
                     className={cn(
-                      "w-6 h-6 transition-all",
+                      "w-6 h-6 shrink-0 transition-all",
                       itemActive && "drop-shadow-lg"
                     )}
                     fill={itemActive ? "currentColor" : "none"}
                     strokeWidth={itemActive ? 2.5 : 2}
                   />
                   {itemActive && (
-                    <div className="absolute inset-0 bg-gradient-rose-glow opacity-20 blur-md" />
+                    <div className="absolute inset-0 bg-gradient-rose-glow opacity-20 blur-md pointer-events-none" />
                   )}
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] sm:text-xs mt-1 font-bold transition-colors text-center",
+                    "text-[10px] sm:text-xs font-medium transition-colors text-center shrink-0",
                     itemActive ? "text-primary" : "text-muted-foreground"
                   )}
                 >

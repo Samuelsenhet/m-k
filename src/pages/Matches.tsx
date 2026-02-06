@@ -552,7 +552,7 @@ export default function Matches() {
             <p className="text-sm text-muted-foreground font-medium mb-6">Kom tillbaka imorgon för nya matchningar! ✨</p>
             <Button asChild variant="outline" size="sm" className="gap-2">
               <Link to="/demo-seed">
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 shrink-0" />
                 Se demo – matchningar & chatt
               </Link>
             </Button>

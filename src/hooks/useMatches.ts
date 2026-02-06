@@ -19,6 +19,8 @@ type Match = {
   status: "pending" | "liked" | "passed" | "mutual";
   compatibilityFactors: string[];
   expiresAt: string;
+  /** AI explanation for why this match is likhet/motsatt – shown as comment on matching */
+  personalityInsight?: string | null;
   special_effects?: string[] | null;
   special_event_message?: string | null;
 };

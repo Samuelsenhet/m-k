@@ -416,6 +416,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                       <Label htmlFor="lastName" className="text-sm">Efternamn</Label>
                       <Input
                         id="lastName"
+                        name="lastName"
                         value={profile.lastName}
                         onChange={(e) => updateProfile('lastName', e.target.value)}
                         placeholder="Valfritt"
