@@ -156,6 +156,7 @@ const Sidebar = React.forwardRef<
         <SheetContent
           data-sidebar="sidebar"
           data-mobile="true"
+          aria-describedby="sidebar-sheet-desc"
           className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={
             {
@@ -164,6 +165,7 @@ const Sidebar = React.forwardRef<
           }
           side={side}
         >
+          <span id="sidebar-sheet-desc" className="sr-only">Navigation sidebar</span>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>

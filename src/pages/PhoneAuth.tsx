@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { usePhoneAuth, PhoneAuthStep } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PhoneInput } from '@/components/auth/PhoneInput';
@@ -14,6 +15,9 @@ import { AgeVerification } from '@/components/auth/AgeVerification';
 import { calculateAge } from '@/components/auth/age-utils';
 import { Heart, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { getProfilesAuthKey } from '@/lib/profiles';
+
+type ProfilesInsert = Database['public']['Tables']['profiles']['Insert'];
 
 const phoneSchema = z.string()
   .min(9, 'Ange ett giltigt telefonnummer')
@@ -47,11 +51,12 @@ export default function PhoneAuth() {
     const checkUserStatus = async () => {
       // Don't redirect if we're in the middle of completing profile
       if (user && !isCompletingProfile) {
+        const profileKey = await getProfilesAuthKey(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_completed, date_of_birth')
-          .eq('id', user.id)
-          .single();
+          .eq(profileKey, user.id)
+          .maybeSingle();
         
         // Returning user with completed onboarding -> matches
         if (profile?.onboarding_completed) {
@@ -140,37 +145,60 @@ export default function PhoneAuth() {
       const { data: session } = await supabase.auth.getSession();
       
       if (session.session) {
+        const sessionUserId = session.session.user.id;
+        const profileKey = await getProfilesAuthKey(sessionUserId);
+        const patch = {
+          date_of_birth: dobString,
+          phone: formattedPhone,
+          phone_verified_at: new Date().toISOString(),
+        };
+
         // Try to update first, returning the updated row
         const { data: updatedProfile, error: updateError } = await supabase
           .from('profiles')
-          .update({
-            date_of_birth: dobString,
-            phone: formattedPhone,
-            phone_verified_at: new Date().toISOString(),
-          })
-          .eq('id', session.session.user.id)
+          .update(patch)
+          .eq(profileKey, sessionUserId)
           .select('date_of_birth, onboarding_completed')
-          .single();
+          .maybeSingle();
 
         let savedProfile = updatedProfile;
 
-        if (updateError) {
-          console.error('Profile update error:', updateError);
+        if (updateError || !savedProfile) {
+          if (import.meta.env.DEV) {
+            console.error('Profile update error:', updateError);
+          }
           // If profile doesn't exist, create it and return the inserted row
-          const { data: insertedProfile, error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.session.user.id,
-              date_of_birth: dobString,
-              phone: formattedPhone,
-              phone_verified_at: new Date().toISOString(),
-            })
-            .select('date_of_birth, onboarding_completed')
-            .single();
+          const insertWithKey = async (key: 'id' | 'user_id') => {
+            const insertPayload =
+              key === 'id'
+                ? ({ id: sessionUserId, ...patch } as const)
+                : ({ user_id: sessionUserId, ...patch } as const);
+
+            return await supabase
+              .from('profiles')
+              .insert(insertPayload as unknown as ProfilesInsert)
+              .select('date_of_birth, onboarding_completed')
+              .single();
+          };
+
+          // Try detected key first, then fallback to the other key (handles ambiguous schemas).
+          let { data: insertedProfile, error: insertError } = await insertWithKey(profileKey);
+          if (insertError) {
+            const fallbackKey: 'id' | 'user_id' = profileKey === 'id' ? 'user_id' : 'id';
+            const fallbackRes = await insertWithKey(fallbackKey);
+            insertedProfile = fallbackRes.data;
+            insertError = fallbackRes.error;
+          }
           
           if (insertError) {
-            console.error('Profile insert error:', insertError);
-            toast.error(t('profile.error_saving'));
+            if (import.meta.env.DEV) {
+              console.error('Profile insert error:', insertError);
+            }
+            const base = t('profile.error_saving');
+            const details =
+              (insertError as { message?: string } | null)?.message ||
+              (updateError as { message?: string } | null)?.message;
+            toast.error(import.meta.env.DEV && details ? `${base}: ${details}` : base);
             setIsCompletingProfile(false);
             return;
           }

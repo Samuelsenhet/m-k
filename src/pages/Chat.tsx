@@ -5,10 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { MatchList } from "@/components/chat/MatchList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { VideoChatWindow } from "@/components/chat/VideoChatWindow";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ArrowLeft, Search } from "lucide-react";
 import { BottomNav } from "@/components/navigation/BottomNav";
-import { useRealtime } from "@/hooks/useRealtime";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
+import { getProfilesAuthKey } from "@/lib/profiles";
+import { useTranslation } from "react-i18next";
 // Removed problematic import - check if CallHistory exists
 // import { CallHistory, CallLogEntry } from '@/components/chat/CallHistory';
 
@@ -26,15 +27,16 @@ interface SelectedMatch {
   matched_profile?: {
     display_name: string;
     avatar_url: string | null;
+    id_verification_status?: string | null;
   };
 }
 
 // Move CallHistoryDisplay outside parent for performance
-function CallHistoryDisplay({ logs }: { logs: CallLogEntry[] }) {
+function CallHistoryDisplay({ logs, className }: { logs: CallLogEntry[]; className?: string }) {
   if (logs.length === 0) return null;
   return (
-    <div className="p-4 border-t border-border bg-card">
-      <h3 className="font-semibold text-sm mb-2 text-muted-foreground">
+    <div className={className ?? "p-4 border-t border-border bg-card"}>
+      <h3 className="font-semibold text-sm mb-2 text-gray-600">
         Samtalshistorik
       </h3>
       <div className="space-y-2">
@@ -59,6 +61,7 @@ function CallHistoryDisplay({ logs }: { logs: CallLogEntry[] }) {
 
 export default function Chat() {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(
@@ -67,16 +70,13 @@ export default function Chat() {
   const [icebreakers, setIcebreakers] = useState<string[]>([]);
   const [loadingMatch, setLoadingMatch] = useState(false);
   const [videoCallActive, setVideoCallActive] = useState(false);
+  const [showPostVideoCard, setShowPostVideoCard] = useState(false);
   const [incomingCall, setIncomingCall] = useState<{
     callerName: string;
     callerId: string;
   } | null>(null);
   const [callLogs, setCallLogs] = useState<CallLogEntry[]>([]);
-
-  // Add a dummy roomId for connection check (could be user.id or a global room)
-  const { isConnected: realtimeConnected } = useRealtime({
-    roomId: user?.id || "global",
-  });
+  const [chatSearchQuery, setChatSearchQuery] = useState(""); // chat list search (used in input + MatchList)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -103,7 +103,9 @@ export default function Chat() {
           .single();
 
         if (error || !match) {
-          console.error("Match not found:", error);
+          if (import.meta.env.DEV) {
+            console.error("Match not found:", error);
+          }
           return;
         }
 
@@ -111,13 +113,16 @@ export default function Chat() {
         const matchedUserId =
           match.user_id === user?.id ? match.matched_user_id : match.user_id;
 
-        // Fetch the profile
-        // @ts-expect-error: Supabase client types cause deep instantiation error here
-        const { data: profile, error: profileError } = await supabase
+        const profileKey = await getProfilesAuthKey(matchedUserId);
+        // Fetch the profile (cast to avoid deep instantiation issues)
+        const { data: profile, error: profileError } = (await supabase
           .from("profiles")
           .select("display_name, avatar_url")
-          .eq("user_id", matchedUserId)
-          .single();
+          .eq(profileKey, matchedUserId)
+          .single()) as unknown as {
+          data: { display_name: string; avatar_url: string | null } | null;
+          error: unknown;
+        };
         // Type assertion to avoid deep type instantiation error
         const safeProfile = (profile as {
           display_name: string;
@@ -225,22 +230,6 @@ export default function Chat() {
 
   if (!user) return null;
 
-  if (!realtimeConnected) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center text-muted-foreground">
-          <h2 className="font-semibold text-lg mb-2">
-            Real-time chat är tillfälligt otillgängligt
-          </h2>
-          <p>
-            Du kan fortfarande läsa gamla meddelanden, men nya meddelanden visas
-            inte direkt. Försök igen senare.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (videoCallActive && selectedMatch) {
     return (
       <VideoChatWindow
@@ -264,7 +253,7 @@ export default function Chat() {
   return (
     <div className="min-h-screen flex flex-col bg-background pb-16">
       {selectedMatch ? (
-        <>
+        <div className="flex flex-1 flex-col min-h-0 msn-chat">
           <ChatWindow
             matchId={selectedMatch.id}
             matchedUserId={selectedMatch.matched_user_id}
@@ -274,31 +263,60 @@ export default function Chat() {
             matchedUserAvatar={
               selectedMatch.matched_profile?.avatar_url || undefined
             }
+            matchedUserVerified={
+              selectedMatch.matched_profile?.id_verification_status === "approved"
+            }
             icebreakers={icebreakers}
             onBack={handleBack}
+            onStartVideo={() => setVideoCallActive(true)}
+            showPostVideoCard={showPostVideoCard}
+            onDismissPostVideoCard={() => setShowPostVideoCard(false)}
           />
-          <div className="p-4 flex justify-center">
-            <button
-              className="bg-primary text-white px-4 py-2 rounded-full shadow hover:bg-primary/90 transition-colors"
-              onClick={() => setVideoCallActive(true)}
-            >
-              Starta videochatt
-            </button>
-          </div>
-          <CallHistoryDisplay logs={callLogs} />
-        </>
+          <CallHistoryDisplay logs={callLogs} className="msn-list-card border-t border-border mx-2 mb-2 rounded p-3 text-sm shrink-0" />
+        </div>
       ) : (
         <>
-          <div className="p-4 border-b border-border bg-card">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-primary" />
-              <h1 className="font-serif font-semibold text-lg">Meddelanden</h1>
+          {/* Chat list header: back + centered Chats */}
+          <div className="flex items-center justify-between px-3 py-3 safe-area-top bg-background border-b border-border">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="p-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+              aria-label={t("common.back")}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-semibold text-lg text-foreground absolute left-1/2 -translate-x-1/2">
+              {t("chat.chats")}
+            </h1>
+            <Link
+              to="/demo-seed"
+              className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 text-xs font-medium"
+            >
+              Demo
+            </Link>
+          </div>
+          {/* Search bar */}
+          <div className="px-3 py-2 bg-background border-b border-border shrink-0">
+            <div className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-muted/30 px-3 py-2.5 focus-within:border-primary/60 focus-within:bg-background transition-colors">
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <input
+                id="chat-search"
+                name="chatSearch"
+                type="search"
+                value={chatSearchQuery}
+                onChange={(e) => setChatSearchQuery(e.target.value)}
+                placeholder={t("chat.search")}
+                aria-label={t("chat.search")}
+                className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
             </div>
           </div>
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto bg-background">
             <MatchList
               onSelectMatch={handleSelectMatch}
               selectedMatchId={selectedMatch?.id}
+              searchQuery={chatSearchQuery}
             />
           </div>
         </>

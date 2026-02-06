@@ -6,21 +6,24 @@ const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
 const TWILIO_VERIFY_SERVICE_SID = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
 
+// FIXED: More restrictive CORS for production
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("CORS_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Credentials": "true",
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", {
+    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
       status: 405,
-      headers: corsHeaders
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -32,11 +35,23 @@ serve(async (req) => {
     });
   }
 
-  // Validate Twilio configuration
-  if (!TWILIO_VERIFY_SERVICE_SID || !TWILIO_VERIFY_SERVICE_SID.startsWith("VA")) {
-    console.error("Invalid TWILIO_VERIFY_SERVICE_SID:", TWILIO_VERIFY_SERVICE_SID);
+  // FIXED: Validate all Twilio configuration
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
+    console.error("Missing Twilio configuration:", {
+      hasAccountSid: !!TWILIO_ACCOUNT_SID,
+      hasAuthToken: !!TWILIO_AUTH_TOKEN,
+      hasServiceSid: !!TWILIO_VERIFY_SERVICE_SID,
+    });
     return new Response(
-      JSON.stringify({ error: "Server configuration error: Invalid Verify Service SID" }),
+      JSON.stringify({ error: "Server configuration error: Missing Twilio credentials" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!TWILIO_VERIFY_SERVICE_SID.startsWith("VA")) {
+    console.error("Invalid TWILIO_VERIFY_SERVICE_SID format:", TWILIO_VERIFY_SERVICE_SID);
+    return new Response(
+      JSON.stringify({ error: "Server configuration error: Invalid Verify Service SID format" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -91,26 +106,63 @@ serve(async (req) => {
     );
   }
 
-  // Twilio Verify API: Send OTP
+  // FIXED: Twilio Verify API: Send OTP with better error handling
   const url = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/Verifications`;
   const body = new URLSearchParams({ To: phone, Channel: "sms" });
-  const twilioRes = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Authorization": "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-  const data = await twilioRes.json();
-  if (!twilioRes.ok) {
-    return new Response(JSON.stringify({ error: data.message }), {
+  
+  try {
+    const twilioRes = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+
+    const data = await twilioRes.json().catch(() => ({}));
+    
+    if (!twilioRes.ok) {
+      const errorMessage = data.message || data.error || `Twilio API error: ${twilioRes.status}`;
+      console.error("Twilio send OTP error:", errorMessage, data);
+      
+      // Handle specific Twilio error codes
+      if (data.code === 60200) {
+        return new Response(JSON.stringify({ 
+          error: "Ogiltigt telefonnummer. Kontrollera numret och försök igen." 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      
+      if (data.code === 60203) {
+        return new Response(JSON.stringify({ 
+          error: "För många försök. Vänta en stund och försök igen." 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: twilioRes.status >= 400 && twilioRes.status < 500 ? twilioRes.status : 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    
+    // Success
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+  } catch (err) {
+    console.error("Unexpected error sending OTP:", err);
+    return new Response(JSON.stringify({ 
+      error: "Ett oväntat fel uppstod. Försök igen senare." 
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" }
-  });
 });

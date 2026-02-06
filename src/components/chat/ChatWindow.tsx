@@ -7,15 +7,35 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Send, Loader2, ArrowLeft, Sparkles, Check, CheckCheck, Brain, Laugh, Heart, Coffee, MessageCircle, HelpCircle } from 'lucide-react';
+import { Send, Loader2, ArrowLeft, Sparkles, Check, CheckCheck, Brain, Laugh, Heart, Coffee, MessageCircle, HelpCircle, Paperclip, Video, Mic, Image, Gift, Search, MoreVertical, AlertCircle, Ban, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { TypingIndicator } from './TypingIndicator';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useIcebreakerAnalytics } from '@/hooks/useIcebreakerAnalytics';
+import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
 import type { IcebreakerCategory } from '@/types/api';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Category configuration with icons
 const CATEGORY_CONFIG: { key: IcebreakerCategory; icon: typeof Laugh; color: string }[] = [
@@ -43,40 +63,28 @@ interface MessageBubbleProps {
 const MessageBubble = memo(function MessageBubble({ message, isOwn }: MessageBubbleProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      initial={{ opacity: 0, y: 8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
       className={cn('flex mb-2', isOwn ? 'justify-end' : 'justify-start')}
       role="listitem"
     >
       <div
         className={cn(
-          'max-w-[80%] rounded-3xl px-4 py-3 shadow-lg transition-premium',
-          isOwn
-            ? 'bg-gradient-rose-glow text-white rounded-br-md shadow-glow-rose'
-            : 'bg-white text-gray-900 rounded-bl-md border border-gray-100 shadow-sm'
+          'max-w-[80%] px-3 py-2 text-sm',
+          isOwn ? 'msn-bubble-own' : 'msn-bubble-them'
         )}
       >
-        <p className="text-sm leading-relaxed font-medium">{message.content}</p>
-        <div
-          className={cn(
-            'flex items-center gap-1.5 mt-1.5',
-            isOwn ? 'justify-end' : ''
-          )}
-        >
-          <span
-            className={cn(
-              'text-xs font-medium',
-              isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
-            )}
-          >
+        <p className="leading-relaxed" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>{message.content}</p>
+        <div className={cn('flex items-center gap-1.5 mt-1', isOwn ? 'justify-end' : '')}>
+          <span className="text-xs text-gray-600">
             {format(new Date(message.created_at), 'HH:mm', { locale: sv })}
           </span>
           {isOwn && (
             message.is_read ? (
-              <CheckCheck className="w-3.5 h-3.5 text-white/70" aria-label="Läst" />
+              <CheckCheck className="w-3 h-3 text-gray-600" aria-label="Läst" />
             ) : (
-              <Check className="w-3.5 h-3.5 text-white/50" aria-label="Skickat" />
+              <Check className="w-3 h-3 text-gray-500" aria-label="Skickat" />
             )
           )}
         </div>
@@ -90,8 +98,12 @@ interface ChatWindowProps {
   matchedUserId: string;
   matchedUserName: string;
   matchedUserAvatar?: string;
+  matchedUserVerified?: boolean;
   icebreakers?: string[];
   onBack: () => void;
+  onStartVideo?: () => void;
+  showPostVideoCard?: boolean;
+  onDismissPostVideoCard?: () => void;
 }
 
 export function ChatWindow({
@@ -99,11 +111,17 @@ export function ChatWindow({
   matchedUserId,
   matchedUserName,
   matchedUserAvatar,
+  matchedUserVerified,
   icebreakers = [],
   onBack,
+  onStartVideo,
+  showPostVideoCard = false,
+  onDismissPostVideoCard,
 }: ChatWindowProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const achievementsCtx = useAchievementsContextOptional();
   const { trackIcebreakerUsed, trackIcebreakersShown } = useIcebreakerAnalytics();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -116,11 +134,17 @@ export function ChatWindow({
   const [loadingAI, setLoadingAI] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<IcebreakerCategory>('general');
+  const [matchTypeExplanation, setMatchTypeExplanation] = useState<string | null>(null);
   // Follow-up suggestions state
   const [showFollowupPanel, setShowFollowupPanel] = useState(false);
   const [followups, setFollowups] = useState<string[]>([]);
   const [loadingFollowups, setLoadingFollowups] = useState(false);
   const [followupsRemaining, setFollowupsRemaining] = useState<number | null>(null);
+  const [postVideoSuggestion, setPostVideoSuggestion] = useState<string | null>(null);
+  const [loadingPostVideo, setLoadingPostVideo] = useState(false);
+  const [kemiCheckSuggestionDismissed, setKemiCheckSuggestionDismissed] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -232,6 +256,39 @@ export function ChatWindow({
     scrollToBottom();
   }, [messages]);
 
+  // Fetch post-video AI suggestion when returning from Kemi-Check
+  useEffect(() => {
+    if (!showPostVideoCard || !matchedUserId) return;
+    setPostVideoSuggestion(null);
+    setLoadingPostVideo(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.access_token) {
+        setLoadingPostVideo(false);
+        toast.error(t('chat.postVideoError'));
+        return;
+      }
+      return supabase.functions.invoke('ai-assistant', {
+        body: { type: 'after_video', matchedUserId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+    }).then((result) => {
+      if (!result) return;
+      const { data, error } = result;
+      if (error) {
+        console.error('Post-video AI error:', error);
+        toast.error(t('chat.postVideoError'));
+        return;
+      }
+      if (data?.suggestion) {
+        setPostVideoSuggestion(data.suggestion);
+      } else if (data?.error) {
+        toast.error(data.error);
+      }
+    }).catch(() => {
+      toast.error(t('chat.postVideoError'));
+    }).finally(() => setLoadingPostVideo(false));
+  }, [showPostVideoCard, matchedUserId, t]);
+
   
 
   const broadcastTyping = useCallback(() => {
@@ -280,6 +337,18 @@ export function ChatWindow({
       console.error('Error sending message:', error);
       setNewMessage(content);
       toast.error('Meddelandet kunde inte skickas. Försök igen.');
+    } else if (achievementsCtx) {
+      achievementsCtx.checkAndAwardAchievement('first_message');
+      // conversation_starter: started 5 conversations (user sent first message in 5 matches)
+      const { data: firstMsgMatches } = await supabase
+        .from('messages')
+        .select('match_id')
+        .eq('sender_id', user.id)
+        .order('created_at', { ascending: true });
+      const matchIds = [...new Set((firstMsgMatches ?? []).map((m) => m.match_id))];
+      if (matchIds.length >= 5) {
+        achievementsCtx.checkAndAwardAchievement('conversation_starter');
+      }
     }
     setSending(false);
   };
@@ -323,6 +392,7 @@ export function ChatWindow({
       const icebreakersData = data.icebreakers as string[];
       if (icebreakersData && icebreakersData.length > 0) {
         setAiIcebreakers(icebreakersData.slice(0, 3));
+        setMatchTypeExplanation((data.matchTypeExplanation as string) ?? null);
         // Track that icebreakers were shown (fire-and-forget)
         trackIcebreakersShown(matchId, icebreakersData.slice(0, 3), category);
       } else {
@@ -344,11 +414,18 @@ export function ChatWindow({
     setFollowups([]);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error(t('chat.followup_error'));
+        setLoadingFollowups(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('generate-followups', {
         body: {
           matchId,
           messageCount: 10,
         },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (error) throw error;
@@ -386,39 +463,190 @@ export function ChatWindow({
     messages.length > 0 &&
     messages[messages.length - 1]?.sender_id !== user?.id;
 
+  // Show "boka Kemi-Check" suggestion when conversation is between 10–20 messages
+  const KEMI_CHECK_SUGGESTION_MIN = 10;
+  const KEMI_CHECK_SUGGESTION_MAX = 20;
+  const showKemiCheckSuggestion =
+    messages.length >= KEMI_CHECK_SUGGESTION_MIN &&
+    messages.length <= KEMI_CHECK_SUGGESTION_MAX &&
+    !kemiCheckSuggestionDismissed &&
+    !loading;
+
+  // Kemi-Check (FaceTime) icon only after 10+ messages
+  const KEMI_CHECK_MESSAGE_THRESHOLD = 10;
+  const showKemiCheckIcon = messages.length >= KEMI_CHECK_MESSAGE_THRESHOLD;
+
   return (
-    <div className="flex flex-col h-full bg-gradient-premium">
-      {/* Premium Header */}
-      <div className="glass border-b border-white/20 px-4 py-3 safe-area-top">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={onBack} 
-            className="p-2 hover:bg-white/20 rounded-xl transition-premium active:scale-95 touch-manipulation"
-            aria-label={t('common.back')}
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <Avatar className="w-11 h-11 ring-2 ring-white/50 shadow-lg">
+    <div className="msn-chat flex flex-1 flex-col min-h-0 min-w-0">
+      {/* Chat header: back, avatar, name + Active Now, video (Kemi-Check when 10+ msgs), more (Block / Delete / Report) */}
+      <div className="msn-title-bar flex items-center gap-3 px-3 py-2.5 safe-area-top shrink-0">
+        <button
+          onClick={onBack}
+          className="p-1.5 rounded hover:bg-white/20 text-white shrink-0"
+          aria-label={t('common.back')}
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div className="relative shrink-0">
+          <Avatar className="w-10 h-10 rounded-full border-2 border-white/30 shadow">
             <AvatarImage src={matchedUserAvatar} alt={matchedUserName} />
-            <AvatarFallback className="bg-gradient-rose-glow text-white font-bold">
+            <AvatarFallback className="bg-primary/20 text-primary-foreground text-sm font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
               {matchedUserName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <h2 className="font-bold text-foreground text-base">{matchedUserName}</h2>
-            <p className="text-xs text-primary font-semibold flex items-center gap-1">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              Online
-            </p>
-          </div>
-          
-          {/* AI Icebreaker Button */}
+          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--msn-title-bar-bg)]" aria-hidden />
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <span className="text-sm font-semibold truncate text-primary-foreground" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+            {matchedUserName}
+            {matchedUserVerified && <VerifiedBadge size="sm" className="ml-1 inline align-middle" />}
+          </span>
+          <span className="text-xs text-primary-foreground/80 truncate">{t('chat.activeNow')}</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {showKemiCheckIcon && (
+            <button
+              type="button"
+              className="p-2 rounded-full bg-white/15 hover:bg-white/25 text-primary-foreground transition-colors"
+              title={t('chat.kemiCheckTooltip')}
+              aria-label={t('chat.kemiCheck')}
+              onClick={onStartVideo}
+            >
+              <Video className="w-4 h-4" />
+            </button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="p-2 text-primary-foreground hover:opacity-80 transition-opacity" aria-label={t('chat.more_options', 'Fler alternativ')}>
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[200px] rounded-b-xl bg-primary-foreground/95 border-border">
+              <DropdownMenuItem
+                onClick={() => setShowBlockConfirm(true)}
+                className="cursor-pointer text-foreground focus:bg-muted"
+              >
+                <Ban className="w-4 h-4 mr-2" />
+                {t('chat.block_user')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowDeleteConfirm(true)}
+                className="cursor-pointer text-foreground focus:bg-muted"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t('chat.delete_person')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => navigate(`/report?userId=${encodeURIComponent(matchedUserId)}&matchId=${encodeURIComponent(matchId)}&context=chat`)}
+                className="cursor-pointer text-foreground focus:bg-muted"
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {t('report.report_user')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Block User confirmation */}
+      <AlertDialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
+        <AlertDialogContent className="rounded-2xl max-w-[340px] gap-4 p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold text-foreground">{t('chat.block_user')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-foreground/90">
+              {t('chat.block_user_confirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row gap-2 sm:justify-end">
+            <AlertDialogCancel
+              onClick={() => setShowBlockConfirm(false)}
+              className="rounded-xl border-2 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 order-2"
+            >
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowBlockConfirm(false);
+                toast.success(t('chat.block_user'));
+                // TODO: call block API
+              }}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 order-1"
+            >
+              {t('common.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Person confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="rounded-2xl max-w-[340px] gap-4 p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold text-foreground">{t('chat.delete_person')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-foreground/90">
+              {t('chat.delete_person_confirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row gap-2 sm:justify-end">
+            <AlertDialogCancel
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded-xl border-2 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 order-2"
+            >
+              {t('common.no')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                toast.success(t('chat.delete_person'));
+                onBack();
+              }}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 order-1"
+            >
+              {t('common.yes')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* MÄÄK Action Toolbar – dating/relationship goals */}
+      <div className="msn-toolbar flex items-center gap-1 px-2 py-1.5 shrink-0 flex-wrap">
+        <button type="button" className="msn-toolbar-btn p-2 flex flex-col items-center gap-0.5 text-[10px]" title={t('chat.sendPhoto')} aria-label={t('chat.sendPhoto')} onClick={() => toast.info(t('chat.coming_soon'))}>
+          <Paperclip className="w-4 h-4" />
+          <span>{t('chat.sendPhoto')}</span>
+        </button>
+        {showKemiCheckIcon && (
+          <button type="button" className="msn-toolbar-btn p-2 flex flex-col items-center gap-0.5 text-[10px]" title={t('chat.kemiCheckTooltip')} onClick={onStartVideo} aria-label={t('chat.kemiCheck')}>
+            <Video className="w-4 h-4" />
+            <span>{t('chat.kemiCheck')}</span>
+          </button>
+        )}
+        <button type="button" className="msn-toolbar-btn p-2 flex flex-col items-center gap-0.5 text-[10px]" title={t('chat.voiceMsg')} aria-label={t('chat.voiceMsg')} onClick={() => toast.info(t('chat.coming_soon'))}>
+          <Mic className="w-4 h-4" />
+          <span>{t('chat.voiceMsg')}</span>
+        </button>
+        <button
+          type="button"
+          className="msn-toolbar-btn p-2 flex flex-col items-center gap-0.5 text-[10px]"
+          title={t('chat.icebreakers')}
+          aria-label={t('chat.icebreakers')}
+          onClick={() => {
+            setShowAIPanel(true);
+            if (aiIcebreakers.length === 0) {
+              generateAIIcebreakers();
+            }
+          }}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>{t('chat.icebreakers')}</span>
+        </button>
+        <div className="flex-1" />
         <Sheet open={showAIPanel} onOpenChange={setShowAIPanel}>
           <SheetTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-primary"
+            <button
+              type="button"
+              className="msn-toolbar-btn p-2 flex flex-col items-center gap-0.5 text-[10px]"
               aria-label={t('chat.ai_icebreakers')}
               onClick={() => {
                 setShowAIPanel(true);
@@ -427,8 +655,9 @@ export function ChatWindow({
                 }
               }}
             >
-              <Brain className="w-5 h-5" />
-            </Button>
+              <Brain className="w-4 h-4" />
+              <span>{t('chat.aiSuggestions')}</span>
+            </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto max-h-[70vh]">
             <SheetHeader>
@@ -441,6 +670,19 @@ export function ChatWindow({
               <p className="text-sm text-muted-foreground">
                 {t('chat.personalized_starters')}
               </p>
+
+              {/* Why likhet/motsatt – attractive card */}
+              {matchTypeExplanation && (
+                <div className="rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/10 to-primary/5 p-4 shadow-card">
+                  <p className="flex items-center gap-2 text-base font-bold text-primary mb-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/20 text-primary">
+                      <Sparkles className="h-4 w-4" />
+                    </span>
+                    {t('chat.why_you_matched', 'Varför ni matchade')}
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed pl-10">{matchTypeExplanation}</p>
+                </div>
+              )}
 
               {/* Category Picker */}
               <div className="space-y-2">
@@ -531,9 +773,177 @@ export function ChatWindow({
             </div>
           </SheetContent>
         </Sheet>
+      </div>
 
-        {/* Follow-up Help Button (shows after 3+ messages when it's user's turn) */}
-        {showFollowupButton && (
+      {/* Main: messages + avatar panels */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Messages area */}
+        <div className="msn-messages-area flex-1 flex flex-col min-w-0 overflow-hidden rounded-br">
+          <ScrollArea className="flex-1 px-3 py-4">
+            {/* AI-Wingman: suggest booking Kemi-Check when conversation is going well (e.g. 20+ messages) */}
+            {showKemiCheckSuggestion && (
+              <div className="mb-4 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <Video className="w-5 h-5 text-primary shrink-0" />
+                  <h3 className="font-semibold text-sm text-foreground">{t('chat.kemiCheck')}</h3>
+                </div>
+                <p className="text-sm text-foreground leading-relaxed" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+                  {t('chat.aiSuggestKemiCheck')}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    onClick={() => {
+                      setKemiCheckSuggestionDismissed(true);
+                      onStartVideo?.();
+                    }}
+                  >
+                    <Video className="w-4 h-4" />
+                    {t('chat.bookKemiCheck')}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setKemiCheckSuggestionDismissed(true)}
+                  >
+                    {t('chat.postVideoDismiss')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {showPostVideoCard && onDismissPostVideoCard && (
+              <div className="mb-4 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary shrink-0" />
+                  <h3 className="font-semibold text-sm text-foreground">{t('chat.postVideoTitle')}</h3>
+                </div>
+                {loadingPostVideo ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">{t('chat.postVideoGenerating')}</span>
+                  </div>
+                ) : postVideoSuggestion ? (
+                  <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+                    {postVideoSuggestion}
+                  </p>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onDismissPostVideoCard}
+                  className="w-full"
+                >
+                  {t('chat.postVideoDismiss')}
+                </Button>
+              </div>
+            )}
+            {loading ? (
+              <div className="flex justify-center items-center h-full py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : messages.length === 0 && showIcebreakers && icebreakers.length > 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 px-4 space-y-4">
+                <p className="text-sm text-gray-700 text-center" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+                  Ny match! Välj en konversationsstartare eller skriv ditt eget meddelande.
+                </p>
+                <div className="w-full max-w-md space-y-2">
+                  {icebreakers.map((icebreaker, index) => (
+                    <motion.button
+                      key={index}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => handleIcebreakerClick(icebreaker)}
+                      className="w-full p-3 text-left text-sm msn-bubble-them hover:border-primary/40 transition-colors"
+                      style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}
+                    >
+                      {icebreaker}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 pb-4" role="list" aria-label={t('chat.messages')}>
+                {messages.map((message) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isOwn={message.sender_id === user?.id}
+                  />
+                ))}
+                {partnerTyping && (
+                  <div className="flex justify-start">
+                    <TypingIndicator />
+                  </div>
+                )}
+                <div ref={scrollRef} />
+              </div>
+            )}
+          </ScrollArea>
+
+          {/* Message input: "Write Your Message" + mic icon */}
+          <div className="msn-input-toolbar px-3 py-3 shrink-0 border-t border-border/80 bg-background/95">
+            <form onSubmit={handleSubmit} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={handleInputChange}
+                placeholder={t('chat.writeYourMessage')}
+                disabled={sending}
+                className="flex-1 min-h-[44px] px-4 py-2.5 rounded-2xl bg-muted/80 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}
+              />
+              <button
+                type="button"
+                className="p-2.5 rounded-full bg-muted/80 hover:bg-muted text-foreground shrink-0 transition-colors"
+                title={t('chat.voiceMsg')}
+                aria-label={t('chat.voiceMsg')}
+                onClick={() => toast.info(t('chat.coming_soon'))}
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+              <button
+                type="submit"
+                disabled={!newMessage.trim() || sending}
+                className="p-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                aria-label={t('chat.send')}
+              >
+                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right: Avatar panels (MSN-style) */}
+        <div className="msn-avatar-panel w-24 sm:w-28 flex flex-col border-l shrink-0 overflow-auto">
+          <div className="p-2 border-b border-border/80">
+            <p className="text-[10px] font-semibold text-muted-foreground mb-1" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>{t('chat.myMatch')}</p>
+            <Avatar className="w-14 h-14 mx-auto rounded border-2 border-border shadow">
+              <AvatarImage src={matchedUserAvatar} alt={matchedUserName} />
+              <AvatarFallback className="bg-primary/15 text-foreground text-lg font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+                {matchedUserName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+          <div className="p-2">
+            <p className="text-[10px] font-semibold text-muted-foreground mb-1" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>You</p>
+            <Avatar className="w-14 h-14 mx-auto rounded border-2 border-border shadow">
+              <AvatarFallback className="bg-secondary text-foreground text-lg font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+                {user?.email?.charAt(0).toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </div>
+
+      {/* MSN Footer */}
+      <div className="msn-footer px-3 py-1.5 text-center shrink-0 text-xs safe-area-bottom">
+        {t('chat.footerTagline')}
+      </div>
+
+      {/* Follow-up Help Button */}
+      {showFollowupButton && (
           <Sheet open={showFollowupPanel} onOpenChange={setShowFollowupPanel}>
             <SheetTrigger asChild>
               <Button
@@ -635,91 +1045,6 @@ export function ChatWindow({
             </SheetContent>
           </Sheet>
         )}
-        </div>
-      </div>
-
-      {/* Premium Messages Area */}
-      <ScrollArea className="flex-1 px-4 py-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground font-medium">Laddar meddelanden...</p>
-            </div>
-          </div>
-        ) : messages.length === 0 && showIcebreakers && icebreakers.length > 0 ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-6 px-4 animate-scale-in">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-rose-glow flex items-center justify-center shadow-glow-rose animate-bounce-gentle">
-              <Sparkles className="w-10 h-10 text-white" />
-            </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Ny match! 🎉
-              </h3>
-              <p className="text-sm text-gray-600 font-medium mb-6">
-                Välj en konversationsstartare eller skriv ditt eget meddelande
-              </p>
-            </div>
-            <div className="w-full max-w-md space-y-3">
-              {icebreakers.map((icebreaker, index) => (
-                <motion.button
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => handleIcebreakerClick(icebreaker)}
-                  className="w-full p-4 text-left text-sm bg-card rounded-2xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-premium active:scale-95 touch-manipulation font-medium shadow-sm text-foreground"
-                >
-                  {icebreaker}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3 pb-4" role="list" aria-label={t('chat.messages')}>
-            {messages.map((message, index) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwn={message.sender_id === user?.id}
-              />
-            ))}
-            {partnerTyping && (
-              <div className="flex justify-start">
-                <TypingIndicator />
-              </div>
-            )}
-            <div ref={scrollRef} />
-          </div>
-        )}
-      </ScrollArea>
-
-      {/* Premium Input Area */}
-      <form onSubmit={handleSubmit} className="glass border-t border-white/20 p-4 safe-area-bottom">
-        <div className="flex items-end gap-3">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={handleInputChange}
-              placeholder="Skriv ett meddelande..."
-              disabled={sending}
-              className="w-full px-5 py-3.5 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-200 focus:outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100 transition-premium text-sm font-medium placeholder:text-gray-400 disabled:opacity-50"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={!newMessage.trim() || sending}
-            className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground shadow-glow-primary hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-bounce active:scale-95 touch-manipulation flex items-center justify-center"
-          >
-            {sending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }

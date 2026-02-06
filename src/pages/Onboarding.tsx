@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen';
+import { getProfilesAuthKey } from '@/lib/profiles';
 
 export default function Onboarding() {
   const { user, loading } = useAuth();
@@ -15,32 +16,49 @@ export default function Onboarding() {
   const checkOnboardingStatus = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('onboarding_completed, date_of_birth, display_name')
-      .eq('id', user.id)
-      .single();
+    try {
+      const profileKey = await getProfilesAuthKey(user.id);
+      if (!profileKey) {
+        console.error('Onboarding: Failed to get profile key');
+        navigate('/phone-auth');
+        setCheckingStatus(false);
+        return;
+      }
 
-    if (error || !data) {
-      // No profile yet, redirect to phone-auth to complete age verification
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('onboarding_completed, date_of_birth, display_name')
+        .eq(profileKey, user.id)
+        .maybeSingle();
+
+      if (error || !data) {
+        // No profile yet, redirect to phone-auth to complete age verification
+        navigate('/phone-auth');
+        setCheckingStatus(false);
+        return;
+      }
+
+      if (!data.date_of_birth) {
+        // Missing date_of_birth, redirect to phone-auth to complete
+        navigate('/phone-auth');
+        setCheckingStatus(false);
+        return;
+      }
+
+      if (data.onboarding_completed) {
+        // Already completed onboarding, redirect to home
+        navigate('/');
+        setCheckingStatus(false);
+        return;
+      }
+
+      setDisplayName(data.display_name || undefined);
+      setCheckingStatus(false);
+    } catch (err) {
+      console.error('Onboarding: Error checking status', err);
       navigate('/phone-auth');
-      return;
+      setCheckingStatus(false);
     }
-
-    if (!data.date_of_birth) {
-      // Missing date_of_birth, redirect to phone-auth to complete
-      navigate('/phone-auth');
-      return;
-    }
-
-    if (data.onboarding_completed) {
-      // Already completed onboarding, redirect to home
-      navigate('/');
-      return;
-    }
-    
-    setDisplayName(data.display_name || undefined);
-    setCheckingStatus(false);
   }, [navigate, user]);
 
   useEffect(() => {
@@ -57,13 +75,21 @@ export default function Onboarding() {
   const handleComplete = async () => {
     // Re-fetch to get the updated display_name after wizard completion
     if (user) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .single();
-      
-      setDisplayName(data?.display_name?.split(' ')[0] || undefined);
+      try {
+        const profileKey = await getProfilesAuthKey(user.id);
+        if (profileKey) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq(profileKey, user.id)
+            .maybeSingle();
+
+          setDisplayName(data?.display_name?.split(' ')[0] || undefined);
+        }
+      } catch (err) {
+        console.error('Onboarding: Error fetching display name', err);
+        // Continue to welcome screen even if fetch fails
+      }
     }
     setShowWelcome(true);
   };

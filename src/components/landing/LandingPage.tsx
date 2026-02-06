@@ -59,19 +59,19 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
           <div className="flex items-center gap-1.5">
             {user ? (
               <>
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95">
-                  <Link to="/matches">
-                    <Heart className="w-5 h-5" />
+                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95 flex items-center justify-center">
+                  <Link to="/matches" className="flex items-center justify-center">
+                    <Heart className="w-5 h-5 shrink-0" />
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95">
-                  <Link to="/chat">
-                    <MessageCircle className="w-5 h-5" />
+                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95 flex items-center justify-center">
+                  <Link to="/chat" className="flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 shrink-0" />
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95">
-                  <Link to="/profile">
-                    <User className="w-5 h-5" />
+                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95 flex items-center justify-center">
+                  <Link to="/profile" className="flex items-center justify-center">
+                    <User className="w-5 h-5 shrink-0" />
                   </Link>
                 </Button>
               </>
@@ -106,6 +106,12 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               Kom igång gratis
               <ArrowRight className="w-5 h-5" />
             </ShimmerButton>
+            <Button asChild variant="outline" size="lg" className="w-full mt-3 min-h-[48px] text-base font-medium border-primary/30 text-primary hover:bg-primary/10">
+              <Link to="/demo-seed" className="flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                Se demo – matchningar & chatt utan konto
+              </Link>
+            </Button>
           </div>
           
           <p className="text-xs sm:text-sm text-muted-foreground mt-4 px-4">Redan 10,000+ svenskar söker kärlek här</p>

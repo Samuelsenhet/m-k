@@ -3,8 +3,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get("CORS_ORIGIN") || '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
 serve(async (req: Request) => {
@@ -24,36 +25,65 @@ serve(async (req: Request) => {
       }
     )
 
-    // Get the user from auth
+    // Get the user from auth (REQUIRED for this function)
     const {
       data: { user },
+      error: authError
     } = await supabaseClient.auth.getUser()
 
-    if (!user) {
-      throw new Error('Not authenticated')
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Not authenticated' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
     }
 
-    const url = new URL(req.url)
-    const user_id = url.searchParams.get('user_id') || user.id
-
-    // Verify user matches
-    if (user_id !== user.id) {
-      throw new Error('Unauthorized')
+    // Get user_id from request body or query params (support both)
+    let requestUserId = user.id;
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        requestUserId = body.user_id || user.id;
+      } catch {
+        // If body parsing fails, use query params or default to authenticated user
+        const url = new URL(req.url);
+        requestUserId = url.searchParams.get('user_id') || user.id;
+      }
+    } else {
+      const url = new URL(req.url);
+      requestUserId = url.searchParams.get('user_id') || user.id;
     }
 
-    // Use CET timezone for date (Europe/Stockholm)
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' })
+    // Verify user matches (security: users can only query their own status)
+    if (requestUserId !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401
+        }
+      );
+    }
+
+    // Use CET timezone for date (Europe/Stockholm) – YYYY-MM-DD for DB
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Stockholm' })
     const now = new Date()
 
     // 1. Check user's onboarding status
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('onboarding_completed')
-      .eq('user_id', user_id)
+      .eq('id', requestUserId)
       .single()
 
     if (profileError || !profile) {
-      throw new Error('Profile not found')
+      return new Response(
+        JSON.stringify({ error: 'Profile not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      )
     }
 
     // Determine journey phase
@@ -66,7 +96,7 @@ serve(async (req: Request) => {
       const { data: todayMatches, error: matchError } = await supabaseClient
         .from('matches')
         .select('id, created_at')
-        .eq('user_id', user_id)
+        .eq('user_id', requestUserId)
         .eq('match_date', today)
         .limit(1)
 
@@ -77,7 +107,7 @@ serve(async (req: Request) => {
         const { data: allMatches, error: allMatchError } = await supabaseClient
           .from('matches')
           .select('id')
-          .eq('user_id', user_id)
+          .eq('user_id', requestUserId)
           .order('created_at', { ascending: true })
           .limit(1)
 
@@ -91,10 +121,10 @@ serve(async (req: Request) => {
       } else {
         // Check if pool exists (means matches are ready to be delivered)
         const { data: matchPool } = await supabaseClient
-          .from('user_daily_match_pool')
+          .from('user_daily_match_pools')
           .select('id')
-          .eq('user_id', user_id)
-          .eq('date', today)
+          .eq('user_id', requestUserId)
+          .eq('pool_date', today)
           .maybeSingle()
 
         journey_phase = matchPool ? 'READY' : 'WAITING'
@@ -105,7 +135,7 @@ serve(async (req: Request) => {
     const { data: deliveredMatches, error: deliveredError } = await supabaseClient
       .from('matches')
       .select('id')
-      .eq('user_id', user_id)
+      .eq('user_id', requestUserId)
       .eq('match_date', today)
 
     if (deliveredError) throw deliveredError

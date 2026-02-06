@@ -269,6 +269,109 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          id: string
+          reporter_id: string
+          reported_user_id: string | null
+          match_id: string | null
+          context: string
+          violation_type: string
+          description: string
+          evidence_paths: string[]
+          witness_statement: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reporter_id: string
+          reported_user_id?: string | null
+          match_id?: string | null
+          context: string
+          violation_type: string
+          description: string
+          evidence_paths?: string[]
+          witness_statement?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          reporter_id?: string
+          reported_user_id?: string | null
+          match_id?: string | null
+          context?: string
+          violation_type?: string
+          description?: string
+          evidence_paths?: string[]
+          witness_statement?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reported_user_id_fkey"
+            columns: ["reported_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderator_roles: {
+        Row: { user_id: string }
+        Insert: { user_id: string }
+        Update: { user_id?: string }
+        Relationships: []
+      }
+      appeals: {
+        Row: {
+          id: string
+          user_id: string
+          report_id: string | null
+          reason: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          report_id?: string | null
+          reason: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          report_id?: string | null
+          reason?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       personality_results: {
         Row: {
           archetype: string | null
@@ -336,6 +439,7 @@ export type Database = {
           height: number | null
           hometown: string | null
           id: string
+          instagram: string | null
           interested_in: string | null
           looking_for: string | null
           max_age: number | null
@@ -370,6 +474,12 @@ export type Database = {
           height?: number | null
           hometown?: string | null
           id?: string
+          id_document_back_path?: string | null
+          id_document_front_path?: string | null
+          id_verification_status?: string | null
+          id_verification_submitted_at?: string | null
+          instagram?: string | null
+          linkedin?: string | null
           interested_in?: string | null
           looking_for?: string | null
           max_age?: number | null
@@ -404,6 +514,12 @@ export type Database = {
           height?: number | null
           hometown?: string | null
           id?: string
+          id_document_back_path?: string | null
+          id_document_front_path?: string | null
+          id_verification_status?: string | null
+          id_verification_submitted_at?: string | null
+          instagram?: string | null
+          linkedin?: string | null
           interested_in?: string | null
           looking_for?: string | null
           max_age?: number | null

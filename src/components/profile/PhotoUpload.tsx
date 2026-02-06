@@ -132,6 +132,7 @@ function SortablePhotoCard({
   onUpload,
   t,
 }: SortablePhotoCardProps) {
+  const translate = typeof t === 'function' ? t : (key: string) => key;
   const hasPhoto = photo?.storage_path;
   const sortableId = photo.id || `empty-${index}`;
 
@@ -185,7 +186,7 @@ function SortablePhotoCard({
               <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center mb-2">
                 <AlertCircle className="w-5 h-5 text-destructive" />
               </div>
-              <p className="text-xs text-destructive font-medium">{t('profile.photos.upload_error')}</p>
+              <p className="text-xs text-destructive font-medium">{translate('profile.photos.upload_error')}</p>
             </div>
           ) : (
             <>
@@ -199,7 +200,7 @@ function SortablePhotoCard({
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-[10px] text-muted-foreground truncate max-w-[60%]">
-                    {uploadFileName || t('profile.photos.uploading')}
+                    {uploadFileName || translate('profile.photos.uploading')}
                   </p>
                   <p className="text-[10px] font-medium text-primary">
                     {Math.round(uploadProgress)}%
@@ -221,16 +222,17 @@ function SortablePhotoCard({
           {isPrimary && (
             <div className="absolute top-1 left-1 bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
               <Crown className="w-3 h-3" />
-              {t('profile.photos.primary_photo')}
+              {translate('profile.photos.primary_photo')}
             </div>
           )}
+
 
           {/* Drag handle - larger touch target for "dra för att ändra ordning" */}
           <div
             {...attributes}
             {...listeners}
             className="absolute top-1 right-8 min-w-[44px] min-h-[44px] w-10 h-10 flex items-center justify-center bg-black/50 hover:bg-black/70 rounded-full cursor-grab active:cursor-grabbing touch-manipulation -m-2"
-            title={t('profile.photos.reorder_hint')}
+            title={translate('profile.photos.reorder_hint')}
           >
             <GripVertical className="w-4 h-4 text-white pointer-events-none" />
           </div>
@@ -276,6 +278,7 @@ function SortablePhotoCard({
 
 // Overlay component for dragging state
 function DragOverlayCard({ photo, index, t }: { photo: PhotoSlot; index: number; t: (key: string) => string }) {
+  const translate = typeof t === 'function' ? t : (key: string) => key;
   const isPrimary = index === 0;
 
   return (
@@ -288,7 +291,7 @@ function DragOverlayCard({ photo, index, t }: { photo: PhotoSlot; index: number;
       {isPrimary && (
         <div className="absolute top-1 left-1 bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
           <Crown className="w-3 h-3" />
-          {t('profile.photos.primary_photo')}
+          {translate('profile.photos.primary_photo')}
         </div>
       )}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
@@ -744,12 +747,15 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         </div>
 
         <input
+          id="photo-upload-input"
+          name="profilePhotos"
           ref={fileInputRef}
           type="file"
           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
           multiple
           className="hidden"
           onChange={(e) => selectedSlot !== null && handleUpload(e, selectedSlot)}
+          aria-label="Ladda upp profilbilder"
         />
 
         <DndContext

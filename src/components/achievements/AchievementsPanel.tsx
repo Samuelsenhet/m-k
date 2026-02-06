@@ -1,10 +1,12 @@
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useAchievements, Achievement } from '@/hooks/useAchievements';
-import { Loader2, Trophy, Lock, Star, Camera, UserCheck, Brain, Heart, MessageCircle, Flame, TrendingUp, MessageSquare, Images, Sparkles } from 'lucide-react';
+import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
+import { useAchievements, type Achievement } from '@/hooks/useAchievements';
+import { Loader2, Trophy, Lock, Camera, UserCheck, Brain, Heart, MessageCircle, Flame, TrendingUp, MessageSquare, Images, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -26,18 +28,17 @@ interface AchievementCardProps {
   isEarned: boolean;
 }
 
-function AchievementCard({ achievement, isEarned }: AchievementCardProps) {
-  const { i18n } = useTranslation();
-  const isSwedish = i18n.language === 'sv';
-  
-  const name = isSwedish ? achievement.name_sv : achievement.name_en;
-  const description = isSwedish ? achievement.description_sv : achievement.description_en;
+const AchievementCard = React.forwardRef<HTMLDivElement, AchievementCardProps>(
+  function AchievementCard({ achievement, isEarned }, ref) {
+    const { i18n } = useTranslation();
+    const locale = i18n.language?.startsWith('sv') ? 'sv-SE' : 'en-US';
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn(
+    return (
+      <motion.div
+        ref={ref}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
         "p-4 rounded-xl border transition-all",
         isEarned
           ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30"
@@ -54,39 +55,38 @@ function AchievementCard({ achievement, isEarned }: AchievementCardProps) {
           )}
         >
           {isEarned ? (
-            iconMap[achievement.icon] || <Star className="w-5 h-5" />
+            <span className="text-xl leading-none">{achievement.icon}</span>
           ) : (
             <Lock className="w-5 h-5" />
           )}
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
-            <h4 className="font-semibold text-foreground">{name}</h4>
+            <h4 className="font-semibold text-foreground">{achievement.name}</h4>
             <Badge variant={isEarned ? "default" : "outline"} className="text-xs">
               {achievement.points} pts
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-muted-foreground">{achievement.description}</p>
           {isEarned && achievement.earned_at && (
             <p className="text-xs text-primary mt-1">
-              ✓ {new Date(achievement.earned_at).toLocaleDateString(isSwedish ? 'sv-SE' : 'en-US')}
+              ✓ {new Date(achievement.earned_at).toLocaleDateString(locale)}
             </p>
           )}
         </div>
       </div>
     </motion.div>
-  );
-}
+    );
+  }
+);
+AchievementCard.displayName = 'AchievementCard';
 
 export function AchievementsPanel() {
   const { t, i18n } = useTranslation();
-  const { 
-    earnedAchievements, 
-    unearnedAchievements, 
-    totalPoints, 
-    achievements,
-    loading 
-  } = useAchievements();
+  const ctx = useAchievementsContextOptional();
+  const fallback = useAchievements();
+  const { earnedAchievements, unearnedAchievements, totalPoints, achievements, loading } =
+    ctx?.useAchievementsReturn ?? fallback;
 
   const progressPercent = achievements.length > 0 
     ? (earnedAchievements.length / achievements.length) * 100 
@@ -127,22 +127,31 @@ export function AchievementsPanel() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <AnimatePresence mode="popLayout">
-          {earnedAchievements.map((achievement) => (
-            <AchievementCard 
-              key={achievement.id} 
-              achievement={achievement} 
-              isEarned={true} 
-            />
-          ))}
-          {unearnedAchievements.map((achievement) => (
-            <AchievementCard 
-              key={achievement.id} 
-              achievement={achievement} 
-              isEarned={false} 
-            />
-          ))}
-        </AnimatePresence>
+        {achievements.length === 0 ? (
+          <div className="py-8 text-center text-muted-foreground">
+            <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">{t('achievements.empty')}</p>
+          </div>
+        ) : (
+          <>
+            <AnimatePresence mode="popLayout">
+              {earnedAchievements.map((achievement) => (
+                <AchievementCard
+                  key={achievement.id}
+                  achievement={achievement}
+                  isEarned={true}
+                />
+              ))}
+              {unearnedAchievements.map((achievement) => (
+                <AchievementCard
+                  key={achievement.id}
+                  achievement={achievement}
+                  isEarned={false}
+                />
+              ))}
+            </AnimatePresence>
+          </>
+        )}
       </CardContent>
     </Card>
   );

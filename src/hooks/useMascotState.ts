@@ -10,38 +10,38 @@ export interface MascotStateConfig {
 
 const MASCOT_STATES: Record<string, MascotStateConfig> = {
   ONBOARDING: {
-    pose: 'Idle',
+    pose: 'idle',
     message: null
   },
   WAITING: {
-    pose: 'Idle',
+    pose: 'idle',
     message: 'Dina matchningar analyseras... 🔍'
   },
   READY: {
-    pose: 'Jump',
+    pose: 'jump',
     message: 'Dina matchningar är redo! 🎉',
     effects: ['pulse']
   },
   FIRST_MATCH: {
-    pose: 'Happy',
+    pose: 'happy',
     message: 'Din första matchning! Välkommen till MÄÄK! 🥳',
     effects: ['confetti', 'sparkles']
   },
   NEW_BATCH: {
-    pose: 'Happy',
+    pose: 'happy',
     message: 'Nya matchningar har anlänt! 🔥',
     effects: ['pulse']
   },
   NO_MATCHES: {
-    pose: 'Idle',
+    pose: 'idle',
     message: 'Inga nya matchningar idag, men imorgon kommer fler! 💫'
   },
   MATCH_OPENED: {
-    pose: 'Jump',
+    pose: 'jump',
     message: null
   },
   ICEBREAKER_USED: {
-    pose: 'Happy',
+    pose: 'happy',
     message: 'Bra val av isbrytare! 💬'
   }
 };

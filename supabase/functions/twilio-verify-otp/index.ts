@@ -11,15 +11,18 @@ const {
   SUPABASE_SERVICE_ROLE_KEY,
 } = Deno.env.toObject();
 
+// FIXED: More restrictive CORS for production
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("CORS_ORIGIN") || "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Credentials": "true",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
@@ -33,9 +36,14 @@ serve(async (req) => {
       return jsonError("Missing phone or code", 400);
     }
 
-    // Validate E.164 format
-    if (!phone.startsWith("+") || phone.length < 8) {
-      return jsonError("Invalid phone format", 400);
+    // FIXED: Validate phone format (E.164)
+    if (!phone.startsWith("+") || phone.length < 8 || phone.length > 16) {
+      return jsonError("Ogiltigt telefonnummer. Ange ett giltigt nummer i internationellt format.", 400);
+    }
+
+    // Validate code format (6 digits)
+    if (!/^\d{6}$/.test(code)) {
+      return jsonError("Ogiltig kod. Koden måste vara 6 siffror.", 400);
     }
 
     // Validate Twilio configuration
@@ -45,170 +53,177 @@ serve(async (req) => {
     }
 
     /* ---------- TWILIO VERIFY ---------- */
-    // FIX: Correct endpoint is VerificationChecks (plural)
-    const twilioRes = await fetch(
-      `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationChecks`,
-      {
-        method: "POST",
-        headers: {
-          Authorization:
-            "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({ To: phone, Code: code }),
-      }
-    );
+    // Twilio Verify Verification Check endpoint:
+    // POST https://verify.twilio.com/v2/Services/{ServiceSid}/VerificationCheck
+    // Twilio can return 404 if the verification is expired/approved/max-attempts reached.
+    const requestInit: RequestInit = {
+      method: "POST",
+      headers: {
+        Authorization:
+          "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ To: phone, Code: code }),
+    };
 
-    const twilioData = await twilioRes.json();
-    console.log("Twilio response:", JSON.stringify(twilioData));
+    const checkUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
 
-    // Check for HTTP-level errors from Twilio
-    if (!twilioRes.ok || twilioData.code || twilioData.message) {
-      const errorMessage = twilioData.message || "Twilio verification failed";
-      console.error("Twilio API error:", errorMessage);
+    const twilioRes = await fetch(checkUrl, requestInit);
+    const twilioData: unknown = await twilioRes.json().catch(() => ({}));
+    const twilioObj =
+      twilioData && typeof twilioData === "object"
+        ? (twilioData as Record<string, unknown>)
+        : ({} as Record<string, unknown>);
+    const twilioCode = typeof twilioObj.code === "number" ? twilioObj.code : undefined;
+    const twilioMessage =
+      typeof twilioObj.message === "string" ? twilioObj.message : undefined;
+    const twilioStatus =
+      typeof twilioObj.status === "string" ? twilioObj.status : undefined;
+
+    console.log("Twilio response:", JSON.stringify(twilioObj));
+
+    // 404 from Twilio Verify commonly means: expired, already approved, or max attempts reached.
+    if (twilioRes.status === 404) {
+      return jsonError(
+        "Koden har utgått eller har redan använts. Skicka en ny kod och försök igen.",
+        401
+      );
+    }
+
+    // FIXED: Better error handling for Twilio responses
+    // Check for HTTP-level errors from Twilio (but allow 200 with error codes)
+    if (!twilioRes.ok) {
+      const errorMessage = twilioMessage || `Twilio API error: ${twilioRes.status}`;
+      console.error("Twilio API HTTP error:", errorMessage, twilioObj);
       return jsonError(errorMessage, 502);
     }
 
-    if (twilioData.status !== "approved") {
+    // Check for Twilio error codes in response body
+    if (twilioCode && twilioCode !== 0) {
+      const errorMessage = twilioMessage || `Twilio error code: ${twilioCode}`;
+      console.error("Twilio error code:", twilioCode, twilioMessage);
+      return jsonError(errorMessage, 401);
+    }
+
+    // Check verification status
+    if (twilioStatus !== "approved") {
       const message =
-        twilioData.status === "pending" ? "Fel kod" : "Koden har utgått";
+        twilioStatus === "pending" 
+          ? "Fel kod. Försök igen." 
+          : twilioStatus === "expired"
+          ? "Koden har utgått. Skicka en ny kod."
+          : "Koden är ogiltig. Försök igen.";
+      console.log("Twilio verification status:", twilioStatus);
       return jsonError(message, 401);
     }
 
-    /* ---------- SUPABASE ---------- */
+    /* ---------- SUPABASE AUTH ---------- */
+    // Create Supabase admin client for user management
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // FIX: Use getUserByPhone instead of listUsers (no pagination issues, O(1) lookup)
-    const { data: existingUser, error: getUserError } =
-      await supabase.auth.admin.getUserByPhone(phone);
-
-    // Handle getUserByPhone errors (excluding "not found" which returns null data)
-    if (getUserError && !getUserError.message?.includes("not found")) {
-      console.error("Error fetching user by phone:", getUserError);
-      return jsonError("Failed to lookup user", 500);
+    // CORRECT PATTERN: Use Supabase Auth admin methods (not client-side methods)
+    // Since getUserByPhone doesn't exist, we need to find or create user
+    
+    // Try to find existing user by phone (search first 3 pages = 300 users)
+    let user = null;
+    let isNewUser = false;
+    
+    for (let page = 1; page <= 3; page++) {
+      const { data, error } = await supabase.auth.admin.listUsers({
+        page,
+        perPage: 100,
+      });
+      
+      if (error) {
+        console.error(`Error listing users page ${page}:`, error);
+        break;
+      }
+      
+      const found = data?.users?.find((u) => u.phone === phone);
+      if (found) {
+        user = found;
+        break;
+      }
+      
+      // If we got fewer than 100 users, we've reached the end
+      if (!data?.users || data.users.length < 100) break;
     }
 
-    let user = existingUser?.user;
-    let isNewUser = false;
-
+    // Create user if not found
     if (!user) {
       isNewUser = true;
+      const { data: newUserData, error: createErr } = await supabase.auth.admin.createUser({
+        phone,
+        phone_confirmed: true,
+      });
 
-      // FIX: Use phone_confirmed (not phone_confirm)
-      const { data: newUser, error: createErr } =
-        await supabase.auth.admin.createUser({
-          phone,
-          phone_confirmed: true,
-        });
-
-      if (createErr || !newUser.user) {
+      if (createErr || !newUserData?.user) {
         console.error("Create user error:", createErr);
-
-        // Handle case where user already exists (race condition or phone format mismatch)
+        // If user already exists (race condition), try finding again
         if (createErr?.message?.includes("already") || createErr?.message?.includes("duplicate")) {
-          // Try to fetch user again with the exact phone
-          const { data: retryUser } = await supabase.auth.admin.getUserByPhone(phone);
-          if (retryUser?.user) {
-            user = retryUser.user;
-            isNewUser = false;
-          } else {
-            // Also try listing users as fallback
-            const { data: listData } = await supabase.auth.admin.listUsers({
-              page: 1,
-              perPage: 1000,
-            });
-            const foundUser = listData?.users?.find((u) => u.phone === phone);
-            if (foundUser) {
-              user = foundUser;
-              isNewUser = false;
-            } else {
-              return jsonError("Failed to create user account", 500);
-            }
-          }
-        } else {
-          return jsonError("Failed to create user account", 500);
+          // One more search attempt
+          const { data: retryData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 100 });
+          user = retryData?.users?.find((u) => u.phone === phone) || null;
+          if (user) isNewUser = false;
+        }
+        
+        if (!user) {
+          return jsonError("Kunde inte skapa användarkonto. Försök igen.", 500);
         }
       } else {
-        user = newUser.user;
+        user = newUserData.user;
       }
 
-      // Only create profile for truly new users
+      // Create profile for new users
       if (isNewUser) {
-        // FIX: Handle profile insert errors
         const { error: profileError } = await supabase.from("profiles").insert({
           id: user.id,
           phone,
           phone_verified_at: new Date().toISOString(),
         });
 
-        if (profileError) {
+        if (profileError && !profileError.message?.includes("duplicate") && !profileError.message?.includes("already exists")) {
           console.error("Profile insert error:", profileError);
-          // Check if profile already exists (race condition)
-          if (!profileError.message?.includes("duplicate") && !profileError.message?.includes("already exists")) {
-            // Clean up orphaned auth user to maintain consistency
-            const { error: deleteErr } = await supabase.auth.admin.deleteUser(
-              user.id
-            );
-            if (deleteErr) {
-              console.error("Failed to cleanup orphaned user:", deleteErr);
-            }
-            return jsonError("Failed to create profile", 500);
-          }
-          // Profile already exists, that's fine
-          console.log("Profile already exists, continuing");
+          // Cleanup orphaned auth user
+          await supabase.auth.admin.deleteUser(user.id).catch(() => {});
+          return jsonError("Kunde inte skapa profil. Försök igen.", 500);
         }
       }
     }
 
     /* ---------- CREATE SESSION ---------- */
-    // Since we verified OTP via Twilio (not Supabase's built-in OTP),
-    // we need to generate a session using the admin API.
-    // We use generateLink to create a magic link token, then exchange it for a session.
-
-    // First, ensure user has an email (required for generateLink)
-    // We'll use a placeholder email based on phone
-    const placeholderEmail = `${phone.replace('+', '')}@phone.maak.app`;
-
-    // Update user with placeholder email if not set
-    const { error: updateError } = await supabase.auth.admin.updateUser(user.id, {
+    // CORRECT PATTERN: Use generateLink to create a session token
+    // This is the recommended way to create sessions server-side
+    const placeholderEmail = `${phone.replace(/[^0-9]/g, '')}@phone.maak.app`;
+    
+    // Ensure user has email (required for generateLink)
+    await supabase.auth.admin.updateUserById(user.id, {
       email: placeholderEmail,
       email_confirm: true,
-    });
+    }).catch(() => {}); // Ignore if email already exists
 
-    if (updateError) {
-      console.error("Update user error:", updateError);
-      // Non-fatal - user might already have email
-    }
-
-    // Generate a magic link for the user
+    // Generate magic link to get session token
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: "magiclink",
       email: placeholderEmail,
     });
 
-    if (linkError || !linkData) {
+    if (linkError || !linkData?.properties?.hashed_token) {
       console.error("Generate link error:", linkError);
-      return jsonError("Failed to create session", 500);
+      return jsonError("Kunde inte skapa session. Försök igen.", 500);
     }
 
-    // Extract the token from the generated link
-    const tokenHash = linkData.properties?.hashed_token;
-    if (!tokenHash) {
-      console.error("No token hash in link data");
-      return jsonError("Failed to create session", 500);
-    }
-
-    // Verify the magic link token to get a session
+    // Exchange token hash for session
     const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
+      token_hash: linkData.properties.hashed_token,
       type: "magiclink",
     });
 
-    if (sessionError || !sessionData.session) {
+    if (sessionError || !sessionData?.session) {
       console.error("Session creation error:", sessionError);
-      return jsonError("Failed to create session", 500);
+      return jsonError("Kunde inte skapa session. Försök igen.", 500);
     }
 
     const session = sessionData;
@@ -226,7 +241,12 @@ serve(async (req) => {
     );
   } catch (err) {
     console.error("Unhandled error:", err);
-    return jsonError("Server error", 500);
+    const message =
+      err instanceof Error && typeof err.message === "string" && err.message.trim().length > 0
+        ? err.message
+        : "Server error";
+    // Don't leak huge stack traces to client
+    return jsonError(message.slice(0, 300), 500);
   }
 });
 

@@ -7,10 +7,11 @@ const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface RequestBody {
-  type: "matching" | "profile" | "icebreakers" | "all";
+  type: "matching" | "profile" | "icebreakers" | "all" | "after_video";
   matchedUserId?: string;
 }
 
@@ -63,7 +64,7 @@ serve(async (req) => {
     const { data: userProfile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
-      .eq("user_id", userId)
+      .eq("id", userId)
       .single();
 
     if (profileError || !userProfile) {
@@ -95,7 +96,7 @@ serve(async (req) => {
       const { data: mp } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", matchedUserId)
+        .eq("id", matchedUserId)
         .single();
       matchedProfile = mp;
 
@@ -183,6 +184,25 @@ ${JSON.stringify(context.matchedUser, null, 2)}
 Generera 3 unika och personliga konversationsstartare som användare 1 kan använda för att inleda en konversation med användare 2.
 Basera förslagen på gemensamma intressen, personligheter eller intressanta skillnader.
 Gör dem lättsamma och engagerande.`;
+        break;
+
+      case "after_video":
+        if (!context.matchedUser) {
+          throw new Error("Matched user ID required for after_video");
+        }
+        userPrompt = `Användaren har precis avslutat ett kort videomöte (Kemi-Check) med sin match.
+
+Användare 1 (du):
+${JSON.stringify(context.userProfile, null, 2)}
+Personlighet: ${context.personality?.archetype || "Okänd"}
+
+Användare 2 (match):
+${JSON.stringify(context.matchedUser, null, 2)}
+
+Ge:
+1. En kort sammanfattning (1–2 meningar) om vad som kan funka bra mellan er.
+2. 2–3 konkreta ämnen eller frågor ni kan ta upp i chatt efter videomötet. Exempel: "Ni båda gillar resor – fråga om senaste resan!"
+Var kort, personlig och på svenska.`;
         break;
 
       case "all":

@@ -3,16 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type PhoneAuthStep = "phone" | "verify" | "profile";
 
-interface VerifyResponse {
-  success?: boolean;
-  error?: string;
-  session?: {
-    access_token: string;
-    refresh_token: string;
-  };
-  isNewUser?: boolean;
-}
-
 export const usePhoneAuth = () => {
   const [step, setStep] = useState<PhoneAuthStep>("phone");
   const [loading, setLoading] = useState(false);
@@ -37,19 +27,87 @@ export const usePhoneAuth = () => {
   };
 
   const getEnv = () => {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    // Try to get URL from multiple sources
+    let url = import.meta.env.VITE_SUPABASE_URL;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY; // keep validation for common misconfig
+
+    // Construct URL from project ID if URL is not provided or is placeholder
+    if ((!url || url.includes('your_project') || url.includes('placeholder')) && 
+        projectId && 
+        !projectId.includes('your_project') && 
+        !projectId.includes('placeholder')) {
+      url = `https://${projectId}.supabase.co`;
+    }
 
     if (!url || !anon) {
-      throw new Error("Supabase environment variables missing");
+      const error = "Supabase environment variables missing. Please set VITE_SUPABASE_URL (or VITE_SUPABASE_PROJECT_ID) and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file. See CHECK_SETUP.md for instructions.";
+      if (import.meta.env.DEV) {
+        console.error('❌ Missing environment variables:', {
+          hasUrl: !!url,
+          hasProjectId: !!projectId,
+          hasAnonKey: !!anon,
+          urlValue: url ? `${url.substring(0, 20)}...` : 'missing',
+        });
+      }
+      throw new Error(error);
+    }
+
+    // Check for placeholder values
+    const isPlaceholder = 
+      url.includes('your_project') || 
+      url.includes('your-project') ||
+      url.includes('placeholder') ||
+      anon.includes('your_anon') ||
+      anon.includes('your-anon') ||
+      anon.includes('placeholder');
+
+    if (isPlaceholder) {
+      const error = "Supabase environment variables contain placeholder values. Please update your .env file with real values from https://supabase.com/dashboard → Settings → API";
+      if (import.meta.env.DEV) {
+        console.error('❌ Placeholder values detected:', {
+          url: url.substring(0, 30) + '...',
+          hasPlaceholderKey: anon.includes('your') || anon.includes('placeholder'),
+        });
+      }
+      throw new Error(error);
+    }
+
+    // Validate URL format
+    if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
+      const error = `Invalid Supabase URL format. Expected: https://xxx.supabase.co, got: ${url}`;
+      console.error('❌ Invalid Supabase URL:', url);
+      throw new Error(error);
     }
 
     return { url, anon };
   };
 
   const handleError = (err: unknown, fallback: string) => {
-    console.error(err);
-    setError(err instanceof Error ? err.message : fallback);
+    if (import.meta.env.DEV) {
+      console.error('Phone auth error:', err);
+    }
+    
+    let errorMessage = fallback;
+    
+    if (err instanceof Error) {
+      errorMessage = err.message;
+      
+      // Provide more helpful messages for common errors
+      if (err.message.includes('fetch') || err.message.includes('network')) {
+        errorMessage = 'Nätverksfel. Kontrollera din internetanslutning och att Supabase är korrekt konfigurerad.';
+      } else if (err.message.includes('CORS')) {
+        errorMessage = 'CORS-fel. Kontrollera att edge-funktionerna är korrekt deployade.';
+      } else if (err.message.includes('environment variables')) {
+        errorMessage = 'Konfigurationsfel: Supabase miljövariabler saknas. Kontrollera .env-filen.';
+      } else if (err.message.includes('edge-funktionen')) {
+        errorMessage = err.message; // Already a helpful message
+      }
+    } else if (typeof err === 'string') {
+      errorMessage = err;
+    }
+    
+    setError(errorMessage);
     return false;
   };
 
@@ -60,22 +118,32 @@ export const usePhoneAuth = () => {
     setError(null);
 
     try {
-      const { url, anon } = getEnv();
+      // Validate env once to give a good error message (supabase client would otherwise fail later)
+      getEnv();
       const formattedPhone = formatPhoneE164(phone);
 
-      const res = await fetch(`${url}/functions/v1/twilio-send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${anon}`,
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+        options: {
+          // allow new users to be created on first OTP
+          shouldCreateUser: true,
         },
-        body: JSON.stringify({ phone: formattedPhone }),
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Kunde inte skicka verifieringskod");
+      if (otpError) {
+        const msg = otpError.message || "Kunde inte skicka verifieringskod";
+        // Common Supabase Phone Auth setup issues
+        if (msg.toLowerCase().includes("captcha")) {
+          throw new Error(
+            "SMS-inloggning kräver CAPTCHA i din Supabase-inställning. Stäng av CAPTCHA för Phone Auth eller implementera captchaToken i klienten."
+          );
+        }
+        if (msg.toLowerCase().includes("phone provider is disabled") || msg.toLowerCase().includes("provider")) {
+          throw new Error(
+            "SMS-inloggning är inte aktiverad i Supabase. Gå till Supabase Dashboard → Authentication → Providers → Phone och aktivera."
+          );
+        }
+        throw new Error(msg);
       }
 
       setStep("verify");
@@ -94,41 +162,30 @@ export const usePhoneAuth = () => {
     setError(null);
 
     try {
-      const { url, anon } = getEnv();
+      // Validate env once to give a good error message (supabase client would otherwise fail later)
+      getEnv();
       const formattedPhone = formatPhoneE164(phone);
 
-      const res = await fetch(`${url}/functions/v1/twilio-verify-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${anon}`,
-        },
-        body: JSON.stringify({ phone: formattedPhone, code }),
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        phone: formattedPhone,
+        token: code,
+        type: "sms",
       });
 
-      const data: VerifyResponse = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Ogiltig verifieringskod");
+      if (verifyError) {
+        const msg = verifyError.message || "Ogiltig verifieringskod";
+        if (msg.toLowerCase().includes("expired")) {
+          throw new Error("Koden har utgått. Skicka en ny kod och försök igen.");
+        }
+        throw new Error(msg);
       }
 
-      if (!data.session) {
+      if (!data?.session) {
         throw new Error("Ingen session returnerades");
       }
 
-      // 🔐 Set Supabase session
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      if (data.isNewUser) {
-        setStep("profile");
-      }
+      // After successful verification we always proceed to profile completion step (age verification)
+      setStep("profile");
 
       return true;
     } catch (err) {
