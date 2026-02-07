@@ -289,12 +289,20 @@ export default function Chat() {
             <h1 className="font-semibold text-lg text-foreground absolute left-1/2 -translate-x-1/2">
               {t("chat.chats")}
             </h1>
-            <Link
-              to="/demo-seed"
-              className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 text-xs font-medium"
-            >
-              Demo
-            </Link>
+            <div className="flex items-center gap-1 shrink-0">
+              <Link
+                to="/group-chat"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs font-medium"
+              >
+                {t("groupChat.title")}
+              </Link>
+              <Link
+                to="/demo-seed"
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs font-medium"
+              >
+                Demo
+              </Link>
+            </div>
           </div>
           {/* Search bar */}
           <div className="px-3 py-2 bg-background border-b border-border shrink-0">

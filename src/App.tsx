@@ -17,6 +17,9 @@ import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
 import Matches from "./pages/Matches";
 import Chat from "./pages/Chat";
+import GroupChatList from "./pages/GroupChatList";
+import GroupChatWindow from "./pages/GroupChatWindow";
+import CreateGroupChat from "./pages/CreateGroupChat";
 import Onboarding from "./pages/Onboarding";
 import ViewMatchProfile from "./pages/ViewMatchProfile";
 import PersonalityGuide from "./pages/PersonalityGuide";
@@ -61,6 +64,9 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/matches" element={<Matches />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/group-chat" element={<GroupChatList />} />
+          <Route path="/group-chat/create" element={<CreateGroupChat />} />
+          <Route path="/group-chat/:groupId" element={<GroupChatWindow />} />
           <Route path="/match/:userId" element={<ViewMatchProfile />} />
           <Route path="/view-match" element={<ViewMatchProfile />} />
           <Route path="/demo-seed" element={<DemoSeed />} />

@@ -159,6 +159,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
                 { step: 2, title: 'Ta personlighetstest', desc: '30 frågor, 5 minuter', icon: Brain },
                 { step: 3, title: 'Få dagliga matcher', desc: 'Baserat på kompatibilitet', icon: Heart },
                 { step: 4, title: 'Chatta & träffas', desc: 'Med AI-hjälp på vägen', icon: MessageCircle },
+                { step: 5, title: 'Gruppchatt', desc: 'Prata med flera matchningar tillsammans', icon: Users },
               ].map((item, i) => (
                 <GlowCard
                   key={i}
