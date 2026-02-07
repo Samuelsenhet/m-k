@@ -529,56 +529,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                   <p className="text-xs text-white/60 mb-1">Plats</p>
                   <p className="text-white font-medium flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5" />
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-4xl">{archetypeInfo.emoji}</span>
-                      <div>
-                        <h3 className="text-xl font-bold text-white">{archetypeInfo.title}</h3>
-                        <p className="text-sm text-white/70">{archetypeInfo.name}</p>
-                      </div>
-                    </div>
-                    <p className="text-white/80 mb-4">{archetypeInfo.description}</p>
-                    <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-white/90 mb-2">{t('profile.strengths', 'Styrkor')}</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {archetypeInfo.strengths.map((strength, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white border border-white/20"
-                          >
-                            {strength}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="pt-3 border-t border-white/10">
-                      <p className="text-sm text-white/70">
-                        <span className="font-semibold text-white">I relationer:</span> {archetypeInfo.loveStyle}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Additional Info */}
-            <div className="grid grid-cols-2 gap-4">
-              {profile?.work && (
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Jobb</p>
-                  <p className="text-white font-medium">{profile.work}</p>
-                </div>
-              )}
-              {profile?.education && (
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Utbildning</p>
-                  <p className="text-white font-medium">{profile.education}</p>
-                </div>
-              )}
-              {profile?.hometown && (
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Plats</p>
-                  <p className="text-white font-medium flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5" />
                     {profile.hometown}
                   </p>
                 </div>

@@ -17,6 +17,9 @@ import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
 import Matches from "./pages/Matches";
 import Chat from "./pages/Chat";
+import GroupChatList from "./pages/GroupChatList";
+import GroupChatWindow from "./pages/GroupChatWindow";
+import CreateGroupChat from "./pages/CreateGroupChat";
 import Onboarding from "./pages/Onboarding";
 import ViewMatchProfile from "./pages/ViewMatchProfile";
 import Terms from "./pages/Terms";
@@ -24,6 +27,7 @@ import Reporting from "./pages/Reporting";
 import Report from "./pages/Report";
 import ReportHistory from "./pages/ReportHistory";
 import AdminReports from "./pages/AdminReports";
+import AdminAppeals from "./pages/AdminAppeals";
 import Appeal from "./pages/Appeal";
 import DemoSeed from "./pages/DemoSeed";
 import NotFound from "./pages/NotFound";
@@ -57,6 +61,9 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/matches" element={<Matches />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/group-chat" element={<GroupChatList />} />
+          <Route path="/group-chat/create" element={<CreateGroupChat />} />
+          <Route path="/group-chat/:groupId" element={<GroupChatWindow />} />
           <Route path="/match/:userId" element={<ViewMatchProfile />} />
           <Route path="/view-match" element={<ViewMatchProfile />} />
           <Route path="/terms" element={<Terms />} />
@@ -65,6 +72,7 @@ const AppContent = () => {
           <Route path="/report" element={<Report />} />
           <Route path="/report-history" element={<ReportHistory />} />
           <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/appeals" element={<AdminAppeals />} />
           <Route path="/appeal" element={<Appeal />} />
           <Route path="/demo-seed" element={<DemoSeed />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
