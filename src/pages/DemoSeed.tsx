@@ -525,7 +525,7 @@ export default function DemoSeed() {
                       {selectedMatch.initial}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--msn-title-bar-bg,theme(colors.primary))]" aria-hidden />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--msn-title-bar-bg)]" aria-hidden />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <span className="text-sm font-semibold truncate text-primary-foreground" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>

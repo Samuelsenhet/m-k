@@ -246,6 +246,7 @@
     overflow: hidden;
   }
   .msn-title-bar {
+    --msn-title-bar-bg: hsl(var(--primary));
     background: linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow) / 0.9) 50%, hsl(var(--primary)) 100%) !important;
     color: hsl(var(--primary-foreground)) !important;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 1px 3px hsl(var(--foreground) / 0.15);

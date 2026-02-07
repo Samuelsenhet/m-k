@@ -25,6 +25,7 @@ import Reporting from "./pages/Reporting";
 import Report from "./pages/Report";
 import ReportHistory from "./pages/ReportHistory";
 import AdminReports from "./pages/AdminReports";
+import AdminAppeals from "./pages/AdminAppeals";
 import Appeal from "./pages/Appeal";
 import DemoSeed from "./pages/DemoSeed";
 import About from "./pages/About";
@@ -72,6 +73,7 @@ const AppContent = () => {
           <Route path="/report" element={<Report />} />
           <Route path="/report-history" element={<ReportHistory />} />
           <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/appeals" element={<AdminAppeals />} />
           <Route path="/appeal" element={<Appeal />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

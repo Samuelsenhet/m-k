@@ -64,23 +64,47 @@ export default function Profile() {
 
   const fetchArchetype = useCallback(async () => {
     if (!user) return;
-
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('personality_results')
       .select('archetype, scores')
       .eq('user_id', user.id)
       .maybeSingle();
-
-    if (data?.archetype) {
-      setArchetype(data.archetype);
+    if (error) {
+      if (import.meta.env.DEV) console.error('Profile: personality_results fetch error', error);
+      toast.error(t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.'), {
+        action: { label: t('common.retry', 'Försök igen'), onClick: () => fetchArchetype() },
+      });
+      return;
     }
-  }, [user]);
+    if (data?.archetype) setArchetype(data.archetype);
+  }, [user, t]);
 
   useEffect(() => {
-    if (user) {
-      fetchArchetype();
-    }
+    if (user) fetchArchetype();
   }, [user, fetchArchetype]);
+
+  const fetchProfileAndModerator = useCallback(async () => {
+    if (!user) return;
+    try {
+      const profileKey = await getProfilesAuthKey(user.id);
+      const [profileRes, modRes] = await Promise.all([
+        supabase.from('profiles').select('display_name').eq(profileKey, user.id).maybeSingle(),
+        supabase.from('moderator_roles').select('user_id').eq('user_id', user.id).maybeSingle(),
+      ]);
+      if (profileRes.error) throw profileRes.error;
+      if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
+      setIsModerator(!!modRes.data);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('Profile: profile/moderator fetch error', err);
+      toast.error(t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.'), {
+        action: { label: t('common.retry', 'Försök igen'), onClick: () => fetchProfileAndModerator() },
+      });
+    }
+  }, [user, t]);
+
+  useEffect(() => {
+    if (user) fetchProfileAndModerator();
+  }, [user, fetchProfileAndModerator]);
 
   const handleSignOut = async () => {
     await signOut();

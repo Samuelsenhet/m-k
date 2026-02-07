@@ -100,12 +100,15 @@
     "postVideoTitle": "After Chemistry Check – AI suggestions",
     "postVideoGenerating": "Generating suggestions...",
     "postVideoDismiss": "Close",
-    "postVideoError": "Could not load suggestions. Try again later."
+    "postVideoError": "Could not load suggestions. Try again later.",
+    "chats": "Chats",
+    "createGroup": "Create collection"
   },
   "profile": {
     "title": "My Profile",
     "my_profile": "My Profile",
     "edit_profile": "Edit Profile",
+    "load_error": "Could not load profile. Try again.",
     "editProfile": "Edit profile",
     "displayName": "Display name",
     "firstName": "First name",
@@ -155,7 +158,24 @@
     "error_loading": "Could not load profile",
     "error_saving": "Could not save profile",
     "profile_saved": "Profile saved!",
-    "changes_saved": "Your changes have been saved"
+    "changes_saved": "Your changes have been saved",
+    "dating_intention_title": "What is your intention with dating?",
+    "dating_intention_placeholder": "Tell us more in your own words about what you're looking for.",
+    "dating_livspartner": "Life partner",
+    "dating_langsiktigt": "Long-term relationship",
+    "dating_langsiktigt_oppen_kort": "Long-term relationship, open to short-term",
+    "dating_kortvarigt_oppen_lang": "Short-term relationship, open to long-term",
+    "dating_kortvarigt": "Short-term relationship",
+    "dating_klura_ut": "Still figuring out my dating goals",
+    "relationship_type_title": "What type of relationship are you looking for?",
+    "relationship_type_placeholder": "Tell us more in your own words about what you're looking for.",
+    "relation_monogam": "Monogamous",
+    "relation_icke_monogami": "Non-monogamous",
+    "relation_ta_reda_pa": "Figuring out my relationship type",
+    "interests_title": "Interests",
+    "interests_placeholder": "e.g. art, travel, cooking, fitness...",
+    "prev_photo": "Previous photo",
+    "next_photo": "Next photo"
   },
   "settings": {
     "title": "Settings",
@@ -186,6 +206,26 @@
     "profile_visibility": "Profile visibility",
     "shared_data": "Shared data",
     "verify_id_description": "Upload your ID to verify your account"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "today": "Today",
+    "your_view_this": "viewed you",
+    "your_love_this": "is interested in you",
+    "profile_matched_with": "Your profile matched with {{name}}!",
+    "accept": "Accept",
+    "reject": "Reject",
+    "minutes_ago": "{{count}} minutes ago",
+    "no_notifications": "No notifications",
+    "intro": "Activity and preferences.",
+    "push_and_email": "Push & email",
+    "new_matches": "New matches",
+    "messages": "Messages",
+    "coming_soon": "Coming soon",
+    "push_new_matches": "Push: new matches",
+    "push_messages": "Push: messages",
+    "email_new_matches": "Email: new matches",
+    "email_messages": "Email: messages"
   },
   "personality": {
     "testTitle": "Personality Test",
@@ -263,8 +303,10 @@
   },
   "admin": {
     "reports_title": "Moderation – Reports",
+    "appeals_title": "Moderation – Appeals",
     "access_denied": "You do not have permission to view this page.",
     "no_reports": "No reports yet.",
+    "no_appeals": "No appeals yet.",
     "status": "Status"
   },
   "appeal": {
@@ -278,7 +320,11 @@
     "submit_error": "Could not submit appeal. Try again.",
     "received": "Your appeal has been received.",
     "received_title": "Appeal received",
-    "received_message": "We have received your appeal and will review it within 72 hours. You will get feedback in the app."
+    "received_message": "We have received your appeal and will review it within 72 hours. You will get feedback in the app.",
+    "status_pending": "Pending",
+    "status_reviewing": "Reviewing",
+    "status_approved": "Approved",
+    "status_rejected": "Rejected"
   },
   "gdpr": {
     "welcome": "Welcome to Maak",

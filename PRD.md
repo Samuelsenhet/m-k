@@ -812,11 +812,11 @@ Post-launch improvements: polish, observability, and small features. Pick the fi
 
 **Acceptance Criteria:**
 
-- [ ] Run `npm run lint` and list all current warnings (e.g. react-refresh/only-export-components, exhaustive-deps)
-- [ ] Fix or explicitly disable with a short comment for each remaining warning
-- [ ] `npm run lint` passes with no warnings (or only agreed exceptions documented in a lint comment)
-- [ ] `npm run build` passes
-- [ ] No new warnings introduced
+- [x] Run `npm run lint` and list all current warnings (e.g. react-refresh/only-export-components, exhaustive-deps)
+- [x] Fix or explicitly disable with a short comment for each remaining warning
+- [x] `npm run lint` passes with no warnings (or only agreed exceptions documented in a lint comment)
+- [x] `npm run build` passes
+- [x] No new warnings introduced
 
 ---
 

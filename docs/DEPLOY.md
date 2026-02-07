@@ -38,8 +38,19 @@ Ensure these are set in Vercel (Settings → Environment Variables) for **Produc
 | `VITE_SUPABASE_URL` | Yes |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes |
 | `VITE_SUPABASE_PROJECT_ID` | Yes |
+| `VITE_APP_URL` | No (optional; set to `https://maakapp.se` when using custom domain) |
 
-See `VERCEL_SETUP.md` in the project root for details.
+See `docs/VERCEL_SETUP.md` for details.
+
+### 3b. Custom domain (maakapp.se)
+
+To use **maakapp.se** (or määkapp.com / määkapp.se):
+
+1. **Vercel:** Settings → Domains → Add `maakapp.se` (and optionally www).
+2. **Loopia DNS:** A @ → `216.198.79.1`, CNAME www → värdet från Vercel (Settings → Domains, t.ex. …vercel-dns-017.com).
+3. **Supabase:** Authentication → URL Configuration → Site URL `https://maakapp.se`, Redirect URLs `https://maakapp.se/**`.
+
+Full steps, checklist and optional domains: **`docs/DOMAIN_SETUP.md`**.
 
 ### 4. Build locally
 
@@ -67,6 +78,7 @@ Fix any errors before pushing.
 - [ ] Key routes work: `/`, `/matches`, `/chat`, `/profile`, `/report`, `/report-history`, `/appeal`, `/terms`, `/reporting`.
 - [ ] No console errors on first load and after login.
 - [ ] If you use moderators: open `/admin/reports` as a moderator and confirm reports list and status update work.
+- [ ] Moderators: open `/admin/appeals` and confirm appeals list and status update work.
 
 ---
 

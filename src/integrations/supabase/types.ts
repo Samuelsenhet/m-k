@@ -399,6 +399,27 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_views: {
+        Row: {
+          id: string
+          viewer_id: string
+          viewed_user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          viewer_id: string
+          viewed_user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          viewer_id?: string
+          viewed_user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       profile_photos: {
         Row: {
           created_at: string
@@ -461,6 +482,10 @@ export type Database = {
           updated_at: string
           user_id: string
           work: string | null
+          push_new_matches: boolean
+          push_messages: boolean
+          email_new_matches: boolean
+          email_messages: boolean
         }
         Insert: {
           alcohol?: string | null
@@ -501,6 +526,10 @@ export type Database = {
           updated_at?: string
           user_id: string
           work?: string | null
+          push_new_matches?: boolean
+          push_messages?: boolean
+          email_new_matches?: boolean
+          email_messages?: boolean
         }
         Update: {
           alcohol?: string | null
@@ -541,6 +570,10 @@ export type Database = {
           updated_at?: string
           user_id?: string
           work?: string | null
+          push_new_matches?: boolean
+          push_messages?: boolean
+          email_new_matches?: boolean
+          email_messages?: boolean
         }
         Relationships: []
       }

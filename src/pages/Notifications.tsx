@@ -1,174 +1,247 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Bell, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
-import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/useAuth';
+import { useNotificationFeed } from '@/hooks/useNotificationFeed';
+import { supabase } from '@/integrations/supabase/client';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { useState, useEffect } from 'react';
 
-export type NotificationType = 'view' | 'love';
-
-export interface AppNotification {
-  id: string;
-  type: NotificationType;
-  name: string;
-  /** For type 'view': e.g. matched with name */
-  subtitle?: string;
-  minutesAgo: number;
-  read?: boolean;
-  /** For type 'love': optional match/user id for accept/reject */
-  targetUserId?: string;
+function formatTimeAgo(iso: string, t: (key: string, opts?: { count?: number }) => string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const mins = Math.floor((now.getTime() - d.getTime()) / 60_000);
+  if (mins < 60) return t('notifications.minutes_ago', { count: mins });
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
 }
 
-// Mock data – replace with real fetch from Supabase when notifications table exists
-const MOCK_NOTIFICATIONS: AppNotification[] = [
-  { id: '1', type: 'view', name: 'Ariana', subtitle: 'Jane Cooper', minutesAgo: 10, read: false },
-  { id: '2', type: 'view', name: 'Mira', subtitle: 'Jane Cooper', minutesAgo: 10, read: false },
-  { id: '3', type: 'view', name: 'Tom', subtitle: 'Jane Cooper', minutesAgo: 12, read: false },
-  { id: '4', type: 'love', name: 'Ariana', minutesAgo: 10, read: false, targetUserId: 'u1' },
-  { id: '5', type: 'love', name: 'Lina', minutesAgo: 12, read: false, targetUserId: 'u2' },
-];
-
 export default function Notifications() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
   const { t } = useTranslation();
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const {
+    profileViews,
+    interests,
+    loading,
+    error,
+    acceptInterest,
+    rejectInterest,
+  } = useNotificationFeed();
 
-  const handleBack = () => navigate(-1);
+  const [prefs, setPrefs] = useState<{
+    push_new_matches: boolean;
+    push_messages: boolean;
+    email_new_matches: boolean;
+    email_messages: boolean;
+  } | null>(null);
 
-  const handleAccept = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    // TODO: call API to accept like / create match
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      const key = await getProfilesAuthKey(user.id);
+      const { data } = await supabase
+        .from('profiles')
+        .select('push_new_matches, push_messages, email_new_matches, email_messages')
+        .eq(key, user.id)
+        .maybeSingle();
+      if (data) {
+        setPrefs({
+          push_new_matches: data.push_new_matches ?? true,
+          push_messages: data.push_messages ?? true,
+          email_new_matches: data.email_new_matches ?? true,
+          email_messages: data.email_messages ?? true,
+        });
+      } else {
+        setPrefs({
+          push_new_matches: true,
+          push_messages: true,
+          email_new_matches: true,
+          email_messages: true,
+        });
+      }
+    };
+    load();
+  }, [user]);
+
+  const updatePref = async (
+    field: 'push_new_matches' | 'push_messages' | 'email_new_matches' | 'email_messages',
+    value: boolean
+  ) => {
+    if (!user || prefs === null) return;
+    setPrefs((p) => (p ? { ...p, [field]: value } : null));
+    const key = await getProfilesAuthKey(user.id);
+    await supabase.from('profiles').update({ [field]: value }).eq(key, user.id);
   };
 
-  const handleReject = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    // TODO: call API to reject / pass
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/phone-auth');
-    return null;
-  }
+  const hasFeed = profileViews.length > 0 || interests.length > 0;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-16">
-      {/* Header: back + title – Määk Eucalyptus Grove */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-3 py-3 safe-area-top bg-background border-b border-border">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-[var(--duration-normal)]"
-          aria-label={t('common.back')}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="absolute left-1/2 -translate-x-1/2 font-serif text-lg font-semibold text-foreground">
-          {t('notifications.title')}
-        </h1>
-        <div className="w-10" />
-      </header>
-
-      {/* Section: Today */}
-      <div className="px-4 pt-4 pb-2">
-        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          {t('notifications.today')}
-        </p>
+    <div className="min-h-screen bg-background pb-20">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/profile" state={{ openSettings: true }}>
+              <ChevronLeft className="w-5 h-5" />
+            </Link>
+          </Button>
+          <h1 className="font-serif text-lg font-bold">{t('notifications.title')}</h1>
+        </div>
       </div>
+      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        <p className="text-sm text-muted-foreground">{t('notifications.intro')}</p>
 
-      {/* List – cards with soft shadow */}
-      <div className="flex-1 px-4">
-        <ul className="space-y-3">
-          {notifications.length === 0 ? (
-            <li className="py-12 text-center text-sm text-muted-foreground rounded-xl bg-card/50 border border-border">
-              {t('notifications.no_notifications')}
-            </li>
-          ) : (
-            notifications.map((n) =>
-              n.type === 'view' ? (
-                <li
-                  key={n.id}
-                  className={cn(
-                    'rounded-xl border border-border bg-card p-4 flex gap-3 shadow-[var(--shadow-soft)]',
-                    !n.read && 'ring-1 ring-primary/20'
-                  )}
-                >
-                  <div className="relative shrink-0">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-primary/5 text-primary">
-                      <Bell className="h-5 w-5" />
-                    </span>
-                    {!n.read && (
-                      <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary border-2 border-card" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">
-                      <span className="font-semibold text-primary">{n.name}</span>{' '}
-                      <span className="text-foreground">{t('notifications.your_view_this')}</span>
-                    </p>
-                    {n.subtitle && (
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {t('notifications.profile_matched_with', { name: n.subtitle })}
+        {/* Feed: Today */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif text-base">{t('notifications.today')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loading && (
+              <div className="flex justify-center py-4">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            )}
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+            {!loading && !hasFeed && (
+              <p className="text-sm text-muted-foreground">{t('notifications.no_notifications')}</p>
+            )}
+            {!loading && profileViews.length > 0 && (
+              <div className="space-y-2">
+                {profileViews.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center gap-3 py-2 border-b border-border last:border-0"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-muted flex-shrink-0 overflow-hidden">
+                      {v.viewer_avatar_url ? (
+                        <img src={v.viewer_avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm font-medium">
+                          {(v.viewer_display_name || '?').slice(0, 1)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {v.viewer_display_name || 'Someone'}{' '}
+                        <span className="text-muted-foreground font-normal">{t('notifications.your_view_this')}</span>
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('notifications.minutes_ago', { count: n.minutesAgo })}
-                    </p>
+                      <p className="text-xs text-muted-foreground">{formatTimeAgo(v.created_at, t)}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <Link to={`/match/${v.viewer_id}`}>{t('settings.view')}</Link>
+                    </Button>
                   </div>
-                </li>
-              ) : (
-                <li
-                  key={n.id}
-                  className="rounded-xl border border-border bg-card p-4 flex gap-3 shadow-[var(--shadow-soft)]"
-                >
-                  <div className="shrink-0">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/30 bg-primary/5 text-primary">
-                      <User className="h-5 w-5" />
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">
-                      <span className="font-semibold text-primary">{n.name}</span>{' '}
-                      <span className="text-foreground">{t('notifications.your_love_this')}</span>
-                    </p>
-                    <div className="flex gap-2 mt-3">
+                ))}
+              </div>
+            )}
+            {!loading && interests.length > 0 && (
+              <div className="space-y-2">
+                {interests.map((i) => (
+                  <div
+                    key={i.id}
+                    className="flex items-center gap-3 py-3 border-b border-border last:border-0"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-muted flex-shrink-0 overflow-hidden">
+                      {i.liker_avatar_url ? (
+                        <img src={i.liker_avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm font-medium">
+                          {(i.liker_display_name || '?').slice(0, 1)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {i.liker_display_name || 'Someone'}{' '}
+                        <span className="text-muted-foreground font-normal">{t('notifications.your_love_this')}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">{formatTimeAgo(i.created_at, t)}</p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
                       <Button
-                        size="sm"
-                        className="rounded-lg bg-primary text-primary-foreground hover:opacity-90 flex-1 transition-opacity duration-[var(--duration-normal)]"
-                        onClick={() => handleAccept(n.id)}
-                      >
-                        {t('notifications.accept')}
-                      </Button>
-                      <Button
-                        size="sm"
                         variant="outline"
-                        className="rounded-lg border-primary/50 text-primary hover:bg-primary/10 flex-1 transition-colors duration-[var(--duration-normal)]"
-                        onClick={() => handleReject(n.id)}
+                        size="sm"
+                        onClick={() => rejectInterest(i.id)}
                       >
                         {t('notifications.reject')}
                       </Button>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          await acceptInterest(i.id);
+                          navigate('/matches');
+                        }}
+                      >
+                        {t('notifications.accept')}
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {t('notifications.minutes_ago', { count: n.minutesAgo })}
-                    </p>
                   </div>
-                </li>
-              )
-            )
-          )}
-        </ul>
-      </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
+        {/* Push & email toggles */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif text-base">{t('notifications.push_and_email')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {prefs === null && (
+              <div className="flex justify-center py-2">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            )}
+            {prefs !== null && (
+              <>
+                <div className="flex items-center justify-between py-3 border-b border-border">
+                  <span className="text-sm">{t('notifications.push_new_matches')}</span>
+                  <Switch
+                    checked={prefs.push_new_matches}
+                    onCheckedChange={(v) => updatePref('push_new_matches', v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-border">
+                  <span className="text-sm">{t('notifications.push_messages')}</span>
+                  <Switch
+                    checked={prefs.push_messages}
+                    onCheckedChange={(v) => updatePref('push_messages', v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-border">
+                  <span className="text-sm">{t('notifications.email_new_matches')}</span>
+                  <Switch
+                    checked={prefs.email_new_matches}
+                    onCheckedChange={(v) => updatePref('email_new_matches', v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-sm">{t('notifications.email_messages')}</span>
+                  <Switch
+                    checked={prefs.email_messages}
+                    onCheckedChange={(v) => updatePref('email_messages', v)}
+                  />
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
       <BottomNav />
     </div>
   );
