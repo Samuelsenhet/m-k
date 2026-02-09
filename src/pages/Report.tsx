@@ -32,7 +32,7 @@ export default function Report() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const reportedUserId = searchParams.get('userId') ?? undefined;
   const matchIdParam = searchParams.get('matchId') ?? undefined;
   const contextParam = searchParams.get('context') ?? 'general';
@@ -87,23 +87,44 @@ export default function Report() {
         evidencePaths.push(path);
       }
 
-      const { error } = await supabase.from('reports').insert({
-        reporter_id: user.id,
-        reported_user_id: reportedUserId || null,
-        match_id: matchIdParam || null,
-        context,
-        violation_type: violationType,
-        description: description.trim(),
-        evidence_paths: evidencePaths,
-        witness_statement: witnessStatement.trim() || null,
-        status: 'pending',
-      });
+      const { data: newReport, error } = await supabase
+        .from('reports')
+        .insert({
+          reporter_id: user.id,
+          reported_user_id: reportedUserId || null,
+          match_id: matchIdParam || null,
+          context,
+          violation_type: violationType,
+          description: description.trim(),
+          evidence_paths: evidencePaths,
+          witness_statement: witnessStatement.trim() || null,
+          status: 'pending',
+        })
+        .select('id')
+        .single();
 
       if (error) {
         console.error('Report insert error:', error);
         toast.error(t('report.submit_error'));
         setSubmitting(false);
         return;
+      }
+
+      const reporterEmail = user.email?.trim();
+      const isPlaceholderEmail = reporterEmail?.includes('@phone.maak.app') ?? true;
+      if (reporterEmail && !isPlaceholderEmail && newReport?.id) {
+        try {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              to: reporterEmail,
+              template: 'report_received',
+              data: { report_id: newReport.id },
+              language: i18n.language?.startsWith('en') ? 'en' : 'sv',
+            },
+          });
+        } catch (e) {
+          console.warn('Report confirmation email failed:', e);
+        }
       }
 
       setSubmitted(true);

@@ -32,7 +32,7 @@ interface AppealRow {
 export default function AdminAppeals() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isModerator } = useProfileData(user?.id);
   const [appeals, setAppeals] = useState<AppealRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,14 +72,28 @@ export default function AdminAppeals() {
       .from("appeals")
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", appealId);
-    setUpdatingId(null);
     if (error) {
       console.error("Error updating appeal:", error);
+      setUpdatingId(null);
       return;
     }
     setAppeals((prev) =>
       prev.map((a) => (a.id === appealId ? { ...a, status, updated_at: new Date().toISOString() } : a))
     );
+    if (status === "approved" || status === "rejected") {
+      try {
+        await supabase.functions.invoke("send-email", {
+          body: {
+            template: "appeal_decision",
+            data: { appeal_id: appealId, status },
+            language: i18n.language?.startsWith("en") ? "en" : "sv",
+          },
+        });
+      } catch (e) {
+        console.warn("Appeal decision email failed:", e);
+      }
+    }
+    setUpdatingId(null);
   };
 
   if (!user) return null;

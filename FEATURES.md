@@ -4,6 +4,37 @@ Overview of how the main app features work end-to-end: matching, matches UI, vid
 
 ---
 
+## 0. E-post i projektet – var det finns + status
+
+**Var e-post/e-mail förekommer i Cursor-projektet:**
+
+| Plats | Användning |
+|-------|------------|
+| `supabase/functions/twilio-verify-otp/index.ts` | Placeholder-e-post `{telefon}@phone.maak.app` för Supabase Auth (krävs för magic link); ingen riktig utskick. |
+| `supabase/functions/reset-demo-password/index.ts` | Tar emot `email` + `newPassword` och uppdaterar lösenord via Admin API; skickar **ingen** e-post. |
+| `src/components/settings/ProfileSettings.tsx` | Visar `user.email` från Supabase Auth. |
+| `src/components/chat/ChatWindow.tsx` | Visar initial från `user?.email` som fallback. |
+| `src/pages/SignUp.tsx`, `src/pages/Login.tsx` | E-post/lösenord-inloggning (kan vara legacy om appen är telefon-only). |
+| `src/contexts/AuthProvider.tsx`, `AuthContext.tsx` | `signIn`/`signUp` med e-post. |
+| `src/pages/Terms.tsx` | Policytext: "meddelar dig via appen eller e-post". |
+| `src/i18n/locales/*.json` | Texter om "pushnotiser och e-post", "Resend code" (OTP-återutsändning). |
+| `src/components/onboarding/GdprOnboarding.tsx` | "Ta emot personliga erbjudanden och nyheter via e-post." |
+| `supabase/config.toml` | Auth e-post/SMTP (kommenterad), inget används för utskick från appen. |
+
+**Notiser idag:** `send-notification` (Edge Function) och triggern `notify_reporter_on_report_status` skriver till tabellen `notifications` och Realtime – **ingen e-post skickas**.
+
+**Är dessa punkter klara?**
+
+| Punkt | Status |
+|-------|--------|
+| **Integrera med Supabase för ärendehantering** | **Ja.** Rapporter/överklaganden i Supabase; vid ny rapport/överklagande anropas Edge Function `send-email` (Resend). Tabellerna `reports` och `appeals` har `email_sent`; `email_templates` och `email_logs` används för mallar och logg. |
+| **Skicka riktiga e-postmeddelanden via API** | **Ja.** Edge Function `send-email` använder Resend API. Mallar: `report_received`, `report_resolved`, `appeal_received`, `appeal_decision`. Secrets: `RESEND_API_KEY`, valfritt `MAIL_FROM` (Supabase Dashboard). |
+| **Admin-panel för e-posthantering** | **Ja.** `/admin/email` – moderatorer ser e-postmallar (Rapporter, Överklaganden), plats för "Skicka e-post", och **sändningsloggar** från `email_logs`. |
+
+**E-postflöde (Resend):** (1) **Ny rapport:** Report.tsx insert → anropar `send-email` med `to` (user.email), `report_received`, `report_id`. (2) **Nytt överklagande:** Appeal.tsx insert → `send-email` med `to`, `appeal_received`, `appeal_id`. (3) **Rapport avslutad:** AdminReports vid status resolved/dismissed → `send-email` med `report_resolved`, `data: { report_id, status }` (ingen `to` – mottagare hämtas i Edge Function från `reports.reporter_id`). (4) **Beslut på överklagande:** AdminAppeals vid approved/rejected → `send-email` med `appeal_decision`, `data: { appeal_id, status }` (mottagare från `appeals.user_id`). Edge Function skickar via Resend, skriver till `email_logs`, sätter `reports.email_sent`/`appeals.email_sent`. Placeholder-adresser (`@phone.maak.app`) hoppas över. Secrets: `RESEND_API_KEY`, valfritt `MAIL_FROM`.
+
+---
+
 ## 1. Matching Algorithm
 
 **Where:** `src/lib/matching.ts`, Supabase Edge Function `match-daily`, and **`generate-match-pools`** (fills `user_daily_match_pools` from personality test data).

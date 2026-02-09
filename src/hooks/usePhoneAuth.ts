@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, hasValidSupabaseConfig } from "@/integrations/supabase/client";
 
 export type PhoneAuthStep = "phone" | "verify" | "profile";
 
@@ -41,16 +41,7 @@ export const usePhoneAuth = () => {
     }
 
     if (!url || !anon) {
-      const error = "Supabase environment variables missing. Please set VITE_SUPABASE_URL (or VITE_SUPABASE_PROJECT_ID) and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file. See CHECK_SETUP.md for instructions.";
-      if (import.meta.env.DEV) {
-        console.error('❌ Missing environment variables:', {
-          hasUrl: !!url,
-          hasProjectId: !!projectId,
-          hasAnonKey: !!anon,
-          urlValue: url ? `${url.substring(0, 20)}...` : 'missing',
-        });
-      }
-      throw new Error(error);
+      throw new Error("Supabase environment variables missing. Please set VITE_SUPABASE_URL (or VITE_SUPABASE_PROJECT_ID) and VITE_SUPABASE_PUBLISHABLE_KEY in your .env file. See CHECK_SETUP.md for instructions.");
     }
 
     // Check for placeholder values
@@ -63,21 +54,12 @@ export const usePhoneAuth = () => {
       anon.includes('placeholder');
 
     if (isPlaceholder) {
-      const error = "Supabase environment variables contain placeholder values. Please update your .env file with real values from https://supabase.com/dashboard → Settings → API";
-      if (import.meta.env.DEV) {
-        console.error('❌ Placeholder values detected:', {
-          url: url.substring(0, 30) + '...',
-          hasPlaceholderKey: anon.includes('your') || anon.includes('placeholder'),
-        });
-      }
-      throw new Error(error);
+      throw new Error("Supabase environment variables contain placeholder values. Please update your .env file with real values from https://supabase.com/dashboard → Settings → API");
     }
 
     // Validate URL format
     if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
-      const error = `Invalid Supabase URL format. Expected: https://xxx.supabase.co, got: ${url}`;
-      console.error('❌ Invalid Supabase URL:', url);
-      throw new Error(error);
+      throw new Error(`Invalid Supabase URL format. Expected: https://xxx.supabase.co, got: ${url}`);
     }
 
     return { url, anon };
@@ -117,8 +99,13 @@ export const usePhoneAuth = () => {
     setLoading(true);
     setError(null);
 
+    if (!hasValidSupabaseConfig) {
+      setError("Supabase är inte konfigurerad. Lägg till VITE_SUPABASE_URL och VITE_SUPABASE_PUBLISHABLE_KEY i .env för inloggning, eller testa appen utan konto via Demo.");
+      setLoading(false);
+      return false;
+    }
+
     try {
-      // Validate env once to give a good error message (supabase client would otherwise fail later)
       getEnv();
       const formattedPhone = formatPhoneE164(phone);
 
@@ -161,8 +148,13 @@ export const usePhoneAuth = () => {
     setLoading(true);
     setError(null);
 
+    if (!hasValidSupabaseConfig) {
+      setError("Supabase är inte konfigurerad. Lägg till .env för inloggning.");
+      setLoading(false);
+      return false;
+    }
+
     try {
-      // Validate env once to give a good error message (supabase client would otherwise fail later)
       getEnv();
       const formattedPhone = formatPhoneE164(phone);
 
@@ -207,5 +199,6 @@ export const usePhoneAuth = () => {
     verifyOtp,
     resendOtp,
     clearError,
+    hasValidSupabaseConfig,
   };
 };

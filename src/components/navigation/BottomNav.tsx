@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Heart, MessageCircle, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { isDemoEnabled } from '@/config/supabase';
 
 interface NavItem {
   path: string;
@@ -9,7 +10,7 @@ interface NavItem {
   icon: typeof Heart;
 }
 
-const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   { path: '/matches', label: 'Matchning', icon: Heart },
   { path: '/chat', label: 'Chatt', icon: MessageCircle },
   { path: '/demo-seed', label: 'Demo', icon: Sparkles },
@@ -18,6 +19,8 @@ const navItems: NavItem[] = [
 
 export function BottomNav() {
   const location = useLocation();
+  const navItems = isDemoEnabled ? allNavItems : allNavItems.filter((item) => item.path !== '/demo-seed');
+  const colCount = navItems.length;
 
   const activeIndex = navItems.findIndex(
     (item) =>
@@ -29,7 +32,7 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/30 safe-area-bottom shadow-[0_-8px_32px_rgba(0,0,0,0.08)]">
       <div className="max-w-lg mx-auto relative">
         {/* Indicator row: same grid as links so bar is centered above each tab */}
-        <div className="absolute top-0 left-0 right-0 grid grid-cols-4 px-2 pointer-events-none">
+        <div className={cn('absolute top-0 left-0 right-0 grid px-2 pointer-events-none', colCount === 3 ? 'grid-cols-3' : 'grid-cols-4')}>
           {navItems.map((_, index) => (
             <div key={index} className="flex justify-center items-start">
               {index === activeIndex && (
@@ -42,7 +45,7 @@ export function BottomNav() {
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-4 items-center justify-items-center h-[72px] px-2">
+        <div className={cn('grid items-center justify-items-center h-[72px] px-2', colCount === 3 ? 'grid-cols-3' : 'grid-cols-4')}>
           {navItems.map((item, index) => {
             const itemActive = index === activeIndex;
 

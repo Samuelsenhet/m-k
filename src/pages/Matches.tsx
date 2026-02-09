@@ -16,6 +16,7 @@ import { MatchCountdown } from '@/components/matches/MatchCountdown';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { WaitingPhase, FirstMatchCelebration } from '@/components/journey';
 import { cn } from '@/lib/utils';
+import { isDemoEnabled } from '@/config/supabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
 
@@ -140,11 +141,13 @@ export default function Matches() {
               </p>
             </div>
             <div className="flex gap-1">
+              {isDemoEnabled && (
               <Button asChild variant="ghost" size="icon" className="text-primary" title="Se demo">
                 <Link to="/demo-seed">
                   <Sparkles className="w-5 h-5" />
                 </Link>
               </Button>
+            )}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -550,12 +553,14 @@ export default function Matches() {
             </motion.div>
             <p className="text-lg font-bold text-foreground mb-2">Inga matchningar just nu</p>
             <p className="text-sm text-muted-foreground font-medium mb-6">Kom tillbaka imorgon för nya matchningar! ✨</p>
+            {isDemoEnabled && (
             <Button asChild variant="outline" size="sm" className="gap-2">
               <Link to="/demo-seed">
                 <Sparkles className="w-4 h-4 shrink-0" />
                 Se demo – matchningar & chatt
               </Link>
             </Button>
+            )}
           </motion.div>
         )}
         </div>

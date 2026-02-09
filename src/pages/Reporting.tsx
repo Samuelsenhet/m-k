@@ -68,7 +68,7 @@ export default function Reporting() {
             <p><strong className="text-foreground">För den rapporterade användaren:</strong></p>
             <ul className="list-disc pl-5 space-y-1">
               <li>Mindre överträdelser: Varning med utbildningsmodul om community-riktlinjer</li>
-              <li>Allvarliga fall: Meddelande om permanent avstängning från MĀĀK</li>
+              <li>Allvarliga fall: Meddelande om permanent avstängning från MÄÄK</li>
               <li>Alltid med specifikt skäl och referens till vilken regel som brutits</li>
             </ul>
           </CardContent>
@@ -130,7 +130,7 @@ export default function Reporting() {
 
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-foreground mb-2">MĀĀK:s åtagande</p>
+            <p className="text-sm font-medium text-foreground mb-2">MÄÄK:s åtagande</p>
             <p className="text-sm text-muted-foreground italic">
               &quot;Vi strävar efter att skapa en säker, respektfull och meningsfull dejtingsmiljö för alla våra medlemmar. Varje rapport tas på största allvar och hanteras med diskretion, rättvisa och en tydlig inriktning på communityns välbefinnande.&quot;
             </p>
@@ -140,7 +140,7 @@ export default function Reporting() {
         <div className="text-sm text-muted-foreground">
           <p className="font-semibold text-foreground mb-1">Kontakt för frågor om rapportering:</p>
           <p>📧 safety@maakapp.se</p>
-          <p>🔗 MĀĀK Safety Center (inom appen)</p>
+          <p>🔗 MÄÄK Safety Center (inom appen)</p>
         </div>
       </div>
       <BottomNav />

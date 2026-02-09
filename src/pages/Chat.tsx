@@ -9,6 +9,7 @@ import { MessageCircle, ArrowLeft, Search } from "lucide-react";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
 import { getProfilesAuthKey } from "@/lib/profiles";
+import { isDemoEnabled } from "@/config/supabase";
 import { useTranslation } from "react-i18next";
 // Removed problematic import - check if CallHistory exists
 // import { CallHistory, CallLogEntry } from '@/components/chat/CallHistory';
@@ -296,12 +297,14 @@ export default function Chat() {
               >
                 {t("groupChat.title")}
               </Link>
+              {isDemoEnabled && (
               <Link
                 to="/demo-seed"
                 className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs font-medium"
               >
                 Demo
               </Link>
+            )}
             </div>
           </div>
           {/* Search bar */}
