@@ -62,6 +62,7 @@ export const SUPABASE_URL_EXPORT = SUPABASE_URL;
 const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 const allowPlaceholders = isTestEnv || import.meta.env.VITE_ALLOW_PLACEHOLDER_SUPABASE === 'true';
 const hasValidConfig = isValidUrl && isValidKey;
+export const hasValidSupabaseConfig = hasValidConfig;
 
 if (!hasValidConfig) {
   if (!allowPlaceholders) {
