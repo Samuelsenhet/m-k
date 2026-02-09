@@ -15,6 +15,7 @@ interface ProfileData {
   bio: string | null;
   date_of_birth: string | null;
   hometown: string | null;
+  country: string | null;
   work: string | null;
   height: string | null;
   instagram?: string | null;
@@ -39,6 +40,11 @@ interface ProfileViewProps {
   archetype?: string | null;
   onSettings?: () => void;
 }
+
+const COUNTRY_LABELS: Record<string, string> = {
+  SE: 'Sverige', NO: 'Norge', DK: 'Danmark', FI: 'Finland', IS: 'Island',
+  DE: 'Tyskland', GB: 'Storbritannien', US: 'USA',
+};
 
 // Category color mapping using design system
 const CATEGORY_STYLES: Record<string, { className: string; label: string }> = {
@@ -80,7 +86,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
     const [profileRes, photosRes, matchesRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('display_name, bio, date_of_birth, hometown, work, height, instagram, linkedin')
+        .select('display_name, bio, date_of_birth, hometown, country, work, height, instagram, linkedin')
         .eq(profileKey, user.id)
         .maybeSingle(),
       supabase
@@ -314,10 +320,10 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                 </p>
               )}
               
-              {profile?.hometown && (
+              {(profile?.hometown || profile?.country) && (
                 <p className="text-sm text-white/80 flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5" />
-                  {profile.hometown}
+                  {[profile.hometown, profile.country && COUNTRY_LABELS[profile.country]].filter(Boolean).join(', ')}
                 </p>
               )}
 
@@ -532,12 +538,12 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                   <p className="text-white font-medium">{profile.education}</p>
                 </div>
               )}
-              {profile?.hometown && (
+              {(profile?.hometown || profile?.country) && (
                 <div>
                   <p className="text-xs text-white/60 mb-1">Plats</p>
                   <p className="text-white font-medium flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5" />
-                    {profile.hometown}
+                    {[profile.hometown, profile.country && COUNTRY_LABELS[profile.country]].filter(Boolean).join(', ')}
                   </p>
                 </div>
               )}
