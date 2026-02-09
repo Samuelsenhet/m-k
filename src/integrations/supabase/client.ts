@@ -3,10 +3,13 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Get environment variables
+// Get environment variables (support both current and legacy names)
 const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID || '';
 const SUPABASE_URL_ENV = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  '';
 
 // Construct Supabase URL from project ID if URL is not provided
 function getSupabaseUrl(): string {
@@ -55,26 +58,25 @@ if (!isValidUrl || !isValidKey) {
   );
 }
 
+const hasValidConfig = isValidUrl && isValidKey;
+
+/** True when .env has valid Supabase URL and key. Use to show setup page instead of app when false. */
+export const SUPABASE_CONFIGURED = hasValidConfig;
+
 // Export the URL for use in other parts of the app
 export const SUPABASE_URL_EXPORT = SUPABASE_URL;
 
-// Allow app to load without Supabase so /demo-seed and landing work when .env is missing
 const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 const allowPlaceholders = isTestEnv || import.meta.env.VITE_ALLOW_PLACEHOLDER_SUPABASE === 'true';
-const hasValidConfig = isValidUrl && isValidKey;
 
 if (!hasValidConfig) {
-  if (!allowPlaceholders) {
-    console.warn(
-      'Supabase configuration is missing or invalid. The app will load but login and data features will not work. ' +
-      'Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env to enable them. ' +
-      'You can still use the demo at /demo-seed.'
-    );
-  }
+  console.warn(
+    '[MÄÄK] Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env. Demo: /demo-seed.'
+  );
 }
 
-// Use placeholder URL/key when invalid so createClient doesn't throw; real requests will fail until .env is set
-const urlForClient = hasValidConfig ? SUPABASE_URL : `https://placeholder.supabase.co`;
+// Use placeholder when invalid so createClient doesn't throw; app can show setup page
+const urlForClient = hasValidConfig ? SUPABASE_URL : 'https://placeholder.supabase.co';
 const keyForClient = hasValidConfig ? SUPABASE_PUBLISHABLE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 
 // Import the supabase client like this:

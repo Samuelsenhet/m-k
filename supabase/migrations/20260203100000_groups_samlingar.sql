@@ -68,12 +68,13 @@ CREATE POLICY "Group members can view group_members"
     )
   );
 
--- Creator adds members (enforced in app: only add users who are mutual matches)
-CREATE POLICY "Group creator can insert members"
+-- Self-join, or creator/existing member can add others
+CREATE POLICY "Group creator or member can insert members"
   ON public.group_members FOR INSERT
   WITH CHECK (
-    EXISTS (SELECT 1 FROM public.groups WHERE id = group_id AND created_by = auth.uid())
-    OR (user_id = auth.uid() AND EXISTS (SELECT 1 FROM public.groups g INNER JOIN public.group_members gm ON gm.group_id = g.id WHERE g.id = group_id AND gm.user_id = auth.uid()))
+    user_id = auth.uid()
+    OR EXISTS (SELECT 1 FROM public.groups WHERE id = group_id AND created_by = auth.uid())
+    OR EXISTS (SELECT 1 FROM public.group_members gm WHERE gm.group_id = group_id AND gm.user_id = auth.uid())
   );
 
 -- Creator can delete members; members can delete themselves (leave)
@@ -124,10 +125,34 @@ CREATE POLICY "Group members can insert group_messages"
     )
   );
 
--- Sender can update own message (e.g. edit)
+-- Sender can update own message (e.g. edit content)
 CREATE POLICY "Sender can update own group_message"
   ON public.group_messages FOR UPDATE
   USING (sender_id = auth.uid());
+
+-- Group members can mark messages as read via RPC (see below)
+-- Direct UPDATE for read_by is handled by the SECURITY DEFINER RPC.
+
+-- Trigger: prevent tampering with read_by (append-only)
+CREATE OR REPLACE FUNCTION public.prevent_read_by_tamper()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Allow if read_by is unchanged
+  IF NEW.read_by IS NOT DISTINCT FROM OLD.read_by THEN
+    RETURN NEW;
+  END IF;
+  -- Allow only append: NEW.read_by must contain all elements of OLD.read_by
+  IF NOT (OLD.read_by <@ NEW.read_by) THEN
+    RAISE EXCEPTION 'read_by can only be appended to, not removed or overwritten';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_read_by_tamper ON public.group_messages;
+CREATE TRIGGER trg_prevent_read_by_tamper
+  BEFORE UPDATE ON public.group_messages
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_read_by_tamper();
 
 -- ============================================
 -- Trigger: updated_at for groups
@@ -149,3 +174,44 @@ DROP TRIGGER IF EXISTS group_messages_updated_at ON public.group_messages;
 CREATE TRIGGER group_messages_updated_at
   BEFORE UPDATE ON public.group_messages
   FOR EACH ROW EXECUTE FUNCTION public.set_groups_updated_at();
+
+-- ============================================
+-- 4. RPC: mark group message as read
+-- ============================================
+-- SECURITY DEFINER so group members can append themselves to read_by
+-- without needing a broad UPDATE policy on group_messages.
+CREATE OR REPLACE FUNCTION public.mark_group_message_read(p_message_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_group_id UUID;
+BEGIN
+  -- Get the group_id for the message
+  SELECT group_id INTO v_group_id
+    FROM public.group_messages
+    WHERE id = p_message_id;
+
+  IF v_group_id IS NULL THEN
+    RAISE EXCEPTION 'Message not found';
+  END IF;
+
+  -- Verify caller is a member of the group
+  IF NOT EXISTS (
+    SELECT 1 FROM public.group_members
+    WHERE group_id = v_group_id AND user_id = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Not a member of this group';
+  END IF;
+
+  -- Append caller to read_by if not already present
+  UPDATE public.group_messages
+    SET read_by = read_by || to_jsonb(auth.uid()::text)
+    WHERE id = p_message_id
+      AND NOT (read_by @> to_jsonb(auth.uid()::text));
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.mark_group_message_read(UUID) TO authenticated;
