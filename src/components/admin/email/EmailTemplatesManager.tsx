@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit2, Eye, Copy, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export interface EmailTemplateRow {

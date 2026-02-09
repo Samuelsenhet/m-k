@@ -14,17 +14,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type TemplateName = "report_received" | "report_resolved" | "appeal_received" | "appeal_decision";
+type InlineTemplateName = "report_received" | "report_resolved" | "appeal_received" | "appeal_decision";
 
 interface SendEmailPayload {
   to?: string;
-  template: TemplateName;
-  data?: { report_id?: string; appeal_id?: string; status?: string };
+  template: string;
+  data?: Record<string, string>;
   language?: "sv" | "en";
 }
 
 const INLINE_TEMPLATES: Record<
-  TemplateName,
+  InlineTemplateName,
   { sv: { subject: string; body: string }; en: { subject: string; body: string } }
 > = {
   report_received: {
@@ -71,7 +71,17 @@ const INLINE_TEMPLATES: Record<
 
 function replacePlaceholders(text: string, data?: Record<string, string>): string {
   if (!data) return text;
-  return text.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] ?? `{{${key}}}`);
+  return text.replace(/\{\{(\w+)\}\}/g, (_, key) => String(data[key] ?? `{{${key}}}`));
+}
+
+function injectTrackingPixel(html: string, logId: string): string {
+  if (!SUPABASE_URL || !logId) return html;
+  const trackUrl = `${SUPABASE_URL}/functions/v1/track-email?log_id=${logId}`;
+  const pixel = `<img src="${trackUrl}" width="1" height="1" style="display:none;" alt="" />`;
+  if (html.includes("</body>")) {
+    return html.replace("</body>", `${pixel}</body>`);
+  }
+  return html + pixel;
 }
 
 serve(async (req: Request) => {
@@ -98,26 +108,18 @@ serve(async (req: Request) => {
     const payload: SendEmailPayload = await req.json();
     const { to: toParam, template, data = {}, language = "sv" } = payload;
 
-    if (!template) {
+    if (!template || typeof template !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing required field: template" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const validTemplates: TemplateName[] = ["report_received", "report_resolved", "appeal_received", "appeal_decision"];
-    if (!validTemplates.includes(template)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid template" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    let to = toParam?.trim();
     const admin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
       ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
       : null;
 
+    let to = toParam?.trim();
     if (!to && admin) {
       if (template === "report_resolved" && data.report_id) {
         const { data: report } = await admin.from("reports").select("reporter_id").eq("id", data.report_id).single();
@@ -143,14 +145,72 @@ serve(async (req: Request) => {
     }
 
     const lang = language === "en" ? "en" : "sv";
-    const t = INLINE_TEMPLATES[template][lang];
-    const dataStr: Record<string, string> = {
-      ...(data.report_id && { report_id: data.report_id }),
-      ...(data.appeal_id && { appeal_id: data.appeal_id }),
-      ...(data.status && { status: data.status }),
-    };
-    const subject = replacePlaceholders(t.subject, dataStr);
-    const html = replacePlaceholders(t.body, dataStr);
+    const dataStr: Record<string, string> = { ...data };
+
+    let subject: string;
+    let html: string;
+    let templateId: string | null = null;
+
+    if (admin) {
+      const { data: dbTemplate } = await admin
+        .from("email_templates")
+        .select("id, subject_sv, subject_en, body_sv, body_en")
+        .eq("name", template)
+        .single();
+
+      if (dbTemplate) {
+        subject = replacePlaceholders(lang === "en" ? (dbTemplate.subject_en || dbTemplate.subject_sv) : dbTemplate.subject_sv, dataStr);
+        const body = lang === "en" ? (dbTemplate.body_en || dbTemplate.body_sv) : dbTemplate.body_sv;
+        html = replacePlaceholders(body || "", dataStr);
+        templateId = dbTemplate.id;
+        await admin
+          .from("email_templates")
+          .update({ last_used: new Date().toISOString() })
+          .eq("id", dbTemplate.id);
+      } else {
+        const inlineName = template as InlineTemplateName;
+        const inline = INLINE_TEMPLATES[inlineName];
+        if (!inline) {
+          return new Response(
+            JSON.stringify({ error: "Invalid template (not in DB and not a built-in template)" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        subject = replacePlaceholders(inline[lang].subject, dataStr);
+        html = replacePlaceholders(inline[lang].body, dataStr);
+      }
+    } else {
+      const inlineName = template as InlineTemplateName;
+      const inline = INLINE_TEMPLATES[inlineName];
+      if (!inline) {
+        return new Response(
+          JSON.stringify({ error: "Invalid template" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      subject = replacePlaceholders(inline[lang].subject, dataStr);
+      html = replacePlaceholders(inline[lang].body, dataStr);
+    }
+
+    let logId: string | null = null;
+    if (admin) {
+      const { data: logRow } = await admin
+        .from("email_logs")
+        .insert({
+          recipient_email: to,
+          subject,
+          template_name: template,
+          template_id: templateId,
+          status: "pending",
+          report_id: data.report_id ?? null,
+          appeal_id: data.appeal_id ?? null,
+        })
+        .select("id")
+        .single();
+      logId = logRow?.id ?? null;
+    }
+
+    const htmlToSend = logId ? injectTrackingPixel(html, logId) : html;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -162,7 +222,7 @@ serve(async (req: Request) => {
         from: FROM_EMAIL,
         to: [to],
         subject,
-        html,
+        html: htmlToSend,
       }),
     });
 
@@ -170,16 +230,11 @@ serve(async (req: Request) => {
     const logStatus = res.ok ? "sent" : "failed";
     const errorMessage = res.ok ? null : (resData?.message ?? JSON.stringify(resData));
 
-    if (admin) {
-      await admin.from("email_logs").insert({
-        recipient_email: to,
-        subject,
-        template_name: template,
-        status: logStatus,
-        report_id: data.report_id ?? null,
-        appeal_id: data.appeal_id ?? null,
-        error_message: errorMessage,
-      });
+    if (admin && logId) {
+      await admin
+        .from("email_logs")
+        .update({ status: logStatus, error_message: errorMessage })
+        .eq("id", logId);
       if (res.ok && data.report_id) {
         await admin.from("reports").update({ email_sent: true }).eq("id", data.report_id);
       }
@@ -196,7 +251,7 @@ serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, id: resData?.id }),
+      JSON.stringify({ success: true, id: resData?.id, log_id: logId ?? undefined }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

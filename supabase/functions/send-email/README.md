@@ -1,6 +1,10 @@
 # send-email Edge Function
 
-Skickar e-post via [Resend](https://resend.com) för ärendehantering (rapporter, överklaganden).
+Skickar e-post via [Resend](https://resend.com) för ärendehantering (rapporter, överklaganden) och bulk-utskick.
+
+- **DB-mallar:** Om en mall med angivet `template`-namn finns i `email_templates` används den (med `last_used` uppdaterat). Annars används inbyggda mallar för `report_received`, `report_resolved`, `appeal_received`, `appeal_decision`.
+- **Variabler:** Alla nycklar i `data` ersätts i ämne och body som `{{key}}`.
+- **Tracking:** En loggrad skapas i `email_logs` med status `pending` innan utskick; en tracking-pixel (anropar `track-email`) injiceras i HTML. Efter utskick uppdateras loggen till `sent` eller `failed`.
 
 ## Secrets (Supabase Dashboard → Edge Functions → send-email → Secrets)
 

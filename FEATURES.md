@@ -33,6 +33,12 @@ Overview of how the main app features work end-to-end: matching, matches UI, vid
 
 **E-postflöde (Resend):** (1) **Ny rapport:** Report.tsx insert → anropar `send-email` med `to` (user.email), `report_received`, `report_id`. (2) **Nytt överklagande:** Appeal.tsx insert → `send-email` med `to`, `appeal_received`, `appeal_id`. (3) **Rapport avslutad:** AdminReports vid status resolved/dismissed → `send-email` med `report_resolved`, `data: { report_id, status }` (ingen `to` – mottagare hämtas i Edge Function från `reports.reporter_id`). (4) **Beslut på överklagande:** AdminAppeals vid approved/rejected → `send-email` med `appeal_decision`, `data: { appeal_id, status }` (mottagare från `appeals.user_id`). Edge Function skickar via Resend, skriver till `email_logs`, sätter `reports.email_sent`/`appeals.email_sent`. Placeholder-adresser (`@phone.maak.app`) hoppas över. Secrets: `RESEND_API_KEY`, valfritt `MAIL_FROM`.
 
+**Utökad e-post (Punkt 2):** `send-email` använder DB-mallar från `email_templates` (fallback till inbyggda), `last_used` uppdateras, tracking-pixel anropar `track-email` (sätter `opened_at`/`clicked_at`). `send-bulk-email` skickar kampanjer från `bulk_emails` till alla profiler med riktig e-post. **Deploy:** `supabase functions deploy send-email track-email send-bulk-email --no-verify-jwt`. **Test:** (1) Redigera mall i Admin → E-posthantering → Mallar; nästa rapport använder DB-innehållet. (2) Öppna skickat mail (bilder på); `email_logs.opened_at` sätts. (3) Skapa kampanj under Skicka → Skicka nu; endast användare med riktig e-post får mailet.
+
+**Bulk-filter:** `profiles.country` (ISO alpha-2) används av `send-bulk-email` när kampanjen har `filters.country` (t.ex. SE, NO, DK). Uppskattat antal i admin använder samma filter.
+
+**Valfria nästa steg:** Cron/jobb för schemalagda kampanjer (t.ex. Supabase Cron eller extern scheduler som anropar `send-bulk-email` för `status = 'scheduled'` och `scheduled_for <= now()`).
+
 ---
 
 ## 1. Matching Algorithm
