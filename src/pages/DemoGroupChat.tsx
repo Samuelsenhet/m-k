@@ -128,7 +128,7 @@ export default function DemoGroupChat() {
       selectedGroup
         ? [...(DEMO_MESSAGES[selectedGroup.id] ?? []), ...(extraMessages[selectedGroup.id] ?? [])]
         : [],
-    [selectedGroup?.id, extraMessages]
+    [selectedGroup, extraMessages]
   );
 
   useEffect(() => {

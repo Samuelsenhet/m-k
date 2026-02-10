@@ -66,9 +66,6 @@ export const SUPABASE_CONFIGURED = hasValidConfig;
 // Export the URL for use in other parts of the app
 export const SUPABASE_URL_EXPORT = SUPABASE_URL;
 
-const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-const allowPlaceholders = isTestEnv || import.meta.env.VITE_ALLOW_PLACEHOLDER_SUPABASE === 'true';
-
 if (!hasValidConfig) {
   console.warn(
     '[MÄÄK] Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env. Demo: /demo-seed.'

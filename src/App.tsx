@@ -12,6 +12,8 @@ import { GdprOnboarding } from "@/components/onboarding/GdprOnboarding";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
+import { isSupabaseConfigured, isDemoEnabled } from "@/config/supabase";
+import { SupabaseSetupPage } from "@/components/SupabaseSetupPage";
 import Index from "./pages/Index";
 import PhoneAuth from "./pages/PhoneAuth";
 import Profile from "./pages/Profile";
@@ -28,11 +30,29 @@ import AdminReports from "./pages/AdminReports";
 import AdminAppeals from "./pages/AdminAppeals";
 import Appeal from "./pages/Appeal";
 import DemoSeed from "./pages/DemoSeed";
+import DemoGroupChat from "./pages/DemoGroupChat";
 import About from "./pages/About";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+/** When Supabase is not configured, show setup page and allow demo routes only. */
+const AppWithoutSupabase = () => (
+  <BrowserRouter
+    future={{
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+    }}
+  >
+    <Routes>
+      <Route path="/demo-seed" element={<DemoSeed />} />
+      <Route path="/demo-samlingar" element={<DemoGroupChat />} />
+      <Route path="*" element={<SupabaseSetupPage />} />
+    </Routes>
+  </BrowserRouter>
+);
+
 
 const AppContent = () => {
   const { hasConsented, isLoading } = useConsent();
@@ -64,6 +84,7 @@ const AppContent = () => {
           <Route path="/match/:userId" element={<ViewMatchProfile />} />
           <Route path="/view-match" element={<ViewMatchProfile />} />
           <Route path="/demo-seed" element={<DemoSeed />} />
+          <Route path="/demo-samlingar" element={<DemoGroupChat />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/personality-guide" element={<PersonalityGuide />} />
           <Route path="/terms" element={<Terms />} />
@@ -99,7 +120,13 @@ const App = () => (
                   <Analytics />
                 </>
               )}
-              <AppContent />
+              {!isSupabaseConfigured && !isDemoEnabled ? (
+                <SupabaseSetupPage />
+              ) : isDemoEnabled && !isSupabaseConfigured ? (
+                <AppWithoutSupabase />
+              ) : (
+                <AppContent />
+              )}
             </TooltipProvider>
           </AchievementsProvider>
         </AuthProvider>

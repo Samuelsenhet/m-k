@@ -116,7 +116,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     if (user) {

@@ -16,18 +16,19 @@ describe('ProfileSettings', () => {
   it('renders and calls onSignOut when logout is clicked', async () => {
     const onSignOut = vi.fn();
     render(
-      <ProfileSettings
-        open={true}
-        onOpenChange={vi.fn()}
-        user={defaultUser}
-        displayName={null}
-        isModerator={false}
-        onOpenAchievements={vi.fn()}
-        onOpenNotifications={vi.fn()}
-        onOpenPrivacy={vi.fn()}
-        onSignOut={onSignOut}
-        onDeleteAccount={vi.fn()}
-        isDeleting={false}
+      <MemoryRouter>
+        <ProfileSettings
+          open={true}
+          onOpenChange={vi.fn()}
+          user={defaultUser}
+          displayName={null}
+          isModerator={false}
+          onOpenAchievements={vi.fn()}
+          onOpenNotifications={vi.fn()}
+          onOpenPrivacy={vi.fn()}
+          onSignOut={onSignOut}
+          onDeleteAccount={vi.fn()}
+          isDeleting={false}
         />
       </MemoryRouter>
     );
