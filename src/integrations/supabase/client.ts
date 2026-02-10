@@ -62,6 +62,7 @@ const hasValidConfig = isValidUrl && isValidKey;
 
 /** True when .env has valid Supabase URL and key. Use to show setup page instead of app when false. */
 export const SUPABASE_CONFIGURED = hasValidConfig;
+export const hasValidSupabaseConfig = hasValidConfig;
 
 // Export the URL for use in other parts of the app
 export const SUPABASE_URL_EXPORT = SUPABASE_URL;

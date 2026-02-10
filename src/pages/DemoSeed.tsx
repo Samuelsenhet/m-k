@@ -63,6 +63,7 @@ const SEED_MATCHES = [
   { id: 'demo-4', displayName: 'Alex', initial: 'A', lastMessage: 'Ska vi ta en promenad i helgen?', lastAt: 'Igår', unread: 0 },
 ];
 
+
 const SEED_CHATS: Record<string, { from: 'me' | 'them'; text: string }[]> = {
   'demo-1': [
     { from: 'them', text: 'Hej! Så kul att vi matchade 🎉' },
@@ -525,7 +526,7 @@ export default function DemoSeed() {
                       {selectedMatch.initial}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--msn-title-bar-bg)]" aria-hidden />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--msn-title-bar-bg,#0ea5a4)]" aria-hidden />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <span className="text-sm font-semibold truncate text-primary-foreground" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>

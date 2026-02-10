@@ -10,6 +10,7 @@ import { useNotificationFeed } from '@/hooks/useNotificationFeed';
 import { supabase } from '@/integrations/supabase/client';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 function formatTimeAgo(iso: string, t: (key: string, opts?: { count?: number }) => string): string {
   const d = new Date(iso);
@@ -17,9 +18,9 @@ function formatTimeAgo(iso: string, t: (key: string, opts?: { count?: number }) 
   const mins = Math.floor((now.getTime() - d.getTime()) / 60_000);
   if (mins < 60) return t('notifications.minutes_ago', { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return t('notifications.hours_ago', { count: hours });
   const days = Math.floor(hours / 24);
-  return `${days}d`;
+  return t('notifications.days_ago', { count: days });
 }
 
 export default function Notifications() {
@@ -45,20 +46,31 @@ export default function Notifications() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const key = await getProfilesAuthKey(user.id);
-      const { data } = await supabase
-        .from('profiles')
-        .select('push_new_matches, push_messages, email_new_matches, email_messages')
-        .eq(key, user.id)
-        .maybeSingle();
-      if (data) {
-        setPrefs({
-          push_new_matches: data.push_new_matches ?? true,
-          push_messages: data.push_messages ?? true,
-          email_new_matches: data.email_new_matches ?? true,
-          email_messages: data.email_messages ?? true,
-        });
-      } else {
+      try {
+        const key = await getProfilesAuthKey(user.id);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('push_new_matches, push_messages, email_new_matches, email_messages')
+          .eq(key, user.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setPrefs({
+            push_new_matches: data.push_new_matches ?? true,
+            push_messages: data.push_messages ?? true,
+            email_new_matches: data.email_new_matches ?? true,
+            email_messages: data.email_messages ?? true,
+          });
+        } else {
+          setPrefs({
+            push_new_matches: true,
+            push_messages: true,
+            email_new_matches: true,
+            email_messages: true,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load notification prefs:', err);
         setPrefs({
           push_new_matches: true,
           push_messages: true,
@@ -75,9 +87,16 @@ export default function Notifications() {
     value: boolean
   ) => {
     if (!user || prefs === null) return;
+    const previousPrefs = { ...prefs };
     setPrefs((p) => (p ? { ...p, [field]: value } : null));
-    const key = await getProfilesAuthKey(user.id);
-    await supabase.from('profiles').update({ [field]: value }).eq(key, user.id);
+    try {
+      const key = await getProfilesAuthKey(user.id);
+      const { error } = await supabase.from('profiles').update({ [field]: value }).eq(key, user.id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Failed to update notification pref:', err);
+      setPrefs(previousPrefs);
+    }
   };
 
   const hasFeed = profileViews.length > 0 || interests.length > 0;
@@ -182,8 +201,13 @@ export default function Notifications() {
                       <Button
                         size="sm"
                         onClick={async () => {
-                          await acceptInterest(i.id);
-                          navigate('/matches');
+                          try {
+                            await acceptInterest(i.id);
+                            navigate('/matches');
+                          } catch (err) {
+                            console.error('Failed to accept interest:', err);
+                            toast.error(t('notifications.accept_error', 'Could not accept interest. Please try again.'));
+                          }
                         }}
                       >
                         {t('notifications.accept')}

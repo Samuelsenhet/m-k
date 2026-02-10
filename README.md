@@ -13,6 +13,8 @@ A Swedish personality-based dating platform with phone auth, daily matches (simi
 
 ## Setup
 
+**Config:** See `src/config/supabase.ts` for `isSupabaseConfigured` and `isDemoEnabled`. **Important:** Open **this folder** in Cursor (File → Open Folder → select the `m-k` project root). Run `npm run dev` from here so the app finds your `.env` file. If you open a different copy of the repo (e.g. a worktree), `.env` won’t be there and login won’t work.
+
 1. Clone the repo.
 2. Copy `.env.example` to `.env` and add your Supabase and Twilio credentials (see [Supabase Dashboard](https://supabase.com/dashboard)).
 3. Install dependencies: `npm install`
@@ -86,6 +88,7 @@ src/
 - **Matching**: Daily match pool; filters for similar vs complementary; match score and AI-style explanation; “Se profil” and Chatta from cards
 - **Chat**: Real-time messages, icebreakers (incl. AI-generated), read receipts, search, “Recent match” strip; per-conversation Block / Delete / Report and Kemi-Check (video) when 10+ messages
 - **Notifications**: Feed with “viewed you” and “interested in you” items; Accept/Reject on interest (Määk styling: primary green, cards)
+- **Samlingar**: Gruppchatt – skapa grupper från mutual matches, chatta i grupp, lämna grupp. Se [docs/SAMLINGAR.md](docs/SAMLINGAR.md) för Realtime och testflöde.
 - **Profile**: View/edit profile, matching settings (age, distance), language, achievements, AI assistant, terms, reporting, delete account
 - **Design**: Eucalyptus Grove (primary green, sage, off-white), serif titles (Playfair), soft shadows and card layout
 - **Other**: Achievements, AI assistant panel, PWA, i18n (sv/en), GDPR consent onboarding

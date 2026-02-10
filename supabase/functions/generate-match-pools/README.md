@@ -34,7 +34,7 @@ select vault.create_secret('YOUR_SERVICE_ROLE_KEY', 'generate_pools_service_role
 -- Schedule daily at 00:00 CET (cron: minute hour day month dow; 0 0 = midnight UTC, use 22 23 for ~00:00 CET in UTC)
 select cron.schedule(
   'generate-match-pools-daily',
-  '0 0 * * *',
+  '0 23 * * *',
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'generate_pools_base_url') || '/functions/v1/generate-match-pools',
@@ -48,8 +48,8 @@ select cron.schedule(
 );
 ```
 
-- Get **Project ref** and **service_role** from **Dashboard** → **Settings** → **API** (Project URL and service_role key).  
-- For 00:00 CET use cron `0 0 * * *` if your DB is in UTC (CET = UTC+1, so 00:00 CET = 23:00 UTC previous day → use `0 23 * * *` for 23:00 UTC = 00:00 CET).
+- Get **Project ref** and **service_role** from **Dashboard** → **Settings** → **API** (Project URL and service_role key).
+- For 00:00 CET (UTC+1) use `0 23 * * *` when your DB/timezone is UTC.
 
 3. **Unschedule (if needed):** `select cron.unschedule('generate-match-pools-daily');`
 

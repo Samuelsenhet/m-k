@@ -92,6 +92,7 @@ export default function Profile() {
         supabase.from('moderator_roles').select('user_id').eq('user_id', user.id).maybeSingle(),
       ]);
       if (profileRes.error) throw profileRes.error;
+      if (modRes.error) throw modRes.error;
       if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
       setIsModerator(!!modRes.data);
     } catch (err) {

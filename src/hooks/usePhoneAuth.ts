@@ -30,7 +30,9 @@ export const usePhoneAuth = () => {
     // Try to get URL from multiple sources
     let url = import.meta.env.VITE_SUPABASE_URL;
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY; // keep validation for common misconfig
+    const anon =
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     // Construct URL from project ID if URL is not provided or is placeholder
     if ((!url || url.includes('your_project') || url.includes('placeholder')) && 

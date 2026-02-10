@@ -32,7 +32,9 @@ export function getSupabaseUrl(): string {
 
 export function validateSupabaseConfig(): { valid: boolean; url: string; error?: string } {
   const url = getSupabaseUrl();
-  const anon = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const anon =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!url) {
     return {

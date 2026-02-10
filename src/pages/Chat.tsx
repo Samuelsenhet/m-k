@@ -5,7 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { MatchList } from "@/components/chat/MatchList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { VideoChatWindow } from "@/components/chat/VideoChatWindow";
-import { MessageCircle, ArrowLeft, Search } from "lucide-react";
+import { GroupAvatar } from "@/components/chat/GroupAvatar";
+import { CreateGroupModal } from "@/components/chat/CreateGroupModal";
+import { GroupChatRoom } from "@/components/chat/GroupChatRoom";
+import { useGroups } from "@/hooks/useGroups";
+import type { SamlingGroup } from "@/hooks/useGroups";
+import { MessageCircle, ArrowLeft, Search, Users, Plus } from "lucide-react";
 import { BottomNav } from "@/components/navigation/BottomNav";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
 import { getProfilesAuthKey } from "@/lib/profiles";
@@ -78,6 +83,10 @@ export default function Chat() {
   } | null>(null);
   const [callLogs, setCallLogs] = useState<CallLogEntry[]>([]);
   const [chatSearchQuery, setChatSearchQuery] = useState(""); // chat list search (used in input + MatchList)
+  const [selectedGroup, setSelectedGroup] = useState<SamlingGroup | null>(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const { groups, createGroup, leaveGroup, refreshGroups } = useGroups();
+  const [pendingOpenGroupId, setPendingOpenGroupId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -147,6 +156,14 @@ export default function Chat() {
       loadMatchFromUrl(matchId);
     }
   }, [searchParams, user, selectedMatch, loadMatchFromUrl]);
+
+  useEffect(() => {
+    if (pendingOpenGroupId && groups.some((g) => g.id === pendingOpenGroupId)) {
+      const g = groups.find((x) => x.id === pendingOpenGroupId);
+      if (g) setSelectedGroup(g);
+      setPendingOpenGroupId(null);
+    }
+  }, [groups, pendingOpenGroupId]);
 
   const handleBack = () => {
     setSelectedMatch(null);
@@ -230,6 +247,22 @@ export default function Chat() {
   }
 
   if (!user) return null;
+
+  if (selectedGroup) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background pb-16">
+        <div className="flex-1 flex flex-col min-h-0">
+          <GroupChatRoom
+            group={selectedGroup}
+            currentUserId={user.id}
+            onBack={() => setSelectedGroup(null)}
+            leaveGroup={leaveGroup}
+          />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
 
   if (videoCallActive && selectedMatch) {
     return (
@@ -324,6 +357,43 @@ export default function Chat() {
             </div>
           </div>
           <div className="flex-1 overflow-auto bg-background">
+            {/* Samlingar (gruppchatter) */}
+            <div className="px-3 pt-4 pb-2 border-b border-border">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Samlingar
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateGroup(true)}
+                  className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 hover:bg-primary/90"
+                  aria-label={t("chat.createGroup")}
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+              {groups.length > 0 ? (
+                <div className="space-y-2">
+                  {groups.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setSelectedGroup(g)}
+                      className="w-full flex items-center gap-3 p-3 rounded-2xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                    >
+                      <GroupAvatar members={g.members} size={52} showCount />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground truncate">{g.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{g.members.map((m) => m.display_name ?? "?").join(", ")}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Skapa en grupp med dina matcher.</p>
+              )}
+            </div>
             <MatchList
               onSelectMatch={handleSelectMatch}
               selectedMatchId={selectedMatch?.id}
@@ -332,7 +402,16 @@ export default function Chat() {
           </div>
         </>
       )}
-      {!selectedMatch && <BottomNav />}
+      <CreateGroupModal
+        open={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+        onCreated={(groupId) => {
+          setShowCreateGroup(false);
+          setPendingOpenGroupId(groupId);
+        }}
+        createGroup={createGroup}
+      />
+      {!selectedMatch && !selectedGroup && <BottomNav />}
     </div>
   );
 }

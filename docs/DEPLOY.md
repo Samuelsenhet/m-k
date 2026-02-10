@@ -52,6 +52,10 @@ To use **maakapp.se** (or määkapp.com / määkapp.se):
 
 Full steps, checklist and optional domains: **`docs/DOMAIN_SETUP.md`**.
 
+### 3c. Samlingar (gruppchatt)
+
+Om du använder Samlingar: kör migrationerna (inkl. `20260203100100_realtime_group_messages.sql`) och aktivera Realtime för `group_messages` enligt **`docs/SAMLINGAR.md`**. Där finns också testflöde och notis om Fas 2.
+
 ### 4. Build locally
 
 ```bash
