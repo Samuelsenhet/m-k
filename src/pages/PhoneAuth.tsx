@@ -16,6 +16,7 @@ import { calculateAge } from '@/components/auth/age-utils';
 import { Heart, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { isSupabaseConfigured, isDemoEnabled } from '@/config/supabase';
 
 type ProfilesInsert = Database['public']['Tables']['profiles']['Insert'];
 
@@ -43,7 +44,7 @@ export default function PhoneAuth() {
   const [countdown, setCountdown] = useState(0);
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
   
-  const { step, loading, error, sendOtp, verifyOtp, resendOtp, setStep } = usePhoneAuth();
+  const { step, loading, error, sendOtp, verifyOtp, resendOtp, setStep, hasValidSupabaseConfig } = usePhoneAuth();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -259,6 +260,33 @@ export default function PhoneAuth() {
           <ArrowLeft className="w-4 h-4" />
           {step === 'phone' ? t('common.back') : t('common.back')}
         </button>
+
+        {step === 'phone' && !isSupabaseConfigured && !isDemoEnabled && (
+          <Card className="mb-4 border-destructive/30 bg-destructive/5">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-sm text-foreground">
+                Supabase är inte konfigurerad. Lägg till <code className="text-xs bg-muted px-1 rounded">VITE_SUPABASE_URL</code> och <code className="text-xs bg-muted px-1 rounded">VITE_SUPABASE_PUBLISHABLE_KEY</code> i <code className="text-xs bg-muted px-1 rounded">.env</code>. Kontakta support om problem kvarstår.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+        {step === 'phone' && isDemoEnabled && (
+          <Card className="mb-4 border-primary/30 bg-primary/5">
+            <CardContent className="pt-4 pb-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Testa appen utan konto:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/demo-seed">Demo – matchningar & chatt</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/demo-samlingar">Demo-samlingar</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="shadow-card border-border overflow-hidden">
           <CardHeader className="text-center">

@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MaakMascot } from '@/components/mascot/MaakMascot';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/useAuth';
+import { isDemoEnabled } from '@/config/supabase';
 import { cn } from '@/lib/utils';
 
 interface LandingPageProps {
@@ -106,12 +107,14 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               Kom igång gratis
               <ArrowRight className="w-5 h-5" />
             </ShimmerButton>
-            <Button asChild variant="outline" size="lg" className="w-full mt-3 min-h-[48px] text-base font-medium border-primary/30 text-primary hover:bg-primary/10">
-              <Link to="/demo-seed" className="flex items-center justify-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                Se demo – matchningar & chatt utan konto
-              </Link>
-            </Button>
+            {isDemoEnabled && (
+              <Button asChild variant="outline" size="lg" className="w-full mt-3 min-h-[48px] text-base font-medium border-primary/30 text-primary hover:bg-primary/10">
+                <Link to="/demo-seed" className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  Se demo – matchningar & chatt utan konto
+                </Link>
+              </Button>
+            )}
           </div>
           
           <p className="text-xs sm:text-sm text-muted-foreground mt-4 px-4">Redan 10,000+ svenskar söker kärlek här</p>
@@ -159,6 +162,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
                 { step: 2, title: 'Ta personlighetstest', desc: '30 frågor, 5 minuter', icon: Brain },
                 { step: 3, title: 'Få dagliga matcher', desc: 'Baserat på kompatibilitet', icon: Heart },
                 { step: 4, title: 'Chatta & träffas', desc: 'Med AI-hjälp på vägen', icon: MessageCircle },
+                { step: 5, title: 'Gruppchatt', desc: 'Prata med flera matchningar tillsammans', icon: Users },
               ].map((item, i) => (
                 <GlowCard
                   key={i}

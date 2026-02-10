@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 export default function Appeal() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -33,17 +33,38 @@ export default function Appeal() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from('appeals').insert({
-      user_id: user.id,
-      reason: reason.trim(),
-      status: 'pending',
-    });
-    setSubmitting(false);
+    const { data: newAppeal, error } = await supabase
+      .from('appeals')
+      .insert({
+        user_id: user.id,
+        reason: reason.trim(),
+        status: 'pending',
+      })
+      .select('id')
+      .single();
     if (error) {
       console.error('Appeal insert error:', error);
       toast.error(t('appeal.submit_error'));
+      setSubmitting(false);
       return;
     }
+    const userEmail = user.email?.trim();
+    const isPlaceholderEmail = userEmail?.includes('@phone.maak.app') ?? true;
+    if (userEmail && !isPlaceholderEmail && newAppeal?.id) {
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            to: userEmail,
+            template: 'appeal_received',
+            data: { appeal_id: newAppeal.id },
+            language: i18n.language?.startsWith('en') ? 'en' : 'sv',
+          },
+        });
+      } catch (e) {
+        console.warn('Appeal confirmation email failed:', e);
+      }
+    }
+    setSubmitting(false);
     setSubmitted(true);
     toast.success(t('appeal.received'));
   };

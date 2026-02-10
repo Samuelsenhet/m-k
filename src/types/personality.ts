@@ -261,15 +261,16 @@ export function calculateArchetype(scores: Record<DimensionKey, number>): Archet
   return code;
 }
 
-// Get category from archetype
-export function getCategoryFromArchetype(archetype: ArchetypeCode): PersonalityCategory {
-  return ARCHETYPE_INFO[archetype].category;
-}
-
-/** The 4 archetype codes per category (for personality guide and "which of the 4" display). */
+// Archetype codes grouped by category (for "same category" lists)
 export const ARCHETYPE_CODES_BY_CATEGORY: Record<PersonalityCategory, ArchetypeCode[]> = {
   DIPLOMAT: ['INFJ', 'INFP', 'ENFJ', 'ENFP'],
   STRATEGER: ['INTJ', 'INTP', 'ENTJ', 'ENTP'],
   BYGGARE: ['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'],
   UPPTÄCKARE: ['ISTP', 'ISFP', 'ESTP', 'ESFP'],
 };
+
+// Get category from archetype
+export function getCategoryFromArchetype(archetype: ArchetypeCode): PersonalityCategory {
+  return ARCHETYPE_INFO[archetype].category;
+}
+

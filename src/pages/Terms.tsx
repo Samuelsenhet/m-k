@@ -27,7 +27,7 @@ export default function Terms() {
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <p>
-              Dessa Användarvillkor (&quot;Villkor&quot;) ingås mellan dig och MĀĀK AB (&quot;Företaget&quot;, &quot;MĀĀK&quot;, &quot;vi&quot;, &quot;oss&quot;). Villkoren styr din tillgång till och användning av vår webbplats, mobilapplikationer och alla andra tjänster inklusive innehåll, funktionalitet och evenemang (sammanfattat &quot;Tjänsterna&quot;).
+              Dessa Användarvillkor (&quot;Villkor&quot;) ingås mellan dig och MÄÄK AB (&quot;Företaget&quot;, &quot;MÄÄK&quot;, &quot;vi&quot;, &quot;oss&quot;). Villkoren styr din tillgång till och användning av vår webbplats, mobilapplikationer och alla andra tjänster inklusive innehåll, funktionalitet och evenemang (sammanfattat &quot;Tjänsterna&quot;).
             </p>
             <p>
               Genom att använda Tjänsterna godkänner du och samtycker till att följa dessa Villkor samt vår Integritetspolicy. Om du inte godkänner Villkoren får du inte använda Tjänsterna.
@@ -36,9 +36,9 @@ export default function Terms() {
             <section>
               <h3 className="font-semibold text-foreground mb-2">1. Ålders- & ID-krav</h3>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Du måste vara minst 20 år gammal för att använda MĀĀK.</li>
+                <li>Du måste vara minst 20 år gammal för att använda MÄÄK.</li>
                 <li>Du måste verifiera din ålder och kan välja att verifiera din identitet genom att ladda upp ett godkänt ID (körkort, pass, nationellt ID).</li>
-                <li>MĀĀK förbehåller sig rätten att begära ytterligare verifiering eller avsluta din åtkomst om du inte uppfyller kraven.</li>
+                <li>MÄÄK förbehåller sig rätten att begära ytterligare verifiering eller avsluta din åtkomst om du inte uppfyller kraven.</li>
               </ul>
             </section>
 
@@ -47,7 +47,7 @@ export default function Terms() {
               <ul className="list-disc pl-5 space-y-1">
                 <li>Du ansvarar för att ditt lösenord och telefonnummer hålls konfidentiella.</li>
                 <li>Du är ensam ansvarig för dina interaktioner med andra användare, både i appen och personligt.</li>
-                <li>MĀĀK garanterar inte säkerheten vid möten utanför appen. Använd sunt förnuft och ta säkerhetsåtgärder.</li>
+                <li>MÄÄK garanterar inte säkerheten vid möten utanför appen. Använd sunt förnuft och ta säkerhetsåtgärder.</li>
               </ul>
             </section>
 
@@ -55,7 +55,7 @@ export default function Terms() {
               <h3 className="font-semibold text-foreground mb-2">3. Användargenererat innehåll</h3>
               <ul className="list-disc pl-5 space-y-1">
                 <li>Allt innehåll du lägger upp (bilder, texter, meddelanden) får inte bryta mot svensk lag eller vara kränkande, trakasserande eller olagligt.</li>
-                <li>MĀĀK förbehåller sig rätten att ta bort innehåll eller avsluta konton som bryter mot våra riktlinjer.</li>
+                <li>MÄÄK förbehåller sig rätten att ta bort innehåll eller avsluta konton som bryter mot våra riktlinjer.</li>
               </ul>
             </section>
 
@@ -71,7 +71,7 @@ export default function Terms() {
             <section>
               <h3 className="font-semibold text-foreground mb-2">5. Immateriell egendom</h3>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Allt innehåll, logotyper och design i MĀĀK är skyddat av upphovsrätt och tillhör MĀĀK AB.</li>
+                <li>Allt innehåll, logotyper och design i MÄÄK är skyddat av upphovsrätt och tillhör MÄÄK AB.</li>
                 <li>Du får inte kopiera, modifiera eller distribuera någon del av Tjänsterna utan vårt tillstånd.</li>
               </ul>
             </section>
@@ -87,7 +87,7 @@ export default function Terms() {
             <section>
               <h3 className="font-semibold text-foreground mb-2">7. Tvistlösning</h3>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Eventuella tvister mellan dig och MĀĀK ska lösas genom medling eller skiljeförfarande enligt svensk lag.</li>
+                <li>Eventuella tvister mellan dig och MÄÄK ska lösas genom medling eller skiljeförfarande enligt svensk lag.</li>
                 <li>Du avstår från rätten att ingå grupptalan.</li>
               </ul>
             </section>
@@ -96,7 +96,7 @@ export default function Terms() {
               <h3 className="font-semibold text-foreground mb-2">8. Kontakt</h3>
               <p>Frågor om dessa Villkor? Kontakta oss på:</p>
               <p>📧 juridik@maakapp.se</p>
-              <p>🏢 MĀĀK AB, Sverige</p>
+              <p>🏢 MÄÄK AB, Sverige</p>
             </section>
           </CardContent>
         </Card>
@@ -162,7 +162,7 @@ export default function Terms() {
 
             <section>
               <h3 className="font-semibold text-foreground mb-2">8. Barn & integritet</h3>
-              <p>MĀĀK är endast för personer 20 år och äldre. Vi samlar inte medvetet in data från minderåriga.</p>
+              <p>MÄÄK är endast för personer 20 år och äldre. Vi samlar inte medvetet in data från minderåriga.</p>
             </section>
 
             <section>
@@ -173,7 +173,7 @@ export default function Terms() {
             <section>
               <h3 className="font-semibold text-foreground mb-2">10. Kontakt för integritetsfrågor</h3>
               <p>📧 dataskydd@maakapp.se</p>
-              <p>🏢 MĀĀK AB, Sverige</p>
+              <p>🏢 MÄÄK AB, Sverige</p>
             </section>
           </CardContent>
         </Card>
