@@ -4,7 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { ProfileSettings } from './ProfileSettings';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: 'sv', changeLanguage: vi.fn() },
+  }),
 }));
 
 const defaultUser = {
@@ -34,7 +37,7 @@ describe('ProfileSettings', () => {
     );
 
     const logoutButton = screen.getByRole('button', { name: /settings\.logout/i });
-    expect(logoutButton).toBeInTheDocument();
+    expect(logoutButton).toBeTruthy();
 
     fireEvent.click(logoutButton);
     expect(onSignOut).toHaveBeenCalledTimes(1);
