@@ -13,10 +13,12 @@ CREATE INDEX IF NOT EXISTS idx_profile_views_viewed_user_created
 ALTER TABLE public.profile_views ENABLE ROW LEVEL SECURITY;
 
 -- Viewers can insert their own view; viewed user can see views of their profile
+DROP POLICY IF EXISTS "Users can insert own profile view" ON public.profile_views;
 CREATE POLICY "Users can insert own profile view"
   ON public.profile_views FOR INSERT
   WITH CHECK (auth.uid() = viewer_id);
 
+DROP POLICY IF EXISTS "Users can view profile views where they are the viewed user" ON public.profile_views;
 CREATE POLICY "Users can view profile views where they are the viewed user"
   ON public.profile_views FOR SELECT
   USING (auth.uid() = viewed_user_id);
@@ -60,6 +62,7 @@ ALTER TABLE public.matches ADD CONSTRAINT matches_status_check
   CHECK (status IN ('pending', 'liked', 'disliked', 'passed', 'mutual'));
 
 -- Allow the "matched user" to update the row (e.g. accept or reject interest)
+DROP POLICY IF EXISTS "Users can update matches where they are the matched user" ON public.matches;
 CREATE POLICY "Users can update matches where they are the matched user"
   ON public.matches FOR UPDATE
   USING (auth.uid() = matched_user_id);

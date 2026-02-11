@@ -18,15 +18,18 @@ CREATE TABLE IF NOT EXISTS public.groups (
 ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
 
 -- Authenticated users can create groups (they become creator via group_members)
+DROP POLICY IF EXISTS "Authenticated users can create groups" ON public.groups;
 CREATE POLICY "Authenticated users can create groups"
   ON public.groups FOR INSERT
   WITH CHECK (auth.uid() = created_by);
 
 -- Only creator can update/delete group
+DROP POLICY IF EXISTS "Group creator can update group" ON public.groups;
 CREATE POLICY "Group creator can update group"
   ON public.groups FOR UPDATE
   USING (created_by = auth.uid());
 
+DROP POLICY IF EXISTS "Group creator can delete group" ON public.groups;
 CREATE POLICY "Group creator can delete group"
   ON public.groups FOR DELETE
   USING (created_by = auth.uid());
@@ -49,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_group_members_user_id ON public.group_members(use
 ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
 
 -- Only members can view a group (placed after group_members table creation)
+DROP POLICY IF EXISTS "Group members can view group" ON public.groups;
 CREATE POLICY "Group members can view group"
   ON public.groups FOR SELECT
   USING (
@@ -59,6 +63,7 @@ CREATE POLICY "Group members can view group"
   );
 
 -- Members can view other members of their groups
+DROP POLICY IF EXISTS "Group members can view group_members" ON public.group_members;
 CREATE POLICY "Group members can view group_members"
   ON public.group_members FOR SELECT
   USING (
@@ -69,6 +74,7 @@ CREATE POLICY "Group members can view group_members"
   );
 
 -- Self-join, or creator/existing member can add others
+DROP POLICY IF EXISTS "Group creator or member can insert members" ON public.group_members;
 CREATE POLICY "Group creator or member can insert members"
   ON public.group_members FOR INSERT
   WITH CHECK (
@@ -78,6 +84,7 @@ CREATE POLICY "Group creator or member can insert members"
   );
 
 -- Creator can delete members; members can delete themselves (leave)
+DROP POLICY IF EXISTS "Creator or self can delete group_members" ON public.group_members;
 CREATE POLICY "Creator or self can delete group_members"
   ON public.group_members FOR DELETE
   USING (
@@ -105,6 +112,7 @@ CREATE INDEX IF NOT EXISTS idx_group_messages_created_at ON public.group_message
 ALTER TABLE public.group_messages ENABLE ROW LEVEL SECURITY;
 
 -- Only group members can read messages
+DROP POLICY IF EXISTS "Group members can view group_messages" ON public.group_messages;
 CREATE POLICY "Group members can view group_messages"
   ON public.group_messages FOR SELECT
   USING (
@@ -115,6 +123,7 @@ CREATE POLICY "Group members can view group_messages"
   );
 
 -- Only group members can send messages
+DROP POLICY IF EXISTS "Group members can insert group_messages" ON public.group_messages;
 CREATE POLICY "Group members can insert group_messages"
   ON public.group_messages FOR INSERT
   WITH CHECK (
@@ -126,6 +135,7 @@ CREATE POLICY "Group members can insert group_messages"
   );
 
 -- Sender can update own message (e.g. edit content)
+DROP POLICY IF EXISTS "Sender can update own group_message" ON public.group_messages;
 CREATE POLICY "Sender can update own group_message"
   ON public.group_messages FOR UPDATE
   USING (sender_id = auth.uid());
