@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured } from "@/config/supabase";
 
 export type PhoneAuthStep = "phone" | "verify" | "profile";
 
@@ -118,7 +119,12 @@ export const usePhoneAuth = () => {
     setError(null);
 
     try {
-      // Validate env once to give a good error message (supabase client would otherwise fail later)
+      if (!isSupabaseConfigured) {
+        setError(
+          "Supabase är inte konfigurerad. Lägg till VITE_SUPABASE_URL och VITE_SUPABASE_PUBLISHABLE_KEY i .env. Se .env.example."
+        );
+        return false;
+      }
       getEnv();
       const formattedPhone = formatPhoneE164(phone);
 
@@ -162,7 +168,12 @@ export const usePhoneAuth = () => {
     setError(null);
 
     try {
-      // Validate env once to give a good error message (supabase client would otherwise fail later)
+      if (!isSupabaseConfigured) {
+        setError(
+          "Supabase är inte konfigurerad. Lägg till VITE_SUPABASE_URL och VITE_SUPABASE_PUBLISHABLE_KEY i .env."
+        );
+        return false;
+      }
       getEnv();
       const formattedPhone = formatPhoneE164(phone);
 

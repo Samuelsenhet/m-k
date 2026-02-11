@@ -12,7 +12,10 @@
     "retry": "Försök igen",
     "sending": "Skickar...",
     "verifying": "Verifierar...",
-    "save_changes": "Spara ändringar"
+    "save_changes": "Spara ändringar",
+    "online_now_full": "Just nu är det {{count}} användare online",
+    "online_now_short": "Just nu är {{count}} online",
+    "online_badge": "{{count}} online"
   },
   "nav": {
     "matches": "Matchningar",
@@ -103,6 +106,32 @@
     "postVideoError": "Kunde inte hämta förslag. Försök igen senare.",
     "chats": "Chattar",
     "createGroup": "Skapa samling"
+  },
+  "groupChat": {
+    "title": "Gruppchatt",
+    "create": "Skapa grupp",
+    "createComingSoon": "Skapa grupp kommer snart",
+    "defaultName": "Gruppchatt",
+    "groupName": "Gruppnamn",
+    "groupNamePlaceholder": "t.ex. Fika-grupp",
+    "selectMatches": "Välj matchningar",
+    "selectMatchesHint": "Välj minst 2 personer (minst 2 krävs).",
+    "minTwoRequired": "Välj minst 2 matchningar.",
+    "needMoreMatches": "Du behöver minst 2 matchningar för att skapa en grupp.",
+    "creating": "Skapar...",
+    "created": "Gruppen skapad!",
+    "errorCreate": "Kunde inte skapa gruppen. Försök igen.",
+    "unknownUser": "Användare",
+    "noGroups": "Du har inga grupper än",
+    "noMessagesYet": "Inga meddelanden än",
+    "notFoundOrNoAccess": "Gruppen hittades inte eller du har inte åtkomst.",
+    "backToList": "Tillbaka till listan",
+    "leaveGroup": "Lämna grupp",
+    "leaveGroupConfirm": "Vill du verkligen lämna gruppen? Du kan inte se meddelanden längre om du inte bjuds in igen.",
+    "leaving": "Lämnar...",
+    "leftGroup": "Du har lämnat gruppen.",
+    "errorLeave": "Kunde inte lämna gruppen. Försök igen.",
+    "moreOptions": "Fler alternativ"
   },
   "profile": {
     "title": "Min profil",
@@ -205,7 +234,17 @@
     "privacy_description": "Hantera vilka som ser din profil, dina foton och dina aktiviteter. Mer alternativ kommer snart.",
     "profile_visibility": "Profilsynlighet",
     "shared_data": "Deldata",
-    "verify_id_description": "Ladda upp ditt ID för att verifiera ditt konto"
+    "verify_id_description": "Ladda upp ditt ID för att verifiera ditt konto",
+    "show_online_count": "Visa antal aktiva användare",
+    "matching_settings": "Matchinställningar",
+    "submit": "Spara"
+  },
+  "about": {
+    "title": "Om MÄÄK",
+    "about_maak": "Om MÄÄK",
+    "intro": "MÄÄK hjälper dig hitta din match baserat på personlighet. Vi vill skapa meningsfulla möten med respekt för integritet och trygghet.",
+    "placeholder": "Mer information om appen och teamet kommer snart.",
+    "contact_us": "Kontakta oss"
   },
   "notifications": {
     "title": "Notifikationer",

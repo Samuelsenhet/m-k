@@ -19,8 +19,10 @@ Your app needs these at **build time** (Vite bakes `VITE_*` into the bundle). Na
 | `VITE_SUPABASE_URL` | `https://YOUR_PROJECT_REF.supabase.co` | Supabase → Settings → API → **Project URL** |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `eyJhbG...` (long string) | Supabase → Settings → API → **anon public** key |
 | `VITE_SUPABASE_PROJECT_ID` | Your project ref (e.g. `abcdefgh`) | In the Project URL or Supabase → Settings → General → **Reference ID** |
+| `VITE_ENABLE_DEMO` | `false` (or leave unset) | **Production:** always `false` so demo is hidden. Only set `true` for demo/pitch deployments. |
 
 - For **Environment**, select **Production** (and **Preview** if you use preview deployments).
+- **Production:** set `VITE_ENABLE_DEMO=false` (or omit) so demo links and `/demo-seed` are not shown.
 - Click **Save** after each variable.
 
 ### Option B – Vercel CLI
@@ -72,3 +74,15 @@ If the build fails with a Node/engine error:
 - Opening a route like `https://your-app.vercel.app/matches` or `/chat` does **not** show 404 (thanks to `vercel.json` rewrites).
 
 If the app loads but Supabase calls fail (e.g. 401, “invalid key”), double-check that `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set correctly on Vercel and that you redeployed after adding them.
+
+---
+
+## 5. Recommended env for Production vs Demo
+
+| Environment | VITE_SUPABASE_URL | VITE_SUPABASE_PUBLISHABLE_KEY | VITE_ENABLE_DEMO |
+|-------------|-------------------|-------------------------------|------------------|
+| **Production** | Your real URL | Your anon key | `false` or unset |
+| **Preview (staging)** | Your real URL | Your anon key | `false` or unset |
+| **Demo / pitch build** | Can be empty | Can be empty | `true` |
+
+When `VITE_ENABLE_DEMO=false` (or unset), demo links and the Demo tab are hidden; `/demo-seed` redirects to `/`.

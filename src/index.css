@@ -6,40 +6,40 @@
 
 @layer base {
   :root {
-    /* MÄÄK – Eucalyptus Grove palette (grounded, peaceful, authentic)
-     * MD3 tokens; WCAG 2.1 AA; motion 100–300ms. */
-    /* #F2F0EF off-white, #4B6E48 forest, #B2AC88 sage, #898989 gray, #253D2C dark */
-    --background: 30 10% 94%;
-    --foreground: 120 25% 19%;
+    /* MÄÄK – Rosa/Eucalyptus palette (varm, trygg, modern svensk)
+     * FAS2 design; WCAG 2.1 AA; motion 100–300ms. */
+    /* Primary rosa #EC4899, accent emerald #10B981, bakgrund #FDF2F8 → #F0FDF4 */
+    --background: 330 100% 98%;
+    --foreground: 220 13% 18%;
 
-    --card: 30 12% 97%;
-    --card-foreground: 120 25% 19%;
-    --surface: 30 12% 97%;
-    --surface-foreground: 120 25% 19%;
+    --card: 330 60% 98%;
+    --card-foreground: 220 13% 18%;
+    --surface: 330 40% 98%;
+    --surface-foreground: 220 13% 18%;
 
-    --popover: 30 12% 97%;
-    --popover-foreground: 120 25% 19%;
+    --popover: 330 60% 98%;
+    --popover-foreground: 220 13% 18%;
 
-    /* Primary: Forest green #4B6E48 – CTAs, trust, growth */
-    --primary: 116 21% 36%;
+    /* Primary: Rosa – CTAs, kärlek, warmth */
+    --primary: 330 81% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 116 25% 42%;
+    --primary-glow: 330 75% 65%;
 
-    /* Secondary: Sage #B2AC88 – subtle emphasis */
-    --secondary: 45 18% 88%;
-    --secondary-foreground: 120 25% 22%;
+    /* Secondary: Emerald/sage – accent */
+    --secondary: 160 84% 39%;
+    --secondary-foreground: 0 0% 100%;
 
-    /* Tertiary: Light sage tint */
-    --tertiary: 45 20% 94%;
-    --tertiary-foreground: 120 20% 25%;
+    /* Tertiary: Light rose tint */
+    --tertiary: 330 50% 96%;
+    --tertiary-foreground: 220 13% 22%;
 
-    /* Muted: #898989 gray – body text */
-    --muted: 0 0% 92%;
-    --muted-foreground: 0 0% 42%;
+    /* Muted */
+    --muted: 330 20% 94%;
+    --muted-foreground: 220 10% 42%;
 
-    /* Accent: Sage for links/emphasis */
-    --accent: 45 18% 62%;
-    --accent-foreground: 120 25% 19%;
+    /* Accent: Emerald for links/emphasis */
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
 
     /* Personality (unchanged for consistency) */
     --diplomat: 280 60% 55%;
@@ -56,9 +56,9 @@
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 10% 88%;
-    --input: 30 10% 88%;
-    --ring: 116 21% 36%;
+    --border: 330 20% 90%;
+    --input: 330 20% 90%;
+    --ring: 330 81% 60%;
 
     --radius: 0.75rem;
     --radius-sm: 0.25rem;
@@ -70,58 +70,59 @@
     --duration-normal: 200ms;
     --duration-slow: 300ms;
 
-    /* Eucalyptus grove gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(116 21% 36%), hsl(45 18% 52%));
-    --gradient-hero: linear-gradient(180deg, hsl(30 10% 94%) 0%, hsl(45 15% 96%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(30 12% 97%) 0%, hsl(45 18% 96%) 100%);
+    /* Rosa → Eucalyptus gradients (#F472B6 → #34D399, knapp #EC4899 → #10B981) */
+    --gradient-primary: linear-gradient(135deg, hsl(330 81% 60%), hsl(160 84% 39%));
+    --gradient-button: linear-gradient(135deg, hsl(330 81% 60%), hsl(160 84% 39%));
+    --gradient-hero: linear-gradient(180deg, hsl(330 100% 98%) 0%, hsl(160 60% 97%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(330 60% 98%) 0%, hsl(160 40% 97%) 100%);
 
     --gradient-diplomat: linear-gradient(135deg, hsl(280 60% 55%), hsl(300 50% 60%));
     --gradient-strateger: linear-gradient(135deg, hsl(220 70% 50%), hsl(200 65% 55%));
     --gradient-byggare: linear-gradient(135deg, hsl(145 55% 42%), hsl(116 25% 42%));
     --gradient-upptackare: linear-gradient(135deg, hsl(45 95% 50%), hsl(35 90% 55%));
 
-    --shadow-soft: 0 2px 12px -2px hsl(120 25% 19% / 0.06);
-    --shadow-card: 0 4px 20px -4px hsl(120 25% 19% / 0.08);
-    --shadow-glow: 0 0 30px hsl(116 21% 36% / 0.2);
+    --shadow-soft: 0 2px 12px -2px hsl(220 13% 18% / 0.06);
+    --shadow-card: 0 4px 20px -4px hsl(220 13% 18% / 0.08);
+    --shadow-glow: 0 0 30px hsl(330 81% 60% / 0.2);
 
-    --sidebar-background: 30 10% 94%;
-    --sidebar-foreground: 120 25% 19%;
-    --sidebar-primary: 116 21% 36%;
+    --sidebar-background: 330 100% 98%;
+    --sidebar-foreground: 220 13% 18%;
+    --sidebar-primary: 330 81% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 45 18% 88%;
-    --sidebar-accent-foreground: 120 25% 22%;
-    --sidebar-border: 30 10% 88%;
-    --sidebar-ring: 116 21% 36%;
+    --sidebar-accent: 160 84% 39%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 330 20% 90%;
+    --sidebar-ring: 330 81% 60%;
   }
 
   .dark {
-    --background: 120 20% 8%;
-    --foreground: 45 15% 92%;
+    --background: 330 20% 8%;
+    --foreground: 330 10% 92%;
 
-    --card: 120 18% 12%;
-    --card-foreground: 45 15% 92%;
+    --card: 330 18% 12%;
+    --card-foreground: 330 10% 92%;
 
-    --surface: 120 18% 14%;
-    --surface-foreground: 45 15% 92%;
+    --surface: 330 18% 14%;
+    --surface-foreground: 330 10% 92%;
 
-    --popover: 120 18% 12%;
-    --popover-foreground: 45 15% 92%;
+    --popover: 330 18% 12%;
+    --popover-foreground: 330 10% 92%;
 
-    --primary: 116 25% 48%;
-    --primary-foreground: 120 25% 10%;
-    --primary-glow: 116 30% 55%;
+    --primary: 330 75% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 330 70% 60%;
 
-    --secondary: 45 15% 22%;
-    --secondary-foreground: 45 15% 88%;
+    --secondary: 160 70% 35%;
+    --secondary-foreground: 0 0% 100%;
 
-    --tertiary: 120 15% 18%;
-    --tertiary-foreground: 45 15% 88%;
+    --tertiary: 330 15% 18%;
+    --tertiary-foreground: 330 10% 88%;
 
-    --muted: 120 12% 18%;
+    --muted: 330 12% 18%;
     --muted-foreground: 0 0% 58%;
 
-    --accent: 45 20% 55%;
-    --accent-foreground: 120 25% 10%;
+    --accent: 160 70% 40%;
+    --accent-foreground: 0 0% 100%;
 
     --diplomat: 280 65% 60%;
     --strateger: 220 75% 58%;
@@ -131,18 +132,18 @@
     --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 120 15% 22%;
-    --input: 120 15% 22%;
-    --ring: 116 25% 48%;
+    --border: 330 15% 22%;
+    --input: 330 15% 22%;
+    --ring: 330 75% 55%;
 
-    --sidebar-background: 120 20% 10%;
-    --sidebar-foreground: 45 15% 92%;
-    --sidebar-primary: 116 25% 48%;
-    --sidebar-primary-foreground: 120 25% 10%;
-    --sidebar-accent: 120 15% 18%;
-    --sidebar-accent-foreground: 45 15% 88%;
-    --sidebar-border: 120 15% 22%;
-    --sidebar-ring: 116 25% 48%;
+    --sidebar-background: 330 20% 10%;
+    --sidebar-foreground: 330 10% 92%;
+    --sidebar-primary: 330 75% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 330 15% 18%;
+    --sidebar-accent-foreground: 330 10% 88%;
+    --sidebar-border: 330 15% 22%;
+    --sidebar-ring: 330 75% 55%;
   }
 }
 
@@ -165,6 +166,10 @@
 @layer components {
   .gradient-primary {
     background: var(--gradient-primary);
+  }
+
+  .gradient-button {
+    background: var(--gradient-button);
   }
 
   .gradient-hero {
@@ -200,7 +205,8 @@
     box-shadow: var(--shadow-card);
   }
 
-  .shadow-glow {
+  .shadow-glow,
+  .shadow-glow-primary {
     box-shadow: var(--shadow-glow);
   }
 
@@ -637,18 +643,18 @@
   }
 }
 
-/* Eucalyptus grove gradient backgrounds */
+/* Rosa/Eucalyptus gradient backgrounds */
 .bg-gradient-premium {
   background: 
-    radial-gradient(ellipse at top, hsl(116 21% 36% / 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, hsl(45 18% 62% / 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom left, hsl(145 55% 42% / 0.06) 0%, transparent 50%),
-    linear-gradient(180deg, hsl(30 10% 94%) 0%, hsl(45 15% 96%) 50%, hsl(30 12% 97%) 100%);
+    radial-gradient(ellipse at top, hsl(330 81% 60% / 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, hsl(160 84% 39% / 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom left, hsl(330 60% 70% / 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, hsl(330 100% 98%) 0%, hsl(160 60% 97%) 50%, hsl(330 60% 98%) 100%);
 }
 
 .bg-gradient-premium-dark {
   background: 
-    radial-gradient(ellipse at top, hsl(116 25% 48% / 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, hsl(45 20% 55% / 0.12) 0%, transparent 50%),
-    linear-gradient(180deg, hsl(120 20% 8%) 0%, hsl(120 18% 12%) 50%, hsl(120 20% 10%) 100%);
+    radial-gradient(ellipse at top, hsl(330 75% 55% / 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, hsl(160 70% 40% / 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, hsl(330 20% 8%) 0%, hsl(330 18% 12%) 50%, hsl(330 20% 10%) 100%);
 }

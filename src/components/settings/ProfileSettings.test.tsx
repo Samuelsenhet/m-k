@@ -16,7 +16,8 @@ describe('ProfileSettings', () => {
   it('renders and calls onSignOut when logout is clicked', async () => {
     const onSignOut = vi.fn();
     render(
-      <ProfileSettings
+      <MemoryRouter>
+        <ProfileSettings
         open={true}
         onOpenChange={vi.fn()}
         user={defaultUser}

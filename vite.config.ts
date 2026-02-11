@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     hmr: {
       overlay: false,
+      // Explicit port so the client connects to the same port as the dev server (avoids WS connection failures)
+      port: 8080,
+      protocol: "ws",
     },
   },
   plugins: [

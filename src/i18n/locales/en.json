@@ -12,7 +12,10 @@
     "retry": "Try again",
     "sending": "Sending...",
     "verifying": "Verifying...",
-    "save_changes": "Save changes"
+    "save_changes": "Save changes",
+    "online_now_full": "There are {{count}} users online right now",
+    "online_now_short": "{{count}} online right now",
+    "online_badge": "{{count}} online"
   },
   "nav": {
     "matches": "Matches",
@@ -103,6 +106,32 @@
     "postVideoError": "Could not load suggestions. Try again later.",
     "chats": "Chats",
     "createGroup": "Create collection"
+  },
+  "groupChat": {
+    "title": "Group chat",
+    "create": "Create group",
+    "createComingSoon": "Create group coming soon",
+    "defaultName": "Group chat",
+    "groupName": "Group name",
+    "groupNamePlaceholder": "e.g. Coffee group",
+    "selectMatches": "Select matches",
+    "selectMatchesHint": "Choose at least 2 people (minimum 2 required).",
+    "minTwoRequired": "Select at least 2 matches.",
+    "needMoreMatches": "You need at least 2 matches to create a group.",
+    "creating": "Creating...",
+    "created": "Group created!",
+    "errorCreate": "Could not create group. Try again.",
+    "unknownUser": "User",
+    "noGroups": "You have no groups yet",
+    "noMessagesYet": "No messages yet",
+    "notFoundOrNoAccess": "Group not found or you don't have access.",
+    "backToList": "Back to list",
+    "leaveGroup": "Leave group",
+    "leaveGroupConfirm": "Are you sure you want to leave? You won't see messages anymore unless you're re-invited.",
+    "leaving": "Leaving...",
+    "leftGroup": "You have left the group.",
+    "errorLeave": "Could not leave the group. Try again.",
+    "moreOptions": "More options"
   },
   "profile": {
     "title": "My Profile",
@@ -205,7 +234,17 @@
     "privacy_description": "Control who can see your profile, photos and activity. More options coming soon.",
     "profile_visibility": "Profile visibility",
     "shared_data": "Shared data",
+    "show_online_count": "Show number of active users",
+    "matching_settings": "Matching settings",
+    "submit": "Save",
     "verify_id_description": "Upload your ID to verify your account"
+  },
+  "about": {
+    "title": "About MÄÄK",
+    "about_maak": "About MÄÄK",
+    "intro": "MÄÄK helps you find your match based on personality. We aim to create meaningful connections with respect for privacy and safety.",
+    "placeholder": "More information about the app and team coming soon.",
+    "contact_us": "Contact us"
   },
   "notifications": {
     "title": "Notifications",

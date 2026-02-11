@@ -28,6 +28,9 @@ export default function About() {
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <p>{t('about.intro')}</p>
             <p>{t('about.placeholder')}</p>
+            <Button variant="outline" className="w-full mt-2" asChild>
+              <Link to="/contact">{t('about.contact_us')}</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

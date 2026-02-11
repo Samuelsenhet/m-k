@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { LogOut, Settings, X, Trophy, Sparkles, Trash2, ShieldCheck, ChevronDown, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
+import { LogOut, Settings, X, Trophy, Sparkles, Trash2, ShieldCheck, ChevronDown, ChevronRight, ChevronLeft, HelpCircle, BookOpen } from 'lucide-react';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -15,6 +15,8 @@ import { AchievementsPanel } from '@/components/achievements/AchievementsPanel';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { LanguageToggle } from '@/components/settings/LanguageToggle';
 import { MatchingSettings } from '@/components/settings/MatchingSettings';
+import { Switch } from '@/components/ui/switch';
+import { getShowOnlineCount, setShowOnlineCount } from '@/lib/onlineCountPref';
 import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +46,7 @@ export default function Profile() {
   const [verifyIdOpen, setVerifyIdOpen] = useState(false);
   const [privacyManageOpen, setPrivacyManageOpen] = useState(false);
   const [isModerator, setIsModerator] = useState<boolean | null>(null);
+  const [showOnlineCount, setShowOnlineCountState] = useState(getShowOnlineCount);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -61,6 +64,11 @@ export default function Profile() {
     }
     prevPathRef.current = location.pathname;
   }, [location.pathname, location.state]);
+
+  // Sync "show online count" switch when settings sheet opens
+  useEffect(() => {
+    if (settingsOpen) setShowOnlineCountState(getShowOnlineCount());
+  }, [settingsOpen]);
 
   const fetchArchetype = useCallback(async () => {
     if (!user) return;
@@ -214,6 +222,17 @@ export default function Profile() {
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-sm">{t('settings.language')}</span>
                     <LanguageToggle />
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm">{t('settings.show_online_count')}</span>
+                    <Switch
+                      checked={showOnlineCount}
+                      onCheckedChange={(v) => {
+                        setShowOnlineCount(v);
+                        setShowOnlineCountState(v);
+                      }}
+                      aria-label={t('settings.show_online_count')}
+                    />
                   </div>
                   <div
                     role="button"
@@ -429,19 +448,24 @@ export default function Profile() {
             <AIAssistantPanel onClose={() => setShowAIAssistant(false)} />
           </div>
         ) : showAchievements ? (
-          <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif font-bold text-xl text-white">{t('achievements.title')}</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
+          <div className="absolute inset-0 bg-black z-30 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex items-center justify-between gap-2 shrink-0 py-2 pr-2">
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowAchievements(false)}
-                className="text-white"
+                className="text-white gap-1 -ml-1"
+                aria-label={t('common.back')}
               >
-                <X className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
+                <span>{t('common.back')}</span>
               </Button>
+              <h2 className="font-serif font-bold text-lg text-white truncate flex-1 text-center">{t('achievements.title')}</h2>
+              <div className="w-[72px]" />
             </div>
-            <AchievementsPanel />
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-6">
+              <AchievementsPanel />
+            </div>
           </div>
         ) : isEditing ? (
           <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">

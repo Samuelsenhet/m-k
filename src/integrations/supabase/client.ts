@@ -51,14 +51,14 @@ if (!isValidUrl || !isValidKey) {
   if (!isValidKey) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY');
   
   console.warn(
-    `Supabase: missing or invalid ${missing.join(' and ')}. Set them in .env from Supabase Dashboard → Settings → API. Demo at /demo-seed works without them.`
+    `Supabase: missing or invalid ${missing.join(' and ')}. Set them in .env from Supabase Dashboard → Settings → API.`
   );
 }
 
 // Export the URL for use in other parts of the app
 export const SUPABASE_URL_EXPORT = SUPABASE_URL;
 
-// Allow app to load without Supabase so /demo-seed and landing work when .env is missing
+// Allow app to load without Supabase when .env is missing (placeholder client used until configured)
 const isTestEnv = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 const allowPlaceholders = isTestEnv || import.meta.env.VITE_ALLOW_PLACEHOLDER_SUPABASE === 'true';
 const hasValidConfig = isValidUrl && isValidKey;
@@ -68,7 +68,7 @@ if (!hasValidConfig) {
     console.warn(
       'Supabase configuration is missing or invalid. The app will load but login and data features will not work. ' +
       'Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env to enable them. ' +
-      'You can still use the demo at /demo-seed.'
+      'Configure .env to enable login and data.'
     );
   }
 }

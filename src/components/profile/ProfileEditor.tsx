@@ -24,6 +24,7 @@ interface ProfileData {
   work: string;
   education: string;
   hometown: string;
+  country: string;
   instagram: string;
   religion: string;
   politics: string;
@@ -68,6 +69,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     work: '',
     education: '',
     hometown: '',
+    country: '',
     instagram: '',
     linkedin: '',
     religion: '',
@@ -95,7 +97,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
     const profileKey = await getProfilesAuthKey(user.id);
     const { data, error } = await supabase
       .from('profiles')
-      .select('display_name, bio, gender, looking_for, height, work, education, hometown, instagram, linkedin, religion, politics, smoking, alcohol, pronouns, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra, show_age, show_job, show_education, show_last_name')
+      .select('display_name, bio, gender, looking_for, height, work, education, hometown, country, instagram, linkedin, religion, politics, smoking, alcohol, pronouns, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra, show_age, show_job, show_education, show_last_name')
       .eq(profileKey, user.id)
       .maybeSingle();
 
@@ -112,6 +114,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         work: data.work || '',
         education: data.education || '',
         hometown: data.hometown || '',
+        country: data.country || 'SE',
         instagram: data.instagram || '',
         linkedin: data.linkedin || '',
         religion: data.religion || '',
@@ -179,6 +182,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         work: profile.work || null,
         education: profile.education || null,
         hometown: profile.hometown || null,
+        country: profile.country || null,
         instagram: profile.instagram || null,
         religion: profile.religion || null,
         politics: profile.politics || null,
@@ -428,6 +432,30 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                 className="h-9"
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Land</Label>
+            <Select
+              value={profile.country || 'none'}
+              onValueChange={(value) => updateField('country', value === 'none' ? '' : value)}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Välj land..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Välj land...</SelectItem>
+                <SelectItem value="SE">Sverige</SelectItem>
+                <SelectItem value="NO">Norge</SelectItem>
+                <SelectItem value="DK">Danmark</SelectItem>
+                <SelectItem value="FI">Finland</SelectItem>
+                <SelectItem value="IS">Island</SelectItem>
+                <SelectItem value="DE">Tyskland</SelectItem>
+                <SelectItem value="GB">Storbritannien</SelectItem>
+                <SelectItem value="US">USA</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Används bland annat för utskick (t.ex. nyhetsbrev per land).</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

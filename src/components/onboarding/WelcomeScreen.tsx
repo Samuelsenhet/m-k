@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users, MessageCircle } from 'lucide-react';
+import { Heart, Sparkles, Users, MessageCircle, UsersRound } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { cn } from '@/lib/utils';
+import { isCollectionsEnabled } from '@/config/supabase';
 
 interface WelcomeScreenProps {
   displayName?: string;
@@ -26,6 +27,15 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
       title: 'Djupare kontakter',
       description: 'Vi matchar baserat på personlighet, inte bara utseende',
     },
+    ...(isCollectionsEnabled
+      ? [
+          {
+            icon: UsersRound,
+            title: 'Samlingar',
+            description: 'Du kan samla flera matcher i en trygg gruppchatt – perfekt för låg-press samtal.',
+          },
+        ]
+      : []),
   ];
 
   return (

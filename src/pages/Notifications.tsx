@@ -83,8 +83,8 @@ export default function Notifications() {
   const hasFeed = profileViews.length > 0 || interests.length > 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b shrink-0">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link to="/profile" state={{ openSettings: true }}>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/useAuth";
 import { getProfilesAuthKey } from "@/lib/profiles";
+import { isSupabaseConfigured } from "@/config/supabase";
 
 type Match = {
   id: string;
@@ -71,6 +72,12 @@ export function useMatches() {
 
   const fetchMatches = useCallback(async () => {
     if (!user) return;
+    if (!isSupabaseConfigured) {
+      setMatches([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -127,7 +134,7 @@ export function useMatches() {
 
   // Fetch more matches using cursor
   const fetchMoreMatches = useCallback(async () => {
-    if (!user || !nextCursor || !hasMore) return;
+    if (!user || !nextCursor || !hasMore || !isSupabaseConfigured) return;
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) return;

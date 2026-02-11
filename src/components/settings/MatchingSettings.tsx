@@ -131,11 +131,11 @@ export function MatchingSettings() {
         />
       </div>
 
-      {/* Submit button – full width, rounded, pink/primary */}
       <Button
+        variant="gradient"
         onClick={handleSave}
         disabled={loading || !hasChanges}
-        className="w-full rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium py-3 shadow-sm"
+        className="w-full rounded-xl font-medium py-3"
         size="lg"
       >
         {loading ? t('common.saving') : t('settings.submit')}
