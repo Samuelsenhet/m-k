@@ -105,7 +105,15 @@ serve(async (req: Request) => {
   }
 
   try {
-    const payload: SendEmailPayload = await req.json();
+    let payload: SendEmailPayload;
+    try {
+      payload = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     const { to: toParam, template, data = {}, language = "sv" } = payload;
 
     if (!template || typeof template !== "string") {

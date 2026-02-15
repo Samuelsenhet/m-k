@@ -12,12 +12,18 @@
     "retry": "Försök igen",
     "sending": "Skickar...",
     "verifying": "Verifierar...",
-    "save_changes": "Spara ändringar"
+    "save_changes": "Spara ändringar",
+    "online_now_full": "Just nu är det {{count}} användare online",
+    "online_now_short": "Just nu är {{count}} online",
+    "online_badge": "{{count}} online"
   },
   "nav": {
     "matches": "Matchningar",
     "chat": "Chatt",
     "profile": "Profil"
+  },
+  "landing": {
+    "users_seeking_love": "Redan {{count}} svenskar söker kärlek här"
   },
   "auth": {
     "phoneTitle": "Ange ditt telefonnummer",
@@ -367,6 +373,12 @@
     "showJob": "Visa mitt jobb",
     "showEducation": "Visa min utbildning",
     "showLastName": "Visa mitt efternamn"
+  },
+  "about": {
+    "title": "Om MÄÄK",
+    "about_maak": "Om MÄÄK",
+    "intro": "MÄÄK är Sveriges smartaste dejtingapp med AI-driven personlighetsmatchning. Vi hjälper singlar att hitta någon som verkligen passar utifrån personlighet, värderingar och kommunikation.",
+    "placeholder": "Ta vårt 30-frågor personlighetstest, få dagliga matchningar och starta meningsfulla konversationer med isbrytare som passar dig."
   },
   "onboarding": {
     "welcome_title": "Välkommen till MÄÄK!",

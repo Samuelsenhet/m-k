@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Mail, Send, FileText, BarChart3, Calendar, History, Template } from 'lucide-react';
+import { Mail, Send, FileText, BarChart3, Calendar, History, LayoutTemplate } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import EmailTemplatesManager from './EmailTemplatesManager';
 import BulkEmailSender from './BulkEmailSender';
 import EmailAnalytics from './EmailAnalytics';
@@ -20,6 +23,8 @@ export default function AdminEmailDashboard() {
     totalTemplates: 0,
     pendingBulk: 0,
   });
+  const [testEmail, setTestEmail] = useState('');
+  const [testSending, setTestSending] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -45,6 +50,56 @@ export default function AdminEmailDashboard() {
     fetchStats();
   }, []);
 
+  const sendTestEmail = async () => {
+    const to = testEmail.trim();
+    if (!to) {
+      toast.error('Ange en e-postadress');
+      return;
+    }
+    setTestSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to,
+          template: 'report_received',
+          data: { report_id: `test-${Date.now()}` },
+          language: 'sv',
+        },
+      });
+
+      if (error) {
+        const err = error as { message?: string; error?: string };
+        const errMsg =
+          err.error ??
+          err.message ??
+          (data as { error?: string } | null)?.error ??
+          'Anrop till send-email misslyckades. Kontrollera att funktionen är deployad och att RESEND_API_KEY är satt i Supabase (Edge Functions → send-email → Secrets).';
+        toast.error('Testmail misslyckades', { description: errMsg });
+        return;
+      }
+
+      if (data?.skipped) {
+        toast.info('E-post hoppades över', { description: data.reason ?? 'T.ex. placeholder-adress' });
+      } else if (data?.success) {
+        toast.success('Testmail skickat', {
+          description: `Till ${to}. Kolla inkorg och skräppost. Fick du inget? Se fliken Loggar nedan och Resend.com → Logs.`,
+        });
+        setStats((s) => ({ ...s, sentToday: s.sentToday + 1 }));
+      } else {
+        const errMsg = (data as { error?: string; details?: unknown })?.error ?? 'Okänt fel';
+        const details = (data as { details?: { message?: string } })?.details;
+        toast.error('Kunde inte skicka', {
+          description: details?.message ? `${errMsg}: ${details.message}` : errMsg,
+        });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Kunde inte anropa send-email';
+      toast.error('Testmail misslyckades', { description: msg });
+    } finally {
+      setTestSending(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -58,8 +113,8 @@ export default function AdminEmailDashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
-                <Mail className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              <div className="p-2 rounded-lg bg-primary/15 dark:bg-primary/20">
+                <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Skickade idag</p>
@@ -96,10 +151,43 @@ export default function AdminEmailDashboard() {
         </Card>
       </div>
 
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="font-semibold mb-2">Skicka testmail</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Skickar ett e-postmeddelande med mallen &quot;Rapport mottagen&quot; till adressen du anger. Använd för att verifiera att e-postfunktionen fungerar.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              type="email"
+              placeholder="t.ex. din@epost.se"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              className="max-w-xs"
+            />
+            <Button onClick={sendTestEmail} disabled={testSending}>
+              {testSending ? 'Skickar...' : 'Skicka testmail'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Om det misslyckas: kontrollera att Edge Function &quot;send-email&quot; är deployad och att <strong>RESEND_API_KEY</strong> är satt i Supabase (Edge Functions → send-email → Secrets). Avsändardomän (t.ex. maakapp.se) måste vara verifierad i Resend.
+          </p>
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">Fick du inget mejl trots &quot;Testmail skickat&quot;?</p>
+            <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+              <li>Kolla <strong>skräppost</strong> och &quot;Promotions&quot; (Gmail).</li>
+              <li>Öppna fliken <strong>Loggar</strong> nedan – står mailet som &quot;Skickad&quot; eller &quot;Misslyckad&quot;? Vid misslyckad visas felmeddelande från Resend.</li>
+              <li>Logga in på <strong>resend.com</strong> → <strong>Logs</strong> – se om mailet levererades eller studsade (bounce).</li>
+              <li>Avsändare är <strong>MAIL_FROM</strong> (standard: no-reply@maakapp.se). Domänen måste vara verifierad i Resend → Domains.</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="templates" className="w-full">
         <TabsList className="grid w-full grid-cols-4 max-w-lg">
           <TabsTrigger value="templates" className="gap-1.5">
-            <Template className="w-4 h-4" />
+            <LayoutTemplate className="w-4 h-4" />
             Mallar
           </TabsTrigger>
           <TabsTrigger value="send" className="gap-1.5">

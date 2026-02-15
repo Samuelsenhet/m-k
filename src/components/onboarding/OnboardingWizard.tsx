@@ -20,6 +20,9 @@ import { toast } from 'sonner';
 import { type PersonalityTestResult, ARCHETYPE_INFO, type ArchetypeCode } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
+import { useTranslation } from 'react-i18next';
+import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
 
 interface OnboardingWizardProps {
   onComplete: () => void;
@@ -77,7 +80,9 @@ const PHOTO_PROMPTS = [
 ];
 
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
+  const onlineCount = useOnlineCount(user?.id);
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [direction, setDirection] = useState(1);
@@ -331,12 +336,18 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     <div className="min-h-screen gradient-hero flex flex-col">
       {/* Header */}
       <div className="p-4">
-        <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-glow">
             <Heart className="w-5 h-5 text-primary-foreground" fill="currentColor" />
           </div>
           <span className="text-2xl font-serif font-bold text-foreground">MÄÄK</span>
         </div>
+
+        {hasValidSupabaseConfig && (
+          <p className="text-center text-xs sm:text-sm font-medium text-primary mb-3" role="status" aria-live="polite">
+            {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
+          </p>
+        )}
 
         {/* Progress Bar */}
         <div className="max-w-md mx-auto mb-2">

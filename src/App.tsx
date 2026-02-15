@@ -31,12 +31,14 @@ import Report from "./pages/Report";
 import ReportHistory from "./pages/ReportHistory";
 import AdminReports from "./pages/AdminReports";
 import AdminAppeals from "./pages/AdminAppeals";
+import AdminEmail from "./pages/AdminEmail";
 import Appeal from "./pages/Appeal";
 import DemoSeed from "./pages/DemoSeed";
 import DemoGroupChat from "./pages/DemoGroupChat";
 import About from "./pages/About";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
+import { OnlineCountBar } from "./components/OnlineCountBar";
 
 const queryClient = new QueryClient();
 
@@ -77,7 +79,9 @@ const AppContent = () => {
           v7_relativeSplatPath: true,
         }}
       >
-        <Routes>
+        <OnlineCountBar />
+        <div className="pb-10">
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/phone-auth" element={<PhoneAuth />} />
           <Route path="/onboarding" element={<Onboarding />} />
@@ -101,10 +105,12 @@ const AppContent = () => {
           <Route path="/report-history" element={<ReportHistory />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/appeals" element={<AdminAppeals />} />
+          <Route path="/admin/email" element={<AdminEmail />} />
           <Route path="/appeal" element={<Appeal />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </div>
       </BrowserRouter>
       <InstallPrompt />
     </>

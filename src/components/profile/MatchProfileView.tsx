@@ -323,7 +323,7 @@ export function MatchProfileView({
               {matchScore != null && (
                 <div className="mt-3 flex items-center justify-between p-3 rounded-xl bg-white/10 border border-white/20">
                   <span className="text-sm font-medium text-white/80">Matchning</span>
-                  <span className="text-xl font-bold text-rose-400">{matchScore}%</span>
+                  <span className="text-xl font-bold text-primary">{matchScore}%</span>
                 </div>
               )}
 
@@ -446,7 +446,7 @@ export function MatchProfileView({
               {matchScore != null && (
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-white/10">
                   <span className="text-sm font-medium text-muted-foreground">Matchning</span>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
+                  <span className="text-2xl font-bold text-gradient">
                     {matchScore}%
                   </span>
                 </div>

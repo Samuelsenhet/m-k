@@ -15,7 +15,7 @@ export const MascotController = () => {
 
   return (
     <div className="flex flex-col items-center gap-6 p-8">
-      <Card className="p-6 bg-gradient-to-br from-pink-50 to-purple-50">
+      <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10">
         <MaakMascot size={300} pose={pose} expression={expression} />
       </Card>
 
@@ -68,7 +68,7 @@ export const MascotController = () => {
       <div className="flex gap-2 flex-wrap justify-center">
         <button
           onClick={() => { setPose("love"); setExpression("😍"); }}
-          className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           💕 Kärlek
         </button>

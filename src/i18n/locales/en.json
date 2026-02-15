@@ -12,12 +12,18 @@
     "retry": "Try again",
     "sending": "Sending...",
     "verifying": "Verifying...",
-    "save_changes": "Save changes"
+    "save_changes": "Save changes",
+    "online_now_full": "There are {{count}} users online right now",
+    "online_now_short": "{{count}} online right now",
+    "online_badge": "{{count}} online"
   },
   "nav": {
     "matches": "Matches",
     "chat": "Chat",
     "profile": "Profile"
+  },
+  "landing": {
+    "users_seeking_love": "Already {{count}} Swedes seeking love here"
   },
   "auth": {
     "phoneTitle": "Enter your phone number",
@@ -369,6 +375,12 @@
     "showJob": "Show my job",
     "showEducation": "Show my education",
     "showLastName": "Show my last name"
+  },
+  "about": {
+    "title": "About MÄÄK",
+    "about_maak": "About MÄÄK",
+    "intro": "MÄÄK is Sweden's smartest dating app with AI-driven personality matching. We help singles find someone who truly fits based on personality, values and communication.",
+    "placeholder": "Take our 30-question personality test, get daily matches and start meaningful conversations with icebreakers that suit you."
   },
   "onboarding": {
     "welcome_title": "Welcome to MÄÄK!",

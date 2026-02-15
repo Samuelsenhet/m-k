@@ -192,7 +192,7 @@ export default function DemoSeed() {
                     {hasScore && 'matchScore' in profileMatch && (
                       <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                         <span className="text-sm font-medium text-muted-foreground">Matchning</span>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                        <span className="text-2xl font-bold text-gradient">
                           {profileMatch.matchScore}%
                         </span>
                       </div>
@@ -246,7 +246,7 @@ export default function DemoSeed() {
       </header>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'matches' | 'chat')} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <TabsList className="w-full grid grid-cols-2 rounded-none border-b border-border bg-transparent p-0 h-12 shrink-0">
+        <TabsList className="w-full grid grid-cols-3 rounded-none border-b border-border bg-transparent p-0 h-12 shrink-0">
           <TabsTrigger value="matches" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent gap-1.5">
             <Heart className="w-4 h-4" />
             Matchningar
@@ -255,6 +255,13 @@ export default function DemoSeed() {
             <MessageCircle className="w-4 h-4" />
             Chatt
           </TabsTrigger>
+          <Link
+            to="/demo-samlingar"
+            className="flex items-center justify-center gap-1.5 rounded-none border-b-2 border-transparent py-3 px-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent [&.active]:border-primary [&.active]:text-foreground"
+          >
+            <Users className="w-4 h-4" />
+            Samlingar
+          </Link>
         </TabsList>
 
         {/* Matchningar-tab: samma layout som riktiga Matches-sidan */}
@@ -263,11 +270,11 @@ export default function DemoSeed() {
             <div className="max-w-lg mx-auto px-4 py-6">
               {/* Header som i appen */}
               <div className="mb-6">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-1">
+                <h2 className="text-3xl font-bold text-gradient mb-1">
                   Dagens matchningar
                 </h2>
                 <p className="text-sm text-gray-600 flex items-center gap-1.5 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-rose-500" />
+                  <Clock className="w-3.5 h-3.5 text-primary" />
                   24h löpande • Kvalitetsfokus
                 </p>
               </div>
@@ -303,7 +310,7 @@ export default function DemoSeed() {
                   <div className="w-8 h-8 rounded-xl bg-gradient-rose-glow flex items-center justify-center shadow-glow-rose">
                     <Heart className="w-5 h-5 text-white" fill="white" />
                   </div>
-                  <span className="bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                  <span className="text-gradient">
                     Dina matchningar
                   </span>
                 </motion.h3>
@@ -398,7 +405,7 @@ export default function DemoSeed() {
                             </div>
                             <div className={cn(
                               'absolute top-4 left-4 glass-dark px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg',
-                              match.matchType === 'similar' ? 'text-rose-300 border border-rose-400/30' : 'text-violet-300 border border-violet-400/30'
+                              match.matchType === 'similar' ? 'text-primary border border-primary/30' : 'text-violet-300 border border-violet-400/30'
                             )}>
                               {match.matchType === 'similar' ? (
                                 <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Liknande</span>
@@ -439,7 +446,7 @@ export default function DemoSeed() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                                <div className="text-3xl font-bold text-gradient">
                                   {match.matchScore}%
                                 </div>
                                 <div className="text-xs text-muted-foreground font-medium">matchning</div>
@@ -468,7 +475,7 @@ export default function DemoSeed() {
                             <div className="mb-5">
                               <div className="h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                                 <motion.div
-                                  className="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full shadow-glow-rose"
+                                  className="h-full gradient-primary rounded-full shadow-glow-rose"
                                   initial={{ width: 0 }}
                                   animate={{ width: `${match.matchScore}%` }}
                                   transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}

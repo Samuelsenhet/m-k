@@ -2,6 +2,8 @@
 
 Use this checklist before and after each production deploy.
 
+**Before first production launch:** run through **`docs/PROD_LAUNCH_CHECKLIST.md`** (auth, RLS, Edge Functions, analytics, smoke test).
+
 ---
 
 ## Before deploy
@@ -55,6 +57,24 @@ Full steps, checklist and optional domains: **`docs/DOMAIN_SETUP.md`**.
 ### 3c. Samlingar (gruppchatt)
 
 Om du använder Samlingar: kör migrationerna (inkl. `20260203100100_realtime_group_messages.sql`) och aktivera Realtime för `group_messages` enligt **`docs/SAMLINGAR.md`**. Där finns också testflöde och notis om Fas 2.
+
+### 3d. GitHub Actions secrets (CI Supabase deploy)
+
+If you use the **Production** or **Staging** workflows to run `supabase db push` / `supabase functions deploy` from CI, set these in **GitHub → Repo → Settings → Secrets and variables → Actions**:
+
+| Secret | Used by | Where to get it |
+|--------|--------|------------------|
+| `SUPABASE_ACCESS_TOKEN` | Production & Staging | [Supabase Account → Access Tokens](https://supabase.com/dashboard/account/tokens) |
+| `PRODUCTION_PROJECT_ID` | Production workflow | Supabase Dashboard → Project Settings → General → Reference ID |
+| `PRODUCTION_DB_PASSWORD` | Production workflow | Your production DB password |
+| `STAGING_PROJECT_ID` | Staging workflow | Same, for staging project |
+| `STAGING_DB_PASSWORD` | Staging workflow | Staging DB password |
+
+If `PRODUCTION_PROJECT_ID` (or `STAGING_PROJECT_ID`) is missing, the workflow fails with *"flag needs an argument: --project-ref"*. Add the project ref and re-run.
+
+### 3e. Demo (production)
+
+For production, **do not** set `VITE_ENABLE_DEMO=true`. Leave it unset or set `VITE_ENABLE_DEMO=false` in Vercel (and locally for prod builds). Demo is disabled by default; the app throws on build if demo is enabled in production.
 
 ### 4. Build locally
 

@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Users, MessageCircle } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/useAuth';
+import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
 
 interface WelcomeScreenProps {
   displayName?: string;
@@ -10,6 +14,9 @@ interface WelcomeScreenProps {
 }
 
 export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const onlineCount = useOnlineCount(user?.id);
   const features = [
     {
       icon: Users,
@@ -66,6 +73,19 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
           >
             Din profil är nu klar. Här är vad som väntar dig.
           </motion.p>
+
+          {hasValidSupabaseConfig && (
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.35 }}
+              className="text-sm font-medium text-primary mt-3"
+              role="status"
+              aria-live="polite"
+            >
+              {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
+            </motion.p>
+          )}
         </motion.div>
 
         {/* Features */}

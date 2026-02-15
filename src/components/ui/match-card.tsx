@@ -57,7 +57,7 @@ export const MatchCard = React.forwardRef<HTMLDivElement, MatchCardProps>(
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-rose-400 via-pink-400 to-purple-400 flex items-center justify-center">
+            <div className="w-full h-full gradient-primary flex items-center justify-center">
               <span className="text-6xl font-bold text-white">{name.charAt(0)}</span>
             </div>
           )}
@@ -125,7 +125,7 @@ export const MatchCard = React.forwardRef<HTMLDivElement, MatchCardProps>(
               {name}, {age}
             </h3>
             {personality && (
-              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-rose-100 text-rose-700">
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/15 text-primary">
                 {personality}
               </span>
             )}

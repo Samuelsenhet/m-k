@@ -10,15 +10,20 @@ import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/useAuth';
 import { isDemoEnabled } from '@/config/supabase';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
 
 interface LandingPageProps {
   onStart?: () => void;
 }
 
 export const LandingPage = ({ onStart }: LandingPageProps) => {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [currentFeature, setCurrentFeature] = useState(0);
+  const onlineCount = useOnlineCount(user?.id);
 
   const features = [
     { icon: Brain, title: '30 personlighetsfrågor', desc: 'Djupgående test för äkta kompatibilitet' },
@@ -98,9 +103,15 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </span>
           </h1>
           
-          <p className="text-muted-foreground text-base sm:text-lg mb-8 sm:mb-10 leading-relaxed px-4">
+          <p className="text-muted-foreground text-base sm:text-lg mb-4 leading-relaxed px-4">
             Glöm ytliga swipes. MÄÄK matchar dig baserat på personlighet, inte utseende.
           </p>
+
+          {hasValidSupabaseConfig && (
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 px-4 font-medium" role="status" aria-live="polite">
+              {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
+            </p>
+          )}
           
           <div className="px-4">
             <ShimmerButton size="lg" onClick={handleStart} className="w-full min-h-[56px] text-base font-semibold active:scale-[0.98]">
@@ -116,8 +127,6 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               </Button>
             )}
           </div>
-          
-          <p className="text-xs sm:text-sm text-muted-foreground mt-4 px-4">Redan 10,000+ svenskar söker kärlek här</p>
         </div>
 
         {/* Features - Rotating card for mobile */}

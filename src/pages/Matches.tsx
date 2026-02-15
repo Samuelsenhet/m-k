@@ -90,7 +90,40 @@ export default function Matches() {
     );
   }
 
-  if (authLoading || loading || statusLoading) {
+  if (authLoading || statusLoading) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Honest error state: backend failed (e.g. 401) – do not show happy empty state
+  if (error) {
+    return (
+      <>
+        <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-6 pb-24">
+          <Card className="w-full max-w-md border-destructive/50 bg-destructive/10">
+            <CardContent className="p-6 text-center space-y-4">
+              <p className="font-semibold text-destructive">
+                Vi har problem att hämta matchningar just nu
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {error}
+              </p>
+              <Button onClick={() => refreshMatches()} variant="default" className="w-full gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Försök igen
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <BottomNav />
+      </>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen gradient-hero flex items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -132,11 +165,11 @@ export default function Matches() {
           {/* Premium Header */}
           <div className="flex items-center justify-between mb-6 animate-slide-in-right">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-1">
+              <h1 className="text-3xl font-bold text-gradient mb-1">
                 Dagens matchningar
               </h1>
               <p className="text-sm text-gray-600 flex items-center gap-1.5 font-medium">
-                <Clock className="w-3.5 h-3.5 text-rose-500" />
+                <Clock className="w-3.5 h-3.5 text-primary" />
                 24h löpande • Kvalitetsfokus
               </p>
             </div>
@@ -208,14 +241,6 @@ export default function Matches() {
           <ProfileCompletionPrompt />
         </div>
 
-        {error && (
-          <Card className="mb-6 border-destructive/50 bg-destructive/10">
-            <CardContent className="p-4 text-center text-destructive">
-              {error}
-            </CardContent>
-          </Card>
-        )}
-
         {mutualMatches.length > 0 && (
           <motion.div
             className="mb-8"
@@ -231,7 +256,7 @@ export default function Matches() {
               <div className="w-8 h-8 rounded-xl bg-gradient-rose-glow flex items-center justify-center shadow-glow-rose">
                 <Heart className="w-5 h-5 text-white" fill="white" />
               </div>
-              <span className="bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="text-gradient">
                 Ömsesidiga matchningar ({mutualMatches.length})
               </span>
             </motion.h2>
@@ -386,7 +411,7 @@ export default function Matches() {
                       {/* Premium Match type badge */}
                       <div className={`absolute top-4 left-4 glass-dark px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg ${
                         match.matchType === 'similar' 
-                          ? 'text-rose-300 border border-rose-400/30' 
+                          ? 'text-primary/80 border border-primary/30' 
                           : 'text-violet-300 border border-violet-400/30'
                       }`}>
                         {match.matchType === 'similar' ? (

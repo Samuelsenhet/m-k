@@ -49,7 +49,7 @@ export function NotificationPrompt() {
         <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              {/* Bell Icon with pink background */}
+              {/* Bell icon with primary (green) tint */}
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Bell className="w-7 h-7 text-primary" />
               </div>

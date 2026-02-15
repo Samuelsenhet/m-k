@@ -1,0 +1,135 @@
+# Progress Log
+
+## Project Context
+- Tech: React 18 + TypeScript + Vite + Supabase + shadcn/ui
+- Run dev: `npm run dev` (port 8080)
+- Build: `npm run build`
+- Lint: `npm run lint`
+
+## Current Feature: Enhanced AI Icebreakers
+- PRD created: 2026-01-18
+- Stories: 11 total (US-001 through US-011)
+- Status: COMPLETE (11/11 done)
+
+## New Feature: Profile Photo Management
+- PRD created: 2026-01-26
+- Stories: 5 total (US-012 through US-016)
+- Status: IN PROGRESS (2/5 done)
+
+## Story Progress
+- [x] US-001: Add icebreaker_analytics table
+- [x] US-002: Add icebreaker category enum
+- [x] US-003: Update generate-icebreakers for profile context
+- [x] US-004: Add category selection to icebreaker generation
+- [x] US-005: Create generate-followups edge function
+- [x] US-006: Regenerate Supabase types (manually added types for icebreaker_analytics and category column)
+- [x] US-007: Create useIcebreakerAnalytics hook
+- [x] US-008: Add category picker UI to chat
+- [x] US-009: Add follow-up suggestions UI
+- [x] US-010: Track icebreaker usage analytics
+- [x] US-011: Add Swedish translations for icebreaker categories
+
+## Files Created/Modified
+
+### Migrations
+- `supabase/migrations/20260118_add_icebreaker_analytics.sql` - Analytics table with RLS
+- `supabase/migrations/20260118_add_icebreaker_category.sql` - Category column on icebreakers
+
+### Edge Functions
+- `supabase/functions/generate-icebreakers/index.ts` - Enhanced with profile context and categories
+- `supabase/functions/generate-followups/index.ts` - New: conversation follow-up suggestions
+
+### Frontend
+- `src/types/api.ts` - Added IcebreakerCategory type and interfaces
+- `src/hooks/useIcebreakerAnalytics.ts` - New: fire-and-forget analytics tracking
+- `src/i18n/locales/sv.json` - Added category and followup translations
+- `src/i18n/locales/en.json` - Added category and followup translations
+- `src/components/chat/ChatWindow.tsx` - Category picker UI, follow-up panel, analytics integration
+
+## Learnings
+- `types_new.ts` was an artifact from failed `supabase gen types` - deleted
+- Migrations follow idempotent pattern with `DROP POLICY IF EXISTS`
+- User references use `auth.users(id)` not a profiles table FK
+- Edge functions use LOVABLE_API_KEY for AI calls via `ai.gateway.lovable.dev`
+- Profile data: `profiles` table, personality: `personality_results` table
+- Hooks use fire-and-forget pattern for analytics (non-blocking)
+- generate-followups has rate limiting (5/day per match) tracked via icebreaker_analytics
+
+## New Story Progress (Profile Photo Management)
+- [x] US-012: Add photo reordering functionality
+- [x] US-013: Add photo deletion with confirmation
+- [ ] US-014: Enhance photo upload with progress indicator
+- [ ] US-015: Add photo count indicator and limits
+- [ ] US-016: Add Swedish translations for photo management
+
+## Remaining Work
+- Complete Profile Photo Management feature (5 stories)
+- Note: Types were manually added since Docker wasn't running. When local Supabase is available, you can optionally regenerate types with: `supabase gen types typescript --local > src/integrations/supabase/types.ts`
+
+## What Was Built
+
+### Category Picker (US-008)
+- 5 category chips with icons (Mixed, Funny, Deep, Activity, Compliment)
+- Framer Motion animations for smooth transitions
+- Selected category passed to generate-icebreakers function
+
+### Follow-up Suggestions (US-009)
+- "Need help?" button appears after 3+ messages when it's user's turn
+- Sheet panel with AI-generated follow-up suggestions
+- Rate limiting display (5 per day per match)
+- Click-to-send functionality
+
+### Analytics Tracking (US-010)
+- Fire-and-forget tracking (non-blocking)
+- Tracks: shown, used, response time
+- All tracking integrated in ChatWindow
+
+---
+
+## Iteration 1 - US-012: Photo Reordering
+- What was implemented:
+  - Drag-and-drop photo reordering using @dnd-kit/core and @dnd-kit/sortable
+  - Premium visual feedback during drag (card styling, shadows, scale effects)
+  - Primary photo badge with crown icon ("Huvudfoto")
+  - GripVertical drag handle on each photo
+  - Supabase RPC function `update_photo_order` for atomic order updates
+- Files changed:
+  - `supabase/migrations/20260126_add_photo_reordering.sql` - New: RPC function for photo order
+  - `src/components/profile/PhotoUpload.tsx` - Enhanced with dnd-kit drag-and-drop
+  - `package.json` - Added @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities
+- Learnings for future iterations:
+  - `profile_photos` table already had `display_order` column - no schema change needed
+  - @dnd-kit works well with existing Card components
+  - Use `useSortable` hook for individual draggable items
+  - `CSS.Transform.toString()` from @dnd-kit/utilities handles transform styling
+  - DragOverlay provides smooth visual feedback during drag
+  - Use `rectSortingStrategy` for grid layouts
+  - Disable sortable for empty slots with `disabled: !hasPhoto`
+---
+
+## Iteration 2 - US-013: Photo Deletion with Confirmation
+- What was implemented:
+  - AlertDialog confirmation before photo deletion (Swedish text)
+  - Trash2 icon (replaced X) with loading spinner during deletion
+  - Delete from Supabase storage bucket
+  - Delete photo record from `profile_photos` table
+  - Automatic reordering: remaining photos shift up to fill gaps
+  - Database update via existing `update_photo_order` RPC for reordered photos
+  - Prevention of deletion when only one photo remains (shows toast error)
+  - Premium glassmorphism styling on AlertDialog
+  - Mobile-optimized touch targets with active:scale-95
+- Files changed:
+  - `src/components/profile/PhotoUpload.tsx` - Added AlertDialog, delete confirmation flow, reordering logic
+- Learnings for future iterations:
+  - AlertDialog from shadcn/ui uses Radix primitives with open/onOpenChange pattern
+  - Store index to delete before clearing state to avoid closure issues
+  - Reordering after deletion: filter out deleted photo, then fill remaining slots
+  - Use `canDeletePhotos = photoCount > 1` to disable delete on last photo
+  - `disabled` prop on Button prevents accidental clicks during deletion
+  - Premium design: use `.glass` class on AlertDialogContent for glassmorphism
+---
+
+(Additional iterations 3–12 truncated for brevity; full content kept in qrp worktree.)
+
+---
+Restored to main project from qrp worktree.

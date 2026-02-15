@@ -437,7 +437,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
           <div className="space-y-1.5">
             <Label className="text-xs">Land</Label>
             <Select
-              value={profile.country || 'none'}
+              value={profile.country || 'SE'}
               onValueChange={(value) => updateField('country', value === 'none' ? '' : value)}
             >
               <SelectTrigger className="h-9">

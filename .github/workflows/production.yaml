@@ -9,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
@@ -18,6 +19,13 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+
+      - name: Require production Supabase project ref
+        run: |
+          if [ -z "${{ secrets.PRODUCTION_PROJECT_ID }}" ]; then
+            echo "::error::PRODUCTION_PROJECT_ID secret is missing. Add it in GitHub → Settings → Secrets → Actions (Supabase project ref from Dashboard → Project Settings → General)."
+            exit 1
+          fi
 
       - name: Link to Production Project
         run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}

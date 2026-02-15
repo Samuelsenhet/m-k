@@ -104,6 +104,13 @@ export function useMatches() {
         if (retryToken) result = await invokeMatchDaily(retryToken);
       }
       const { data, error } = result;
+      // 202 + journey_phase WAITING: success response, no matches yet
+      if (data && (data as { journey_phase?: string }).journey_phase === 'WAITING') {
+        setMatches([]);
+        setHasMore(false);
+        setLoading(false);
+        return;
+      }
       if (error) throw error;
       if (!data || !Array.isArray(data.matches)) {
         setMatches([]);
@@ -118,7 +125,9 @@ export function useMatches() {
       if (import.meta.env.DEV) {
         console.error("Error fetching matches:", err);
       }
-      setError(getErrorMessage(err, "Kunde inte hämta matchningar. Kontrollera att du är inloggad."));
+      const msg = getErrorMessage(err, "Kunde inte hämta matchningar. Kontrollera att du är inloggad.");
+      const is401 = typeof err === "object" && err !== null && "status" in (err as { status?: number }) && (err as { status: number }).status === 401;
+      setError(is401 ? "Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund." : msg);
       setHasMore(false);
     } finally {
       setLoading(false);

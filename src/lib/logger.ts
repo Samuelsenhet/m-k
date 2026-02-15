@@ -90,7 +90,7 @@ const REMOTE_MIN_LEVEL = LogLevel.ERROR;
 const FLUSH_INTERVAL_MS = 10_000;
 const MAX_BATCH_SIZE = 20;
 
-let remoteBuffer: LogEntry[] = [];
+const remoteBuffer: LogEntry[] = [];
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
 function startFlushTimer() {

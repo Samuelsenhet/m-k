@@ -8,12 +8,20 @@
  * Användning:
  *   node scripts/loopia-dns.js list                    # lista records för maakapp.se
  *   node scripts/loopia-dns.js set-vercel              # sätt A @ + CNAME www för Vercel
+ *   node scripts/loopia-dns.js apply-csv [sökväg]      # lägg records från CSV (default: scripts/loopia_domains.csv)
  *
  * .env läses automatiskt om dotenv finns; annars använd export eller --env-file.
  */
 
+import { readFile } from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const LOOPIA_RPC = 'https://api.loopia.se/RPCSERV';
 const DOMAIN = 'maakapp.se';
+const DEFAULT_CSV_PATH = path.join(__dirname, 'loopia_domains.csv');
 
 // Vercel (uppdatera om Vercel visar nya värden under Settings → Domains)
 const VERCEL_A_VALUE = '216.198.79.1';
@@ -170,7 +178,55 @@ async function main() {
     return;
   }
 
-  console.log('Användning: node scripts/loopia-dns.js list | set-vercel');
+  if (cmd === 'apply-csv') {
+    const csvPath = process.argv[3] || DEFAULT_CSV_PATH;
+    let raw;
+    try {
+      raw = await readFile(csvPath, 'utf8');
+    } catch (e) {
+      console.error('Kunde inte läsa CSV:', csvPath, e.message);
+      process.exit(1);
+    }
+    const lines = raw.split(/\r?\n/).filter((line) => line.trim());
+    if (lines.length < 2) {
+      console.error('CSV måste ha rubrikrad + minst en datarad. Kolumner: domain,subdomain,type,rdata,ttl');
+      process.exit(1);
+    }
+    const rows = lines.slice(1).map((line) => {
+      const parts = line.split(',').map((p) => p.trim());
+      return {
+        domain: parts[0],
+        subdomain: parts[1] === '@' ? '' : (parts[1] || ''),
+        type: parts[2],
+        rdata: parts[3],
+        ttl: parts[4] ? parseInt(parts[4], 10) : TTL,
+      };
+    });
+    for (const row of rows) {
+      if (!row.domain || !row.type || !row.rdata) {
+        console.warn('Hoppar över ogiltig rad:', row);
+        continue;
+      }
+      try {
+        await addZoneRecord(user, pass, row.domain, row.subdomain, {
+          type: row.type,
+          rdata: row.rdata,
+          ttl: row.ttl || TTL,
+        });
+        console.log(`${row.type} ${row.subdomain || '@'} ${row.domain} → ${row.rdata} tillagt.`);
+      } catch (e) {
+        if (e.message.includes('DUPLICATE') || e.message.includes('exists')) {
+          console.log(`${row.type} ${row.subdomain || '@'} ${row.domain} finns redan.`);
+        } else {
+          console.error('Fel för rad', row, e.message);
+        }
+      }
+    }
+    console.log('Klar.');
+    return;
+  }
+
+  console.log('Användning: node scripts/loopia-dns.js list | set-vercel | apply-csv [sökväg]');
   process.exit(1);
 }
 

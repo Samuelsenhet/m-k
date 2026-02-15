@@ -114,6 +114,7 @@ serve(async (req: Request) => {
     } = await supabaseClient.auth.getUser()
 
     if (authError || !user) {
+      console.warn('match-daily: auth failed', authError?.message ?? 'no user');
       return new Response(
         JSON.stringify({ error: 'Not authenticated' }),
         { 

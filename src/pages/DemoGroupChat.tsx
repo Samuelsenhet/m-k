@@ -166,9 +166,9 @@ export default function DemoGroupChat() {
               <span className="text-sm">Tillbaka</span>
             </button>
           ) : (
-            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+            <Link to="/demo-seed" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
               <ChevronLeft className="w-5 h-5" />
-              <span className="text-sm">Till startsidan</span>
+              <span className="text-sm">Tillbaka till demo</span>
             </Link>
           )}
           <span className="font-semibold text-foreground">
