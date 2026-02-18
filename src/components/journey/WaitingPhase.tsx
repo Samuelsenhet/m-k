@@ -4,32 +4,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Clock, Heart, Sparkles, ArrowRight } from 'lucide-react';
-import { MaakMascot } from '@/components/mascot';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface WaitingPhaseProps {
   timeRemaining: string; // e.g., "18h 42m"
   nextMatchAvailable: string; // ISO timestamp
 }
 
+const MAAK_WAITING_COPY = 'Jag är här medan vi väntar. Bra saker får ta tid.';
+
 export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhaseProps) {
   const navigate = useNavigate();
+  const mascot = useMascot(MASCOT_SCREEN_STATES.WAITING);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
   const tips = [
     {
       icon: Heart,
-      title: "Fyll i din bio",
-      description: "En bra bio ökar dina chanser för matchningar med 40%"
-    },
-    {
-      icon: Sparkles,
-      title: "Lägg till fler foton",
-      description: "3-6 foton ger de bästa matchningarna"
+      title: "Matchning med mening",
+      description: "Vi letar efter någon som passar dig – inte bara är lik dig"
     },
     {
       icon: Clock,
-      title: "Kolla in dina intressen",
-      description: "Se till att dina intressen är uppdaterade"
+      title: "Ta den tid det tar",
+      description: "Bra matchningar tar lite tid"
+    },
+    {
+      icon: Sparkles,
+      title: "Medan du väntar",
+      description: "Under tiden kan du lära känna dig själv"
     }
   ];
 
@@ -47,10 +52,13 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
       <div className="w-full max-w-lg space-y-6">
-        {/* Mascot Container */}
+        {/* Mascot + Määk relation copy */}
         <div className="flex justify-center">
-          <MaakMascot pose="idle" expression="😊" size={150} />
+          <Mascot {...mascot} />
         </div>
+        <p className="text-center text-sm text-muted-foreground">
+          {MAAK_WAITING_COPY}
+        </p>
 
         {/* Main Message Card */}
         <Card className="border-primary/20">
@@ -130,9 +138,8 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
           </CardContent>
         </Card>
 
-        {/* Encouragement Message */}
         <p className="text-center text-sm text-muted-foreground px-4">
-          Medan du väntar kan du fortsätta förbättra din profil för ännu bättre matchningar! ✨
+          Medan du väntar kan du lägga till mer om dig i profilen – lugn och i din takt.
         </p>
       </div>
     </div>

@@ -66,6 +66,45 @@
     --radius-lg: 1rem;
     --radius-xl: 1.25rem;
     --radius-2xl: 1.75rem;
+    --radius-full: 9999px;
+
+    /* FAS 1 – Design token foundation (semantic layer)
+     * UNIFIED COLOR SYSTEM: Primary #4B6E48, Coral #F97068, Sage #B2AC88, Cream #F5F4F1, Text Dark #253D2C */
+    --color-primary: 116 21% 36%;
+    --color-coral: 6 92% 69%;
+    --color-sage: 52 22% 61%;
+    --color-cream: 40 14% 95%;
+    --color-dark: 120 25% 19%;
+    /* Semantic aliases – UI can switch style by reassigning these only */
+    --color-accent: var(--color-coral);
+    --color-surface: var(--color-sage);
+    --color-background: var(--color-cream);
+    --color-foreground: var(--color-dark);
+    /* MÄÄK design system – button gradients & shadows */
+    --gradient-primary-button: linear-gradient(135deg, #4B6E48 0%, #5FA886 100%);
+    --gradient-coral-button: linear-gradient(135deg, #F97068 0%, #FF9080 100%);
+    --shadow-primary-button: 0 4px 14px rgba(75, 110, 72, 0.21);
+    --shadow-coral-button: 0 4px 14px rgba(249, 112, 104, 0.21);
+
+    /* FAS 1 – Elevation (shadows for cards, PiP, floating elements) */
+    --elevation-1: 0 2px 12px -2px hsl(var(--color-dark) / 0.06);
+    --elevation-2: 0 4px 20px -4px hsl(var(--color-dark) / 0.08);
+    --elevation-3: 0 8px 32px -8px hsl(var(--color-dark) / 0.12);
+    --elevation-glow-primary: 0 0 30px hsl(var(--color-primary) / 0.2);
+    --elevation-glow-accent: 0 0 24px hsl(var(--color-coral) / 0.25);
+
+    /* FAS 1 – Typography (semantic; no visual change) */
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --text-display: 2.25rem;
+    --text-headline: 1.875rem;
+    --text-title: 1.5rem;
+    --text-body: 1rem;
+    --text-label: 0.875rem;
+    --text-caption: 0.75rem;
+
+    /* FAS 1 – Motion (calm, low-pressure UX) */
+    --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
     --duration-fast: 100ms;
     --duration-normal: 200ms;
     --duration-slow: 300ms;

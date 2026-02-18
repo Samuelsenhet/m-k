@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users, MessageCircle } from 'lucide-react';
-import { Logo } from '@/components/Logo';
+import { Sparkles, Users, MessageCircle } from 'lucide-react';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
@@ -13,10 +15,13 @@ interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
+const MAAK_GUIDE_COPY = 'Jag guidar dig lugnt genom det här.';
+
 export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const onlineCount = useOnlineCount(user?.id);
+  const mascot = useMascot(MASCOT_SCREEN_STATES.ONBOARDING_WELCOME);
   const features = [
     {
       icon: Users,
@@ -45,17 +50,25 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
       </div>
 
       <div className="relative max-w-md w-full text-center">
-        {/* Logo and Welcome */}
+        {/* Määk as guide + Welcome */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, type: 'spring' }}
           className="mb-8"
         >
-          <div className="flex justify-center mb-6">
-            <Logo size={80} variant="icon-only" />
+          <div className="flex justify-center mb-4">
+            <Mascot {...mascot} />
           </div>
-          
+          <motion.p
+            initial={{ y: 8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            className="text-sm text-muted-foreground mb-6"
+          >
+            {MAAK_GUIDE_COPY}
+          </motion.p>
+
           <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

@@ -3,7 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { MaakMascot } from '@/components/mascot';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface FirstMatchCelebrationProps {
   specialMessage: string;
@@ -17,6 +19,7 @@ export function FirstMatchCelebration({
   onContinue 
 }: FirstMatchCelebrationProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const mascot = useMascot(MASCOT_SCREEN_STATES.FIRST_MATCH);
 
   useEffect(() => {
     // Trigger confetti animation
@@ -65,7 +68,7 @@ export function FirstMatchCelebration({
         <CardContent className="p-8 text-center space-y-6">
           {/* Animated Mascot */}
           <div className="flex justify-center">
-            <MaakMascot pose="love" expression="😍" size={140} />
+            <Mascot {...mascot} />
           </div>
 
           {/* Celebration Message */}

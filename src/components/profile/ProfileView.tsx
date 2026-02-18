@@ -1,14 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Camera, MapPin, ImagePlus, HelpCircle, User, Pencil, ChevronUp, Settings } from 'lucide-react';
+import { MapPin, User, Pencil, ChevronUp, Settings } from 'lucide-react';
 import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { useTranslation } from 'react-i18next';
 import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { toast } from 'sonner';
+import {
+  ButtonPrimary,
+  ButtonGhost,
+  ButtonIcon,
+  ArchetypeBadge,
+  InterestChipV2,
+} from '@/components/ui-v2';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
+import type { ArchetypeKey } from '@/components/ui-v2/badge';
 
 interface ProfileData {
   display_name: string | null;
@@ -18,6 +28,7 @@ interface ProfileData {
   country: string | null;
   work: string | null;
   height: string | null;
+  interested_in?: string | null;
   instagram?: string | null;
   linkedin?: string | null;
   education?: string | null;
@@ -46,24 +57,26 @@ const COUNTRY_LABELS: Record<string, string> = {
   DE: 'Tyskland', GB: 'Storbritannien', US: 'USA',
 };
 
-// Category color mapping using design system
-const CATEGORY_STYLES: Record<string, { className: string; label: string }> = {
-  DIPLOMAT: { className: 'badge-diplomat', label: 'Diplomat' },
-  STRATEGER: { className: 'badge-strateger', label: 'Strateg' },
-  BYGGARE: { className: 'badge-byggare', label: 'Byggare' },
-  UPPTÄCKARE: { className: 'badge-upptackare', label: 'Upptäckare' },
-};
+/** Map API category to ui-v2 ArchetypeKey */
+function toArchetypeKey(category: string | undefined): ArchetypeKey | undefined {
+  if (!category) return undefined;
+  const key = category.toLowerCase();
+  if (key === 'diplomat' || key === 'strateger' || key === 'byggare' || key === 'upptackare') return key;
+  return undefined;
+}
 
-// Get traits from archetype info
-const getArchetypeTraits = (archetype: string) => {
-  const info = ARCHETYPE_INFO[archetype as ArchetypeCode];
-  if (!info) return [];
-  
-  return info.strengths.map((strength, i) => ({
-    trait: strength,
-    primary: i < 2,
-    category: info.category,
-  }));
+/** Parse interested_in string to array of labels for InterestChipV2 */
+function parseInterests(interestedIn: string | null | undefined): string[] {
+  if (!interestedIn || typeof interestedIn !== 'string') return [];
+  return interestedIn.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+}
+
+// Category styling for expandable "Visa mer" section (token-aligned where possible)
+const CATEGORY_STYLES: Record<string, { className: string; label: string }> = {
+  DIPLOMAT: { className: 'bg-personality-diplomat/20 text-personality-diplomat border-personality-diplomat/30', label: 'Diplomat' },
+  STRATEGER: { className: 'bg-personality-strateger/20 text-personality-strateger border-personality-strateger/30', label: 'Strateg' },
+  BYGGARE: { className: 'bg-personality-byggare/20 text-personality-byggare border-personality-byggare/30', label: 'Byggare' },
+  UPPTÄCKARE: { className: 'bg-personality-upptackare/20 text-personality-upptackare border-personality-upptackare/30', label: 'Upptäckare' },
 };
 
 export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps) {
@@ -78,6 +91,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
   const sheetTouchStartY = useRef<number>(0);
 
   const archetypeInfo = archetype ? ARCHETYPE_INFO[archetype as ArchetypeCode] : null;
+  const profileEmptyMascot = useMascot(MASCOT_SCREEN_STATES.PROFILE_EMPTY);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -86,7 +100,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
     const [profileRes, photosRes, matchesRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('display_name, bio, date_of_birth, hometown, country, work, height, instagram, linkedin')
+        .select('display_name, bio, date_of_birth, hometown, country, work, height, interested_in, instagram, linkedin, id_verification_status, education, gender, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra')
         .eq(profileKey, user.id)
         .maybeSingle(),
       supabase
@@ -168,47 +182,45 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black animate-pulse">
-        <div className="w-full h-full bg-muted" />
+      <div className="fixed inset-0 bg-warm-dark flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" aria-hidden />
       </div>
     );
   }
 
   const age = calculateAge(profile?.date_of_birth || null);
   const height = formatHeight(profile?.height);
+  const interestsList = parseInterests(profile?.interested_in);
+  const archetypeKey = archetypeInfo ? toArchetypeKey(archetypeInfo.category) : undefined;
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* Top Navigation Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 pt-safe-top">
-        <button
-          type="button"
+    <div className="fixed inset-0 bg-warm-dark overflow-y-auto overflow-x-hidden">
+      {/* Top bar: Settings + Edit (avatar) */}
+      <div className="sticky top-0 left-0 right-0 z-20 flex justify-between items-center p-4 pt-safe-top bg-warm-dark/80 backdrop-blur-sm border-b border-white/10">
+        <ButtonIcon
+          size="default"
           onClick={onSettings}
-          className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20 text-white hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="rounded-full border border-border bg-card/80 text-foreground hover:bg-muted"
           aria-label={t('settings.title')}
         >
           <Settings className="w-5 h-5" />
-        </button>
+        </ButtonIcon>
         <button
           type="button"
           onClick={onEdit}
-          className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20 overflow-hidden shrink-0 hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-12 h-12 rounded-full border-2 border-border bg-card/80 overflow-hidden shrink-0 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-warm-dark"
           aria-label={t('profile.edit_profile')}
         >
           {photos.length > 0 ? (
-            <img
-              src={getPublicUrl(photos[0].storage_path)}
-              alt="Profile"
-              className="w-full h-full object-cover object-center scale-110"
-            />
+            <img src={getPublicUrl(photos[0].storage_path)} alt="" className="w-full h-full object-cover" />
           ) : (
-            <User className="w-6 h-6 text-white" />
+            <User className="w-6 h-6 text-muted-foreground mx-auto mt-2.5" />
           )}
         </button>
       </div>
 
-      {/* Main Photo Section - Full Screen */}
-      <div className="relative w-full h-full">
+      {/* Hero: profile image 3:4 */}
+      <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
         {photos.length > 0 ? (
           <>
             <img
@@ -216,168 +228,117 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               alt={profile?.display_name || 'Profilfoto'}
               className="w-full h-full object-cover"
             />
-            
-            {/* Photo indicators */}
-            {photos.length > 1 && (
-              <div className="absolute top-20 left-4 right-4 flex gap-1 z-10">
-                {photos.map((_, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "h-1 flex-1 rounded-full transition-all",
-                      index === currentPhotoIndex 
-                        ? "bg-white" 
-                        : "bg-white/40"
-                    )}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Navigation areas for swiping */}
             {photos.length > 1 && (
               <>
-                <button
-                  type="button"
-                  onClick={prevPhoto}
-                  className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
-                  aria-label="Föregående foto"
-                />
-                <button
-                  type="button"
-                  onClick={nextPhoto}
-                  className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
-                  aria-label="Nästa foto"
-                />
+                <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
+                  {photos.map((_, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        'h-1 flex-1 rounded-full transition-all',
+                        index === currentPhotoIndex ? 'bg-primary' : 'bg-white/40'
+                      )}
+                      aria-hidden
+                    />
+                  ))}
+                </div>
+                <button type="button" onClick={prevPhoto} className="absolute left-0 top-0 bottom-0 w-1/3 z-10" aria-label="Föregående foto" />
+                <button type="button" onClick={nextPhoto} className="absolute right-0 top-0 bottom-0 w-1/3 z-10" aria-label="Nästa foto" />
               </>
             )}
           </>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 bg-gradient-to-br from-gray-900 to-black">
-            <Camera className="w-20 h-20 mb-4 opacity-40" />
-            <p className="text-lg">Inga foton ännu</p>
-            <Button
-              onClick={onEdit}
-              variant="outline"
-              className="mt-4 border-white/20 text-white hover:bg-white/10"
-            >
-              <ImagePlus className="w-4 h-4 mr-2" />
+          <div className="w-full h-full flex flex-col items-center justify-center bg-warm-dark/90 text-muted-foreground p-6">
+            <Mascot {...profileEmptyMascot} className="mb-4" />
+            <p className="text-base font-medium text-foreground mb-3">Inga foton ännu</p>
+            <ButtonPrimary onClick={onEdit} className="gap-2">
+              <Pencil className="w-4 h-4" />
               Lägg till foto
-            </Button>
+            </ButtonPrimary>
           </div>
         )}
-
-        {/* User Info Overlay - Bottom Left */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pb-24">
-          <div className="bg-black/60 backdrop-blur-md rounded-2xl p-4 max-w-[75%]">
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-                  {profile?.display_name || 'Ingen namn'}
-                  {profile?.id_verification_status === 'approved' && (
-                    <VerifiedBadge size="md" className="text-white shrink-0" />
-                  )}
-                </h1>
-                {age && height && (
-                  <span className="text-xl text-white/90">
-                    {age} | {height}
-                  </span>
-                )}
-                {age && !height && (
-                  <span className="text-xl text-white/90">{age}</span>
-                )}
-              </div>
-              
-              {(profile?.instagram || profile?.linkedin) && (
-                <p className="text-sm text-white/80 font-medium flex flex-wrap items-center gap-x-1 gap-y-0.5">
-                  {profile?.instagram && (
-                    <a
-                      href={`https://instagram.com/${getInstagramUsername(profile.instagram)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      Instagram {profile.instagram.startsWith('@') ? profile.instagram : `@${profile.instagram}`}
-                    </a>
-                  )}
-                  {profile?.instagram && profile?.linkedin && <span>·</span>}
-                  {profile?.linkedin && (
-                    <a
-                      href={`https://linkedin.com/in/${getLinkedInUsername(profile.linkedin)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      LinkedIn {profile.linkedin.startsWith('@') ? profile.linkedin : `@${profile.linkedin}`}
-                    </a>
-                  )}
-                </p>
-              )}
-              
-              {profile?.work && (
-                <p className="text-base text-white/90 font-medium">
-                  {profile.work}
-                </p>
-              )}
-              
-              {(profile?.hometown || profile?.country) && (
-                <p className="text-sm text-white/80 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {[profile.hometown, profile.country && COUNTRY_LABELS[profile.country]].filter(Boolean).join(', ')}
-                </p>
-              )}
-
-              {/* Personality Badge – huvudkategori (inte arketyp) */}
-              {archetypeInfo && (
-                <div className="mt-2">
-                  <span className={cn(
-                    "inline-block px-3 py-1 rounded-full text-xs font-semibold text-white border border-white/30",
-                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/20'
-                  )}>
-                    {CATEGORY_INFO[archetypeInfo.category].emoji} {CATEGORY_INFO[archetypeInfo.category].title}
-                  </span>
-                </div>
-              )}
-
-              {/* Edit profile + Expand */}
-              <div className="mt-3 flex flex-col gap-2">
-                <Button
-                  onClick={onEdit}
-                  variant="outline"
-                  size="sm"
-                  className="w-full border-white/40 bg-black/50 text-white hover:bg-black/60 hover:text-white"
-                >
-                  <Pencil className="w-4 h-4 mr-2" />
-                  {t('profile.edit_profile')}
-                </Button>
-                <button
-                  onClick={() => setShowFullInfo(!showFullInfo)}
-                  className="w-full flex items-center justify-center gap-2 text-white/80 hover:text-white transition-colors py-2"
-                >
-                  <ChevronUp className={cn("w-5 h-5 shrink-0 transition-transform", showFullInfo && "rotate-180")} />
-                  <span className="text-sm font-medium">{showFullInfo ? 'Dölj' : 'Visa mer'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-      {/* Scrollable Info Section - Expandable */}
+      {/* Content on warm-dark: use primary-foreground for legibility */}
+      <div className="p-4 pb-8 space-y-4 text-primary-foreground">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            {profile?.display_name || 'Ingen namn'}
+            {profile?.id_verification_status === 'approved' && (
+              <VerifiedBadge size="md" className="shrink-0 text-primary-foreground" />
+            )}
+          </h1>
+          {age != null && (
+            <span className="text-primary-foreground/80">
+              {height ? `${age} · ${height}` : `${age} år`}
+            </span>
+          )}
+        </div>
+        {archetypeKey && (
+          <ArchetypeBadge archetype={archetypeKey} className="shrink-0 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground" />
+        )}
+        <div className="flex flex-wrap items-center gap-3 text-sm text-primary-foreground/80">
+          {profile?.id_verification_status === 'approved' && <span>Verifierad</span>}
+          {matchCount > 0 && <span>{matchCount} {matchCount === 1 ? 'match' : 'matcher'}</span>}
+        </div>
+        {profile?.bio ? (
+          <section>
+            <h2 className="text-sm font-semibold mb-1">Om mig</h2>
+            <p className="text-primary-foreground/90 leading-relaxed">{profile.bio}</p>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-primary-foreground/20 bg-primary-foreground/5 p-4 flex flex-col items-center text-center">
+            <Mascot {...profileEmptyMascot} className="mb-2" />
+            <p className="text-sm text-primary-foreground/80 mb-2">Lägg till en bio så andra får veta mer om dig.</p>
+            <ButtonGhost onClick={onEdit} size="sm" className="gap-2 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10">
+              <Pencil className="w-4 h-4" /> {t('profile.edit_profile')}
+            </ButtonGhost>
+          </section>
+        )}
+        {interestsList.length > 0 ? (
+          <section>
+            <h2 className="text-sm font-semibold mb-2">{t('profile.interests_title', 'Intressen')}</h2>
+            <div className="flex flex-wrap gap-2">
+              {interestsList.map((label) => (
+                <InterestChipV2 key={label} label={label} variant="dark" className="border-primary-foreground/20 text-primary-foreground" />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-primary-foreground/20 bg-primary-foreground/5 p-4 flex flex-col items-center text-center">
+            <Mascot {...profileEmptyMascot} className="mb-2" />
+            <p className="text-sm text-primary-foreground/80 mb-2">Lägg till intressen så matchningar blir enklare.</p>
+            <ButtonGhost onClick={onEdit} size="sm" className="gap-2 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10">
+              <Pencil className="w-4 h-4" /> {t('profile.edit_profile')}
+            </ButtonGhost>
+          </section>
+        )}
+        <div className="flex flex-col gap-2 pt-2">
+          <ButtonPrimary onClick={onEdit} className="w-full gap-2">
+            <Pencil className="w-4 h-4" /> {t('profile.edit_profile')}
+          </ButtonPrimary>
+          <button
+            type="button"
+            onClick={() => setShowFullInfo(!showFullInfo)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-primary-foreground/80 hover:text-primary-foreground transition-colors rounded-md border border-primary-foreground/20 hover:bg-primary-foreground/10"
+          >
+            <ChevronUp className={cn('w-5 h-5 shrink-0 transition-transform', showFullInfo && 'rotate-180')} />
+            <span className="text-sm font-medium">{showFullInfo ? 'Dölj' : 'Visa mer'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable Info Section - Expandable (Visa mer) */}
       {showFullInfo && (
         <div
-          className="absolute bottom-0 left-0 right-0 z-30 bg-black/95 backdrop-blur-xl rounded-t-3xl max-h-[70vh] overflow-y-auto overflow-x-hidden animate-slide-up overscroll-contain"
+          className="absolute bottom-0 left-0 right-0 z-30 bg-card border-t border-border rounded-t-3xl max-h-[70vh] overflow-y-auto overflow-x-hidden animate-slide-up overscroll-contain shadow-elevation-2"
           style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
         >
           <div className="p-6 space-y-6 pb-safe-bottom">
-            {/* Drag handle – tap or swipe down to close */}
             <div
               className="flex justify-center pt-2 pb-4 cursor-grab active:cursor-grabbing touch-manipulation"
               onClick={() => setShowFullInfo(false)}
-              onTouchStart={(e) => {
-                sheetTouchStartY.current = e.touches[0].clientY;
-              }}
+              onTouchStart={(e) => { sheetTouchStartY.current = e.touches[0].clientY; }}
               onTouchEnd={(e) => {
                 const endY = e.changedTouches[0].clientY;
                 if (endY - sheetTouchStartY.current > 50) setShowFullInfo(false);
@@ -387,39 +348,36 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               aria-label="Dra ner för att stänga"
               onKeyDown={(e) => e.key === 'Enter' && setShowFullInfo(false)}
             >
-              <div className="w-12 h-1 bg-white/30 rounded-full pointer-events-none" />
+              <div className="w-12 h-1 bg-muted-foreground/40 rounded-full pointer-events-none" />
             </div>
-
-            {/* Bio Section */}
             {profile?.bio && (
               <div>
-                <h2 className="text-xl font-bold text-white mb-2">Om mig</h2>
-                <p className="text-white/80 leading-relaxed">{profile.bio}</p>
+                <h2 className="text-xl font-bold text-foreground mb-2">Om mig</h2>
+                <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
               </div>
             )}
 
-            {/* Dejtingavsikter & Relationstyper */}
             {(profile?.dating_intention || profile?.relationship_type || profile?.dating_intention_extra || profile?.relationship_type_extra) && (
               <div className="space-y-3">
                 {profile.dating_intention && (
                   <div>
-                    <h2 className="text-xl font-bold text-white mb-1">{t('profile.dating_intention_title')}</h2>
-                    <p className="text-white/90 font-medium">
+                    <h2 className="text-xl font-bold text-foreground mb-1">{t('profile.dating_intention_title')}</h2>
+                    <p className="text-foreground font-medium">
                       {t(('profile.dating_' + profile.dating_intention) as 'profile.dating_livspartner')}
                     </p>
                     {profile.dating_intention_extra && (
-                      <p className="text-white/80 text-sm mt-1">{profile.dating_intention_extra}</p>
+                      <p className="text-muted-foreground text-sm mt-1">{profile.dating_intention_extra}</p>
                     )}
                   </div>
                 )}
                 {profile.relationship_type && (
                   <div>
-                    <h2 className="text-xl font-bold text-white mb-1">{t('profile.relationship_type_title')}</h2>
-                    <p className="text-white/90 font-medium">
+                    <h2 className="text-xl font-bold text-foreground mb-1">{t('profile.relationship_type_title')}</h2>
+                    <p className="text-foreground font-medium">
                       {t(('profile.relation_' + profile.relationship_type) as 'profile.relation_monogam')}
                     </p>
                     {profile.relationship_type_extra && (
-                      <p className="text-white/80 text-sm mt-1">{profile.relationship_type_extra}</p>
+                      <p className="text-muted-foreground text-sm mt-1">{profile.relationship_type_extra}</p>
                     )}
                   </div>
                 )}
@@ -429,27 +387,25 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
             {/* Personality Section – 1. En huvudkategori  2. Fyra arketyper (PDF metod) */}
             {archetypeInfo && (
               <div className="space-y-4">
-                {/* 1. En huvudkategori – din primära förbindelsestil */}
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-2">{t('personality.main_category_label', '1. En huvudkategori')}</h2>
-                  <p className="text-sm text-white/70 mb-2">{t('personality.main_category_sub', 'Din primära förbindelsestil')}</p>
+                  <h2 className="text-xl font-bold text-foreground mb-2">{t('personality.main_category_label', '1. En huvudkategori')}</h2>
+                  <p className="text-sm text-muted-foreground mb-2">{t('personality.main_category_sub', 'Din primära förbindelsestil')}</p>
                   <div className={cn(
-                    "p-4 rounded-2xl border flex items-center gap-3",
-                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/10 border-white/20'
+                    'p-4 rounded-2xl border border-border flex items-center gap-3',
+                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-muted/50'
                   )}>
                     <span className="text-4xl">{CATEGORY_INFO[archetypeInfo.category].emoji}</span>
                     <div>
-                      <h3 className="text-lg font-bold text-white">{CATEGORY_INFO[archetypeInfo.category].title}</h3>
-                      <p className="text-sm text-white/80">{CATEGORY_INFO[archetypeInfo.category].description}</p>
+                      <h3 className="text-lg font-bold text-foreground">{CATEGORY_INFO[archetypeInfo.category].title}</h3>
+                      <p className="text-sm text-muted-foreground">{CATEGORY_INFO[archetypeInfo.category].description}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* 2. Fyra arketyper – olika sidor av din personlighet */}
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-2">{t('personality.four_archetypes_label', 'Fyra arketyper')}</h2>
-                  <p className="text-sm text-white/70 mb-3">{t('personality.four_archetypes_sub', 'Olika sidor av din personlighet – din typ är markerad')}</p>
-                  <p className="text-sm text-white/90 mb-3 font-medium">
+                  <h2 className="text-xl font-bold text-foreground mb-2">{t('personality.four_archetypes_label', 'Fyra arketyper')}</h2>
+                  <p className="text-sm text-muted-foreground mb-3">{t('personality.four_archetypes_sub', 'Olika sidor av din personlighet – din typ är markerad')}</p>
+                  <p className="text-sm text-foreground mb-3 font-medium">
                     {t('personality.test_result_line', 'Din typ från testet: {{title}} ({{code}}) – 1 av 4 i {{category}}.', {
                       title: archetypeInfo.title,
                       code: archetypeInfo.name,
@@ -465,20 +421,20 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                         <div
                           key={code}
                           className={cn(
-                            'p-3 rounded-xl border flex items-center gap-2',
-                            style?.className || 'bg-white/10 border-white/20',
-                            isUserArchetype && 'ring-2 ring-white/50'
+                            'p-3 rounded-xl border border-border flex items-center gap-2',
+                            style?.className || 'bg-muted/50',
+                            isUserArchetype && 'ring-2 ring-primary'
                           )}
                         >
                           <span className="text-2xl">{info.emoji}</span>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-white truncate">
+                            <p className="text-sm font-bold text-foreground truncate">
                               {info.title}
                               {isUserArchetype && (
-                                <span className="ml-1 text-xs font-normal text-white/80">({t('personality.your_type', 'din typ')})</span>
+                                <span className="ml-1 text-xs font-normal text-muted-foreground">({t('personality.your_type', 'din typ')})</span>
                               )}
                             </p>
-                            <p className="text-xs text-white/70">{info.name}</p>
+                            <p className="text-xs text-muted-foreground">{info.name}</p>
                           </div>
                         </div>
                       );
@@ -486,37 +442,33 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
                   </div>
                 </div>
 
-                {/* Din arketyp – full kort (Personlighetstyp) */}
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-3">{t('personality.your_archetype_card', 'Din arketyp')}</h2>
+                  <h2 className="text-xl font-bold text-foreground mb-3">{t('personality.your_archetype_card', 'Din arketyp')}</h2>
                   <div className={cn(
-                    "p-4 rounded-2xl border",
-                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/10 border-white/20'
+                    'p-4 rounded-2xl border border-border',
+                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-muted/50'
                   )}>
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-4xl">{archetypeInfo.emoji}</span>
                       <div>
-                        <h3 className="text-xl font-bold text-white">{archetypeInfo.title}</h3>
-                        <p className="text-sm text-white/70">{archetypeInfo.name}</p>
+                        <h3 className="text-xl font-bold text-foreground">{archetypeInfo.title}</h3>
+                        <p className="text-sm text-muted-foreground">{archetypeInfo.name}</p>
                       </div>
                     </div>
-                    <p className="text-white/80 mb-4">{archetypeInfo.description}</p>
+                    <p className="text-muted-foreground mb-4">{archetypeInfo.description}</p>
                     <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-white/90 mb-2">{t('profile.strengths', 'Styrkor')}</h4>
+                      <h4 className="text-sm font-semibold text-foreground mb-2">{t('profile.strengths', 'Styrkor')}</h4>
                       <div className="flex flex-wrap gap-2">
                         {archetypeInfo.strengths.map((strength, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white border border-white/20"
-                          >
+                          <span key={index} className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
                             {strength}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-white/10">
-                      <p className="text-sm text-white/70">
-                        <span className="font-semibold text-white">I relationer:</span> {archetypeInfo.loveStyle}
+                    <div className="pt-3 border-t border-border">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">I relationer:</span> {archetypeInfo.loveStyle}
                       </p>
                     </div>
                   </div>
@@ -524,24 +476,23 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               </div>
             )}
 
-            {/* Additional Info */}
             <div className="grid grid-cols-2 gap-4">
               {profile?.work && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Jobb</p>
-                  <p className="text-white font-medium">{profile.work}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Jobb</p>
+                  <p className="text-foreground font-medium">{profile.work}</p>
                 </div>
               )}
               {profile?.education && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Utbildning</p>
-                  <p className="text-white font-medium">{profile.education}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Utbildning</p>
+                  <p className="text-foreground font-medium">{profile.education}</p>
                 </div>
               )}
               {(profile?.hometown || profile?.country) && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Plats</p>
-                  <p className="text-white font-medium flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground mb-1">Plats</p>
+                  <p className="text-foreground font-medium flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5" />
                     {[profile.hometown, profile.country && COUNTRY_LABELS[profile.country]].filter(Boolean).join(', ')}
                   </p>
@@ -549,58 +500,44 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               )}
               {age && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Ålder</p>
-                  <p className="text-white font-medium">{age} år</p>
+                  <p className="text-xs text-muted-foreground mb-1">Ålder</p>
+                  <p className="text-foreground font-medium">{age} år</p>
                 </div>
               )}
               {height && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Längd</p>
-                  <p className="text-white font-medium">{height}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Längd</p>
+                  <p className="text-foreground font-medium">{height}</p>
                 </div>
               )}
               {profile?.gender && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Kön</p>
-                  <p className="text-white font-medium">{profile.gender}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Kön</p>
+                  <p className="text-foreground font-medium">{profile.gender}</p>
                 </div>
               )}
               {profile?.instagram && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">Instagram</p>
-                  <a
-                    href={`https://instagram.com/${profile.instagram.replace(/^@/, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white font-medium text-blue-400 hover:underline"
-                  >
+                  <p className="text-xs text-muted-foreground mb-1">Instagram</p>
+                  <a href={`https://instagram.com/${profile.instagram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">
                     {profile.instagram.startsWith('@') ? profile.instagram : `@${profile.instagram}`}
                   </a>
                 </div>
               )}
               {profile?.linkedin && (
                 <div>
-                  <p className="text-xs text-white/60 mb-1">LinkedIn</p>
-                  <a
-                    href={`https://linkedin.com/in/${getLinkedInUsername(profile.linkedin)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white font-medium text-blue-400 hover:underline"
-                  >
+                  <p className="text-xs text-muted-foreground mb-1">LinkedIn</p>
+                  <a href={`https://linkedin.com/in/${getLinkedInUsername(profile.linkedin)}`} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">
                     {profile.linkedin.startsWith('@') ? profile.linkedin : `@${profile.linkedin}`}
                   </a>
                 </div>
               )}
             </div>
 
-            {/* Edit Button */}
-            <Button
-              onClick={onEdit}
-              className="w-full bg-primary text-white hover:bg-primary/90 h-12 rounded-full font-medium [&_svg]:text-white"
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Redigera profil
-            </Button>
+            <ButtonPrimary onClick={onEdit} className="w-full gap-2 h-12">
+              <Pencil className="w-4 h-4" />
+              {t('profile.edit_profile')}
+            </ButtonPrimary>
           </div>
         </div>
       )}

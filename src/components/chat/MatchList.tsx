@@ -2,16 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageCircle, Heart, CheckCheck, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { VerifiedBadge } from '@/components/ui/verified-badge';
+import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv, enUS } from 'date-fns/locale';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { ChatListItemCard, AvatarWithRing } from '@/components/ui-v2';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface Match {
   id: string;
@@ -50,6 +49,7 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const dateLocale = i18n.language === 'sv' ? sv : enUS;
+  const noChatsMascot = useMascot(MASCOT_SCREEN_STATES.NO_CHATS);
 
   const query = searchQuery.trim().toLowerCase();
   const displayName = (m: Match) => m.matched_profile?.display_name ?? 'Användare';
@@ -180,10 +180,8 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
   if (matches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Heart className="w-8 h-8 text-primary" />
-        </div>
-        <h3 className="font-serif font-semibold text-foreground mb-2">
+        <Mascot {...noChatsMascot} className="mb-4" />
+        <h3 className="font-heading font-semibold text-foreground mb-2">
           {t('matches.noMatches')}
         </h3>
         <p className="text-sm text-muted-foreground">
@@ -206,14 +204,15 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
                   key={match.id}
                   type="button"
                   onClick={() => onSelectMatch(match)}
-                  className="flex flex-col items-center gap-2 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl p-1 transition-colors hover:bg-muted/50"
+                  className="flex flex-col items-center gap-2 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl p-1 transition-colors duration-normal hover:bg-muted/50"
                 >
-                  <Avatar className="w-14 h-14 rounded-full border-2 border-primary/20 bg-primary/10">
-                    <AvatarImage src={getPhotoUrl(match.matched_profile?.avatar_url || null)} />
-                    <AvatarFallback className="bg-primary/20 text-primary text-lg font-semibold">
-                      {displayName(match).charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <AvatarWithRing
+                    showRing
+                    ringVariant="coral"
+                    src={getPhotoUrl(match.matched_profile?.avatar_url ?? null)}
+                    fallback={displayName(match).slice(0, 2).toUpperCase()}
+                    size="lg"
+                  />
                   <span className="text-xs font-medium text-foreground truncate max-w-[72px]">
                     {displayName(match)}
                   </span>
@@ -235,60 +234,29 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
           filteredMatches.map((match) => {
             const hasUnread = (match.unread_count ?? 0) > 0;
             const lastMsg = match.last_message;
+            const chatStatus = !lastMsg
+              ? ('start-chat' as const)
+              : hasUnread
+                ? ('your-turn' as const)
+                : undefined;
+            const timeLabel = lastMsg
+              ? format(new Date(lastMsg.created_at), 'p', { locale: dateLocale })
+              : '';
+            const preview = lastMsg ? lastMsg.content : t('chat.chooseIcebreaker');
             return (
-              <button
+              <ChatListItemCard
                 key={match.id}
-                type="button"
+                displayName={displayName(match)}
+                lastMessagePreview={preview}
+                timeLabel={timeLabel}
+                status={chatStatus}
+                avatarSrc={getPhotoUrl(match.matched_profile?.avatar_url ?? null)}
+                avatarFallback={displayName(match).slice(0, 2).toUpperCase()}
+                showRing={hasUnread}
+                state={selectedMatchId === match.id ? 'active' : hasUnread ? 'unread' : 'idle'}
+                verified={match.matched_profile?.id_verification_status === 'approved'}
                 onClick={() => onSelectMatch(match)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
-                  selectedMatchId === match.id && 'bg-primary/5'
-                )}
-              >
-                <Avatar className="w-12 h-12 rounded-full border-2 border-primary/20 bg-primary/10 shrink-0">
-                  <AvatarImage src={getPhotoUrl(match.matched_profile?.avatar_url || null)} />
-                  <AvatarFallback className="bg-primary/20 text-primary font-semibold">
-                    {displayName(match).charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-semibold text-foreground truncate flex items-center gap-1.5">
-                      {displayName(match)}
-                      {match.matched_profile?.id_verification_status === 'approved' && (
-                        <VerifiedBadge size="sm" className="shrink-0" />
-                      )}
-                    </h4>
-                    {lastMsg && (
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {format(new Date(lastMsg.created_at), 'p', { locale: dateLocale })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between gap-2 mt-0.5">
-                    {lastMsg ? (
-                      <p className="text-sm text-muted-foreground truncate flex-1 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        {lastMsg.content}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-primary flex items-center gap-1.5">
-                        <MessageCircle className="w-3.5 h-3.5 shrink-0" />
-                        {t('chat.chooseIcebreaker')}
-                      </p>
-                    )}
-                    <div className="shrink-0 w-5 flex justify-end">
-                      {hasUnread ? (
-                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold">
-                          {match.unread_count}
-                        </span>
-                      ) : lastMsg ? (
-                        <CheckCheck className="w-5 h-5 shrink-0 text-destructive" aria-label={t('chat.messages')} />
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </button>
+              />
             );
           })
         )}

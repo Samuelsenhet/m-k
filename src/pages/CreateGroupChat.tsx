@@ -167,6 +167,7 @@ export default function CreateGroupChat() {
             className="max-w-md"
             maxLength={64}
           />
+          <p className="text-xs text-muted-foreground">{t("groupChat.groupNamePreview")}</p>
         </div>
 
         <div className="space-y-2">

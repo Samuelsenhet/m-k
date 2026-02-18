@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/useAuth';
 
 interface MatchStatus {
   journey_phase: 'WAITING' | 'READY' | 'FIRST_MATCH';
@@ -10,62 +9,63 @@ interface MatchStatus {
 }
 
 export function useMatchStatus() {
-  const { user } = useAuth();
   const [status, setStatus] = useState<MatchStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchStatus = useCallback(async () => {
-    if (!user) {
-      setStatus(null);
-      setError(new Error('No user logged in'));
-      setIsLoading(false);
-      return;
-    }
+  const fetchStatus = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      let token = session?.access_token;
-      if (!token) {
-        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-        token = refreshed?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
-      }
-      if (!token) {
-        setStatus(null);
-        setError(new Error('Failed to obtain auth token'));
-        setIsLoading(false);
-        return;
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Not authenticated');
       }
 
-      const invoke = async (accessToken: string) =>
-        supabase.functions.invoke('match-status', {
-          body: { user_id: user.id },
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-      let { data, error } = await invoke(token);
-      if (error) {
-        await new Promise((r) => setTimeout(r, 1000));
-        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-        const retryToken = refreshed?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
-        if (retryToken) ({ data, error } = await invoke(retryToken));
+      // Get Supabase URL - try multiple sources
+      let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      
+      // Construct from project ID if URL is not provided
+      if ((!supabaseUrl || supabaseUrl.includes('your_project') || supabaseUrl.includes('placeholder')) && 
+          projectId && 
+          !projectId.includes('your_project') && 
+          !projectId.includes('placeholder')) {
+        supabaseUrl = `https://${projectId}.supabase.co`;
       }
-      if (error) throw error;
-      if (!data) throw new Error('No data returned');
 
-      setStatus(data as MatchStatus);
+      if (!supabaseUrl || supabaseUrl.includes('your_project') || supabaseUrl.includes('placeholder')) {
+        throw new Error('Supabase URL is not configured. Please set VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID in your .env file.');
+      }
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/match-status?user_id=${user.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setStatus(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     fetchStatus();
-  }, [fetchStatus]);
+  }, []);
 
   return {
     status,

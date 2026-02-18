@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, MessageCircle, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Mascot } from "@/components/system/Mascot";
+import { useMascot } from "@/hooks/useMascot";
+import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
 import { format } from "date-fns";
 import { sv, enUS } from "date-fns/locale";
 
@@ -20,6 +23,7 @@ export interface GroupChatRow {
 export default function GroupChatList() {
   const { user, loading } = useAuth();
   const { t, i18n } = useTranslation();
+  const mascot = useMascot(MASCOT_SCREEN_STATES.SAMLINGAR_EMPTY);
   const navigate = useNavigate();
   const [groups, setGroups] = useState<GroupChatRow[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
@@ -133,15 +137,19 @@ export default function GroupChatList() {
 
       <div className="flex-1 overflow-auto p-3">
         {groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Users className="w-12 h-12 text-muted-foreground mb-4" aria-hidden />
-            <p className="text-muted-foreground mb-4">{t("groupChat.noGroups")}</p>
-            <Button asChild variant="outline" className="gap-2">
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <Mascot {...mascot} className="mb-4" />
+            <h2 className="font-semibold text-foreground mb-2">{t("groupChat.emptyHeading")}</h2>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+              {t("groupChat.emptyBody")}
+            </p>
+            <Button asChild className="gap-2 mb-2">
               <Link to="/group-chat/create">
                 <MessageCircle className="w-4 h-4 shrink-0" />
-                {t("groupChat.create")}
+                {t("groupChat.createFirst")}
               </Link>
             </Button>
+            <p className="text-xs text-muted-foreground">{t("groupChat.emptyCtaSecondary")}</p>
           </div>
         ) : (
           <ul className="space-y-2" role="list">
@@ -159,8 +167,8 @@ export default function GroupChatList() {
                       <p className="font-medium text-foreground truncate">{group.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {group.last_message
-                          ? group.last_message.content
-                          : t("groupChat.noMessagesYet")}
+                          ? t("groupChat.lastShared", { text: group.last_message.content })
+                          : t("groupChat.sharedContext")}
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">

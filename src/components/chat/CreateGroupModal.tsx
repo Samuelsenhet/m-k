@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getProfilesAuthKey } from "@/lib/profiles";
@@ -39,6 +40,7 @@ export function CreateGroupModal({
   onCreated,
   createGroup,
 }: CreateGroupModalProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -113,30 +115,32 @@ export function CreateGroupModal({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Skapa Samling</DialogTitle>
+          <DialogTitle>{t("groupChat.create")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div>
-            <label className="text-sm font-medium mb-2 block">Namn på gruppen</label>
+            <label className="text-sm font-medium mb-2 block">{t("groupChat.groupName")}</label>
             <Input
-              placeholder="T.ex. Fredagshäng, Brunch-gänget..."
+              placeholder={t("groupChat.groupNamePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="rounded-xl"
             />
+            <p className="text-xs text-muted-foreground mt-1.5">{t("groupChat.groupNamePreview")}</p>
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Välj matcher (minst 2)
+              {t("groupChat.selectMatches")}
             </label>
+            <p className="text-xs text-muted-foreground mb-2">{t("groupChat.selectMatchesHint")}</p>
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : options.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                Inga matcher att lägga till ännu. Matcha med fler först.
+                {t("groupChat.needMoreMatches")}
               </p>
             ) : (
               <div className="space-y-2 max-h-48 overflow-auto">
@@ -180,7 +184,7 @@ export function CreateGroupModal({
             onClick={handleCreate}
           >
             {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
-            Skapa samling
+            {t("groupChat.create")}
           </Button>
         </div>
       </DialogContent>

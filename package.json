@@ -16,6 +16,8 @@
     "typecheck": "tsc --noEmit",
     "spellcheck": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\" --no-progress --relative",
     "spellcheck:fix": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\" --no-progress --no-summary",
+    "mascot:sprite": "node scripts/build-mascot-sprite.mjs",
+    "mascot:clean": "node scripts/crop-mascot-clean.mjs",
     "preview": "vite preview --config config/vite.config.ts",
     "vercel:env": "npx vercel env add VITE_SUPABASE_URL production && npx vercel env add VITE_SUPABASE_PUBLISHABLE_KEY production && npx vercel env add VITE_SUPABASE_PROJECT_ID production",
     "expo": "expo start",

@@ -1,293 +1,198 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { GlowCard } from '@/components/ui/glow-card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Heart, Sparkles, Users, MessageCircle, ArrowRight, User, LogOut, Phone, Brain, Calendar, HelpCircle, Video } from 'lucide-react';
+import React from 'react';
+import { Heart, MessageCircle, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MaakMascot } from '@/components/mascot/MaakMascot';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/useAuth';
-import { isDemoEnabled } from '@/config/supabase';
-import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next';
-import { useOnlineCount } from '@/hooks/useOnlineCount';
-import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
+import {
+  ButtonPrimary,
+  ButtonGhost,
+  CardV2,
+  CardV2Content,
+  BestMatchCard,
+} from '@/components/ui-v2';
+import { LandingHero } from '@/components/landing/LandingHero';
 
 interface LandingPageProps {
   onStart?: () => void;
 }
 
+const LANDING_MAX_WIDTH = 'max-w-lg';
+
 export const LandingPage = ({ onStart }: LandingPageProps) => {
-  const { t } = useTranslation();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [currentFeature, setCurrentFeature] = useState(0);
-  const onlineCount = useOnlineCount(user?.id);
-
-  const features = [
-    { icon: Brain, title: '30 personlighetsfrågor', desc: 'Djupgående test för äkta kompatibilitet' },
-    { icon: Sparkles, title: 'AI-driven matchning', desc: 'Smart algoritm som förstår dig' },
-    { icon: MessageCircle, title: 'AI-konversationshjälp', desc: 'Aldrig mer awkward tystnad' },
-    { icon: Video, title: 'Kemi-Check video', desc: 'Videodejt innan ni träffas' },
-  ];
-
-  useEffect(() => { 
-    const i = setInterval(() => setCurrentFeature(p => (p + 1) % features.length), 3000); 
-    return () => clearInterval(i); 
-  }, [features.length]);
+  const problemMascot = useMascot(MASCOT_SCREEN_STATES.LANDING_PROBLEM);
 
   const handleStart = () => {
-    if (user) {
-      // User is logged in, go to onboarding
-      navigate('/onboarding');
-    } else {
-      // User not logged in, go to phone auth first
-      navigate('/phone-auth');
-    }
+    if (user) navigate('/onboarding');
+    else navigate('/phone-auth');
     onStart?.();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-premium overflow-x-hidden relative">
-      {/* Eucalyptus grove – subtle background orbs */}
+    <div className="min-h-screen bg-background overflow-x-hidden relative">
+      {/* Subtle background – token-based only */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/15 rounded-full blur-3xl animate-glow" />
-        <div className="absolute top-40 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-40 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-glow" style={{ animationDelay: '0.5s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-secondary/30 rounded-full blur-3xl animate-pulse-soft" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute top-40 right-10 w-96 h-96 bg-muted rounded-full blur-3xl opacity-60" />
+        <div className="absolute bottom-40 left-1/4 w-64 h-64 bg-primary/8 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full px-4 pt-safe-top pb-safe-bottom">
-        {/* Header - Premium mobile optimized */}
-        <nav className="flex justify-between items-center py-5 mb-10 animate-fade-in relative z-10">
+        {/* Header – Logo + nav; no coral in nav */}
+        <nav className="flex justify-between items-center py-5 mb-6 relative z-10" aria-label="Huvudnavigation">
           <Logo size={48} />
           <div className="flex items-center gap-1.5">
             {user ? (
               <>
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95 flex items-center justify-center">
-                  <Link to="/matches" className="flex items-center justify-center">
+                <ButtonGhost asChild size="icon" className="h-10 w-10">
+                  <Link to="/matches" className="flex items-center justify-center" aria-label="Matcher">
                     <Heart className="w-5 h-5 shrink-0" />
                   </Link>
-                </Button>
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95 flex items-center justify-center">
-                  <Link to="/chat" className="flex items-center justify-center">
+                </ButtonGhost>
+                <ButtonGhost asChild size="icon" className="h-10 w-10">
+                  <Link to="/chat" className="flex items-center justify-center" aria-label="Chatt">
                     <MessageCircle className="w-5 h-5 shrink-0" />
                   </Link>
-                </Button>
-                <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground active:scale-95 flex items-center justify-center">
-                  <Link to="/profile" className="flex items-center justify-center">
+                </ButtonGhost>
+                <ButtonGhost asChild size="icon" className="h-10 w-10">
+                  <Link to="/profile" className="flex items-center justify-center" aria-label="Profil">
                     <User className="w-5 h-5 shrink-0" />
                   </Link>
-                </Button>
+                </ButtonGhost>
               </>
             ) : (
-              <ShimmerButton variant="ghost" size="sm" shimmer={false} onClick={() => navigate('/phone-auth')} className="text-sm">
+              <ButtonGhost size="sm" onClick={() => navigate('/phone-auth')}>
                 Logga in
-              </ShimmerButton>
+              </ButtonGhost>
             )}
           </div>
         </nav>
 
-        {/* Hero - Mobile first */}
-        <div className="text-center w-full max-w-lg mx-auto mb-12 sm:mb-16">
-          <div className="mb-6 sm:mb-10">
-            <MaakMascot size={200} className="mx-auto drop-shadow-xl sm:hidden" />
-            <MaakMascot size={280} className="mx-auto drop-shadow-xl hidden sm:block" />
-          </div>
-          
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4 sm:mb-5 leading-tight tracking-tight px-2">
-            Hitta kärlek som
-            <span className="block mt-1 text-gradient">
-              matchar din själ
-            </span>
-          </h1>
-          
-          <p className="text-muted-foreground text-base sm:text-lg mb-4 leading-relaxed px-4">
-            Glöm ytliga swipes. MÄÄK matchar dig baserat på personlighet, inte utseende.
-          </p>
+        <LandingHero />
 
-          {hasValidSupabaseConfig && (
-            <p className="text-sm sm:text-base text-muted-foreground mb-6 px-4 font-medium" role="status" aria-live="polite">
-              {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
-            </p>
-          )}
-          
-          <div className="px-4">
-            <ShimmerButton size="lg" onClick={handleStart} className="w-full min-h-[56px] text-base font-semibold active:scale-[0.98]">
-              Kom igång gratis
-              <ArrowRight className="w-5 h-5" />
-            </ShimmerButton>
-            {isDemoEnabled && (
-              <Button asChild variant="outline" size="lg" className="w-full mt-3 min-h-[48px] text-base font-medium border-primary/30 text-primary hover:bg-primary/10">
-                <Link to="/demo-seed" className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Se demo – matchningar & chatt utan konto
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Features - Rotating card for mobile */}
-        <div className="px-4 mb-12 sm:mb-16">
-          <div className="max-w-lg mx-auto">
-            <div className="flex justify-center gap-2 mb-6" role="tablist" aria-label="Funktioner">
-              {features.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  role="tab"
-                  aria-selected={i === currentFeature}
-                  aria-label={`Visa ${features[i].title}`}
-                  onClick={() => setCurrentFeature(i)}
-                  className={cn(
-                    'h-1.5 rounded-full transition-all duration-normal touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    i === currentFeature ? 'w-8 bg-primary' : 'w-1.5 bg-muted'
-                  )}
-                />
-              ))}
-            </div>
-
-            <GlowCard glowColor="rose" className="text-center active:scale-[0.98] transition-bounce card-premium">
-              <div className={cn(
-                'w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-5 rounded-3xl flex items-center justify-center gradient-primary shadow-glow transition-all duration-normal animate-scale-in'
-              )}>
-                {React.createElement(features[currentFeature].icon, { className: 'w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground drop-shadow-lg' })}
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-3 text-foreground">{features[currentFeature].title}</h2>
-              <p className="text-sm sm:text-base text-muted-foreground font-medium leading-relaxed">{features[currentFeature].desc}</p>
-            </GlowCard>
-          </div>
-        </div>
-
-        {/* How it works - Mobile optimized */}
-        <section className="w-full px-4 py-12 sm:py-16 bg-card/60 backdrop-blur-sm" aria-labelledby="how-it-works-heading">
-          <div className="max-w-lg mx-auto">
-            <h2 id="how-it-works-heading" className="text-xl sm:text-2xl font-bold text-center mb-8 sm:mb-10 px-2 text-foreground">Så fungerar det</h2>
-            <div className="space-y-3 sm:space-y-4">
-              {[
-                { step: 1, title: 'Skapa profil', desc: 'Berätta om dig själv', icon: User },
-                { step: 2, title: 'Ta personlighetstest', desc: '30 frågor, 5 minuter', icon: Brain },
-                { step: 3, title: 'Få dagliga matcher', desc: 'Baserat på kompatibilitet', icon: Heart },
-                { step: 4, title: 'Chatta & träffas', desc: 'Med AI-hjälp på vägen', icon: MessageCircle },
-                { step: 5, title: 'Gruppchatt', desc: 'Prata med flera matchningar tillsammans', icon: Users },
-              ].map((item, i) => (
-                <GlowCard
-                  key={i}
-                  glowColor={i % 2 === 0 ? 'rose' : 'violet'}
-                  className="flex items-center gap-3 sm:gap-4 !p-4 sm:!p-5 active:scale-[0.98] transition-transform duration-normal touch-manipulation"
-                >
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-base sm:text-lg shadow-card flex-shrink-0">
-                    {item.step}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-base sm:text-lg mb-0.5">{item.title}</h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{item.desc}</p>
-                  </div>
-                  <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0" aria-hidden />
-                </GlowCard>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ Section - Mobile optimized */}
-        <section className="w-full px-4 py-12 sm:py-16" aria-labelledby="faq-heading">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow" aria-hidden>
-              <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 text-primary-foreground" />
-            </div>
-            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3 px-2">
-              Vanliga frågor
+        {/* 2. Problem – Känna igen sig (CardV2, no stats); mascot neutral/thinking */}
+        <section className="w-full mb-16 sm:mb-20" aria-labelledby="problem-heading">
+          <div className={LANDING_MAX_WIDTH + ' mx-auto px-2'}>
+            <Mascot {...problemMascot} className="mx-auto mb-4 opacity-90" aria-hidden />
+            <h2 id="problem-heading" className="text-xl sm:text-2xl font-bold text-center text-foreground mb-6">
+              Känna igen sig?
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto px-4">
-              Har du funderingar? Här hittar du svar på de vanligaste frågorna.
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <Accordion type="single" collapsible className="space-y-2 sm:space-y-3">
-              <AccordionItem value="item-1" className="bg-card rounded-2xl border border-border px-4 sm:px-6 shadow-sm">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-base text-foreground">
-                  Hur fungerar personlighetsmatchningen?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-4 sm:pb-5">
-                  Vårt personlighetstest analyserar 30 olika aspekter av din personlighet baserat på 
-                  vetenskapliga modeller. Vår AI jämför sedan ditt resultat med andra användare för att 
-                  hitta personer som kompletterar din personlighet på bästa sätt.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-2" className="bg-card rounded-2xl border border-border px-4 sm:px-6 shadow-sm">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-base text-foreground">
-                  Är MÄÄK gratis att använda?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-4 sm:pb-5">
-                  Ja! Det är helt gratis att skapa konto, göra personlighetstestet och få dagliga 
-                  matchningar. Vi tror på att alla förtjänar att hitta kärlek utan prisbarriärer.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3" className="bg-card rounded-2xl border border-border px-4 sm:px-6 shadow-sm">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-base text-foreground">
-                  Hur många matchningar får jag per dag?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-4 sm:pb-5">
-                  Du får nya matchningar varje dag baserat på din personlighetsprofil. Antalet varierar 
-                  beroende på tillgänglighet, men kvalitet går alltid före kvantitet hos oss.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4" className="bg-card rounded-2xl border border-border px-4 sm:px-6 shadow-sm">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-base text-foreground">
-                  Vad är AI-isbrytare?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-4 sm:pb-5">
-                  När du matchas med någon genererar vår AI skräddarsydda konversationsstartare baserat 
-                  på båda era profiler och personligheter. Detta gör det enklare att börja prata och 
-                  skapa en genuin koppling.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-5" className="bg-card rounded-2xl border border-border px-4 sm:px-6 shadow-sm">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-base text-foreground">
-                  Hur skyddas min integritet?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-4 sm:pb-5">
-                  Din integritet är vår högsta prioritet. Du bestämmer själv vilken information som 
-                  visas på din profil, och vi delar aldrig dina uppgifter med tredje part. All data 
-                  lagras säkert och krypterat.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-6" className="bg-card rounded-2xl border border-border px-4 sm:px-6 shadow-sm">
-                <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-base text-foreground">
-                  Vilken ålder krävs för att använda MÄÄK?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-4 sm:pb-5">
-                  Du måste vara minst 20 år för att använda MÄÄK. Vi verifierar ålder vid registrering 
-                  för att skapa en trygg miljö för alla användare.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <div className="space-y-3">
+              <CardV2 variant="default" padding="default">
+                <CardV2Content>
+                  <p className="font-semibold text-foreground">Marknadsplatsen</p>
+                  <p className="text-sm text-muted-foreground mt-1">Känslan av att välja och bli vald – inte att mötas.</p>
+                </CardV2Content>
+              </CardV2>
+              <CardV2 variant="default" padding="default">
+                <CardV2Content>
+                  <p className="font-semibold text-foreground">Snabba beslut</p>
+                  <p className="text-sm text-muted-foreground mt-1">Swipe på sekunder, innan du vet vem du egentligen ser.</p>
+                </CardV2Content>
+              </CardV2>
+              <CardV2 variant="default" padding="default">
+                <CardV2Content>
+                  <p className="font-semibold text-foreground">Yta före person</p>
+                  <p className="text-sm text-muted-foreground mt-1">Profilen som säljpunkt – inte människan bakom.</p>
+                </CardV2Content>
+              </CardV2>
+            </div>
           </div>
         </section>
 
-        {/* Social proof */}
-        <div className="w-full text-center py-8 sm:py-12 px-4" aria-hidden>
-          <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4">Älskad av singlar i Sverige</p>
-          <div className="flex justify-center items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Heart
-                key={i}
-                className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-pulse-soft"
-                fill="currentColor"
-                style={{ animationDelay: `${i * 0.2}s` }}
-              />
-            ))}
+        {/* 3. Transformation – Hur MÄÄK känns (BestMatchCard as emotional preview) */}
+        <section className="w-full mb-16 sm:mb-20" aria-labelledby="transformation-heading">
+          <div className={LANDING_MAX_WIDTH + ' mx-auto px-2'}>
+            <h2 id="transformation-heading" className="text-xl sm:text-2xl font-bold text-center text-foreground mb-6">
+              Så kan det kännas istället
+            </h2>
+            <div className="space-y-4">
+              <p className="text-muted-foreground text-center text-sm sm:text-base">Här börjar samtalet. Personlighet först. Lugn takt.</p>
+              <div className="flex justify-center">
+                <BestMatchCard
+                  name="Någon du vill fortsätta prata med"
+                  interests={['Samtal', 'Äkthet', 'Tid']}
+                  className="w-full max-w-[280px] mx-auto"
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* 4. Så fungerar det – Passa → Chatta → Se profil (explanation, not action) */}
+        <section className="w-full py-12 sm:py-16 bg-card/50 backdrop-blur-sm" aria-labelledby="how-heading">
+          <div className={LANDING_MAX_WIDTH + ' mx-auto px-2'}>
+            <h2 id="how-heading" className="text-xl sm:text-2xl font-bold text-center text-foreground mb-8">
+              Så fungerar det
+            </h2>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+              <div className="flex items-center gap-2">
+                <ButtonGhost size="default" className="pointer-events-none" asChild>
+                  <span className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-muted-foreground" aria-hidden />
+                    Passa
+                  </span>
+                </ButtonGhost>
+              </div>
+              <span className="text-muted-foreground" aria-hidden>→</span>
+              <div className="flex items-center gap-2">
+                <ButtonGhost size="default" className="pointer-events-none" asChild>
+                  <span className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-muted-foreground" aria-hidden />
+                    Chatta
+                  </span>
+                </ButtonGhost>
+              </div>
+              <span className="text-muted-foreground" aria-hidden>→</span>
+              <div className="flex items-center gap-2">
+                <ButtonGhost size="default" className="pointer-events-none" asChild>
+                  <span className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-muted-foreground" aria-hidden />
+                    Se profil
+                  </span>
+                </ButtonGhost>
+              </div>
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-4">Inga likes. Ingen swipe. Inget matchande i procent.</p>
+            <p className="text-center text-sm text-muted-foreground mt-1 font-medium">Inga snabba beslut. Bara medvetna.</p>
+          </div>
+        </section>
+
+        {/* 5. Social proof – quote / känsla only; no numbers */}
+        <section className="w-full py-12 sm:py-16" aria-labelledby="social-heading">
+          <div className={LANDING_MAX_WIDTH + ' mx-auto px-2'}>
+            <h2 id="social-heading" className="sr-only">Vad andra säger</h2>
+            <CardV2 variant="default" padding="lg">
+              <CardV2Content>
+                <blockquote className="text-foreground font-medium italic text-center">
+                  "Det kändes äntligen som att någon ville förstå mig – inte bara swipa vidare."
+                </blockquote>
+                <p className="text-sm text-muted-foreground text-center mt-3">— Känsla vi strävar efter</p>
+              </CardV2Content>
+            </CardV2>
+          </div>
+        </section>
+
+        {/* 6. Avslutande CTA */}
+        <section className="w-full py-12 sm:py-16 pb-safe-bottom" aria-labelledby="final-cta-heading">
+          <div className={LANDING_MAX_WIDTH + ' mx-auto px-2 text-center space-y-4'}>
+            <h2 id="final-cta-heading" className="text-xl font-bold text-foreground">
+              Redo att göra det annorlunda?
+            </h2>
+            <div className="flex flex-col gap-3">
+              <ButtonPrimary size="lg" onClick={handleStart} className="w-full min-h-[52px] text-base font-semibold">
+                Kom igång gratis
+              </ButtonPrimary>
+              <ButtonGhost size="lg" className="w-full min-h-[48px] text-base" asChild>
+                <a href="#how-heading">Jag vill veta mer</a>
+              </ButtonGhost>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

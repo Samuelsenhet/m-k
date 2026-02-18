@@ -280,14 +280,14 @@ export default function GroupChatWindow() {
         <AlertDialogContent className="rounded-2xl max-w-[340px] gap-4 p-6" aria-describedby={undefined}>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-bold text-foreground">
-              {t("groupChat.leaveGroup")}
+              {t("groupChat.leaveTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-foreground/90">
-              {t("groupChat.leaveGroupConfirm")}
+              {t("groupChat.leaveDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-2 sm:justify-end">
-            <AlertDialogCancel disabled={leaving}>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel disabled={leaving}>{t("groupChat.stayInSamling")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -296,7 +296,7 @@ export default function GroupChatWindow() {
               disabled={leaving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {leaving ? t("groupChat.leaving") : t("groupChat.leaveGroup")}
+              {leaving ? t("groupChat.leaving") : t("groupChat.leaveSamling")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -305,9 +305,11 @@ export default function GroupChatWindow() {
       <ScrollArea className="flex-1 px-3 py-2">
         <div className="space-y-2 pb-4" role="list" aria-label={t("chat.messages")}>
           {messages.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              {t("groupChat.noMessagesYet")}
-            </p>
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <p className="text-sm text-muted-foreground mb-1">{t("groupChat.emptyRoomLine1")}</p>
+              <p className="text-sm text-muted-foreground mb-4">{t("groupChat.emptyRoomLine2")}</p>
+              <p className="text-xs text-muted-foreground italic">{t("groupChat.firstSystemMessage")}</p>
+            </div>
           ) : (
             messages.map((msg) => {
               const isOwn = msg.sender_id === user.id;
@@ -361,7 +363,7 @@ export default function GroupChatWindow() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t("chat.typeMessage")}
+            placeholder={messages.length === 0 ? t("groupChat.emptyRoomCta") : t("chat.typeMessage")}
             className="flex-1"
             aria-label={t("chat.typeMessage")}
             disabled={sending}

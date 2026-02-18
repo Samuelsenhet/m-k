@@ -1,0 +1,22 @@
+---
+description: Run one Ralph roadmap task in Cursor (no Claude CLI needed)
+alwaysApply: false
+globs: 
+---
+
+# Ralph task – one iteration without Claude CLI
+
+When the user says **"run Ralph"**, **"next Ralph task"**, **"do one Ralph iteration"**, or similar:
+
+1. **Read** `docs/setup/NÄSTA STEG – FULL ROADMAP (TASK FÖR TASK)` and `progress.txt` (section "## Completed tasks").
+2. **Pick** the next single task from the current STEG (0–7) that is not yet in Completed tasks.
+3. **Do it:**
+   - If it’s a doc task (e.g. STEG 0, 1.1, 1.2): create or update the required file (e.g. `docs/PRODUCT_PHILOSOPHY.md`, `docs/UIX_AUDIT.md`, `docs/DESIGN_DEBT.md`).
+   - If it’s implementation: follow the philosophy in `docs/PRODUCT_PHILOSOPHY.md` and the agent prompts in `.cursor/`; implement one task only.
+4. **Verify:** Run `npm run typecheck` and `npm run lint` (or build if relevant). Fix any errors.
+5. **Update** `progress.txt`: append the completed task under "## Completed tasks", and any notes under "## Learnings".
+6. **Suggest** a commit message, e.g. `feat: [short task description]`.
+
+Philosophy (from PRODUCT_PHILOSOPHY.md): Passa → Chatta → Se profil; no swipe/likes/ranking; profile secondary, chat primary. If a change breaks this, treat it as a bug and propose a compliant alternative.
+
+If all STEG 0–7 are complete, say so and output that the roadmap is complete.

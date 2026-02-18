@@ -58,7 +58,7 @@
 ## New Story Progress (Profile Photo Management)
 - [x] US-012: Add photo reordering functionality
 - [x] US-013: Add photo deletion with confirmation
-- [ ] US-014: Enhance photo upload with progress indicator
+- [x] US-014: Enhance photo upload with progress indicator
 - [ ] US-015: Add photo count indicator and limits
 - [ ] US-016: Add Swedish translations for photo management
 
@@ -129,7 +129,19 @@
   - Premium design: use `.glass` class on AlertDialogContent for glassmorphism
 ---
 
-(Additional iterations 3–12 truncated for brevity; full content kept in qrp worktree.)
+## Iteration 3 - US-014: Enhance photo upload with progress indicator
+- What was implemented:
+  - Smooth simulated progress during upload: progress bar animates from 0% toward 85% every 180ms while the file is uploading (Supabase client does not expose real upload progress).
+  - On upload completion progress is set to 100% and success state is shown as before.
+  - useEffect + ref to run/clear interval when any upload has status 'uploading'; avoids progress jumping from 0 to 100 with no feedback.
+- Files changed:
+  - `src/components/profile/PhotoUpload.tsx` - Added useEffect and progressIntervalRef for simulated progress; added useEffect import.
+- Learnings:
+  - Supabase storage .upload() in JS does not provide progress events; simulated progress (0 → 85% during upload, then 100% on done) is a common UX pattern.
+
+---
+
+(Additional iterations 4–12 truncated for brevity; full content kept in qrp worktree.)
 
 ---
 Restored to main project from qrp worktree.

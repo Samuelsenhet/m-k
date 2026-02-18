@@ -4,7 +4,9 @@ import { Sparkles, MessageCircle, Heart, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MaakMascot } from "@/components/mascot/MaakMascot";
+import { Mascot } from "@/components/system/Mascot";
+import { useMascot } from "@/hooks/useMascot";
+import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
 
 interface FirstMatchCelebrationProps {
   matchCount: number;
@@ -19,6 +21,7 @@ export const FirstMatchCelebration = ({
 }: FirstMatchCelebrationProps) => {
   const { t } = useTranslation();
   const [showConfetti, setShowConfetti] = useState(true);
+  const mascot = useMascot(MASCOT_SCREEN_STATES.FIRST_MATCH);
 
   // Hide confetti after animation
   useEffect(() => {
@@ -93,7 +96,7 @@ export const FirstMatchCelebration = ({
           animate={{ scale: 1 }}
           transition={{ type: "spring", duration: 0.8, bounce: 0.5 }}
         >
-          <MaakMascot pose="happy" expression="😍" size={140} />
+          <Mascot {...mascot} />
         </motion.div>
 
         {/* Main Card */}

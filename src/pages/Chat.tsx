@@ -391,7 +391,7 @@ export default function Chat() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Skapa en grupp med dina matcher.</p>
+                <p className="text-sm text-muted-foreground">{t("groupChat.inlineEmpty")}</p>
               )}
             </div>
             <MatchList

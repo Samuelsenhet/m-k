@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,7 @@ interface GroupChatRoomProps {
 }
 
 export function GroupChatRoom({ group, currentUserId, onBack, leaveGroup }: GroupChatRoomProps) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [input, setInput] = useState("");
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -119,7 +121,7 @@ export function GroupChatRoom({ group, currentUserId, onBack, leaveGroup }: Grou
           <DropdownMenuContent align="end">
             <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setShowLeaveConfirm(true)}>
               <LogOut className="w-4 h-4 mr-2" />
-              Lämna gruppen
+              {t("groupChat.leaveGroup")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -162,15 +164,13 @@ export function GroupChatRoom({ group, currentUserId, onBack, leaveGroup }: Grou
       <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lämna gruppen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Du kan inte se gruppchatten längre. Du kan skapas en ny samling senare.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("groupChat.leaveTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("groupChat.leaveDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel>{t("groupChat.stayInSamling")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleLeave} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Lämna
+              {t("groupChat.leaveSamling")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

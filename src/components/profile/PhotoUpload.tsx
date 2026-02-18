@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
@@ -533,6 +533,33 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
   // Effect to process queue when it changes
   const queueRef = useRef(uploadQueue);
   queueRef.current = uploadQueue;
+
+  // Smooth simulated progress (0 → 85%) while upload runs; Supabase client doesn't expose real upload progress
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    const hasUploading = uploadQueue.some((item) => item.status === 'uploading');
+    if (hasUploading && !progressIntervalRef.current) {
+      progressIntervalRef.current = setInterval(() => {
+        setUploadQueue((prev) =>
+          prev.map((item) =>
+            item.status === 'uploading' && item.progress < 85
+              ? { ...item, progress: Math.min(85, item.progress + 6) }
+              : item
+          )
+        );
+      }, 180);
+    }
+    if (!hasUploading && progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
+  }, [uploadQueue]);
 
   // Manual trigger to start processing
   const startProcessing = useCallback(() => {

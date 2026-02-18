@@ -14,6 +14,8 @@ type Match = {
     bio?: string;
     photos?: string[];
   };
+  /** Common interests (from API) for display on match card */
+  interests: string[];
   matchType: "similar" | "complementary";
   matchScore: number;
   status: "pending" | "liked" | "passed" | "mutual";
@@ -50,6 +52,7 @@ const mapMatch = (m: MatchDailyMatch): Match => ({
     bio: m.bio_preview,
     photos: m.photo_urls || [],
   },
+  interests: m.common_interests ?? [],
   matchType: m.match_reason?.includes("liknande") ? "similar" : "complementary",
   matchScore: m.compatibility_percentage,
   status: "pending",

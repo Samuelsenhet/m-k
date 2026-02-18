@@ -1,11 +1,12 @@
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/useAuth';
-import { useOnlineCount } from '@/hooks/useOnlineCount';
-import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/useAuth";
+import { useOnlineCount } from "@/hooks/useOnlineCount";
+import { hasValidSupabaseConfig } from "@/integrations/supabase/client";
+import { OnlineBannerV2 } from "@/components/ui-v2";
 
 /**
  * Live user counter – visible across the app.
- * Shows "Just nu är det X användare online" in a fixed bar at the top.
+ * FAS 5 – Uses OnlineBannerV2 (token colors, motion).
  */
 export function OnlineCountBar() {
   const { t } = useTranslation();
@@ -14,22 +15,13 @@ export function OnlineCountBar() {
 
   if (!hasValidSupabaseConfig) return null;
 
-  const formatted = count.toLocaleString('sv-SE');
+  const label = t("common.online_now_full", { count: count.toLocaleString("sv-SE") });
 
   return (
-    <>
-      <div
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center py-2 px-3 bg-primary/90 text-primary-foreground shadow-md safe-area-top"
-        role="status"
-        aria-live="polite"
-        aria-label={t('common.online_now_full', { count: formatted })}
-      >
-        <p className="text-sm font-bold text-center">
-          {t('common.online_now_full', { count: formatted })}
-        </p>
-      </div>
-      {/* Spacer so main content starts below the bar */}
-      <div className="h-10 flex-shrink-0" aria-hidden="true" />
-    </>
+    <OnlineBannerV2
+      count={count}
+      label={label}
+      aria-label={label}
+    />
   );
 }

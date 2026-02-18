@@ -17,6 +17,9 @@ export default {
       fontFamily: {
         sans: ['DM Sans', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
+        /* FAS 1 – semantic typography tokens (for later phases) */
+        body: 'var(--font-body)',
+        heading: 'var(--font-heading)',
       },
       fontSize: {
         display: ['2.25rem', { lineHeight: '1.2' }],
@@ -36,6 +39,17 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           glow: "hsl(var(--primary-glow))",
+          /* MÄÄK design system scale */
+          50: "#F0F7F4",
+          100: "#D9EDE4",
+          200: "#B5DBC9",
+          300: "#8AC4A9",
+          400: "#5FA886",
+          500: "#4B6E48",
+          600: "#3D5A3B",
+          700: "#2F472E",
+          800: "#253D2C",
+          900: "#1A2D1E",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -92,18 +106,71 @@ export default {
           jp: "hsl(var(--dimension-jp))",
           at: "hsl(var(--dimension-at))",
         },
+        /* FAS 1 – design palette + MÄÄK full scales */
+        coral: {
+          DEFAULT: "#F97068",
+          50: "#FFF5F3",
+          100: "#FFE8E4",
+          200: "#FFD4CC",
+          300: "#FFB5A8",
+          400: "#FF9080",
+          500: "#F97068",
+          600: "#E85550",
+          700: "#C9403B",
+          800: "#A63330",
+          900: "#872928",
+        },
+        sage: {
+          DEFAULT: "#B2AC88",
+          50: "#FDFCFA",
+          100: "#F8F6F1",
+          200: "#F0EDE4",
+          300: "#E4DED0",
+          400: "#D1C8B5",
+          500: "#B2AC88",
+          600: "#968F6B",
+          700: "#787254",
+          800: "#5A5640",
+          900: "#3D3B2C",
+        },
+        cream: "hsl(var(--color-cream))",
+        "warm-dark": "hsl(var(--color-dark))",
+        /* MÄÄK neutral scale (for text/surfaces) */
+        maak: {
+          white: "#FFFFFF",
+          offWhite: "#FAFAF8",
+          cream: "#F5F4F1",
+          sand: "#ECEAE5",
+          stone: "#D4D1CA",
+          gray: "#9A9790",
+          slate: "#6B6860",
+          charcoal: "#3D3B36",
+          dark: "#1F1E1B",
+        },
       },
+      /* FAS 1: radius scale in CSS (--radius-sm … --radius-full); Tailwind keeps current mapping for no regression */
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        full: "var(--radius-full)",
+      },
+      boxShadow: {
+        "elevation-1": "var(--elevation-1)",
+        "elevation-2": "var(--elevation-2)",
+        "elevation-3": "var(--elevation-3)",
+        "elevation-glow-primary": "var(--elevation-glow-primary)",
+        "elevation-glow-accent": "var(--elevation-glow-accent)",
       },
       transitionDuration: {
         fast: "var(--duration-fast)",
         normal: "var(--duration-normal)",
         slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        emphasized: "var(--ease-emphasized)",
       },
       keyframes: {
         "accordion-down": {
