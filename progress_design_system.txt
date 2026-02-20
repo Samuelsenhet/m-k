@@ -1,0 +1,57 @@
+# MaakUnifiedDesignSystem Implementation Progress
+
+## Project Info
+- PRD: docs/prd/PRD_DESIGN_SYSTEM.md
+- Reference: /Users/samuelsenhet/Downloads/MÄÄK CLUADE/MaakUnifiedDesignSystem.jsx
+- Total Tasks: 17 User Stories
+- Started: 2026-02-20
+
+## Learnings
+
+### Design System Patterns
+- All colors should come from `src/design/tokens.ts` (COLORS object)
+- Typography: DM Sans for body, Playfair Display for headings
+- ui-v2 components are in `src/components/ui-v2/`
+- Mascot system uses tokens from `src/constants/mascot.ts`
+
+### Common Gotchas
+- Some screen files have duplicate COLORS definitions - always use tokens.ts
+- Button gradients use CSS variables: --gradient-primary-button, --gradient-coral-button
+- Shadows use CSS variables: --shadow-primary-button, --shadow-coral-button
+
+### File Structure
+- Pages: src/pages/
+- UI Components: src/components/ui-v2/
+- Design Tokens: src/design/tokens.ts
+- CSS Variables: src/index.css
+
+---
+
+## Completed Tasks
+
+## Iteration 1 - US-001: Verify Design Tokens Alignment
+- Verified src/design/tokens.ts COLORS object matches MaakUnifiedDesignSystem.jsx exactly
+- All color scales (primary, coral, sage, neutral, archetypes) match byte-for-byte
+- MASCOT_TOKENS complete with all 21 states from reference
+- FONTS match: DM Sans (sans) + Playfair Display (serif)
+- Files changed: docs/prd/PRD_DESIGN_SYSTEM.md (marked complete), progress_design_system.txt
+- npm run build: PASS
+- npm run lint: PASS (0 issues in 337 files)
+- Learnings for future iterations:
+  - tokens.ts was already perfectly aligned - no changes needed
+  - Build takes ~26s, lint/spellcheck takes ~60s
+  - cspell runs as part of lint
+---
+
+## Current Task
+
+US-002: Update Landing Page
+
+---
+
+## Notes
+
+- Philosophy: Passa -> Chatta -> Se profil (no swipes, no likes, no percentages)
+- Primary color: Forest Green #4B6E48
+- Accent color: Coral #F97068
+- Secondary color: Sage #B2AC88
