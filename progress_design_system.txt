@@ -43,9 +43,27 @@
   - cspell runs as part of lint
 ---
 
+## Iteration 2 - US-002: Update Landing Page
+- Updated src/components/landing/LandingPage.tsx to match reference design
+- Updated src/components/landing/LandingHero.tsx to use COLORS from tokens.ts
+- Background: gradient from COLORS.sage[50] to COLORS.neutral.white
+- Floating cards: coral[100] at -12deg, primary[100] at 8deg
+- Floating elements: 💡 badge, MessageCircle icon, Likhets-match badge
+- Gradient text: linear-gradient(135deg, primary[500] to primary[400]) with WebkitBackgroundClip
+- Feature icons: Brain, Shield, Heart with primary[100] background, primary[600] icon color
+- ButtonPrimary "Kom igång gratis", ButtonSecondary "Jag har redan ett konto"
+- Terms text with Link components to /terms and /privacy
+- npm run build: PASS
+- npm run lint: PASS (0 issues)
+- Learnings for future iterations:
+  - FONTS.serif must be imported too when using fontFamily in inline styles
+  - WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" for gradient text
+  - backgroundClip: "text" for cross-browser compatibility
+---
+
 ## Current Task
 
-US-002: Update Landing Page
+US-003: Update Matches Page
 
 ---
 

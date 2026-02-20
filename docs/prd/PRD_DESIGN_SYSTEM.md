@@ -51,18 +51,18 @@ Design-specifikation: `/Users/samuelsenhet/Downloads/MÄÄK CLUADE/MaakUnifiedDe
 
 **Acceptance Criteria:**
 
-- [ ] Uppdatera `src/components/landing/LandingPage.tsx`
-- [ ] Implementera floating cards hero section (3 staplade kort med rotation: -12deg, 8deg)
-- [ ] Lägg till floating elements: 💡 badge, MessageCircle ikon, "Likhets-match" badge
-- [ ] Implementera gradient text för "matchar din själ" (primary-500 till primary-400)
-- [ ] Lägg till 3 feature icons (Brain, Shield, Heart) med primary-100 bakgrund
-- [ ] Använd ButtonPrimary för "Kom igång gratis"
-- [ ] Använd ButtonSecondary för "Jag har redan ett konto"
-- [ ] Lägg till terms text med länkar (Användarvillkor, Integritetspolicy)
-- [ ] Bakgrund: gradient från sage-50 till neutral.white
-- [ ] Importera COLORS från `src/design/tokens.ts`
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
+- [x] Uppdatera `src/components/landing/LandingPage.tsx`
+- [x] Implementera floating cards hero section (3 staplade kort med rotation: -12deg, 8deg)
+- [x] Lägg till floating elements: 💡 badge, MessageCircle ikon, "Likhets-match" badge
+- [x] Implementera gradient text för "matchar din själ" (primary-500 till primary-400)
+- [x] Lägg till 3 feature icons (Brain, Shield, Heart) med primary-100 bakgrund
+- [x] Använd ButtonPrimary för "Kom igång gratis"
+- [x] Använd ButtonSecondary för "Jag har redan ett konto"
+- [x] Lägg till terms text med länkar (Användarvillkor, Integritetspolicy)
+- [x] Bakgrund: gradient från sage-50 till neutral.white
+- [x] Importera COLORS från `src/design/tokens.ts`
+- [x] `npm run build` passes
+- [x] `npm run lint` passes
 
 ---
 
