@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Camera, MapPin, ArrowLeft, Send, MoreVertical, ChevronUp, AlertCircle, Sparkles } from 'lucide-react';
+import { ButtonPrimary, ActionButtons, InterestChipV2, VerifiedBadge } from '@/components/ui-v2';
+import type { RelationshipLevel } from '@/components/ui-v2/card/CardV2';
+import { getRelationshipBorder } from '@/lib/relationship-depth';
+import { COLORS } from '@/design/tokens';
+import { Camera, MapPin, ArrowLeft, Send, MoreVertical, ChevronUp, AlertCircle, Sparkles, X, MessageCircle, ChevronRight } from 'lucide-react';
 import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
-import { VerifiedBadge } from '@/components/ui/verified-badge';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { toast } from 'sonner';
@@ -32,6 +34,12 @@ interface MatchProfileData {
   dating_intention_extra?: string | null;
   relationship_type?: string | null;
   relationship_type_extra?: string | null;
+  interested_in?: string | null;
+}
+
+function parseInterests(interestedIn: string | null | undefined): string[] {
+  if (!interestedIn || typeof interestedIn !== 'string') return [];
+  return interestedIn.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
 }
 
 interface PhotoSlot {
@@ -46,6 +54,8 @@ interface MatchProfileViewProps {
   matchScore?: number;
   /** AI explanation for why this match is likhet/motsatt – shown as comment on matching */
   personalityInsight?: string | null;
+  /** FAS Relationship Depth: 1=pending, 3=mutual (surface/border/elevation) */
+  relationshipLevel?: RelationshipLevel;
   onBack?: () => void;
   onLike?: () => void;
   onPass?: () => void;
@@ -58,11 +68,14 @@ const CATEGORY_STYLES: Record<string, { className: string; label: string }> = {
   UPPTÄCKARE: { className: 'badge-upptackare', label: 'Upptäckare' },
 };
 
-export function MatchProfileView({ 
-  userId, 
+export function MatchProfileView({
+  userId,
   matchId,
   matchScore,
-  onBack
+  personalityInsight,
+  relationshipLevel,
+  onBack,
+  onPass,
 }: MatchProfileViewProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -111,7 +124,7 @@ export function MatchProfileView({
 
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching match profile:', error);
+      if (import.meta.env.DEV) console.error('Error fetching match profile:', error);
       toast.error(t('common.error') + '. ' + t('common.retry'));
       setLoading(false);
     }
@@ -171,21 +184,29 @@ export function MatchProfileView({
 
   const age = calculateAge(profile?.date_of_birth || null);
   const height = formatHeight(profile?.height);
+  const interestsList = parseInterests(profile?.interested_in);
+
+  const handleChat = () => {
+    if (matchId) navigate(`/chat?match=${matchId}`);
+  };
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* Top Navigation Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 pt-safe-top">
-        <button 
+    <div className="fixed inset-0 overflow-y-auto" style={{ background: COLORS.neutral.offWhite }}>
+      {/* Back + report */}
+      <div className="flex justify-between items-center p-4 pt-safe-top z-20 relative">
+        <button
+          type="button"
           onClick={() => onBack ? onBack() : navigate(-1)}
-          className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20 hover:bg-black/60 transition-colors"
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+          style={{ background: COLORS.primary[400], color: COLORS.neutral.white }}
+          aria-label={t('common.back')}
         >
-          <ArrowLeft className="w-5 h-5 text-white" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20 hover:bg-black/60 transition-colors" aria-label={t('report.report_user')}>
-              <MoreVertical className="w-5 h-5 text-white" />
+            <button className="w-10 h-10 rounded-full flex items-center justify-center border transition-colors" style={{ background: COLORS.neutral.white, borderColor: COLORS.sage[200], color: COLORS.neutral.charcoal }} aria-label={t('report.report_user')}>
+              <MoreVertical className="w-5 h-5" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[180px]">
@@ -197,165 +218,128 @@ export function MatchProfileView({
         </DropdownMenu>
       </div>
 
-      {/* Main Photo Section - Full Screen */}
-      <div className="relative w-full h-full">
-        {photos.length > 0 ? (
-          <>
-            <img
-              src={getPublicUrl(photos[currentPhotoIndex].storage_path)}
-              alt={profile?.display_name || 'Profilfoto'}
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Photo indicators */}
-            {photos.length > 1 && (
-              <div className="absolute top-20 left-4 right-4 flex gap-1 z-10">
-                {photos.map((_, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "h-1 flex-1 rounded-full transition-all",
-                      index === currentPhotoIndex 
-                        ? "bg-white" 
-                        : "bg-white/40"
-                    )}
-                  />
-                ))}
-              </div>
-            )}
+      {/* MatchProfileCard layout – stacked cards + main card */}
+      <div className="relative px-4 pb-8 max-w-lg mx-auto">
+        {/* Stacked cards behind */}
+        <div
+          className="absolute -top-3 left-4 right-4 h-[calc(100%-2rem)] rounded-3xl"
+          style={{ background: COLORS.coral[200], transform: 'rotate(-3deg)' }}
+        />
+        <div
+          className="absolute -top-2 left-2 right-2 h-[calc(100%-2rem)] rounded-3xl"
+          style={{ background: COLORS.primary[200], transform: 'rotate(2deg)' }}
+        />
 
-            {/* Navigation areas for swiping */}
-            {photos.length > 1 && (
+        {/* Main card – FAS Relationship Depth: config border + token surface when relationshipLevel set */}
+        <div
+          className={cn(
+            "relative rounded-3xl overflow-hidden border",
+            relationshipLevel === 1 && "relationship-level-1",
+            relationshipLevel === 2 && "relationship-level-2",
+            relationshipLevel === 3 && "relationship-level-3",
+            relationshipLevel === 4 && "relationship-level-4",
+            relationshipLevel === 5 && "relationship-level-5",
+            relationshipLevel == null && "shadow-xl",
+            getRelationshipBorder(relationshipLevel),
+          )}
+          style={relationshipLevel == null ? { background: COLORS.neutral.white } : undefined}
+        >
+          {/* Photo section aspect-[3/4] */}
+          <div className="relative aspect-[3/4]" style={{ background: COLORS.sage[100] }}>
+            {photos.length > 0 ? (
               <>
-                <button
-                  onClick={prevPhoto}
-                  className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
-                  aria-label="Föregående foto"
+                <img
+                  src={getPublicUrl(photos[currentPhotoIndex].storage_path)}
+                  alt={profile?.display_name || 'Profilfoto'}
+                  className="w-full h-full object-cover"
                 />
-                <button
-                  onClick={nextPhoto}
-                  className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
-                  aria-label="Nästa foto"
-                />
+                {photos.length > 1 && (
+                  <>
+                    <div className="absolute top-20 left-4 right-4 flex gap-1.5 z-10 pointer-events-none">
+                      {photos.map((_, index) => (
+                        <div
+                          key={index}
+                          className={cn(
+                            'h-1.5 flex-1 max-w-8 rounded-full transition-all',
+                            index === currentPhotoIndex ? 'opacity-100' : 'opacity-50'
+                          )}
+                          style={{ background: COLORS.neutral.white }}
+                        />
+                      ))}
+                    </div>
+                    <button type="button" onClick={prevPhoto} className="absolute left-0 top-0 bottom-0 w-1/3 z-10" aria-label={t('profile.prev_photo', 'Föregående')} />
+                    <button type="button" onClick={nextPhoto} className="absolute right-0 top-0 bottom-0 w-1/3 z-10" aria-label={t('profile.next_photo', 'Nästa')} />
+                  </>
+                )}
               </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: `linear-gradient(180deg, ${COLORS.sage[100]} 0%, ${COLORS.sage[200]} 100%)` }}>
+                <span className="text-8xl mb-2" aria-hidden>{archetypeInfo?.emoji ?? '👤'}</span>
+                <p className="text-sm" style={{ color: COLORS.neutral.gray }}>Inga foton</p>
+              </div>
             )}
-          </>
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 bg-gradient-to-br from-gray-900 to-black">
-            <Camera className="w-20 h-20 mb-4 opacity-40" />
-            <p className="text-lg">Inga foton</p>
-          </div>
-        )}
 
-        {/* User Info Overlay - Bottom Left */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pb-24">
-          <div className="bg-black/60 backdrop-blur-md rounded-2xl p-4 max-w-[75%]">
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-                  {profile?.display_name || 'Ingen namn'}
-                  {profile?.id_verification_status === 'approved' && (
-                    <VerifiedBadge size="md" className="text-white shrink-0" />
-                  )}
-                </h1>
-                {age && height && (
-                  <span className="text-xl text-white/90">
-                    {age} | {height}
-                  </span>
-                )}
-                {age && !height && (
-                  <span className="text-xl text-white/90">{age}</span>
-                )}
-              </div>
-
-              {(profile?.instagram || profile?.linkedin) && (
-                <p className="text-sm text-white/80 font-medium flex flex-wrap items-center gap-x-1 gap-y-0.5">
-                  {profile?.instagram && (
-                    <a
-                      href={`https://instagram.com/${getInstagramUsername(profile.instagram)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      Instagram {profile.instagram.startsWith('@') ? profile.instagram : `@${profile.instagram}`}
-                    </a>
-                  )}
-                  {profile?.instagram && profile?.linkedin && <span>·</span>}
-                  {profile?.linkedin && (
-                    <a
-                      href={`https://linkedin.com/in/${getLinkedInUsername(profile.linkedin)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                    >
-                      LinkedIn {profile.linkedin.startsWith('@') ? profile.linkedin : `@${profile.linkedin}`}
-                    </a>
-                  )}
-                </p>
-              )}
-
-              {profile?.work && (
-                <p className="text-base text-white/90 font-medium">
-                  {profile.work}
-                </p>
-              )}
-              
-              {profile?.hometown && (
-                <p className="text-sm text-white/80 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {profile.hometown}
-                </p>
-              )}
-
-              {/* Personality Badge – same as ProfileView: category + archetype style */}
-              {archetypeInfo && (
-                <div className="mt-2">
-                  <span className={cn(
-                    "inline-block px-3 py-1 rounded-full text-xs font-semibold border border-white/30",
-                    CATEGORY_STYLES[archetypeInfo.category]?.className || 'bg-white/20 text-white'
-                  )}>
-                    {CATEGORY_INFO[archetypeInfo.category].emoji} {CATEGORY_INFO[archetypeInfo.category].title}
-                  </span>
-                </div>
-              )}
-
-              {/* Matchning – match score (keep in matching profile) */}
-              {matchScore != null && (
-                <div className="mt-3 flex items-center justify-between p-3 rounded-xl bg-white/10 border border-white/20">
-                  <span className="text-sm font-medium text-white/80">Matchning</span>
-                  <span className="text-xl font-bold text-primary">{matchScore}%</span>
-                </div>
-              )}
-
-              {/* AI explanation: why likhet/motsatt – visible directly in profile (no need to open "Visa mer") */}
-              {personalityInsight && (
-                <div className="mt-3 p-4 rounded-2xl bg-gradient-to-br from-white/15 to-white/5 border border-white/25 shadow-lg shadow-black/10 backdrop-blur-sm">
-                  <p className="flex items-center gap-2 text-sm font-bold text-white mb-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/30 text-primary-foreground">
-                      <Sparkles className="h-3.5 w-3.5" />
-                    </span>
-                    {t('chat.why_you_matched', 'Varför ni matchade')}
-                  </p>
-                  <p className="text-xs text-white/90 leading-relaxed line-clamp-3 pl-9">{personalityInsight}</p>
-                </div>
-              )}
-
-              {/* Progress indicator */}
-              <div className="flex gap-1 mt-3">
-                <div className="h-1 flex-1 bg-white rounded-full" />
-                <div className="h-1 flex-1 bg-white/40 rounded-full" />
-                <div className="h-1 flex-1 bg-white/40 rounded-full" />
-              </div>
-
-              {/* Expand button */}
+            {/* Floating action buttons – X (primary-400) left, MessageCircle (coral-400) right */}
+            <div className="absolute top-4 left-4 right-4 flex justify-between z-10">
               <button
-                onClick={() => setShowFullInfo(!showFullInfo)}
-                className="mt-3 w-full flex items-center justify-center gap-2 text-white/80 hover:text-white transition-colors"
+                type="button"
+                onClick={() => onPass?.()}
+                className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95"
+                style={{ background: COLORS.primary[400], color: COLORS.neutral.white }}
+                aria-label={t('matches.pass', 'Passa')}
               >
-                <ChevronUp className={cn("w-5 h-5 transition-transform", showFullInfo && "rotate-180")} />
-                <span className="text-sm font-medium">{showFullInfo ? 'Dölj' : 'Visa mer'}</span>
+                <X className="w-6 h-6" />
+              </button>
+              <button
+                type="button"
+                onClick={handleChat}
+                className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95"
+                style={{ background: COLORS.coral[400], color: COLORS.neutral.white }}
+                aria-label={t('chat.chats', 'Chatta')}
+              >
+                <MessageCircle className="w-6 h-6" fill="white" />
               </button>
             </div>
+
+            {/* Gradient overlay bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
+
+            {/* Info overlay – name, age, online dot, interest chips */}
+            <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+              <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-2 flex-wrap">
+                {profile?.display_name || 'Ingen namn'}
+                {profile?.id_verification_status === 'approved' && (
+                  <VerifiedBadge size="md" className="text-white shrink-0" />
+                )}
+                {age != null && <span className="font-normal">{age}</span>}
+              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400" aria-hidden />
+                <span className="text-white/90 text-sm">Online</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {interestsList.length > 0
+                  ? interestsList.map((label) => (
+                      <InterestChipV2 key={label} label={label} variant="dark" />
+                    ))
+                  : (
+                      <span className="text-sm text-white/80">Inga intressen</span>
+                    )}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom action bar – cream, Passa / Chatta / Se profil */}
+          <div className="p-4 flex items-center justify-center gap-3" style={{ background: COLORS.neutral.cream }}>
+            <ActionButtons
+              onPassa={() => onPass?.()}
+              onChatta={handleChat}
+              onSeProfil={() => setShowFullInfo(true)}
+              passaLabel="Passa"
+              chattaLabel="Chatta"
+              seProfilLabel="Se profil"
+              className="flex-wrap justify-center gap-3 w-full"
+            />
           </div>
         </div>
 
@@ -394,10 +378,18 @@ export function MatchProfileView({
               )}
 
               {/* Intressen */}
-              {profile?.interested_in && (
+              {(interestsList.length > 0 || profile?.interested_in) && (
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-1">{t('profile.interests_title', 'Intressen')}</h2>
-                  <p className="text-white/80 leading-relaxed">{profile.interested_in}</p>
+                  <h2 className="text-xl font-bold text-white mb-2">{t('profile.interests_title', 'Intressen')}</h2>
+                  {interestsList.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {interestsList.map((label) => (
+                        <InterestChipV2 key={label} label={label} variant="dark" />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-white/80 leading-relaxed">{profile?.interested_in}</p>
+                  )}
                 </div>
               )}
 
@@ -621,13 +613,13 @@ export function MatchProfileView({
 
               {/* Chatta CTA – same position as "Redigera profil" in ProfileView */}
               {matchId && (
-                <Button
+                <ButtonPrimary
                   onClick={() => navigate(`/chat?match=${matchId}`)}
-                  className="w-full bg-primary text-white hover:bg-primary/90 h-12 rounded-full font-medium [&_svg]:text-white gap-2"
+                  className="w-full h-12 rounded-full gap-2"
                 >
                   <Send className="w-4 h-4" />
                   Chatta
-                </Button>
+                </ButtonPrimary>
               )}
             </div>
           </div>

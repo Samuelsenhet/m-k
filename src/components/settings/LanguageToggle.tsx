@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
+import { ButtonGhost } from '@/components/ui-v2';
 import { Globe } from 'lucide-react';
 import {
   DropdownMenu,
@@ -26,11 +26,11 @@ export function LanguageToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2">
+        <ButtonGhost size="sm" className="gap-2">
           <Globe className="w-4 h-4" />
           <span>{currentLang.flag}</span>
           <span className="hidden sm:inline">{currentLang.label}</span>
-        </Button>
+        </ButtonGhost>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {languages.map((lang) => (

@@ -48,11 +48,10 @@ const isValidKey = SUPABASE_PUBLISHABLE_KEY &&
   !SUPABASE_PUBLISHABLE_KEY.includes('your-anon') &&
   !SUPABASE_PUBLISHABLE_KEY.includes('placeholder');
 
-if (!isValidUrl || !isValidKey) {
+if (import.meta.env.DEV && (!isValidUrl || !isValidKey)) {
   const missing = [];
   if (!isValidUrl) missing.push('VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID');
   if (!isValidKey) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY');
-  
   console.warn(
     `Supabase: missing or invalid ${missing.join(' and ')}. Set them in .env from Supabase Dashboard → Settings → API. Demo at /demo-seed works without them.`
   );
@@ -67,7 +66,7 @@ export const hasValidSupabaseConfig = hasValidConfig;
 // Export the URL for use in other parts of the app
 export const SUPABASE_URL_EXPORT = SUPABASE_URL;
 
-if (!hasValidConfig) {
+if (import.meta.env.DEV && !hasValidConfig) {
   console.warn(
     '[MÄÄK] Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env. Demo: /demo-seed.'
   );

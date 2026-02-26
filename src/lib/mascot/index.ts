@@ -76,6 +76,8 @@ export function getMascotAsset(token: MascotToken): MascotAsset {
 
 export const MASCOT_SCREEN_STATES = {
   WAITING: "waiting_phase",
+  /** Loading state (token: mascot_waiting_tea). Message: "Jag är här medan vi väntar. Bra saker får ta tid." */
+  LOADING: "loading",
   FIRST_MATCH: "first_match",
   EMPTY_MATCHES: "empty_matches",
   HOME_IDLE: "home_idle",
@@ -84,10 +86,12 @@ export const MASCOT_SCREEN_STATES = {
   LANDING_PROBLEM: "landing_problem",
   NO_CHATS: "no_chats",
   SAMLINGAR_EMPTY: "samlingar_empty",
-  /** First identity intro (Landing hero). Token: calm_idle, goal: reassure. */
+  /** First identity intro (Landing hero). Token: calm_idle. Goal from emotion. */
   MAAK_INTRO: "maak_intro",
-  /** Onboarding welcome – Määk as guide. Token: calm_idle, goal: guide. */
+  /** Onboarding welcome – Määk as guide. Token: calm_idle. Goal from emotion. */
   ONBOARDING_WELCOME: "onboarding_welcome",
+  /** Matches success list – subtle presence, no intervention. Token: calm_idle, size small, placement corner. Goal from emotion. */
+  MATCHES_SUCCESS: "matches_success",
 } as const;
 
 export type MascotScreenState = (typeof MASCOT_SCREEN_STATES)[keyof typeof MASCOT_SCREEN_STATES];
@@ -103,32 +107,127 @@ const STATE_TOKEN_MAP: Record<string, MascotToken> = {
   landing_problem: "mascot_ai_thinking",
   no_chats: "mascot_practicing_mirror",
   waiting_phase: "mascot_waiting_tea",
-  maak_intro: "mascot_calm_idle", // first identity intro; goal: reassure
-  onboarding_welcome: "mascot_calm_idle", // guide through onboarding; goal: guide
+  loading: "mascot_waiting_tea",
+  maak_intro: "mascot_calm_idle",
+  onboarding_welcome: "mascot_calm_idle",
+  matches_success: "mascot_calm_idle",
 };
 
 /** Design system layout: hero = empty/onboarding, medium = AI/sekundär, icon = logo. */
 export type MascotSize = "small" | "medium" | "hero" | "icon";
 
+/** Placement: center = empty/waiting, inline = header/success row, corner = floating success. */
+export type MascotPlacement = "center" | "inline" | "corner";
+
+/** Spacing preset for layout intelligence (M11): no per-screen margin utilities. */
+export type MascotSpacingPreset = "stack-gap" | "inline-tight" | "floating-safe";
+
+/** Animation types for state-based mascot movement. */
+export type MascotAnimationType = "idle-breathe" | "gentle-float" | "celebrate-bounce" | "none";
+
 export function getMascotTokenForState(state: string): MascotToken {
   return STATE_TOKEN_MAP[state] ?? "mascot_calm_idle";
 }
 
-/** Return size + placement for a screen state (design system MASCOT_LAYOUT). */
-export function getMascotLayoutForState(state: string): {
+/** Local token lookup (no AI). Use for performance when state is known. AI only in chat. */
+export const getMascotTokenLocal = getMascotTokenForState;
+
+/** Layout config with spacing preset for M11 placement intelligence. */
+export interface MascotLayoutConfig {
   size: MascotSize;
-  placement: "center" | "inline";
-} {
-  if (state === "home_idle") return { size: "icon", placement: "inline" };
+  placement: MascotPlacement;
+  spacingPreset: MascotSpacingPreset;
+}
+
+/** Return size + placement + spacingPreset for a screen state (design system MASCOT_LAYOUT). */
+export function getMascotLayoutForState(state: string): MascotLayoutConfig {
+  if (state === "home_idle")
+    return { size: "icon", placement: "inline", spacingPreset: "inline-tight" };
+  if (state === "matches_success")
+    return { size: "small", placement: "corner", spacingPreset: "floating-safe" };
   if (
     state === "empty_matches" ||
     state === "no_chats" ||
     state === "first_match" ||
+    state === "loading" ||
     state === "landing_hero" ||
     state === "maak_intro" ||
     state === "onboarding_welcome"
   )
-    return { size: "hero", placement: "center" };
-  if (state?.startsWith("ai_")) return { size: "medium", placement: "center" };
-  return { size: "medium", placement: "center" };
+    return { size: "hero", placement: "center", spacingPreset: "stack-gap" };
+  if (state?.startsWith("ai_"))
+    return { size: "medium", placement: "center", spacingPreset: "stack-gap" };
+  return { size: "medium", placement: "center", spacingPreset: "stack-gap" };
 }
+
+/**
+ * Animation map for mascot states.
+ * - idle-breathe: 2% scale pulse, 4s duration — barely noticeable, calm presence
+ * - gentle-float: 6px vertical float, 3s duration — noticeable but soothing
+ * - celebrate-bounce: 8% scale + slight rotate, plays twice on mount
+ * - none: no animation (icon size)
+ */
+const MASCOT_ANIMATION_MAP: Record<string, MascotAnimationType> = {
+  home_idle: "none",
+  landing_hero: "idle-breathe",
+  landing_problem: "idle-breathe",
+  maak_intro: "idle-breathe",
+  onboarding_welcome: "idle-breathe",
+  waiting_phase: "gentle-float",
+  loading: "gentle-float",
+  empty_matches: "gentle-float",
+  no_chats: "gentle-float",
+  profile_empty: "idle-breathe",
+  samlingar_empty: "idle-breathe",
+  first_match: "celebrate-bounce",
+  matches_success: "idle-breathe",
+};
+
+/** Return animation type for a screen state. */
+export function getMascotAnimationForState(state: string): MascotAnimationType {
+  return MASCOT_ANIMATION_MAP[state] ?? "idle-breathe";
+}
+
+/** Expression for SVG fallback: eyes, mouth, and optional props (glow, hands, wave, sparkles, hearts, tea, book, card, blanket). */
+export interface MascotExpression {
+  eyes: "open" | "closed";
+  mouth: "small" | "smile" | "big_smile" | "sleep";
+  glow?: boolean;
+  hands?: "open";
+  wave?: boolean;
+  sparkles?: boolean;
+  hearts?: boolean;
+  tea?: boolean;
+  book?: boolean;
+  card?: boolean;
+  blanket?: boolean;
+}
+
+const EXPRESSION_CALM: MascotExpression = { eyes: "closed", mouth: "smile" };
+const EXPRESSION_LISTENING: MascotExpression = { eyes: "open", mouth: "small" };
+const EXPRESSION_THINKING: MascotExpression = { eyes: "open", mouth: "small", glow: true };
+const EXPRESSION_ANSWERING: MascotExpression = { eyes: "open", mouth: "smile", hands: "open" };
+const EXPRESSION_CELEBRATING: MascotExpression = { eyes: "open", mouth: "big_smile", sparkles: true };
+const EXPRESSION_WAITING: MascotExpression = { eyes: "open", mouth: "small", tea: true };
+const EXPRESSION_REASSURING: MascotExpression = { eyes: "closed", mouth: "smile", glow: true };
+const EXPRESSION_SOCIAL: MascotExpression = { eyes: "open", mouth: "big_smile", wave: true };
+
+const TOKEN_EXPRESSION_MAP: Record<MascotToken, MascotExpression> = {
+  mascot_calm_idle: EXPRESSION_CALM,
+  mascot_waiting_tea: EXPRESSION_WAITING,
+  mascot_planting_seed: EXPRESSION_REASSURING,
+  mascot_practicing_mirror: EXPRESSION_SOCIAL,
+  mascot_lighting_lantern: EXPRESSION_CELEBRATING,
+  mascot_ai_listening: EXPRESSION_LISTENING,
+  mascot_ai_thinking: EXPRESSION_THINKING,
+  mascot_ai_open_hand: EXPRESSION_ANSWERING,
+  mascot_ai_tiny_sparkle: EXPRESSION_CELEBRATING,
+};
+
+/** Return expression for SVG fallback by token. */
+export function getMascotExpressionForToken(token: MascotToken): MascotExpression {
+  return TOKEN_EXPRESSION_MAP[token] ?? EXPRESSION_CALM;
+}
+
+export { resolveMascotGoal } from "./resolveMascotGoal";
+export type { MascotGoal } from "./mascot.goal-map";

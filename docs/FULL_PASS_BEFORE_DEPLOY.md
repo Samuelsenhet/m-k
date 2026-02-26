@@ -57,6 +57,8 @@ Tick as you go. Stop and fix any failure before deploying.
 - [ ] `npm run lint` – passes
 - [ ] `npm run build` – succeeds
 
+**Full verifiering (US-017–US-029):** För att köra igenom alla verifieringssteg för App Completion & Polish, använd **[docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md)**.
+
 ---
 
 ## 3. When everything passes

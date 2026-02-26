@@ -9,9 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ButtonPrimary, InputV2, AvatarV2, AvatarV2Image, AvatarV2Fallback } from "@/components/ui-v2";
 import { Users, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -120,7 +118,7 @@ export function CreateGroupModal({
         <div className="space-y-4 py-4">
           <div>
             <label className="text-sm font-medium mb-2 block">{t("groupChat.groupName")}</label>
-            <Input
+            <InputV2
               placeholder={t("groupChat.groupNamePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -156,12 +154,12 @@ export function CreateGroupModal({
                         selected ? "bg-primary/10 ring-2 ring-primary" : "bg-muted/50 hover:bg-muted"
                       )}
                     >
-                      <Avatar className="h-10 w-10 rounded-full">
-                        <AvatarImage src={getPhotoUrl(opt.avatar_url) ?? undefined} />
-                        <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                      <AvatarV2 className="h-10 w-10 rounded-full">
+                        <AvatarV2Image src={getPhotoUrl(opt.avatar_url) ?? undefined} />
+                        <AvatarV2Fallback className="bg-primary/20 text-primary font-semibold">
                           {opt.display_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                        </AvatarV2Fallback>
+                      </AvatarV2>
                       <span className="flex-1 font-medium">{opt.display_name}</span>
                       <div
                         className={cn(
@@ -177,7 +175,7 @@ export function CreateGroupModal({
               </div>
             )}
           </div>
-          <Button
+          <ButtonPrimary
             className="w-full"
             size="lg"
             disabled={selectedIds.size < 2 || !name.trim() || creating}
@@ -185,7 +183,7 @@ export function CreateGroupModal({
           >
             {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
             {t("groupChat.create")}
-          </Button>
+          </ButtonPrimary>
         </div>
       </DialogContent>
     </Dialog>

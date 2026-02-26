@@ -3,98 +3,163 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { AvatarWithRing } from "../avatar";
 import { ButtonCoral } from "../button";
+import { COLORS } from "@/design/tokens";
 import { X } from "lucide-react";
+import { Mascot } from "@/components/system/Mascot";
 
 export interface MatchCelebrationProps {
-  /** Match id for Chatta link */
   matchId: string;
   displayName: string;
   avatarSrc?: string | null;
-  /** Text from personality_insight – why you matched */
+  /** Optional: show overlapping "Du" + match avatars when provided */
+  userAvatarSrc?: string | null;
+  userArchetype?: string;
+  /** "similar" | "complementary" – for likhet/motsats copy and badge */
+  matchType?: "similar" | "complementary";
   personalityInsight?: string | null;
   onClose: () => void;
-  /** Callback when user clicks Chatta (e.g. navigate then close) */
   onChatta?: () => void;
-  /** Chatta button label */
   chattaLabel?: string;
 }
 
+const COPY = {
+  similar: {
+    typ: "likhets",
+    tagline: "Ni delar viktiga värderingar",
+  },
+  complementary: {
+    typ: "motsats",
+    tagline: "Era olikheter kompletterar varandra",
+  },
+} as const;
+
 /**
- * Modal shown when match.special_effects includes "celebration".
- * Overlapping AvatarWithRing, personality_insight text, CTA Chatta. Closable.
+ * Match celebration modal – dark overlay, "Ny matchning!", overlapping avatars,
+ * match type badge (no %), tagline, Fortsätt + Skicka meddelande (ButtonCoral).
  */
 export function MatchCelebration({
-  matchId,
   displayName,
   avatarSrc,
+  userAvatarSrc,
+  userArchetype,
+  matchType = "similar",
   personalityInsight,
   onClose,
   onChatta,
-  chattaLabel = "Chatta",
+  chattaLabel = "Skicka meddelande",
 }: MatchCelebrationProps) {
   const handleChatta = () => {
     onChatta?.();
     onClose();
   };
 
+  const { typ, tagline } = COPY[matchType];
+
   const content = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-warm-dark/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+      style={{
+        background: "rgba(15, 18, 17, 0.92)",
+        backdropFilter: "blur(16px)",
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="match-celebration-title"
     >
       <div
-        className={cn(
-          "relative w-full max-w-md rounded-2xl border border-border bg-card shadow-elevation-2",
-          "animate-in zoom-in-95 duration-300"
-        )}
+        className="relative w-full max-w-md rounded-2xl shadow-elevation-2 animate-in zoom-in-95 duration-300 overflow-hidden"
+        style={{ background: COLORS.neutral.dark }}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
+          className="absolute top-3 right-3 z-10 rounded-full p-2 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
           aria-label="Stäng"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <div className="p-6 pt-8 text-center space-y-6">
-          <div id="match-celebration-title" className="sr-only">
-            Matchning: {displayName}
-          </div>
-
-          {/* Overlapping avatar(s) – single match avatar with ring for celebration */}
+        <div className="p-6 pt-10 text-center space-y-5">
+          {/* Mascot */}
           <div className="flex justify-center">
-            <AvatarWithRing
-              src={avatarSrc}
-              alt={displayName}
-              showRing
-              ringVariant="coral"
-              size="lg"
-              className="ring-4 ring-primary/20"
-            />
+            <Mascot token="mascot_lighting_lantern" size="medium" placement="center" animation="celebrate-bounce" />
           </div>
 
-          <div>
-            <p className="text-lg font-semibold text-foreground">{displayName}</p>
-            {personalityInsight && (
-              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                {personalityInsight}
-              </p>
+          <h2 id="match-celebration-title" className="text-2xl font-bold text-white">
+            Ny matchning!
+          </h2>
+
+          <p className="text-white/90 text-sm">
+            Du och {displayName} är en {typ}-match
+          </p>
+
+          {/* Overlapping avatars – user (left) + match (right) when userAvatarSrc provided, else single match */}
+          <div className="flex justify-center items-center gap-0">
+            {userAvatarSrc != null || userArchetype ? (
+              <>
+                <div className="relative z-10">
+                  <AvatarWithRing
+                    src={userAvatarSrc ?? undefined}
+                    alt="Du"
+                    fallback={<span className="text-2xl">👤</span>}
+                    showRing={false}
+                    size="lg"
+                    className="ring-2 ring-white/30"
+                  />
+                </div>
+                <div className="relative -ml-6 z-0">
+                  <AvatarWithRing
+                    src={avatarSrc}
+                    alt={displayName}
+                    showRing
+                    ringVariant="coral"
+                    size="lg"
+                    className="ring-2 ring-white/30"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="relative flex justify-center">
+                <AvatarWithRing
+                  src={avatarSrc}
+                  alt={displayName}
+                  showRing
+                  ringVariant="coral"
+                  size="lg"
+                  className="relative z-10 ring-2 ring-white/30"
+                />
+              </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
+          {/* Match type badge – no percent, rgba */}
+          <div
+            className="inline-block px-4 py-2 rounded-full text-sm font-medium text-white/95"
+            style={{ background: "rgba(255,255,255,0.15)" }}
+          >
+            {typ === "likhets" ? "Likhets-match" : "Motsats-match"}
+          </div>
+
+          <p className="text-sm text-white/80 leading-relaxed">
+            {tagline}
+          </p>
+          {personalityInsight && (
+            <p className="text-xs text-white/70 leading-relaxed">
+              {personalityInsight}
+            </p>
+          )}
+
+          <div className="flex flex-col gap-2 pt-2">
             <ButtonCoral className="w-full" onClick={handleChatta}>
               {chattaLabel}
             </ButtonCoral>
             <button
               type="button"
               onClick={onClose}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="py-2.5 text-sm font-medium text-white/90 hover:text-white transition-colors rounded-xl"
+              style={{ background: "rgba(255,255,255,0.12)" }}
             >
-              Stäng
+              Fortsätt
             </button>
           </div>
         </div>

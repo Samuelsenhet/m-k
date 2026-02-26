@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, CardV2, CardV2Content, CardV2Footer, CardV2Header, CardV2Title, InputV2 } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Login() {
@@ -40,16 +38,16 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
-        </CardHeader>
+      <CardV2 className="w-full max-w-md">
+        <CardV2Header>
+          <CardV2Title>Login</CardV2Title>
+          <p className="text-sm text-muted-foreground">Enter your credentials to access your account</p>
+        </CardV2Header>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardV2Content className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
+              <InputV2
                 id="email"
                 type="email"
                 placeholder="you@example.com"
@@ -60,7 +58,7 @@ export default function Login() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <InputV2
                 id="password"
                 type="password"
                 placeholder="••••••••"
@@ -69,11 +67,11 @@ export default function Login() {
                 required
               />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+          </CardV2Content>
+          <CardV2Footer className="flex flex-col space-y-4">
+            <ButtonPrimary type="submit" className="w-full" disabled={loading}>
               {loading ? 'Logging in...' : 'Login'}
-            </Button>
+            </ButtonPrimary>
             <div className="text-sm text-center space-y-2">
               <div>
                 Don't have an account?{' '}
@@ -82,9 +80,9 @@ export default function Login() {
                 </Link>
               </div>
             </div>
-          </CardFooter>
+          </CardV2Footer>
         </form>
-      </Card>
+      </CardV2>
     </div>
   );
 }

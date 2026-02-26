@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import { useRef } from 'react';
+import { InputV2 } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { COLORS } from '@/design/tokens';
 
 interface PhoneInputProps {
   value: string;
@@ -40,25 +41,32 @@ export const PhoneInput = ({ value, onChange, error, disabled }: PhoneInputProps
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="phone">Telefonnummer</Label>
+      <Label htmlFor="phone" className="text-sm font-medium" style={{ color: COLORS.primary[800] }}>
+        Telefonnummer
+      </Label>
       <div className="relative">
         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <div className="absolute left-10 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
           +46
         </div>
-        <Input
+        <InputV2
           ref={inputRef}
           id="phone"
           type="tel"
           placeholder="7X XXX XX XX"
           value={displayValue}
           onChange={handleChange}
-          className={cn("pl-20", error && "border-destructive")}
+          variant={error ? "error" : "default"}
+          className="pl-20"
           disabled={disabled}
           autoComplete="tel"
         />
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p className="text-sm" style={{ color: COLORS.coral[600] }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 };

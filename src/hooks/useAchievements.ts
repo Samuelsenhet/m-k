@@ -83,7 +83,7 @@ export const useAchievements = (): UseAchievementsReturn => {
       setEarnedIds(new Set(earnedMap.keys()));
       setAchievements(mergedAchievements);
     } catch (error) {
-      console.error('Error fetching achievements:', error);
+      if (import.meta.env.DEV) console.error('Error fetching achievements:', error);
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export const useAchievements = (): UseAchievementsReturn => {
 
       if (achError) throw achError;
       if (!achievementRow?.id) {
-        console.warn('Achievement code not found in DB:', achievement.code);
+        if (import.meta.env.DEV) console.warn('Achievement code not found in DB:', achievement.code);
         return null;
       }
 
@@ -143,7 +143,7 @@ export const useAchievements = (): UseAchievementsReturn => {
 
       return awarded;
     } catch (error) {
-      console.error('Error awarding achievement:', error);
+      if (import.meta.env.DEV) console.error('Error awarding achievement:', error);
       return null;
     }
   };

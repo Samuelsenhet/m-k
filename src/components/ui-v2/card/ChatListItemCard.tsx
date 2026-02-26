@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { AvatarWithRing } from "../avatar";
 import { StatusBadge, type ChatStatusV2 } from "../badge";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { VerifiedBadge } from "@/components/ui-v2";
 
 export interface ChatListItemCardProps extends React.HTMLAttributes<HTMLDivElement> {
   displayName: string;

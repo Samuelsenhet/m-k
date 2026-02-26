@@ -1,8 +1,7 @@
 import * as React from "react";
 import { Send, Loader2, Image, Mic, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ButtonPrimary } from "../button";
-import { ButtonIcon } from "../button";
+import { COLORS } from "@/design/tokens";
 
 export interface ChatInputBarV2Props {
   value: string;
@@ -45,73 +44,94 @@ const ChatInputBarV2 = React.forwardRef<HTMLTextAreaElement, ChatInputBarV2Props
 
     React.useImperativeHandle(ref, () => textareaRef.current as HTMLTextAreaElement);
 
+    const hasMessage = value.trim().length > 0;
     return (
-      <form onSubmit={onSubmit} className="flex items-end gap-2">
-        <div className="flex flex-1 min-w-0 items-end gap-2 rounded-2xl border border-border bg-muted/80 px-3 py-2 focus-within:border-primary/40 focus-within:bg-background transition-colors duration-normal">
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        {/* Quick actions – design system: Bild, Röst, Isbrytare (sage-100) */}
+        <div className="flex gap-2 overflow-x-auto">
           {onImageClick != null && (
-            <ButtonIcon
+            <button
               type="button"
-              size="sm"
               onClick={onImageClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all hover:scale-105"
+              style={{ background: COLORS.sage[100], color: COLORS.primary[600] }}
               aria-label="Bild"
-              className="shrink-0"
             >
-              <Image className="size-4" />
-            </ButtonIcon>
+              <Image className="w-4 h-4" />
+              Bild
+            </button>
           )}
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={handleChange}
-            placeholder={placeholder}
-            disabled={disabled}
-            rows={1}
-            className={cn(
-              "min-h-[40px] max-h-[120px] flex-1 resize-none bg-transparent py-2 text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                onSubmit(e as unknown as React.FormEvent);
-              }
-            }}
-          />
           {onVoiceClick != null && (
-            <ButtonIcon
+            <button
               type="button"
-              size="sm"
               onClick={onVoiceClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all hover:scale-105"
+              style={{ background: COLORS.sage[100], color: COLORS.primary[600] }}
               aria-label="Röst"
-              className="shrink-0"
             >
-              <Mic className="size-4" />
-            </ButtonIcon>
+              <Mic className="w-4 h-4" />
+              Röst
+            </button>
           )}
           {onAIClick != null && (
-            <ButtonIcon
+            <button
               type="button"
-              size="sm"
               onClick={onAIClick}
-              aria-label="AI-förslag"
-              className="shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all hover:scale-105"
+              style={{ background: COLORS.sage[100], color: COLORS.primary[600] }}
+              aria-label="Isbrytare"
             >
-              <Sparkles className="size-4" />
-            </ButtonIcon>
+              <Sparkles className="w-4 h-4" />
+              Isbrytare
+            </button>
           )}
         </div>
-        <ButtonPrimary
-          type="submit"
-          disabled={!value.trim() || disabled || sending}
-          size="default"
-          className="shrink-0 rounded-full h-11 w-11 p-0"
-          aria-label={sendLabel}
-        >
-          {sending ? (
-            <Loader2 className="size-5 animate-spin" />
-          ) : (
-            <Send className="size-5" />
-          )}
-        </ButtonPrimary>
+        <div className="flex items-end gap-2">
+          <div
+            className="flex flex-1 min-w-0 items-end gap-2 rounded-2xl border px-3 py-2 transition-colors duration-normal focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+            style={{
+              background: COLORS.neutral.cream,
+              borderColor: COLORS.sage[200],
+            }}
+          >
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleChange}
+              placeholder={placeholder}
+              disabled={disabled}
+              rows={1}
+              className={cn(
+                "min-h-[40px] max-h-[120px] flex-1 resize-none bg-transparent py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+              style={{ color: COLORS.neutral.charcoal }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  onSubmit(e as unknown as React.FormEvent);
+                }
+              }}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!hasMessage || disabled || sending}
+            className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all shrink-0 disabled:opacity-50"
+            style={{
+              background: hasMessage
+                ? `linear-gradient(135deg, ${COLORS.primary[500]} 0%, ${COLORS.primary[400]} 100%)`
+                : COLORS.sage[200],
+              color: hasMessage ? COLORS.neutral.white : COLORS.neutral.gray,
+            }}
+            aria-label={sendLabel}
+          >
+            {sending ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <Send className="size-5" />
+            )}
+          </button>
+        </div>
       </form>
     );
   },

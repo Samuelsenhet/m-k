@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileData } from "@/hooks/useProfileData";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ButtonSecondary, ButtonIcon } from "@/components/ui-v2";
+import { CardV2, CardV2Content, CardV2Header, CardV2Title } from "@/components/ui-v2";
 import { ChevronLeft, FileQuestion, Loader2 } from "lucide-react";
 import {
   Select,
@@ -55,7 +55,7 @@ export default function AdminAppeals() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching appeals:", error);
+        if (import.meta.env.DEV) console.error("Error fetching appeals:", error);
         setAppeals([]);
       } else {
         setAppeals((data as AppealRow[]) ?? []);
@@ -90,7 +90,7 @@ export default function AdminAppeals() {
           },
         });
       } catch (e) {
-        console.warn("Appeal decision email failed:", e);
+        if (import.meta.env.DEV) console.warn("Appeal decision email failed:", e);
       }
     }
     setUpdatingId(null);
@@ -101,9 +101,9 @@ export default function AdminAppeals() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <p className="text-muted-foreground mb-4">Du har inte behörighet att visa denna sida.</p>
-        <Button asChild variant="outline">
+        <ButtonSecondary asChild>
           <Link to="/profile">Tillbaka till profil</Link>
-        </Button>
+        </ButtonSecondary>
       </div>
     );
   }
@@ -111,17 +111,17 @@ export default function AdminAppeals() {
   return (
     <div className="min-h-screen flex flex-col bg-background pb-16">
       <header className="flex items-center gap-2 px-3 py-3 safe-area-top bg-background border-b border-border">
-        <Button variant="ghost" size="icon" asChild>
+        <ButtonIcon asChild>
           <Link to="/profile" aria-label={t("common.back")}>
             <ChevronLeft className="w-5 h-5" />
           </Link>
-        </Button>
-        <CardHeader className="flex-1 p-0">
-          <CardTitle className="text-lg flex items-center gap-2">
+        </ButtonIcon>
+        <CardV2Header className="flex-1 p-0">
+          <CardV2Title className="text-lg flex items-center gap-2">
             <FileQuestion className="w-5 h-5" />
             Överklaganden
-          </CardTitle>
-        </CardHeader>
+          </CardV2Title>
+        </CardV2Header>
       </header>
 
       <main className="flex-1 p-4">
@@ -134,8 +134,8 @@ export default function AdminAppeals() {
         ) : (
           <div className="space-y-4">
             {appeals.map((appeal) => (
-              <Card key={appeal.id}>
-                <CardContent className="p-4 space-y-3">
+              <CardV2 key={appeal.id} padding="none">
+                <CardV2Content className="p-4 space-y-3">
                   <div className="flex justify-between items-start gap-2">
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(appeal.created_at), "d MMM yyyy, HH:mm", { locale: sv })}
@@ -160,8 +160,8 @@ export default function AdminAppeals() {
                   {appeal.report_id && (
                     <p className="text-xs text-muted-foreground">Rapport: {appeal.report_id}</p>
                   )}
-                </CardContent>
-              </Card>
+                </CardV2Content>
+              </CardV2>
             ))}
           </div>
         )}

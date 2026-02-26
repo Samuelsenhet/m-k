@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
@@ -94,22 +94,22 @@ export function AchievementsPanel() {
 
   if (loading) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="flex items-center justify-center py-8">
+      <CardV2 padding="none">
+        <CardV2Content className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
     );
   }
 
   return (
-    <Card className="border-border/50">
-      <CardHeader className="pb-3">
+    <CardV2 padding="none">
+      <CardV2Header className="p-5 pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardV2Title className="flex items-center gap-2 text-lg">
             <Trophy className="w-5 h-5 text-primary" />
             {t('achievements.title')}
-          </CardTitle>
+          </CardV2Title>
           <Badge className="gradient-primary text-primary-foreground">
             {totalPoints} pts
           </Badge>
@@ -125,8 +125,8 @@ export function AchievementsPanel() {
           </div>
           <Progress value={progressPercent} className="h-2" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+      </CardV2Header>
+      <CardV2Content className="px-5 pb-5 space-y-3">
         {achievements.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
             <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -152,7 +152,7 @@ export function AchievementsPanel() {
             </AnimatePresence>
           </>
         )}
-      </CardContent>
-    </Card>
+      </CardV2Content>
+    </CardV2>
   );
 }

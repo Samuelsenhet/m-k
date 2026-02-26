@@ -826,12 +826,12 @@ Post-launch improvements: polish, observability, and small features. Pick the fi
 
 **Acceptance Criteria:**
 
-- [ ] When `useMatches()` (or match-daily) is loading, show a skeleton that mirrors the match cards layout (e.g. 3–5 card-shaped placeholders)
-- [ ] Use existing design system (e.g. Skeleton from shadcn/ui, same card size as real cards)
-- [ ] Replace with real content or empty/error state when request completes
-- [ ] `npm run typecheck` passes
-- [ ] `npm run build` passes
-- [ ] Verify in browser at localhost
+- [x] When `useMatches()` (or match-daily) is loading, show a skeleton that mirrors the match cards layout (e.g. 3–5 card-shaped placeholders)
+- [x] Use existing design system (e.g. Skeleton from shadcn/ui, same card size as real cards)
+- [x] Replace with real content or empty/error state when request completes
+- [x] `npm run typecheck` passes
+- [x] `npm run build` passes
+- [x] Verify in browser at localhost
 
 ---
 
@@ -841,9 +841,9 @@ Post-launch improvements: polish, observability, and small features. Pick the fi
 
 **Acceptance Criteria:**
 
-- [ ] Add a short "Phase 2" section to README or docs (e.g. "Post-launch: see PRD.md Phase 2 (US-030+). Pick first [ ] story, implement, then typecheck/build.")
-- [ ] Optionally: add a note in ralph.sh/ralph.ps1 or progress.txt that Ralph can be pointed at PRD again for Phase 2 (first `- [ ]` in PRD.md)
-- [ ] `npm run build` passes
+- [x] Add a short "Phase 2" section to README or docs (e.g. "Post-launch: see PRD.md Phase 2 (US-030+). Pick first [ ] story, implement, then typecheck/build.")
+- [x] Optionally: add a note in ralph.sh/ralph.ps1 or progress.txt that Ralph can be pointed at PRD again for Phase 2 (first `- [ ]` in PRD.md)
+- [x] `npm run build` passes
 
 ---
 

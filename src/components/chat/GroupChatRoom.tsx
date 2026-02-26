@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ChatBubbleV2, ChatInputBarV2 } from "@/components/ui-v2";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, Send, MoreHorizontal, LogOut } from "lucide-react";
+import { ChevronLeft, MoreHorizontal, LogOut } from "lucide-react";
+import { COLORS } from "@/design/tokens";
 import { GroupAvatar } from "./GroupAvatar";
 import type { SamlingGroup } from "@/hooks/useGroups";
 import { cn } from "@/lib/utils";
@@ -101,16 +101,27 @@ export function GroupChatRoom({ group, currentUserId, onBack, leaveGroup }: Grou
 
   const senderName = (senderId: string) => group.members.find((m) => m.user_id === senderId)?.display_name ?? "Användare";
 
+  const toBubbleMessage = (msg: GroupMessage) => ({
+    id: msg.id,
+    content: msg.content,
+    sender_id: msg.sender_id,
+    created_at: msg.created_at,
+    is_read: false,
+  });
+
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 bg-background">
-      <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border bg-primary text-primary-foreground shrink-0">
+      <div
+        className="flex items-center gap-3 px-3 py-2.5 border-b border-border shrink-0"
+        style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
+      >
         <button type="button" onClick={onBack} className="p-1 rounded-full hover:bg-white/10" aria-label="Tillbaka">
           <ChevronLeft className="w-6 h-6" />
         </button>
         <GroupAvatar members={group.members} size={44} className="shrink-0" />
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold truncate">{group.name}</h2>
-          <p className="text-xs text-primary-foreground/80">{group.members.length} medlemmar</p>
+          <p className="text-xs opacity-90">{group.members.length} medlemmar</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -127,39 +138,38 @@ export function GroupChatRoom({ group, currentUserId, onBack, leaveGroup }: Grou
         </DropdownMenu>
       </div>
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-3">
+        <div className="space-y-1">
           {messages.map((msg) => {
             const isOwn = msg.sender_id === currentUserId;
             return (
               <div key={msg.id} className={cn("flex gap-2", isOwn && "flex-row-reverse")}>
                 {!isOwn && (
-                  <div className="text-xs text-muted-foreground shrink-0 w-16 truncate">{senderName(msg.sender_id)}</div>
+                  <div className="text-xs text-muted-foreground shrink-0 w-16 truncate pt-1">
+                    {senderName(msg.sender_id)}
+                  </div>
                 )}
-                <div
-                  className={cn(
-                    "max-w-[75%] px-4 py-2 rounded-2xl",
-                    isOwn ? "bg-primary text-primary-foreground rounded-br-md ml-auto" : "bg-muted rounded-bl-md"
-                  )}
-                >
-                  {msg.content}
-                </div>
+                <ChatBubbleV2
+                  message={toBubbleMessage(msg)}
+                  variant={isOwn ? "own" : "them"}
+                  isOwn={isOwn}
+                />
               </div>
             );
           })}
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
-      <div className="p-3 border-t border-border flex gap-2 shrink-0">
-        <Input
+      <div className="p-3 border-t border-border shrink-0">
+        <ChatInputBarV2
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+          onChange={setInput}
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendMessage();
+          }}
           placeholder={`Skriv till ${group.name}...`}
-          className="rounded-full flex-1"
+          sendLabel={t("common.send", "Skicka")}
         />
-        <Button size="icon" className="rounded-full shrink-0" onClick={sendMessage} disabled={!input.trim()}>
-          <Send className="w-5 h-5" />
-        </Button>
       </div>
       <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
         <AlertDialogContent>

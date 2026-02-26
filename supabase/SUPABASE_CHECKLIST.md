@@ -94,6 +94,14 @@ If there is **no SELECT policy**, Supabase can respond with 404.
 
 ---
 
+## 6. Seed / db reset
+
+**Context:** `config.toml` has `[db.seed]` with `sql_paths = ["./seed.sql"]`. The repo has `seed-demo.sql` but no `seed.sql`.
+
+**For local seed when running `supabase db reset`:** Either create `supabase/seed.sql` (e.g. copy or symlink from `seed-demo.sql`), or change `sql_paths` in `config.toml` to the file you want (e.g. `["./seed-demo.sql"]`).
+
+---
+
 ## Quick order of operations
 
 1. Run **ONE_TIME_SETUP.sql** in Supabase (SQL Editor or migrations).

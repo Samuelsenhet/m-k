@@ -3,26 +3,30 @@ import { Heart, MessageCircle, User, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { isDemoEnabled } from "@/config/supabase";
+import { COLORS } from "@/design/tokens";
+import { useTotalUnreadCount } from "@/hooks/useTotalUnreadCount";
 
 interface NavItem {
   path: string;
   label: string;
   icon: typeof Heart;
+  showUnreadBadge?: boolean;
 }
 
 const allNavItems: NavItem[] = [
   { path: "/matches", label: "Matchning", icon: Heart },
-  { path: "/chat", label: "Chatt", icon: MessageCircle },
+  { path: "/chat", label: "Chatt", icon: MessageCircle, showUnreadBadge: true },
   { path: "/demo-seed", label: "Demo", icon: Sparkles },
   { path: "/profile", label: "Profil", icon: User },
 ];
 
 /**
- * FAS 5 – BottomNav V2. Token-based: surface, primary gradient active indicator,
- * muted/primary icon states, safe-area, no hardcoded colors.
+ * BottomNav V2 – design system: COLORS tokens, primary-50 active, neutral.gray inactive,
+ * coral badge for unread, backdrop-blur, border sage-100, fixed bottom.
  */
 export function BottomNavV2() {
   const location = useLocation();
+  const unreadCount = useTotalUnreadCount();
   const navItems = isDemoEnabled
     ? allNavItems
     : allNavItems.filter((item) => item.path !== "/demo-seed");
@@ -36,11 +40,11 @@ export function BottomNavV2() {
 
   return (
     <nav
-      className={cn(
-        "fixed bottom-0 left-0 right-0 z-50",
-        "border-t border-border bg-card/95 backdrop-blur-xl",
-        "shadow-elevation-1 safe-area-bottom",
-      )}
+      className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl safe-area-bottom"
+      style={{
+        borderTop: `1px solid ${COLORS.sage[100]}`,
+        background: `${COLORS.neutral.white}ee`,
+      }}
       aria-label="Huvudnavigering"
     >
       <div className="max-w-lg mx-auto relative">
@@ -55,7 +59,8 @@ export function BottomNavV2() {
               {index === activeIndex && (
                 <motion.div
                   layoutId="bottomNavIndicator"
-                  className="w-12 h-1.5 rounded-full gradient-primary flex-shrink-0"
+                  className="w-12 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: COLORS.primary[500] }}
                   transition={{
                     type: "spring",
                     stiffness: 500,
@@ -74,16 +79,19 @@ export function BottomNavV2() {
         >
           {navItems.map((item, index) => {
             const itemActive = index === activeIndex;
+            const showBadge = item.showUnreadBadge && unreadCount > 0;
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-1 w-full h-full min-h-[44px]",
-                  "transition-colors duration-normal active:scale-95 touch-manipulation",
+                  "relative flex flex-col items-center justify-center gap-1 w-full h-full min-h-[44px] rounded-xl transition-colors duration-normal active:scale-95 touch-manipulation",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-                  itemActive ? "text-primary" : "text-muted-foreground",
                 )}
+                style={{
+                  color: itemActive ? COLORS.primary[600] : COLORS.neutral.gray,
+                  background: itemActive ? COLORS.primary[50] : "transparent",
+                }}
               >
                 <div
                   className={cn(
@@ -96,12 +104,20 @@ export function BottomNavV2() {
                     fill={itemActive ? "currentColor" : "none"}
                     strokeWidth={itemActive ? 2.5 : 2}
                   />
+                  {showBadge && (
+                    <span
+                      className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{ background: COLORS.coral[500] }}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </div>
                 <span
-                  className={cn(
-                    "text-[10px] sm:text-xs font-medium text-center shrink-0",
-                    itemActive ? "text-primary" : "text-muted-foreground",
-                  )}
+                  className="text-[10px] sm:text-xs font-medium text-center shrink-0"
+                  style={{
+                    color: itemActive ? COLORS.primary[600] : COLORS.neutral.gray,
+                  }}
                 >
                   {item.label}
                 </span>

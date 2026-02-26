@@ -24,7 +24,7 @@ Short overview of PRDs in `PRD.md` and current status.
 - **US-018:** Verify photo count limits – acceptance criteria not all checked.
 - Further US in this section: review `PRD.md` for any remaining unchecked items.
 
-**Suggestions:** Manually run through US-017 and US-018 (and any other verification stories), then check the boxes in `PRD.md` when satisfied.
+**Manuell verifiering:** Använd **[docs/VERIFICATION_CHECKLIST.md](docs/VERIFICATION_CHECKLIST.md)** för att köra igenom US-017–US-029 steg för steg. Bocka av i checklistan och, när nöjd, i `PRD.md`.
 
 ---
 

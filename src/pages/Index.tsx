@@ -5,13 +5,16 @@ import { PersonalityResult } from '@/components/personality/PersonalityResult';
 import type { PersonalityTestResult, ArchetypeCode, DimensionKey, PersonalityCategory } from '@/types/personality';
 import { getCategoryFromArchetype } from '@/types/personality';
 import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { COLORS } from '@/design/tokens';
 
 type AppState = 'landing' | 'test' | 'result' | 'loading';
 
 const Index = () => {
+  const { t } = useTranslation();
   const [appState, setAppState] = useState<AppState>('loading');
   const [testResult, setTestResult] = useState<PersonalityTestResult | null>(null);
   const [hasExistingResult, setHasExistingResult] = useState(false);
@@ -23,9 +26,6 @@ const Index = () => {
       if (authLoading) return;
       
       if (!user) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e6c73ee0-4f15-4e9c-bb4a-1e38631f27a6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Index.tsx:checkExistingResult',message:'Index state resolved',data:{appState:'landing',hasUser:false},timestamp:Date.now(),hypothesisId:'index-flow',runId:'app-flow'})}).catch(()=>{});
-        // #endregion
         setAppState('landing');
         return;
       }
@@ -113,8 +113,20 @@ const Index = () => {
 
   if (appState === 'loading') {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Laddar...</div>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-4"
+        style={{
+          background: `linear-gradient(180deg, ${COLORS.sage[50]} 0%, ${COLORS.neutral.white} 100%)`,
+        }}
+      >
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"
+          style={{ borderColor: COLORS.primary[200], borderTopColor: COLORS.primary[500] }}
+          aria-hidden
+        />
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {t('common.loading')}
+        </p>
       </div>
     );
   }
@@ -123,12 +135,12 @@ const Index = () => {
     <>
       <Helmet>
         <title>MÄÄK - Personlighetsbaserad Dejting | Hitta Din Perfekta Matchning</title>
-        <meta 
-          name="description" 
-          content="MÄÄK är Sveriges smartaste dejtingapp med AI-driven personlighetsmatchning. Ta vårt 30-frågor personlighetstest och hitta någon som verkligen passar dig." 
+        <meta
+          name="description"
+          content="MÄÄK är Sveriges smartaste dejtingapp med AI-driven personlighetsmatchning. Ta vårt 30-frågor personlighetstest och hitta någon som verkligen passar dig."
         />
         <meta name="keywords" content="dejting, personlighetstest, matchning, AI, Sverige, singlar" />
-        <link rel="canonical" href="https://maak.app" />
+        <link rel="canonical" href={import.meta.env.VITE_APP_URL || 'https://maakapp.se'} />
       </Helmet>
 
       {appState === 'landing' && <LandingPage onStart={handleStartTest} />}

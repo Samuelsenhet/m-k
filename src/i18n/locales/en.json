@@ -1,5 +1,6 @@
 {
   "common": {
+    "profile": "Profile",
     "loading": "Loading...",
     "save": "Save",
     "saving": "Saving...",
@@ -25,6 +26,12 @@
   "landing": {
     "users_seeking_love": "Already {{count}} Swedes seeking love here"
   },
+  "maak": {
+    "intro": "I'm Määk.\nI'm here with you, while we find someone who really fits.",
+    "guide": "I'll guide you calmly through this.",
+    "waiting": "I'm here while we wait. Good things take time.",
+    "firstMatch": "I told you it was worth the wait. 💛"
+  },
   "auth": {
     "phoneTitle": "Enter your phone number",
     "phoneDescription": "We'll send you a verification code via SMS",
@@ -49,6 +56,10 @@
   },
   "matches": {
     "title": "Today's matches",
+    "subtitle": "24h rolling • Quality focus",
+    "tabAll": "All",
+    "tabSimilar": "Similar",
+    "tabComplementary": "Complementary",
     "noMatches": "No matches today",
     "expiresIn": "Expires in",
     "like": "Like",
@@ -58,13 +69,24 @@
     "similar": "Similar",
     "complementary": "Complementary",
     "loading_error": "Could not load matches",
-    "complete_test": "Complete the personality test to see matches",
-    "mutual_matches": "Your matches"
+    "loading_error_check_login": "Could not load matches. Make sure you are logged in.",
+    "error_title": "We're having trouble loading matches",
+    "error_reassure": "Something went wrong – I'll try again",
+    "must_be_logged_in": "You must be logged in to see matches",
+    "auth_verify_failed": "We couldn't verify your login. Try logging out and in again, or try again in a moment.",
+    "server_error": "The service isn't responding right now. Check that you're logged in and try again – or wait a moment.",
+    "network_error": "No internet connection. Check your network and try again.",
+    "load_more_error": "Could not load more matches",
+    "noMatchesDescription": "Come back tomorrow for new matches!",
+    "retry": "Try again"
   },
   "chat": {
     "newMatch": "New match! 🎉",
     "chooseIcebreaker": "Choose a conversation starter or write your own message",
+    "startConversation": "Start the conversation with an icebreaker!",
     "typeMessage": "Type a message...",
+    "placeholderDepthMutual": "Write to each other…",
+    "placeholderDepthDeep": "Write something you want to share…",
     "noMessages": "No messages yet",
     "messages": "Messages",
     "ai_icebreakers": "AI-generated icebreakers",
@@ -99,6 +121,10 @@
     "footerTagline": "MÄÄK – Personality test for relationships · Find your match",
     "conversations": "Your conversations",
     "kemiCheck": "Chemistry Check",
+    "mic": "Microphone",
+    "muted": "Muted",
+    "volume": "Volume",
+    "endCall": "End call",
     "kemiCheckSubtitle": "Quick video 5–10 min",
     "kemiCheckTooltip": "Chemistry Check – short video to test your connection",
     "aiSuggestKemiCheck": "Seems like you have a lot in common! Book a Chemistry Check to get to know each other better.",
@@ -108,7 +134,15 @@
     "postVideoDismiss": "Close",
     "postVideoError": "Could not load suggestions. Try again later.",
     "chats": "Chats",
-    "createGroup": "Create collection"
+    "createGroup": "Create collection",
+    "today": "Today",
+    "call_history": "Call history",
+    "online_now": "Online now",
+    "more_options": "More options",
+    "block_user": "Block user",
+    "block_user_confirm": "Block this user? You will no longer be able to chat.",
+    "delete_person": "Remove person",
+    "delete_person_confirm": "Remove this person from your matches? The conversation will be deleted."
   },
   "groupChat": {
     "title": "Group chat",
@@ -237,7 +271,13 @@
     "privacy_description": "Control who can see your profile, photos and activity. More options coming soon.",
     "profile_visibility": "Profile visibility",
     "shared_data": "Shared data",
-    "verify_id_description": "Upload your ID to verify your account"
+    "verify_id_description": "Upload your ID to verify your account",
+    "matching_settings": "Matching settings",
+    "age": "Age",
+    "distance": "Distance",
+    "submit": "Save",
+    "about_us": "About MÄÄK",
+    "learn_personality": "Learn about personality & archetypes"
   },
   "notifications": {
     "title": "Notifications",

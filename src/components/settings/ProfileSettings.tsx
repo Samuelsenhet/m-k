@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonGhost, ButtonCoral, ButtonSecondary, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -71,26 +70,26 @@ export function ProfileSettings({
         </SheetHeader>
         <ScrollArea className="flex-1 min-h-0 max-h-[70vh] w-full">
           <div className="px-6 py-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{t('settings.account')}</CardTitle>
+            <CardV2 padding="none">
+              <CardV2Header className="p-6 pb-2">
+                <CardV2Title className="text-base">{t('settings.account')}</CardV2Title>
                 {displayName && (
                   <p className="text-sm font-medium text-primary">
                     @{displayName.toLowerCase().replace(/\s+/g, '_')}
                   </p>
                 )}
-                <CardDescription className="text-sm">{user.email}</CardDescription>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
                 {profileError && (
                   <p className="text-sm text-destructive mt-1">
                     {t('common.error')}. {onRefetch && (
-                      <Button type="button" variant="link" className="p-0 h-auto text-destructive underline" onClick={onRefetch}>
+                      <ButtonGhost type="button" className="p-0 h-auto text-destructive underline" onClick={onRefetch}>
                         {t('common.retry')}
-                      </Button>
+                      </ButtonGhost>
                     )}
                   </p>
                 )}
-              </CardHeader>
-              <CardContent className="space-y-3">
+              </CardV2Header>
+              <CardV2Content className="p-6 pt-0 space-y-3">
                 {onOpenVerifyId && (
                   <div
                     role="button"
@@ -112,15 +111,15 @@ export function ProfileSettings({
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border">
                   <span className="text-sm">{t('settings.notifications')}</span>
-                  <Button variant="ghost" size="sm" onClick={onOpenNotifications}>
+                  <ButtonGhost size="sm" onClick={onOpenNotifications}>
                     {t('settings.manage')}
-                  </Button>
+                  </ButtonGhost>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-border">
                   <span className="text-sm">{t('settings.privacy')}</span>
-                  <Button variant="ghost" size="sm" onClick={onOpenPrivacy}>
+                  <ButtonGhost size="sm" onClick={onOpenPrivacy}>
                     {t('settings.manage')}
-                  </Button>
+                  </ButtonGhost>
                 </div>
                 <div
                   role="button"
@@ -168,13 +167,13 @@ export function ProfileSettings({
                   <span className="text-sm">{t('settings.reporting')}</span>
                   <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
                 </Link>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{t('settings.support_and_reports')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-0">
+              </CardV2Content>
+            </CardV2>
+            <CardV2 padding="none">
+              <CardV2Header className="p-6 pb-2">
+                <CardV2Title className="text-base">{t('settings.support_and_reports')}</CardV2Title>
+              </CardV2Header>
+              <CardV2Content className="p-6 pt-0 space-y-0">
                 <Link
                   to="/report-history"
                   onClick={() => onOpenChange(false)}
@@ -209,21 +208,20 @@ export function ProfileSettings({
                     <span className="text-sm text-muted-foreground">{t('settings.view')}</span>
                   </Link>
                 )}
-              </CardContent>
-            </Card>
-            <Button variant="destructive" className="w-full" onClick={onSignOut}>
+              </CardV2Content>
+            </CardV2>
+            <ButtonCoral className="w-full" onClick={onSignOut}>
               <LogOut className="w-4 h-4 shrink-0 mr-2" />
               {t('settings.logout')}
-            </Button>
+            </ButtonCoral>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
+                <ButtonSecondary
                   className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                 >
                   <Trash2 className="w-4 h-4 shrink-0 mr-2" />
                   {t('settings.delete_account')}
-                </Button>
+                </ButtonSecondary>
               </AlertDialogTrigger>
               <AlertDialogContent aria-describedby={deleteDescriptionId}>
                 <AlertDialogHeader>

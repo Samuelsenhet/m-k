@@ -132,7 +132,7 @@ export const useUserJourney = () => {
         isFirstDay,
       });
     } catch (err) {
-      console.error('Error fetching journey state:', err);
+      if (import.meta.env.DEV) console.error('Error fetching journey state:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch journey state'));
     } finally {
       setLoading(false);
@@ -186,7 +186,7 @@ export const useUserJourney = () => {
         journeyPhase: newPhase
       }));
     } catch (err) {
-      console.error('Error updating journey phase:', err);
+      if (import.meta.env.DEV) console.error('Error updating journey phase:', err);
     }
   };
 
@@ -230,7 +230,7 @@ export const useUserJourney = () => {
 
       await fetchJourneyState();
     } catch (err) {
-      console.error('Error incrementing matches received:', err);
+      if (import.meta.env.DEV) console.error('Error incrementing matches received:', err);
     }
   };
 

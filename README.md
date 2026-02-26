@@ -37,17 +37,17 @@ A Swedish personality-based dating platform with phone auth, daily matches (simi
 
 ## Deployment
 
-Built for deployment on Vercel with Supabase backend. See [docs/DEPLOY.md](docs/DEPLOY.md) for the full checklist. To use **maakapp.se** (or määkapp.com / määkapp.se), see [docs/DOMAIN_SETUP.md](docs/DOMAIN_SETUP.md).
+Built for deployment on Vercel with Supabase backend. **Follow [docs/DEPLOY.md](docs/DEPLOY.md) step by step** for env vars, build, test, and deploy (Vercel + Supabase). To use **maakapp.se** (or määkapp.com / määkapp.se), see [docs/DOMAIN_SETUP.md](docs/DOMAIN_SETUP.md).
 
 ## Phase 2 (post-launch)
 
-Post-launch tasks live in **PRD.md** under "Phase 2 – Post-launch" (US-030 and onwards). To work on them:
+Post-launch improvements live in **[docs/prd/PRD.md](docs/prd/PRD.md)** under "Phase 2 – Post-launch" (US-030+). To work on them:
 
-1. Open **PRD.md** and find the first unchecked story (first `- [ ]` in Phase 2).
+1. Open **docs/prd/PRD.md** and find the first unchecked story (first `- [ ]` in the file).
 2. Implement that story, then run `npm run typecheck` and `npm run build`.
 3. Mark the story's acceptance criteria `[x]` in PRD.md when done.
 
-**Ralph:** The scripts `ralph.sh` / `ralph.ps1` use **docs/PRE_DEV_CHECKLIST.md** by default. To have Ralph work on Phase 2 stories, point the script at **PRD.md** (first `- [ ]` in the file). See **progress.txt** for how the task source was switched to the Pre-dev checklist; reverse that to use PRD again for Phase 2.
+**Ralph:** To run Ralph on Phase 2, point the script at **docs/prd/PRD.md** (first `- [ ]` in PRD.md). See **docs/progress/progress.txt** for task-source notes.
 
 ## Project structure
 

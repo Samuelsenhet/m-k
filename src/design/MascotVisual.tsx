@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- getMascotTokenForDesignState/getMascotLayout re-exported from design/index */
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { COLORS, MASCOT_TOKENS, type MascotStateKey } from "./tokens";

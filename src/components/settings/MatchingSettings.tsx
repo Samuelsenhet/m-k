@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Users } from 'lucide-react';
+import { ButtonPrimary, CardV2, CardV2Content } from '@/components/ui-v2';
 import { Slider } from '@/components/ui/slider';
+import { COLORS } from '@/design/tokens';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -90,8 +91,17 @@ export function MatchingSettings() {
   };
 
   return (
-    <CardContent className="p-5 space-y-6 bg-card rounded-2xl">
-      <h3 className="text-base font-semibold text-foreground">{t('settings.matching_settings')}</h3>
+    <CardV2>
+      <CardV2Content className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: COLORS.sage[100] }}
+        >
+          <Users className="w-5 h-5" style={{ color: COLORS.primary[600] }} />
+        </div>
+        <h3 className="text-base font-semibold text-foreground">{t('settings.matching_settings')}</h3>
+      </div>
       {/* Age – label left, value right, range slider */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -132,14 +142,15 @@ export function MatchingSettings() {
       </div>
 
       {/* Submit button – full width, rounded, primary green */}
-      <Button
+      <ButtonPrimary
         onClick={handleSave}
         disabled={loading || !hasChanges}
-        className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 shadow-sm"
+        className="w-full rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 shadow-sm"
         size="lg"
       >
         {loading ? t('common.saving') : t('settings.submit')}
-      </Button>
-    </CardContent>
+      </ButtonPrimary>
+    </CardV2Content>
+    </CardV2>
   );
 }

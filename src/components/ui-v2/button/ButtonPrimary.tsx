@@ -26,8 +26,8 @@ const ButtonPrimary = React.forwardRef<HTMLButtonElement, ButtonPrimaryProps>(
   ) => {
     const Comp = asChild ? Slot : "button";
     const sizes = {
-      sm: "h-10 px-4 text-sm gap-1.5 rounded-xl",
-      default: "h-12 px-6 text-base gap-2 rounded-xl",
+      sm: "h-10 px-4 text-sm gap-1.5 rounded-2xl",
+      default: "h-12 px-6 text-base gap-2 rounded-2xl",
       lg: "h-14 px-8 text-lg gap-2.5 rounded-2xl",
     };
     return (
@@ -53,9 +53,15 @@ const ButtonPrimary = React.forwardRef<HTMLButtonElement, ButtonPrimaryProps>(
         }
         {...props}
       >
-        {Icon && !iconRight && <Icon className="w-5 h-5" />}
-        {children}
-        {Icon && iconRight && <Icon className="w-5 h-5" />}
+        {asChild ? (
+          children
+        ) : (
+          <>
+            {Icon && !iconRight && <Icon className="w-5 h-5" />}
+            {children}
+            {Icon && iconRight && <Icon className="w-5 h-5" />}
+          </>
+        )}
       </Comp>
     );
   },

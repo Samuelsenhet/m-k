@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConsent } from '@/contexts/useConsent';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonSecondary, ButtonGhost } from '@/components/ui-v2';
 import { Switch } from '@/components/ui/switch';
 import { Shield, Heart, ChartBar, Megaphone, Sparkles, ChevronRight, Check } from 'lucide-react';
 
@@ -100,23 +100,22 @@ export const GdprOnboarding = () => {
 
               {/* Actions */}
               <div className="space-y-3">
-                <Button
+                <ButtonPrimary
                   onClick={acceptAll}
-                  className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                   size="lg"
+                  className="w-full gap-2"
                 >
                   <Check className="h-4 w-4" />
                   Acceptera alla
-                </Button>
-                <Button
+                </ButtonPrimary>
+                <ButtonSecondary
                   onClick={handleCustomize}
-                  variant="outline"
-                  className="w-full gap-2"
                   size="lg"
+                  className="w-full gap-2"
                 >
                   Anpassa inställningar
                   <ChevronRight className="h-4 w-4" />
-                </Button>
+                </ButtonSecondary>
               </div>
 
               {/* Footer links */}
@@ -189,19 +188,18 @@ export const GdprOnboarding = () => {
 
               {/* Actions */}
               <div className="mt-6 flex gap-3">
-                <Button
+                <ButtonGhost
                   onClick={() => setStep('welcome')}
-                  variant="outline"
                   className="flex-1"
                 >
                   Tillbaka
-                </Button>
-                <Button
+                </ButtonGhost>
+                <ButtonPrimary
                   onClick={handleSavePreferences}
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="flex-1"
                 >
                   Spara val
-                </Button>
+                </ButtonPrimary>
               </div>
             </div>
           </motion.div>

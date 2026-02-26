@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary } from '@/components/ui-v2';
 import { Sparkles, Users, MessageCircle } from 'lucide-react';
 import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
+import { SCREEN_CONTAINER_CLASS } from '@/layout/screenLayout';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
@@ -14,8 +15,6 @@ interface WelcomeScreenProps {
   displayName?: string;
   onContinue: () => void;
 }
-
-const MAAK_GUIDE_COPY = 'Jag guidar dig lugnt genom det här.';
 
 export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
   const { t } = useTranslation();
@@ -41,7 +40,7 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen gradient-hero flex flex-col items-center justify-center p-4">
+    <div className={cn('min-h-screen gradient-hero flex flex-col items-center justify-center', SCREEN_CONTAINER_CLASS)}>
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-float" />
@@ -49,24 +48,21 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
         <div className="absolute bottom-20 right-10 w-40 h-40 bg-primary/5 rounded-full blur-2xl animate-float" style={{ animationDelay: '4s' }} />
       </div>
 
-      <div className="relative max-w-md w-full text-center">
+      <div className="relative max-w-md w-full text-center space-y-6">
         {/* Määk as guide + Welcome */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, type: 'spring' }}
-          className="mb-8"
         >
-          <div className="flex justify-center mb-4">
-            <Mascot {...mascot} />
-          </div>
+          <Mascot {...mascot} />
           <motion.p
             initial={{ y: 8, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.4 }}
             className="text-sm text-muted-foreground mb-6"
           >
-            {MAAK_GUIDE_COPY}
+            {t('maak.guide')}
           </motion.p>
 
           <motion.h1
@@ -106,7 +102,7 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="space-y-4 mb-8"
+          className="space-y-4"
         >
           {features.map((feature, index) => (
             <motion.div
@@ -137,14 +133,14 @@ export function WelcomeScreen({ displayName, onContinue }: WelcomeScreenProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <Button
+          <ButtonPrimary
             onClick={onContinue}
             size="lg"
-            className="w-full gradient-primary text-primary-foreground border-0 shadow-glow text-lg py-6"
+            className="w-full text-lg py-6"
           >
             <Sparkles className="w-5 h-5 mr-2" />
             Se mina matchningar
-          </Button>
+          </ButtonPrimary>
         </motion.div>
 
         {/* Confetti-like decorations */}

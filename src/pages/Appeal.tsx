@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonPrimary, ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ChevronLeft, FileQuestion, CheckCircle } from 'lucide-react';
@@ -43,7 +42,7 @@ export default function Appeal() {
       .select('id')
       .single();
     if (error) {
-      console.error('Appeal insert error:', error);
+      if (import.meta.env.DEV) console.error('Appeal insert error:', error);
       toast.error(t('appeal.submit_error'));
       setSubmitting(false);
       return;
@@ -61,7 +60,7 @@ export default function Appeal() {
           },
         });
       } catch (e) {
-        console.warn('Appeal confirmation email failed:', e);
+        if (import.meta.env.DEV) console.warn('Appeal confirmation email failed:', e);
       }
     }
     setSubmitting(false);
@@ -80,20 +79,20 @@ export default function Appeal() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background pb-20 flex flex-col items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
-          <CardHeader>
-            <CardTitle className="font-serif flex items-center gap-2">
+        <CardV2 className="max-w-lg w-full" padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-primary" />
               {t('appeal.received_title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            </CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4 text-sm text-muted-foreground">
             <p>{t('appeal.received_message')}</p>
-            <Button asChild className="w-full">
+            <ButtonPrimary asChild className="w-full">
               <Link to="/profile">{t('common.back')}</Link>
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonPrimary>
+          </CardV2Content>
+        </CardV2>
         <BottomNav />
       </div>
     );
@@ -103,11 +102,11 @@ export default function Appeal() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <ButtonIcon asChild>
             <Link to="/profile" state={{ openSettings: true }}>
               <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold flex items-center gap-2">
             <FileQuestion className="w-5 h-5" />
             {t('appeal.title')}
@@ -117,11 +116,11 @@ export default function Appeal() {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         <p className="text-sm text-muted-foreground">{t('appeal.intro')}</p>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-base">{t('appeal.form_title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <CardV2 padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif text-base">{t('appeal.form_title')}</CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="reason">{t('appeal.reason')} *</Label>
@@ -135,12 +134,12 @@ export default function Appeal() {
                   className="resize-none"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={submitting || !reason.trim()}>
+              <ButtonPrimary type="submit" className="w-full" disabled={submitting || !reason.trim()}>
                 {submitting ? t('common.sending') : t('appeal.submit')}
-              </Button>
+              </ButtonPrimary>
             </form>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
 
         <p className="text-xs text-muted-foreground text-center">
           <Link to="/reporting" className="underline hover:text-foreground">

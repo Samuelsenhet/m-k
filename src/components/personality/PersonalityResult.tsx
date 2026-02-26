@@ -1,5 +1,5 @@
 import { type PersonalityTestResult, type DimensionKey, type PersonalityCategory, DIMENSION_LABELS, CATEGORY_INFO, ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY } from '@/types/personality';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonSecondary } from '@/components/ui-v2';
 import { Heart, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -221,27 +221,27 @@ export const PersonalityResult = ({ result, isExistingResult = false, onContinue
           style={{ animationDelay: '0.5s' }}
         >
           {isOnboarding ? (
-            <Button
+            <ButtonPrimary
               onClick={onContinue}
-              className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
+              className="flex-1 gap-2"
             >
               <Heart className="w-4 h-4" />
               Fortsätt med profilen
-            </Button>
+            </ButtonPrimary>
           ) : (
             <>
-              <Button asChild variant="outline" className="flex-1 gap-2">
+              <ButtonSecondary asChild className="flex-1 gap-2">
                 <Link to="/profile">
                   <User className="w-4 h-4" />
                   Gå till profil
                 </Link>
-              </Button>
-              <Button asChild className="flex-1 gap-2 gradient-primary text-primary-foreground border-0 shadow-glow">
+              </ButtonSecondary>
+              <ButtonPrimary asChild className="flex-1 gap-2">
                 <Link to="/matches">
                   <Heart className="w-4 h-4" />
                   Hitta matchningar
                 </Link>
-              </Button>
+              </ButtonPrimary>
             </>
           )}
         </div>

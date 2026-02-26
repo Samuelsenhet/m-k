@@ -4,8 +4,7 @@ import { useAuth } from "@/contexts/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Send, Users, MoreVertical, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ButtonSecondary, ButtonIcon, InputV2 } from "@/components/ui-v2";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
@@ -232,9 +231,9 @@ export default function GroupChatWindow() {
         <p className="text-muted-foreground text-center mb-4">
           {t("groupChat.notFoundOrNoAccess")}
         </p>
-        <Button variant="outline" onClick={() => navigate("/group-chat")}>
+        <ButtonSecondary onClick={() => navigate("/group-chat")}>
           {t("groupChat.backToList")}
-        </Button>
+        </ButtonSecondary>
       </div>
     );
   }
@@ -360,7 +359,7 @@ export default function GroupChatWindow() {
           }}
           className="flex gap-2 items-center"
         >
-          <Input
+          <InputV2
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={messages.length === 0 ? t("groupChat.emptyRoomCta") : t("chat.typeMessage")}
@@ -368,9 +367,9 @@ export default function GroupChatWindow() {
             aria-label={t("chat.typeMessage")}
             disabled={sending}
           />
-          <Button type="submit" size="icon" disabled={sending || !input.trim()} aria-label={t("chat.send")}>
+          <ButtonIcon type="submit" disabled={sending || !input.trim()} aria-label={t("chat.send")}>
             <Send className="w-4 h-4 shrink-0" />
-          </Button>
+          </ButtonIcon>
         </form>
       </div>
     </div>

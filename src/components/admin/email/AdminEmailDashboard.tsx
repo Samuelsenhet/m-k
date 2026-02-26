@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Mail, Send, FileText, BarChart3, Calendar, History, LayoutTemplate } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, CardV2, CardV2Content, InputV2 } from '@/components/ui-v2';
 import { toast } from 'sonner';
 import EmailTemplatesManager from './EmailTemplatesManager';
 import BulkEmailSender from './BulkEmailSender';
@@ -110,8 +108,8 @@ export default function AdminEmailDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
+        <CardV2 padding="none">
+          <CardV2Content className="pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/15 dark:bg-primary/20">
                 <Mail className="w-5 h-5 text-primary" />
@@ -121,10 +119,10 @@ export default function AdminEmailDashboard() {
                 <p className="text-xl font-bold">{stats.sentToday}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
+          </CardV2Content>
+        </CardV2>
+        <CardV2 padding="none">
+          <CardV2Content className="pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                 <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -134,10 +132,10 @@ export default function AdminEmailDashboard() {
                 <p className="text-xl font-bold">{stats.totalTemplates}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
+          </CardV2Content>
+        </CardV2>
+        <CardV2 padding="none">
+          <CardV2Content className="pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
                 <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -147,27 +145,27 @@ export default function AdminEmailDashboard() {
                 <p className="text-xl font-bold">{stats.pendingBulk}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
+      <CardV2 padding="none">
+        <CardV2Content className="pt-6">
           <h3 className="font-semibold mb-2">Skicka testmail</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Skickar ett e-postmeddelande med mallen &quot;Rapport mottagen&quot; till adressen du anger. Använd för att verifiera att e-postfunktionen fungerar.
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <Input
+            <InputV2
               type="email"
               placeholder="t.ex. din@epost.se"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
               className="max-w-xs"
             />
-            <Button onClick={sendTestEmail} disabled={testSending}>
+            <ButtonPrimary onClick={sendTestEmail} disabled={testSending}>
               {testSending ? 'Skickar...' : 'Skicka testmail'}
-            </Button>
+            </ButtonPrimary>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
             Om det misslyckas: kontrollera att Edge Function &quot;send-email&quot; är deployad och att <strong>RESEND_API_KEY</strong> är satt i Supabase (Edge Functions → send-email → Secrets). Avsändardomän (t.ex. maakapp.se) måste vara verifierad i Resend.
@@ -181,8 +179,8 @@ export default function AdminEmailDashboard() {
               <li>Avsändare är <strong>MAIL_FROM</strong> (standard: no-reply@maakapp.se). Domänen måste vara verifierad i Resend → Domains.</li>
             </ul>
           </div>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
 
       <Tabs defaultValue="templates" className="w-full">
         <TabsList className="grid w-full grid-cols-4 max-w-lg">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonGhost } from '@/components/ui-v2';
 import { Download, X, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -120,22 +120,21 @@ export const InstallPrompt = () => {
 
           {!isIOS && deferredPrompt && (
             <div className="mt-4 flex gap-2">
-              <Button
+              <ButtonGhost
                 onClick={handleDismiss}
-                variant="ghost"
                 size="sm"
                 className="flex-1"
               >
                 Senare
-              </Button>
-              <Button
+              </ButtonGhost>
+              <ButtonPrimary
                 onClick={handleInstall}
                 size="sm"
                 className="flex-1 gap-2 bg-primary text-primary-foreground"
               >
                 <Download className="h-4 w-4" />
                 Installera
-              </Button>
+              </ButtonPrimary>
             </div>
           )}
         </div>

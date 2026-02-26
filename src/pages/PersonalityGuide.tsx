@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonIcon, ButtonGhost, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,11 +35,11 @@ export default function PersonalityGuide() {
     <div className="min-h-screen bg-background pb-24">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <ButtonIcon asChild>
             <Link to="/profile" state={{ openSettings: true }}>
               <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold">{t('personality_guide.title', 'Personlighet & arketyper')}</h1>
         </div>
       </div>
@@ -72,22 +71,21 @@ export default function PersonalityGuide() {
           const style = CATEGORY_STYLES[categoryKey];
 
           return (
-            <Card key={categoryKey} className={cn('overflow-hidden', style.className)}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
+            <CardV2 key={categoryKey} padding="none" className={cn('overflow-hidden', style.className)}>
+              <CardV2Header className="p-6 pb-2">
+                <CardV2Title className="text-lg flex items-center gap-2">
                   <span>{category.emoji}</span>
                   {category.title}
-                </CardTitle>
+                </CardV2Title>
                 <p className="text-sm text-muted-foreground opacity-90">{category.description}</p>
-              </CardHeader>
-              <CardContent className="space-y-2 pt-0">
+              </CardV2Header>
+              <CardV2Content className="px-6 pb-6 space-y-2">
                 {codes.map((code) => {
                   const info = ARCHETYPE_INFO[code as ArchetypeCode];
                   return (
                     <Collapsible key={code} defaultOpen={false} className="group/collapse">
                       <CollapsibleTrigger asChild>
-                        <Button
-                          variant="ghost"
+                        <ButtonGhost
                           className={cn(
                             'w-full justify-between h-auto py-3 px-4 rounded-xl border bg-background/60 hover:bg-background/80',
                             style.className
@@ -101,7 +99,7 @@ export default function PersonalityGuide() {
                             </div>
                           </span>
                           <ChevronDown className="w-5 h-5 shrink-0 opacity-70 transition-transform group-data-[state=open]/collapse:rotate-180" />
-                        </Button>
+                        </ButtonGhost>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="mt-2 ml-2 pl-4 border-l-2 border-border space-y-4 py-3">
@@ -135,19 +133,19 @@ export default function PersonalityGuide() {
                     </Collapsible>
                   );
                 })}
-              </CardContent>
-            </Card>
+              </CardV2Content>
+            </CardV2>
           );
         })}
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t('personality_guide.abbreviations_title', 'Förkortningar')}</CardTitle>
+        <CardV2 padding="none">
+          <CardV2Header className="p-6 pb-2">
+            <CardV2Title className="text-base">{t('personality_guide.abbreviations_title', 'Förkortningar')}</CardV2Title>
             <p className="text-sm text-muted-foreground">
               {t('personality_guide.abbreviations_intro', 'Varje arketyp har en förkortning (t.ex. INFP) som beskriver dess kärna.')}
             </p>
-          </CardHeader>
-          <CardContent>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0">
             <dl className="grid gap-2 text-sm">
               {(['ei', 'sn', 'tf', 'jp'] as DimensionKey[]).map((dim) => {
                 const labels = DIMENSION_LABELS[dim];
@@ -166,8 +164,8 @@ export default function PersonalityGuide() {
             <p className="text-xs text-muted-foreground mt-3">
               {t('personality_guide.example_code', 'Exempel: INFP = Introversion, Intuition, Feeling, Prospecting')}
             </p>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       </div>
 
       <BottomNav />

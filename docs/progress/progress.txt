@@ -59,11 +59,11 @@
 - [x] US-012: Add photo reordering functionality
 - [x] US-013: Add photo deletion with confirmation
 - [x] US-014: Enhance photo upload with progress indicator
-- [ ] US-015: Add photo count indicator and limits
-- [ ] US-016: Add Swedish translations for photo management
+- [x] US-015: Add photo count indicator and limits (PROFILE_PHOTO_MAX, badge X/max, tooltips)
+- [x] US-016: Add Swedish translations for photo management (PhotoUpload uses i18n)
 
 ## Remaining Work
-- Complete Profile Photo Management feature (5 stories)
+- Profile Photo Management feature complete (5/5 stories)
 - Note: Types were manually added since Docker wasn't running. When local Supabase is available, you can optionally regenerate types with: `supabase gen types typescript --local > src/integrations/supabase/types.ts`
 
 ## What Was Built
@@ -145,3 +145,8 @@
 
 ---
 Restored to main project from qrp worktree.
+
+## Phase 2 (post-launch)
+- Post-launch stories: see docs/prd/PRD.md, section "Phase 2 – Post-launch" (US-030+).
+- To pick next task: find the first `- [ ]` in PRD.md, implement, run typecheck + build, then mark [x].
+- Ralph can be pointed at docs/prd/PRD.md to work on the first unchecked Phase 2 story.

@@ -25,6 +25,12 @@ import {
   MatchProfileCardLight,
   MatchProfileCardDark,
 } from "./card";
+import {
+  VideoCallScreen,
+  PhotoUploadScreen,
+  MatchListPage,
+  ProfilePageDark,
+} from "./screens";
 import { MessageCircle, Sparkles } from "lucide-react";
 
 /**
@@ -72,8 +78,8 @@ export function UiV2Demo() {
           maxLength={6}
           render={({ slots }) => (
             <InputOTPV2Group>
-              {slots.map((_, i) => (
-                <InputOTPV2Slot key={i} index={i} />
+              {slots.map((slot, i) => (
+                <InputOTPV2Slot key={i} {...slot} />
               ))}
             </InputOTPV2Group>
           )}
@@ -160,6 +166,61 @@ export function UiV2Demo() {
               { label: "Music", icon: <Sparkles className="size-3.5" /> },
             ]}
           />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h3 className="text-label font-medium text-muted-foreground">FAS 5 – Screens</h3>
+        <p className="text-sm text-muted-foreground">
+          Full-screen components (scroll to preview). Exact spec from MaakUnifiedDesignSystem.jsx.
+        </p>
+        <div className="space-y-6">
+          <div>
+            <span className="text-caption font-medium text-foreground block mb-2">VideoCallScreen</span>
+            <div className="rounded-xl overflow-hidden border border-border max-h-[320px] overflow-y-auto">
+              <VideoCallScreen callerName="Sofia" onEnd={() => {}} />
+            </div>
+          </div>
+          <div>
+            <span className="text-caption font-medium text-foreground block mb-2">PhotoUploadScreen</span>
+            <div className="rounded-xl overflow-hidden border border-border max-h-[420px] overflow-y-auto">
+              <PhotoUploadScreen
+                photos={[null, null, null, null, null, null]}
+                onPhotoAdd={() => {}}
+                onNext={() => {}}
+                currentStep={4}
+                totalSteps={6}
+              />
+            </div>
+          </div>
+          <div>
+            <span className="text-caption font-medium text-foreground block mb-2">MatchListPage</span>
+            <div className="rounded-xl overflow-hidden border border-border max-h-[400px] overflow-y-auto">
+              <MatchListPage
+                matches={[
+                  { name: "Emma", archetype: "diplomat", emoji: "🎭", matchType: "likhets" },
+                  { name: "Lucas", archetype: "strateger", emoji: "🦋", matchType: "motsats" },
+                ]}
+                likhetCount={1}
+                motsatsCount={1}
+              />
+            </div>
+          </div>
+          <div>
+            <span className="text-caption font-medium text-foreground block mb-2">ProfilePageDark</span>
+            <div className="rounded-xl overflow-hidden border border-border max-h-[380px] overflow-y-auto">
+              <ProfilePageDark
+                profile={{
+                  name: "Samuel Pierre",
+                  age: 29,
+                  height: "167 cm",
+                  occupation: "Entrepenör",
+                  location: "Spånga, Sverige",
+                  archetype: "byggare",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </section>
     </div>

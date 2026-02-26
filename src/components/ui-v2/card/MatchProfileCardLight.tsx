@@ -1,7 +1,7 @@
 import * as React from "react";
 import { MessageCircle, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CardV2 } from "./CardV2";
+import { CardV2, type RelationshipLevel } from "./CardV2";
 import { ButtonCoral, ButtonSecondary, ButtonGhost } from "../button";
 import { InterestChipV2 } from "./InterestChipV2";
 
@@ -11,6 +11,8 @@ export interface MatchProfileCardLightProps extends React.HTMLAttributes<HTMLDiv
   imageSrc?: string | null;
   imageAlt?: string;
   interests?: Array<{ label: string; icon?: React.ReactNode }>;
+  /** FAS Relationship Depth: 1=pending, 3=mutual */
+  relationshipLevel?: RelationshipLevel;
   onPassa?: () => void;
   onChatta?: () => void;
   onSeProfil?: () => void;
@@ -25,6 +27,7 @@ const MatchProfileCardLight = React.forwardRef<HTMLDivElement, MatchProfileCardL
       imageSrc,
       imageAlt,
       interests = [],
+      relationshipLevel,
       onPassa,
       onChatta,
       onSeProfil,
@@ -33,13 +36,20 @@ const MatchProfileCardLight = React.forwardRef<HTMLDivElement, MatchProfileCardL
     ref,
   ) => {
     return (
-      <CardV2 ref={ref} variant="default" padding="none" className={cn("overflow-hidden", className)} {...props}>
+      <CardV2
+        ref={ref}
+        variant="default"
+        padding="none"
+        relationshipLevel={relationshipLevel}
+        className={cn("overflow-hidden", className)}
+        {...props}
+      >
         <div className="relative aspect-[3/4] w-full bg-muted">
           {imageSrc ? (
             <img
               src={imageSrc}
               alt={imageAlt ?? name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain bg-transparent"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">

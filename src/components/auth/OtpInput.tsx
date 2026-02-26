@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Input } from '@/components/ui/input';
+import { InputV2 } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
@@ -62,7 +62,7 @@ export const OtpInput = ({
       <Label>Verifieringskod</Label>
       <div className="flex gap-2 justify-center" onPaste={handlePaste}>
         {Array.from({ length }).map((_, index) => (
-          <Input
+          <InputV2
             key={index}
             ref={(el) => (inputRefs.current[index] = el)}
             type="text"

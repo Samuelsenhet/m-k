@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useLoaderData } from 'react-router-dom';
+import type { ProfileLoaderData } from '@/routes';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { LogOut, Settings, X, Trophy, Sparkles, Trash2, ShieldCheck, ChevronDown, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
+import { ButtonGhost, ButtonPrimary, ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
+import { LoadingStateWithMascot } from '@/components/ui-v2';
+import { SCREEN_CONTAINER_CLASS } from '@/layout/screenLayout';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -19,6 +21,9 @@ import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
+import { COLORS } from '@/design/tokens';
 
 interface PersonalityResultRow {
   id: string;
@@ -28,13 +33,15 @@ interface PersonalityResultRow {
 const SETTINGS_SUBPAGES = ['/terms', '/privacy', '/reporting', '/about', '/report', '/report-history', '/appeal', '/admin/reports'];
 
 export default function Profile() {
+  const loaderData = useLoaderData() as ProfileLoaderData | undefined;
+  const initialProfile = loaderData?.profileData ?? null;
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const prevPathRef = useRef(location.pathname);
-  const [archetype, setArchetype] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [archetype, setArchetype] = useState<string | null>(initialProfile?.archetype ?? null);
+  const [displayName, setDisplayName] = useState<string | null>(initialProfile?.displayName ?? null);
   const [isEditing, setIsEditing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -43,7 +50,10 @@ export default function Profile() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [verifyIdOpen, setVerifyIdOpen] = useState(false);
   const [privacyManageOpen, setPrivacyManageOpen] = useState(false);
-  const [isModerator, setIsModerator] = useState<boolean | null>(null);
+  const onlineCount = useOnlineCount(user?.id);
+  const [isModerator, setIsModerator] = useState<boolean | null>(
+    initialProfile != null ? initialProfile.isModerator : null
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -71,7 +81,11 @@ export default function Profile() {
       .maybeSingle();
     if (error) {
       if (import.meta.env.DEV) console.error('Profile: personality_results fetch error', error);
-      toast.error(t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.'), {
+      const isNetworkError = error?.message === 'Failed to fetch' || (typeof error?.message === 'string' && /fetch|network/i.test(error.message));
+      const message = isNetworkError
+        ? t('profile.network_error', 'Ingen internetanslutning. Kontrollera nätverket och försök igen.')
+        : t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.');
+      toast.error(message, {
         action: { label: t('common.retry', 'Försök igen'), onClick: () => fetchArchetype() },
       });
       return;
@@ -80,8 +94,8 @@ export default function Profile() {
   }, [user, t]);
 
   useEffect(() => {
-    if (user) fetchArchetype();
-  }, [user, fetchArchetype]);
+    if (user && !initialProfile) fetchArchetype();
+  }, [user, initialProfile, fetchArchetype]);
 
   const fetchProfileAndModerator = useCallback(async () => {
     if (!user) return;
@@ -97,15 +111,19 @@ export default function Profile() {
       setIsModerator(!!modRes.data);
     } catch (err) {
       if (import.meta.env.DEV) console.error('Profile: profile/moderator fetch error', err);
-      toast.error(t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.'), {
+      const isNetworkError = err instanceof TypeError && err.message === 'Failed to fetch';
+      const message = isNetworkError
+        ? t('profile.network_error', 'Ingen internetanslutning. Kontrollera nätverket och försök igen.')
+        : t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.');
+      toast.error(message, {
         action: { label: t('common.retry', 'Försök igen'), onClick: () => fetchProfileAndModerator() },
       });
     }
   }, [user, t]);
 
   useEffect(() => {
-    if (user) fetchProfileAndModerator();
-  }, [user, fetchProfileAndModerator]);
+    if (user && !initialProfile) fetchProfileAndModerator();
+  }, [user, initialProfile, fetchProfileAndModerator]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -134,7 +152,7 @@ export default function Profile() {
       
       if (errors.length > 0) {
         if (import.meta.env.DEV) {
-          console.error('Errors during account deletion:', errors);
+          if (import.meta.env.DEV) console.error('Errors during account deletion:', errors);
         }
         // Continue anyway - some tables might not exist or be empty
       }
@@ -146,7 +164,7 @@ export default function Profile() {
         .delete()
         .eq(profileKey, user.id);
       if (profileError) {
-        console.error('Error deleting profile:', profileError);
+        if (import.meta.env.DEV) console.error('Error deleting profile:', profileError);
         throw new Error(t('profile.error_saving'));
       }
       
@@ -157,7 +175,7 @@ export default function Profile() {
       navigate('/');
     } catch (error) {
       if (import.meta.env.DEV) {
-        console.error('Error deleting account:', error);
+        if (import.meta.env.DEV) console.error('Error deleting account:', error);
       }
       toast.error(t('common.error') + '. ' + t('common.retry'));
     } finally {
@@ -167,9 +185,16 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
-      </div>
+      <>
+        <div className="min-h-screen bg-gradient-premium pb-24 safe-area-bottom flex flex-col">
+          <LoadingStateWithMascot
+            message={t('common.loading')}
+            className="flex-1"
+            emotionalConfig={{ screen: "profile" }}
+          />
+        </div>
+        <BottomNav />
+      </>
     );
   }
 
@@ -188,17 +213,27 @@ export default function Profile() {
           </SheetHeader>
           <ScrollArea className="flex-1 min-h-0 max-h-[70vh] w-full">
             <div className="px-6 py-4 space-y-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('settings.account')}</CardTitle>
+              {hasValidSupabaseConfig && (
+                <div
+                  className="rounded-2xl py-3 px-4 text-center text-sm font-medium tabular-nums"
+                  style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
+                </div>
+              )}
+              <CardV2>
+                <CardV2Header className="pb-2">
+                  <CardV2Title className="text-base">{t('settings.account')}</CardV2Title>
                   {displayName && (
                     <p className="text-sm font-medium text-primary">
                       @{displayName.toLowerCase().replace(/\s+/g, '_')}
                     </p>
                   )}
-                  <CardDescription className="text-sm">{user.email}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </CardV2Header>
+                <CardV2Content className="space-y-3">
                   <div
                     role="button"
                     tabIndex={0}
@@ -228,9 +263,9 @@ export default function Profile() {
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-sm">{t('settings.privacy')}</span>
-                    <Button variant="ghost" size="sm" onClick={() => setPrivacyManageOpen(true)}>
+                    <ButtonGhost size="sm" onClick={() => setPrivacyManageOpen(true)}>
                       {t('settings.manage')}
-                    </Button>
+                    </ButtonGhost>
                   </div>
                   <div
                     role="button"
@@ -285,19 +320,19 @@ export default function Profile() {
                     <span className="text-sm font-normal">{t('settings.about_us')}</span>
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
-                </CardContent>
-              </Card>
+                </CardV2Content>
+              </CardV2>
               {/* Matching settings – Age & Distance sliders + Submit */}
-              <Card className="rounded-2xl overflow-hidden">
-                <CardContent className="p-0">
+              <CardV2 className="overflow-hidden" padding="none">
+                <CardV2Content className="p-0">
                   <MatchingSettings />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('settings.support_and_reports')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-0">
+                </CardV2Content>
+              </CardV2>
+              <CardV2>
+                <CardV2Header className="pb-2">
+                  <CardV2Title className="text-base">{t('settings.support_and_reports')}</CardV2Title>
+                </CardV2Header>
+                <CardV2Content className="space-y-0">
                   <div
                     role="button"
                     tabIndex={0}
@@ -340,25 +375,18 @@ export default function Profile() {
                       <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                     </div>
                   )}
-                </CardContent>
-              </Card>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={handleSignOut}
-              >
+                </CardV2Content>
+              </CardV2>
+              <ButtonPrimary className="w-full" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 {t('settings.logout')}
-              </Button>
+              </ButtonPrimary>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  >
+                  <ButtonGhost className="w-full border border-destructive/40 text-destructive hover:bg-destructive/10">
                     <Trash2 className="w-4 h-4 mr-2" />
                     {t('settings.delete_account')}
-                  </Button>
+                  </ButtonGhost>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -414,11 +442,11 @@ export default function Profile() {
             </p>
             <div className="flex items-center justify-between py-3 border-b border-border">
               <span className="text-sm">Profilsynlighet</span>
-              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
+              <ButtonGhost size="sm" disabled>Kommer snart</ButtonGhost>
             </div>
             <div className="flex items-center justify-between py-3 border-b border-border">
               <span className="text-sm">Deldata</span>
-              <Button variant="outline" size="sm" disabled>Kommer snart</Button>
+              <ButtonGhost size="sm" disabled>Kommer snart</ButtonGhost>
             </div>
           </div>
         </SheetContent>
@@ -433,14 +461,9 @@ export default function Profile() {
           <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif font-bold text-xl text-white">{t('achievements.title')}</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setShowAchievements(false)}
-                className="text-white"
-              >
+              <ButtonIcon onClick={() => setShowAchievements(false)} className="text-white hover:bg-white/10">
                 <X className="w-5 h-5" />
-              </Button>
+              </ButtonIcon>
             </div>
             <AchievementsPanel />
           </div>
@@ -448,23 +471,22 @@ export default function Profile() {
           <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif font-bold text-xl text-white">{t('profile.edit_profile')}</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsEditing(false)}
-                className="text-white"
-              >
+              <ButtonIcon onClick={() => setIsEditing(false)} className="text-white hover:bg-white/10">
                 <X className="w-5 h-5" />
-              </Button>
+              </ButtonIcon>
             </div>
             <ProfileEditor onComplete={() => setIsEditing(false)} />
           </div>
         ) : (
-          <ProfileView 
-            onEdit={() => setIsEditing(true)} 
-            archetype={archetype}
-            onSettings={() => setSettingsOpen(true)}
-          />
+          <div className={SCREEN_CONTAINER_CLASS}>
+            <div className="space-y-6">
+              <ProfileView
+                onEdit={() => setIsEditing(true)}
+                archetype={archetype}
+                onSettings={() => setSettingsOpen(true)}
+              />
+            </div>
+          </div>
         )}
       </div>
       <BottomNav />

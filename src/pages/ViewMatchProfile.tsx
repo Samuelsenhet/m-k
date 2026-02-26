@@ -72,6 +72,7 @@ export default function ViewMatchProfile() {
   }
 
   const comment = personalityInsight ?? matchFromList?.personalityInsight ?? null;
+  const relationshipLevel = matchFromList?.status === "mutual" ? 3 : 1;
 
   return (
     <MatchProfileView
@@ -79,6 +80,7 @@ export default function ViewMatchProfile() {
       matchId={matchId || undefined}
       matchScore={matchScore}
       personalityInsight={comment}
+      relationshipLevel={relationshipLevel}
       onBack={() => navigate(-1)}
       onLike={handleLike}
       onPass={handlePass}

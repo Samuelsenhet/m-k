@@ -23,45 +23,47 @@ export const COLORS = {
     900: "#1A2D1E",
   },
 
-  /** ACCENT: Coral – Start Chat, notifikationer, emotionell värme */
+  /** ACCENT: Coral – Start Chat, notifikationer (MaakPolished) */
   coral: {
     50: "#FFF5F3",
     100: "#FFE8E4",
     200: "#FFD4CC",
-    300: "#FFB5A8",
-    400: "#FF9080",
-    500: "#F97068",
-    600: "#E85550",
-    700: "#C9403B",
+    300: "#FFB3A6",
+    400: "#FF8C7A",
+    500: "#FF6B54",
+    600: "#E84D35",
+    700: "#C43D28",
     800: "#A63330",
     900: "#872928",
   },
 
-  /** SECONDARY: Warm Sage – bakgrunder, subtil UI */
+  /** SECONDARY: Warm Sage – bakgrunder (MaakPolished lighter variants) */
   sage: {
-    50: "#FDFCFA",
-    100: "#F8F6F1",
-    200: "#F0EDE4",
-    300: "#E4DED0",
-    400: "#D1C8B5",
-    500: "#B2AC88",
+    50: "#F8FAF9",
+    100: "#EEF4F1",
+    200: "#E1EBE6",
+    300: "#CBDBD3",
+    400: "#A8C4B8",
+    500: "#87AD9D",
     600: "#968F6B",
     700: "#787254",
     800: "#5A5640",
     900: "#3D3B2C",
   },
 
-  /** NEUTRALS */
+  /** NEUTRALS (MaakPolished: cream, light, muted) */
   neutral: {
     white: "#FFFFFF",
-    offWhite: "#FAFAF8",
-    cream: "#F5F4F1",
+    cream: "#FFFCF7",
+    offWhite: "#FAFBFA",
+    light: "#F5F6F5",
+    muted: "#E8EBE9",
     sand: "#ECEAE5",
     stone: "#D4D1CA",
-    gray: "#9A9790",
-    slate: "#6B6860",
-    charcoal: "#3D3B36",
-    dark: "#1F1E1B",
+    gray: "#9CA3A0",
+    slate: "#6B7370",
+    charcoal: "#3D4543",
+    dark: "#1E2422",
   },
 
   /** PERSONALITY ARCHETYPES */

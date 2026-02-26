@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { useProfileData } from '@/hooks/useProfileData';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonIcon } from '@/components/ui-v2';
 import { ChevronLeft, Mail } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import AdminEmailDashboard from '@/components/admin/email/AdminEmailDashboard';
@@ -31,9 +31,9 @@ export default function AdminEmail() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 pb-20">
         <p className="text-muted-foreground text-center mb-4">Du har inte behörighet till denna sida.</p>
-        <Button asChild>
+        <ButtonPrimary asChild>
           <Link to="/profile">Tillbaka</Link>
-        </Button>
+        </ButtonPrimary>
         <BottomNav />
       </div>
     );
@@ -43,11 +43,11 @@ export default function AdminEmail() {
     <div className="min-h-screen bg-background pb-24">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <ButtonIcon asChild>
             <Link to="/profile" state={{ openSettings: true }}>
               <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold flex items-center gap-2">
             <Mail className="w-5 h-5" />
             E-posthantering

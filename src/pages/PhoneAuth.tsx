@@ -7,16 +7,26 @@ import { useAuth } from '@/contexts/useAuth';
 import { usePhoneAuth, PhoneAuthStep } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ButtonPrimary,
+  ButtonGhost,
+  CardV2,
+  CardV2Content,
+  CardV2Header,
+  CardV2Title,
+  InputOTPV2,
+  InputOTPV2Group,
+  InputOTPV2Slot,
+} from '@/components/ui-v2';
+import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/auth/PhoneInput';
-import { OtpInput } from '@/components/auth/OtpInput';
 import { AgeVerification } from '@/components/auth/AgeVerification';
 import { calculateAge } from '@/components/auth/age-utils';
 import { Heart, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { isSupabaseConfigured, isDemoEnabled } from '@/config/supabase';
+import { COLORS } from '@/design/tokens';
 
 type ProfilesInsert = Database['public']['Tables']['profiles']['Insert'];
 
@@ -166,7 +176,7 @@ export default function PhoneAuth() {
 
         if (updateError || !savedProfile) {
           if (import.meta.env.DEV) {
-            console.error('Profile update error:', updateError);
+            if (import.meta.env.DEV) console.error('Profile update error:', updateError);
           }
           // If profile doesn't exist, create it and return the inserted row
           const insertWithKey = async (key: 'id' | 'user_id') => {
@@ -193,7 +203,7 @@ export default function PhoneAuth() {
           
           if (insertError) {
             if (import.meta.env.DEV) {
-              console.error('Profile insert error:', insertError);
+              if (import.meta.env.DEV) console.error('Profile insert error:', insertError);
             }
             const base = t('profile.error_saving');
             const details =
@@ -262,50 +272,50 @@ export default function PhoneAuth() {
         </button>
 
         {step === 'phone' && !isSupabaseConfigured && !isDemoEnabled && (
-          <Card className="mb-4 border-destructive/30 bg-destructive/5">
-            <CardContent className="pt-4 pb-4">
+          <CardV2 className="mb-4 border-destructive/30 bg-destructive/5" padding="none">
+            <CardV2Content className="pt-4 pb-4">
               <p className="text-sm text-foreground">
                 Supabase är inte konfigurerad. Lägg till <code className="text-xs bg-muted px-1 rounded">VITE_SUPABASE_URL</code> och <code className="text-xs bg-muted px-1 rounded">VITE_SUPABASE_PUBLISHABLE_KEY</code> i <code className="text-xs bg-muted px-1 rounded">.env</code>. Kontakta support om problem kvarstår.
               </p>
-            </CardContent>
-          </Card>
+            </CardV2Content>
+          </CardV2>
         )}
         {step === 'phone' && isDemoEnabled && (
-          <Card className="mb-4 border-primary/30 bg-primary/5">
-            <CardContent className="pt-4 pb-4">
+          <CardV2 className="mb-4 border-primary/30 bg-primary/5" padding="none">
+            <CardV2Content className="pt-4 pb-4">
               <p className="text-sm text-muted-foreground mb-3">
                 Testa appen utan konto:
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild>
+                <ButtonGhost size="sm" asChild>
                   <Link to="/demo-seed">Demo – matchningar & chatt</Link>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
+                </ButtonGhost>
+                <ButtonGhost size="sm" asChild>
                   <Link to="/demo-samlingar">Demo-samlingar</Link>
-                </Button>
+                </ButtonGhost>
               </div>
-            </CardContent>
-          </Card>
+            </CardV2Content>
+          </CardV2>
         )}
 
-        <Card className="shadow-card border-border overflow-hidden">
-          <CardHeader className="text-center">
+        <CardV2 className="overflow-hidden">
+          <CardV2Header className="text-center">
             <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow">
               <Heart className="w-7 h-7 text-primary-foreground" fill="currentColor" />
             </div>
-            <CardTitle className="text-2xl font-serif">
+            <CardV2Title className="text-2xl font-serif">
               {step === 'phone' && t('auth.phoneTitle')}
               {step === 'verify' && t('auth.verifyTitle')}
               {step === 'profile' && t('auth.ageTitle')}
-            </CardTitle>
-            <CardDescription>
+            </CardV2Title>
+            <p className="text-sm text-muted-foreground">
               {step === 'phone' && t('auth.phoneDescription')}
               {step === 'verify' && `${t('auth.verifyDescription')} +46 ${phone}`}
               {step === 'profile' && t('auth.ageDescription')}
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </CardV2Header>
 
-          <CardContent>
+          <CardV2Content className="pt-0">
             <AnimatePresence mode="wait">
               {step === 'phone' && (
                 <motion.div
@@ -324,13 +334,13 @@ export default function PhoneAuth() {
                     disabled={loading}
                   />
                   
-                  <Button
+                  <ButtonPrimary
                     onClick={handleSendOtp}
-                    className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
+                    className="w-full"
                     disabled={loading || phone.replace(/\D/g, '').length < 9}
                   >
                     {loading ? t('common.sending') : t('auth.sendCode')}
-                  </Button>
+                  </ButtonPrimary>
 
                   {/* Email auth link removed - phone only */}
                 </motion.div>
@@ -346,20 +356,39 @@ export default function PhoneAuth() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  <OtpInput
-                    value={otp}
-                    onChange={setOtp}
-                    error={errors.otp || (error || undefined)}
-                    disabled={loading}
-                  />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium" style={{ color: COLORS.primary[800] }}>
+                      Verifieringskod
+                    </Label>
+                    <InputOTPV2
+                      value={otp}
+                      onChange={setOtp}
+                      maxLength={6}
+                      disabled={loading}
+                      render={({ slots }) => (
+                        <InputOTPV2Group
+                          className={errors.otp || error ? 'border-destructive rounded-md' : ''}
+                        >
+                          {slots.map((slot, i) => (
+                            <InputOTPV2Slot key={i} {...slot} />
+                          ))}
+                        </InputOTPV2Group>
+                      )}
+                    />
+                    {(errors.otp || error) && (
+                      <p className="text-sm text-center" style={{ color: COLORS.coral[600] }}>
+                        {errors.otp || error}
+                      </p>
+                    )}
+                  </div>
                   
-                  <Button
+                  <ButtonPrimary
                     onClick={handleVerifyOtp}
-                    className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
+                    className="w-full"
                     disabled={loading || otp.length !== 6}
                   >
                     {loading ? t('common.verifying') : t('auth.verify')}
-                  </Button>
+                  </ButtonPrimary>
 
                   <div className="text-center">
                     <button
@@ -392,18 +421,18 @@ export default function PhoneAuth() {
                     error={errors.age || errors['dateOfBirth.day'] || errors['dateOfBirth.month'] || errors['dateOfBirth.year']}
                   />
 
-                  <Button
+                  <ButtonPrimary
                     onClick={handleCompleteProfile}
-                    className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
+                    className="w-full"
                     disabled={loading || !dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year}
                   >
                     {loading ? t('auth.completing') : t('auth.completeProfile')}
-                  </Button>
+                  </ButtonPrimary>
                 </motion.div>
               )}
             </AnimatePresence>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
 
         {/* Progress indicator */}
         <div className="flex justify-center gap-2 mt-6">

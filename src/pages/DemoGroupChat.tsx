@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Send, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ChevronLeft, Users } from "lucide-react";
+import { ButtonSecondary, AvatarV2, AvatarV2Fallback, ChatBubbleV2, ChatInputBarV2 } from "@/components/ui-v2";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { COLORS } from "@/design/tokens";
 import { cn } from "@/lib/utils";
 
 const DEMO_ME_ID = "demo-me";
@@ -65,32 +64,32 @@ function DemoGroupAvatar({ members, size = 48 }: { members: DemoMember[]; size?:
   if (display.length === 1) {
     const m = display[0];
     return (
-      <Avatar className="rounded-full border-2 border-background" style={{ width: size, height: size }}>
-        <AvatarFallback className="bg-primary/20 text-primary font-semibold" style={{ fontSize: size * 0.4 }}>
+      <AvatarV2 className="rounded-full border-2 border-background" style={{ width: size, height: size }}>
+        <AvatarV2Fallback className="bg-primary/20 text-primary font-semibold" style={{ fontSize: size * 0.4 }}>
           {(m.display_name ?? "?").charAt(0).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+        </AvatarV2Fallback>
+      </AvatarV2>
     );
   }
   if (display.length === 2) {
     return (
       <div className="relative" style={{ width: size, height: size }}>
-        <Avatar
+        <AvatarV2
           className="absolute top-0 left-0 rounded-full border-2 border-background"
           style={{ width: small, height: small }}
         >
-          <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+          <AvatarV2Fallback className="bg-primary/20 text-primary text-xs font-semibold">
             {display[0].display_name.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <Avatar
+          </AvatarV2Fallback>
+        </AvatarV2>
+        <AvatarV2
           className="absolute bottom-0 right-0 rounded-full border-2 border-background"
           style={{ width: small, height: small }}
         >
-          <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+          <AvatarV2Fallback className="bg-primary/20 text-primary text-xs font-semibold">
             {display[1].display_name.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+          </AvatarV2Fallback>
+        </AvatarV2>
       </div>
     );
   }
@@ -102,15 +101,15 @@ function DemoGroupAvatar({ members, size = 48 }: { members: DemoMember[]; size?:
         const left = col === 0 ? 0 : size - small;
         const top = row === 0 ? 0 : size - small;
         return (
-          <Avatar
+          <AvatarV2
             key={m.user_id}
             className="absolute rounded-full border-2 border-background"
             style={{ width: small * 0.9, height: small * 0.9, left, top }}
           >
-            <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+            <AvatarV2Fallback className="bg-primary/20 text-primary text-xs font-semibold">
               {m.display_name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+            </AvatarV2Fallback>
+          </AvatarV2>
         );
       })}
     </div>
@@ -187,56 +186,56 @@ export default function DemoGroupChat() {
 
       {selectedGroup ? (
         <div className="flex flex-1 flex-col min-h-0">
-          <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border bg-primary text-primary-foreground shrink-0">
+          <div
+            className="flex items-center gap-3 px-3 py-2.5 border-b border-border shrink-0"
+            style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
+          >
             <DemoGroupAvatar members={selectedGroup.members} size={44} />
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold truncate">{selectedGroup.name}</h2>
-              <p className="text-xs text-primary-foreground/80">{selectedGroup.members.length} medlemmar</p>
+              <p className="text-xs opacity-90">{selectedGroup.members.length} medlemmar</p>
             </div>
           </div>
           <ScrollArea className="flex-1 p-4">
-            <div className="space-y-3">
+            <div className="space-y-1">
               {messages.map((msg) => {
                 const isOwn = msg.sender_id === DEMO_ME_ID;
+                const bubbleMessage = {
+                  id: msg.id,
+                  content: msg.content,
+                  sender_id: msg.sender_id,
+                  created_at: new Date().toISOString(),
+                  is_read: false,
+                };
                 return (
                   <div key={msg.id} className={cn("flex gap-2", isOwn && "flex-row-reverse")}>
                     {!isOwn && (
-                      <div className="text-xs text-muted-foreground shrink-0 w-16 truncate">
+                      <div className="text-xs text-muted-foreground shrink-0 w-16 truncate pt-1">
                         {senderName(msg.sender_id)}
                       </div>
                     )}
-                    <div
-                      className={cn(
-                        "max-w-[75%] px-4 py-2 rounded-2xl",
-                        isOwn
-                          ? "bg-primary text-primary-foreground rounded-br-md ml-auto"
-                          : "bg-muted rounded-bl-md"
-                      )}
-                    >
-                      {msg.content}
-                    </div>
+                    <ChatBubbleV2
+                      message={bubbleMessage}
+                      variant={isOwn ? "own" : "them"}
+                      isOwn={isOwn}
+                    />
                   </div>
                 );
               })}
               <div ref={scrollRef} />
             </div>
           </ScrollArea>
-          <div className="p-3 border-t border-border flex gap-2 shrink-0">
-            <Input
+          <div className="p-3 border-t border-border shrink-0">
+            <ChatInputBarV2
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              onChange={setInput}
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendMessage();
+              }}
               placeholder={`Skriv till ${selectedGroup.name}...`}
-              className="rounded-full flex-1"
+              sendLabel="Skicka"
             />
-            <Button
-              size="icon"
-              className="rounded-full shrink-0"
-              onClick={sendMessage}
-              disabled={!input.trim()}
-            >
-              <Send className="w-5 h-5" />
-            </Button>
           </div>
         </div>
       ) : (
@@ -268,11 +267,11 @@ export default function DemoGroupChat() {
       )}
 
       <div className="border-t border-border p-3 text-center">
-        <Link to="/">
-          <Button variant="outline" size="sm">
+        <ButtonSecondary asChild>
+          <Link to="/">
             Gå till startsidan
-          </Button>
-        </Link>
+          </Link>
+        </ButtonSecondary>
       </div>
     </div>
   );

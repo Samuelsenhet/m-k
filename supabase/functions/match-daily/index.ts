@@ -1,6 +1,7 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getSupabaseEnv } from "../_shared/env.ts"
 
 // Get allowed origin from environment or default to wildcard for development
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
@@ -97,62 +98,79 @@ serve(async (req: Request) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
+    const envResult = getSupabaseEnv(req);
+    if (envResult instanceof Response) return envResult;
+    const { supabaseUrl, supabaseAnonKey } = envResult;
+    const authHeader = req.headers.get('Authorization') ?? '';
 
-    // Get the user from auth (REQUIRED for this function)
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const body = await req.json().catch(() => ({}));
+    const bodyUserId = body.user_id as string | undefined;
+
     const {
       data: { user },
       error: authError
-    } = await supabaseClient.auth.getUser()
+    } = await supabaseClient.auth.getUser();
 
-    if (authError || !user) {
-      console.warn('match-daily: auth failed', authError?.message ?? 'no user');
-      return new Response(
-        JSON.stringify({ error: 'Not authenticated' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
+    let requestUserId: string;
+    let dbClient: ReturnType<typeof createClient>;
+
+    if (user && !authError) {
+      requestUserId = bodyUserId || user.id;
+      if (requestUserId !== user.id) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      dbClient = supabaseClient;
+    } else {
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) {
+        let serviceUserId = bodyUserId;
+        if (!serviceUserId && typeof body === 'object' && body !== null) {
+          const uuidKey = Object.keys(body).find((k) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k));
+          if (uuidKey) serviceUserId = uuidKey;
         }
-      );
-    }
-
-    const body = await req.json().catch(() => ({}));
-    const { user_id } = body;
-    const requestUserId = user_id || user.id
-
-    // Verify user matches (security: users can only query their own matches)
-    if (requestUserId !== user.id) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
+        if (!serviceUserId) {
+          return new Response(
+            JSON.stringify({ error: 'user_id required in body when using service role (dashboard test)' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
         }
-      );
+        requestUserId = serviceUserId;
+        dbClient = createClient(supabaseUrl, serviceRoleKey);
+      } else {
+        console.warn('match-daily: auth failed', authError?.message ?? 'no user');
+        return new Response(
+          JSON.stringify({ error: 'Not authenticated' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
     }
 
     // Use CET timezone for date (Europe/Stockholm) – YYYY-MM-DD for DB
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Stockholm' })
 
     // 1. Check if user has completed onboarding (required for matching)
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await dbClient
       .from('profiles')
       .select('onboarding_completed, onboarding_completed_at, subscription_tier')
       .eq('id', requestUserId)
       .single()
 
     if (profileError || !profile) {
+      // Return 200 so client gets body and shows empty state instead of generic error
       return new Response(
-        JSON.stringify({ error: 'Profile not found', message: 'Complete your profile first' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        JSON.stringify({
+          journey_phase: 'WAITING',
+          matches: [],
+          message: 'Complete your profile first'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
@@ -161,15 +179,16 @@ serve(async (req: Request) => {
     const userLimit = isPlus ? null : 5
 
     if (!profile.onboarding_completed) {
+      // Return 200 so client gets body and shows empty/waiting state instead of generic error
       return new Response(
-        JSON.stringify({ 
-          error: 'Onboarding not completed',
-          message: 'Complete onboarding to receive matches',
-          journey_phase: 'WAITING'
+        JSON.stringify({
+          journey_phase: 'WAITING',
+          matches: [],
+          message: 'Complete onboarding to receive matches'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403
+          status: 200
         }
       )
     }
@@ -200,7 +219,7 @@ serve(async (req: Request) => {
     }
 
     // 3. Get today's match pool for user (table: user_daily_match_pools, column: pool_date)
-    const { data: matchPool, error: poolError } = await supabaseClient
+    const { data: matchPool, error: poolError } = await dbClient
       .from('user_daily_match_pools')
       .select('*')
       .eq('user_id', requestUserId)
@@ -249,7 +268,7 @@ serve(async (req: Request) => {
     const matchesToDeliver = candidates.slice(0, deliveryCount)
 
     // 5. Check if these are already delivered
-    const { data: existingMatches } = await supabaseClient
+    const { data: existingMatches } = await dbClient
       .from('matches')
       .select('matched_user_id')
       .eq('user_id', requestUserId)
@@ -266,7 +285,7 @@ serve(async (req: Request) => {
     // 6. If already delivered, return existing
     if (newMatchesToDeliver.length === 0) {
       // Fetch existing matches and format as MatchOutput
-      const { data: existingMatchData, error: existingError } = await supabaseClient
+      const { data: existingMatchData, error: existingError } = await dbClient
         .from('matches')
         .select('*, profiles!matches_matched_user_id_fkey(display_name, avatar_url)')
         .eq('user_id', requestUserId)
@@ -311,7 +330,7 @@ serve(async (req: Request) => {
     }
 
     // 6b. Fetch current user's personality (for likhet/motsatt explanation on every match)
-    const { data: userPersonality } = await supabaseClient
+    const { data: userPersonality } = await dbClient
       .from('personality_results')
       .select('archetype, category')
       .eq('user_id', requestUserId)
@@ -393,7 +412,7 @@ serve(async (req: Request) => {
       }
     })
 
-    const { data: insertedMatches, error: insertError } = await supabaseClient
+    const { data: insertedMatches, error: insertError } = await dbClient
       .from('matches')
       .insert(matchInserts)
       .select()
@@ -412,7 +431,7 @@ serve(async (req: Request) => {
     // 8. Update last_daily_matches for repeat prevention (table must exist; see RLS_AND_SCHEMA_ALIGNMENT.sql)
     const insertedMatchRows: InsertedMatchRow[] = (insertedMatches ?? []) as InsertedMatchRow[]
     const matchIds = insertedMatchRows.map((m) => m.id)
-    const { error: lastMatchErr } = await supabaseClient
+    const { error: lastMatchErr } = await dbClient
       .from('last_daily_matches')
       .upsert({
         user_id: requestUserId,
@@ -424,7 +443,7 @@ serve(async (req: Request) => {
     }
 
     // 10. Check if this is user's first match ever (for celebration)
-    const { data: allUserMatches } = await supabaseClient
+    const { data: allUserMatches } = await dbClient
       .from('matches')
       .select('id')
       .eq('user_id', requestUserId)

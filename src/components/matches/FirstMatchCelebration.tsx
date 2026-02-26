@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Sparkles, MessageCircle, Heart, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { CardV2, CardV2Content, CardV2Header, CardV2Title } from "@/components/ui-v2";
+import { ButtonPrimary } from "@/components/ui-v2";
 import { Mascot } from "@/components/system/Mascot";
 import { useMascot } from "@/hooks/useMascot";
 import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
@@ -89,15 +89,17 @@ export const FirstMatchCelebration = ({
       </AnimatePresence>
 
       <div className="w-full max-w-md space-y-6 z-10">
-        {/* Mascot with celebration animation */}
+        {/* Mascot with celebration animation (placement/spacing from M11) */}
         <motion.div
-          className="flex justify-center"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", duration: 0.8, bounce: 0.5 }}
         >
           <Mascot {...mascot} />
         </motion.div>
+        <p className="text-center text-sm text-muted-foreground">
+          Jag sa ju att det var värt att vänta. 💛
+        </p>
 
         {/* Main Card */}
         <motion.div
@@ -105,8 +107,8 @@ export const FirstMatchCelebration = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <Card className="border-primary shadow-lg shadow-primary/10">
-            <CardHeader className="text-center pb-2">
+          <CardV2 padding="none" className="border border-primary shadow-lg shadow-primary/10">
+            <CardV2Header className="text-center p-6 pb-2">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -114,13 +116,13 @@ export const FirstMatchCelebration = ({
               >
                 <span className="text-4xl mb-2 block">🎉</span>
               </motion.div>
-              <CardTitle className="text-2xl">Välkommen till MÄÄK!</CardTitle>
+              <CardV2Title className="text-2xl">Välkommen till MÄÄK!</CardV2Title>
               <p className="text-muted-foreground text-sm">
                 Dina första matchningar är redo
               </p>
-            </CardHeader>
+            </CardV2Header>
 
-            <CardContent className="space-y-6">
+            <CardV2Content className="p-6 pt-0 space-y-6">
               {/* Welcome Message */}
               <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
                 <p className="text-sm leading-relaxed">
@@ -159,17 +161,17 @@ export const FirstMatchCelebration = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1 }}
               >
-                <Button
+                <ButtonPrimary
                   className="w-full group"
                   size="lg"
                   onClick={onViewMatches}
                 >
                   Visa mina matchningar
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
+                </ButtonPrimary>
               </motion.div>
-            </CardContent>
-          </Card>
+            </CardV2Content>
+          </CardV2>
         </motion.div>
       </div>
     </div>

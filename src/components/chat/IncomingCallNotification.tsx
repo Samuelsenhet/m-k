@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Phone, PhoneOff } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarV2, AvatarV2Image, AvatarV2Fallback } from '@/components/ui-v2';
 import { cn } from '@/lib/utils';
 
 interface IncomingCallNotificationProps {
@@ -26,12 +26,12 @@ export const IncomingCallNotification: React.FC<IncomingCallNotificationProps> =
 
       <div className="relative flex flex-1 flex-col items-center justify-center px-6 pt-12 pb-8">
         {/* Caller avatar – large circle, MSN/MÄÄK style */}
-        <Avatar className="h-32 w-32 rounded-full border-4 border-primary/40 shadow-2xl ring-4 ring-white/10 mb-6">
-          {callerAvatarUrl && <AvatarImage src={callerAvatarUrl} alt={callerName} />}
-          <AvatarFallback className="bg-primary/30 text-primary-foreground text-4xl font-bold">
+        <AvatarV2 className="h-32 w-32 rounded-full border-4 border-primary/40 shadow-2xl ring-4 ring-white/10 mb-6">
+          {callerAvatarUrl && <AvatarV2Image src={callerAvatarUrl} alt={callerName} />}
+          <AvatarV2Fallback className="bg-primary/30 text-primary-foreground text-4xl font-bold">
             {callerName.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+          </AvatarV2Fallback>
+        </AvatarV2>
         <p className="text-xl font-semibold text-white mb-1" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
           {callerName}
         </p>

@@ -1,5 +1,6 @@
 {
   "common": {
+    "profile": "Profil",
     "loading": "Laddar...",
     "save": "Spara",
     "saving": "Sparar...",
@@ -25,6 +26,12 @@
   "landing": {
     "users_seeking_love": "Redan {{count}} svenskar söker kärlek här"
   },
+  "maak": {
+    "intro": "Jag heter Määk.\nJag finns här med dig, medan vi hittar någon som verkligen passar.",
+    "guide": "Jag guidar dig lugnt genom det här.",
+    "waiting": "Jag är här medan vi väntar. Bra saker får ta tid.",
+    "firstMatch": "Jag sa ju att det var värt att vänta. 💛"
+  },
   "auth": {
     "phoneTitle": "Ange ditt telefonnummer",
     "phoneDescription": "Vi skickar en verifieringskod via SMS",
@@ -49,6 +56,10 @@
   },
   "matches": {
     "title": "Dagens matchningar",
+    "subtitle": "24h löpande • Kvalitetsfokus",
+    "tabAll": "Alla",
+    "tabSimilar": "Likhets",
+    "tabComplementary": "Motsats",
     "noMatches": "Inga matchningar idag",
     "expiresIn": "Löper ut om",
     "like": "Gilla",
@@ -58,13 +69,24 @@
     "similar": "Liknande",
     "complementary": "Kompletterande",
     "loading_error": "Kunde inte hämta matchningar",
-    "complete_test": "Slutför personlighetstestet för att se matchningar",
-    "mutual_matches": "Dina matchningar"
+    "loading_error_check_login": "Kunde inte hämta matchningar. Kontrollera att du är inloggad.",
+    "error_title": "Vi har problem att hämta matchningar just nu",
+    "error_reassure": "Det blev lite fel – jag försöker igen",
+    "must_be_logged_in": "Du måste vara inloggad för att se matchningar",
+    "auth_verify_failed": "Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund.",
+    "server_error": "Tjänsten svarar inte just nu. Kontrollera att du är inloggad och försök igen – eller vänta en stund.",
+    "network_error": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
+    "load_more_error": "Kunde inte hämta fler matchningar",
+    "noMatchesDescription": "Kom tillbaka imorgon för nya matchningar!",
+    "retry": "Försök igen"
   },
   "chat": {
     "newMatch": "Ny match! 🎉",
     "chooseIcebreaker": "Välj en konversationsstartare eller skriv ditt eget meddelande",
+    "startConversation": "Starta konversationen med en isbrytare!",
     "typeMessage": "Skriv ett meddelande...",
+    "placeholderDepthMutual": "Skriv till varandra…",
+    "placeholderDepthDeep": "Skriv något ni vill dela…",
     "noMessages": "Inga meddelanden ännu",
     "messages": "Meddelanden",
     "ai_icebreakers": "AI-genererade isbrytare",
@@ -99,6 +121,10 @@
     "footerTagline": "MÄÄK – Personlighetstest för relationer · Hitta din match",
     "conversations": "Dina konversationer",
     "kemiCheck": "Kemi-Check",
+    "mic": "Mikrofon",
+    "muted": "Dempad",
+    "volume": "Volym",
+    "endCall": "Avsluta samtal",
     "kemiCheckSubtitle": "Snabbvideo 5–10 min",
     "kemiCheckTooltip": "Kemi-Check – kort video för att testa kemi",
     "aiSuggestKemiCheck": "Verkar som ni har mycket gemensamt! Boka en Kemi-Check för att lära känna varandra bättre.",
@@ -108,7 +134,15 @@
     "postVideoDismiss": "Stäng",
     "postVideoError": "Kunde inte hämta förslag. Försök igen senare.",
     "chats": "Chattar",
-    "createGroup": "Skapa samling"
+    "createGroup": "Skapa samling",
+    "today": "Idag",
+    "call_history": "Samtalshistorik",
+    "online_now": "Online nu",
+    "more_options": "Fler alternativ",
+    "block_user": "Blockera användare",
+    "block_user_confirm": "Vill du blockera denna användare? Du kommer inte längre kunna chatta.",
+    "delete_person": "Ta bort person",
+    "delete_person_confirm": "Vill du ta bort denna person från dina matcher? Konversationen försvinner."
   },
   "groupChat": {
     "title": "Samlingar",
@@ -255,7 +289,13 @@
     "privacy_description": "Hantera vilka som ser din profil, dina foton och dina aktiviteter. Mer alternativ kommer snart.",
     "profile_visibility": "Profilsynlighet",
     "shared_data": "Deldata",
-    "verify_id_description": "Ladda upp ditt ID för att verifiera ditt konto"
+    "verify_id_description": "Ladda upp ditt ID för att verifiera ditt konto",
+    "matching_settings": "Matchningsinställningar",
+    "age": "Ålder",
+    "distance": "Avstånd",
+    "submit": "Spara",
+    "about_us": "Om MÄÄK",
+    "learn_personality": "Läs om personlighet & arketyper"
   },
   "notifications": {
     "title": "Notifikationer",

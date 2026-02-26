@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonIcon, ButtonSecondary, ButtonPrimary, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { Switch } from '@/components/ui/switch';
 import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -70,7 +69,7 @@ export default function Notifications() {
           });
         }
       } catch (err) {
-        console.error('Failed to load notification prefs:', err);
+        if (import.meta.env.DEV) console.error('Failed to load notification prefs:', err);
         setPrefs({
           push_new_matches: true,
           push_messages: true,
@@ -94,7 +93,7 @@ export default function Notifications() {
       const { error } = await supabase.from('profiles').update({ [field]: value }).eq(key, user.id);
       if (error) throw error;
     } catch (err) {
-      console.error('Failed to update notification pref:', err);
+      if (import.meta.env.DEV) console.error('Failed to update notification pref:', err);
       setPrefs(previousPrefs);
     }
   };
@@ -105,11 +104,11 @@ export default function Notifications() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <ButtonIcon asChild>
             <Link to="/profile" state={{ openSettings: true }}>
               <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold">{t('notifications.title')}</h1>
         </div>
       </div>
@@ -117,11 +116,11 @@ export default function Notifications() {
         <p className="text-sm text-muted-foreground">{t('notifications.intro')}</p>
 
         {/* Feed: Today */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-base">{t('notifications.today')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <CardV2 padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif text-base">{t('notifications.today')}</CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4">
             {loading && (
               <div className="flex justify-center py-4">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -156,13 +155,12 @@ export default function Notifications() {
                       </p>
                       <p className="text-xs text-muted-foreground">{formatTimeAgo(v.created_at, t)}</p>
                     </div>
-                    <Button
-                      variant="outline"
+                    <ButtonSecondary
                       size="sm"
                       asChild
                     >
                       <Link to={`/match/${v.viewer_id}`}>{t('settings.view')}</Link>
-                    </Button>
+                    </ButtonSecondary>
                   </div>
                 ))}
               </div>
@@ -191,41 +189,40 @@ export default function Notifications() {
                       <p className="text-xs text-muted-foreground">{formatTimeAgo(i.created_at, t)}</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button
-                        variant="outline"
+                      <ButtonSecondary
                         size="sm"
                         onClick={() => rejectInterest(i.id)}
                       >
                         {t('notifications.reject')}
-                      </Button>
-                      <Button
+                      </ButtonSecondary>
+                      <ButtonPrimary
                         size="sm"
                         onClick={async () => {
                           try {
                             await acceptInterest(i.id);
                             navigate('/matches');
                           } catch (err) {
-                            console.error('Failed to accept interest:', err);
+                            if (import.meta.env.DEV) console.error('Failed to accept interest:', err);
                             toast.error(t('notifications.accept_error', 'Could not accept interest. Please try again.'));
                           }
                         }}
                       >
                         {t('notifications.accept')}
-                      </Button>
+                      </ButtonPrimary>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
 
         {/* Push & email toggles */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-base">{t('notifications.push_and_email')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <CardV2 padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif text-base">{t('notifications.push_and_email')}</CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4">
             {prefs === null && (
               <div className="flex justify-center py-2">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -263,8 +260,8 @@ export default function Notifications() {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       </div>
       <BottomNav />
     </div>

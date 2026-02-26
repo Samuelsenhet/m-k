@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonSecondary, CardV2, CardV2Content } from '@/components/ui-v2';
 import { Bell, X } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,8 +45,8 @@ export function NotificationPrompt() {
         exit={{ opacity: 0, y: 50 }}
         className="fixed bottom-20 left-4 right-4 z-50 max-w-md mx-auto"
       >
-        <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden">
-          <CardContent className="p-6">
+        <CardV2 padding="none" className="overflow-hidden bg-card/95 backdrop-blur-sm shadow-2xl">
+          <CardV2Content className="p-6">
             <div className="flex items-start gap-4">
               {/* Bell icon with primary (green) tint */}
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -64,25 +63,24 @@ export function NotificationPrompt() {
 
             {/* Buttons */}
             <div className="flex gap-3 mt-6">
-              <Button 
-                variant="outline"
+              <ButtonSecondary 
                 onClick={handleDismiss}
                 className="flex-1 h-12 rounded-xl bg-muted/50 border-0 hover:bg-muted"
               >
                 <X className="w-4 h-4 mr-2" />
                 Inte nu
-              </Button>
-              <Button 
+              </ButtonSecondary>
+              <ButtonPrimary 
                 onClick={handleEnable}
                 disabled={loading}
                 className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/70 hover:from-primary/90 hover:to-primary/60"
               >
                 <Bell className="w-4 h-4 mr-2" />
                 {loading ? 'Aktiverar...' : 'Aktivera'}
-              </Button>
+              </ButtonPrimary>
             </div>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       </motion.div>
     </AnimatePresence>
   );

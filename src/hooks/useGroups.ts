@@ -29,12 +29,28 @@ export function useGroups() {
     setLoading(true);
     setError(null);
     try {
-      const { data: myMemberships, error: memErr } = await supabase
-        .from("group_members")
-        .select("group_id")
-        .eq("user_id", user.id);
+      let myMemberships: { group_id: string }[] | null = null;
+      let memErr: { message: string } | null = null;
+      try {
+        const res = await supabase
+          .from("group_members")
+          .select("group_id")
+          .eq("user_id", user.id);
+        myMemberships = res.data;
+        memErr = res.error;
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          console.error("[group_members] query error:", e);
+        }
+        setGroups([]);
+        setLoading(false);
+        return;
+      }
 
       if (memErr) {
+        if (import.meta.env.DEV) {
+          console.error("[group_members] Supabase error:", memErr);
+        }
         setError(memErr.message);
         setGroups([]);
         return;
@@ -102,6 +118,9 @@ export function useGroups() {
       }));
       setGroups(result);
     } catch (e) {
+      if (import.meta.env.DEV) {
+        console.error("[useGroups] fetch error:", e);
+      }
       setError(e instanceof Error ? e.message : "Failed to load groups");
       setGroups([]);
     } finally {

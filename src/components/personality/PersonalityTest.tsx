@@ -3,7 +3,7 @@ import { QUESTIONS } from '@/data/questions';
 import { type PersonalityTestResult, type DimensionKey, calculateArchetype, getCategoryFromArchetype } from '@/types/personality';
 import { ProgressBar } from './ProgressBar';
 import { QuestionCard } from './QuestionCard';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonSecondary } from '@/components/ui-v2';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -145,34 +145,33 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
 
         {/* Navigation */}
         <div className="flex justify-between items-center gap-4">
-          <Button
-            variant="outline"
+          <ButtonSecondary
             onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
             disabled={currentIndex === 0}
             className="gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
             Föregående
-          </Button>
+          </ButtonSecondary>
 
           {currentIndex < shuffledQuestions.length - 1 ? (
-            <Button
+            <ButtonPrimary
               onClick={() => setCurrentIndex((i) => Math.min(shuffledQuestions.length - 1, i + 1))}
               disabled={!answers[currentQuestion.id]}
-              className="gap-2 gradient-primary text-primary-foreground border-0"
+              className="gap-2"
             >
               Nästa
               <ChevronRight className="w-4 h-4" />
-            </Button>
+            </ButtonPrimary>
           ) : (
-            <Button
+            <ButtonPrimary
               onClick={handleSubmit}
               disabled={!isComplete}
-              className="gap-2 gradient-primary text-primary-foreground border-0 shadow-glow"
+              className="gap-2"
             >
               <Heart className="w-4 h-4" />
               Visa resultat
-            </Button>
+            </ButtonPrimary>
           )}
         </div>
       </div>

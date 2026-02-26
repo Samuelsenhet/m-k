@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { ChevronLeft } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 
@@ -9,11 +8,11 @@ export default function Terms() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <ButtonIcon asChild>
             <Link to="/profile" state={{ openSettings: true }}>
               <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold">Användarvillkor & Integritet</h1>
         </div>
       </div>
@@ -21,11 +20,11 @@ export default function Terms() {
         <p className="text-sm text-muted-foreground">Senast uppdaterad: 2026</p>
 
         {/* ANVÄNDARVILLKOR */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif">Användarvillkor</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+        <CardV2 padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif">Användarvillkor</CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4 text-sm text-muted-foreground">
             <p>
               Dessa Användarvillkor (&quot;Villkor&quot;) ingås mellan dig och MÄÄK AB (&quot;Företaget&quot;, &quot;MÄÄK&quot;, &quot;vi&quot;, &quot;oss&quot;). Villkoren styr din tillgång till och användning av vår webbplats, mobilapplikationer och alla andra tjänster inklusive innehåll, funktionalitet och evenemang (sammanfattat &quot;Tjänsterna&quot;).
             </p>
@@ -98,15 +97,15 @@ export default function Terms() {
               <p>📧 juridik@maakapp.se</p>
               <p>🏢 MÄÄK AB, Sverige</p>
             </section>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
 
         {/* INTEGRITETSPOLICY */}
-        <Card id="integritet">
-          <CardHeader>
-            <CardTitle className="font-serif">Integritetspolicy</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+        <CardV2 id="integritet" padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif">Integritetspolicy</CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4 text-sm text-muted-foreground">
             <section>
               <h3 className="font-semibold text-foreground mb-2">1. Vilken information samlar vi in?</h3>
               <ul className="list-disc pl-5 space-y-1">
@@ -175,8 +174,8 @@ export default function Terms() {
               <p>📧 dataskydd@maakapp.se</p>
               <p>🏢 MÄÄK AB, Sverige</p>
             </section>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       </div>
       <BottomNav />
     </div>

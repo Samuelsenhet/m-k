@@ -19,7 +19,7 @@ export default function Onboarding() {
     try {
       const profileKey = await getProfilesAuthKey(user.id);
       if (!profileKey) {
-        console.error('Onboarding: Failed to get profile key');
+        if (import.meta.env.DEV) console.error('Onboarding: Failed to get profile key');
         navigate('/phone-auth');
         setCheckingStatus(false);
         return;
@@ -55,7 +55,7 @@ export default function Onboarding() {
       setDisplayName(data.display_name || undefined);
       setCheckingStatus(false);
     } catch (err) {
-      console.error('Onboarding: Error checking status', err);
+      if (import.meta.env.DEV) console.error('Onboarding: Error checking status', err);
       navigate('/phone-auth');
       setCheckingStatus(false);
     }
@@ -87,7 +87,7 @@ export default function Onboarding() {
           setDisplayName(data?.display_name?.split(' ')[0] || undefined);
         }
       } catch (err) {
-        console.error('Onboarding: Error fetching display name', err);
+        if (import.meta.env.DEV) console.error('Onboarding: Error fetching display name', err);
         // Continue to welcome screen even if fetch fails
       }
     }

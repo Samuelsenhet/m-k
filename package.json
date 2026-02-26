@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "index.js",
   "scripts": {
@@ -18,6 +18,11 @@
     "spellcheck:fix": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\" --no-progress --no-summary",
     "mascot:sprite": "node scripts/build-mascot-sprite.mjs",
     "mascot:clean": "node scripts/crop-mascot-clean.mjs",
+    "mascot:fix": "node scripts/fix-mascot-images.mjs",
+    "launch:check": "node scripts/launch-check.mjs",
+    "edge:fix-401": "node scripts/set-edge-secrets-and-deploy.mjs",
+    "edge:align-and-deploy": "node scripts/ensure-supabase-project-and-deploy.mjs",
+    "test:edge-match-daily": "node scripts/invoke-match-daily-test.mjs",
     "preview": "vite preview --config config/vite.config.ts",
     "vercel:env": "npx vercel env add VITE_SUPABASE_URL production && npx vercel env add VITE_SUPABASE_PUBLISHABLE_KEY production && npx vercel env add VITE_SUPABASE_PROJECT_ID production",
     "expo": "expo start",
@@ -91,7 +96,7 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.8.6",
     "react-resizable-panels": "^2.1.9",
-    "react-router-dom": "^6.30.1",
+    "react-router-dom": "^7.13.0",
     "recharts": "^2.15.4",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
@@ -101,7 +106,7 @@
     "zod": "^3.25.76"
   },
   "engines": {
-    "node": ">=20.0.0 <21.0.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
     "@cspell/dict-sv": "^2.3.2",

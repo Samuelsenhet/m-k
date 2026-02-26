@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { CardV2, CardV2Content, InputV2 } from '@/components/ui-v2';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -44,7 +43,7 @@ export default function EmailLogs() {
 
       const { data, error } = await query;
       if (error) {
-        console.error('Error fetching email logs:', error);
+        if (import.meta.env.DEV) console.error('Error fetching email logs:', error);
         setLogs([]);
       } else {
         setLogs((data ?? []) as EmailLogRow[]);
@@ -60,7 +59,7 @@ export default function EmailLogs() {
       <h2 className="text-xl font-semibold">Sändningsloggar</h2>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <Input
+        <InputV2
           placeholder="Sök mottagare, ämne eller mall..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -78,15 +77,15 @@ export default function EmailLogs() {
         </select>
       </div>
 
-      <Card>
+      <CardV2 padding="none">
         {loading ? (
-          <CardContent className="py-12 flex justify-center">
+          <CardV2Content className="py-12 flex justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </CardContent>
+          </CardV2Content>
         ) : logs.length === 0 ? (
-          <CardContent className="py-8 text-center text-muted-foreground text-sm">
+          <CardV2Content className="py-8 text-center text-muted-foreground text-sm">
             Inga e-postmeddelanden hittades.
-          </CardContent>
+          </CardV2Content>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -131,7 +130,7 @@ export default function EmailLogs() {
             </table>
           </div>
         )}
-      </Card>
+      </CardV2>
     </div>
   );
 }

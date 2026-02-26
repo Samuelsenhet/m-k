@@ -1,6 +1,8 @@
 import * as React from "react";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { RelationshipLevel } from "./CardV2";
+import { getRelationshipBorder } from "@/lib/relationship-depth";
 import { ButtonCoral } from "../button";
 import { InterestChipV2 } from "./InterestChipV2";
 
@@ -10,6 +12,8 @@ export interface MatchProfileCardDarkProps extends React.HTMLAttributes<HTMLDivE
   imageSrc?: string | null;
   imageAlt?: string;
   interests?: Array<{ label: string; icon?: React.ReactNode }>;
+  /** FAS Relationship Depth: 1=pending, 3=mutual; when >= 3 adds subtle left accent, keeps dark surface */
+  relationshipLevel?: RelationshipLevel;
   onChatta?: () => void;
 }
 
@@ -22,6 +26,7 @@ const MatchProfileCardDark = React.forwardRef<HTMLDivElement, MatchProfileCardDa
       imageSrc,
       imageAlt,
       interests = [],
+      relationshipLevel,
       onChatta,
       ...props
     },
@@ -31,7 +36,9 @@ const MatchProfileCardDark = React.forwardRef<HTMLDivElement, MatchProfileCardDa
       <div
         ref={ref}
         className={cn(
-          "relative overflow-hidden rounded-2xl bg-warm-dark text-white shadow-elevation-2",
+          "relative overflow-hidden rounded-2xl text-white shadow-elevation-2",
+          "bg-warm-dark",
+          getRelationshipBorder(relationshipLevel),
           className,
         )}
         {...props}
@@ -41,7 +48,7 @@ const MatchProfileCardDark = React.forwardRef<HTMLDivElement, MatchProfileCardDa
             <img
               src={imageSrc}
               alt={imageAlt ?? name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain bg-transparent"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-warm-dark/80 text-white/60">

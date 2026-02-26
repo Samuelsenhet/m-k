@@ -1,6 +1,7 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getSupabaseEnv } from "../_shared/env.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get("CORS_ORIGIN") || '*',
@@ -15,57 +16,64 @@ serve(async (req: Request) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
+    const envResult = getSupabaseEnv(req);
+    if (envResult instanceof Response) return envResult;
+    const { supabaseUrl, supabaseAnonKey } = envResult;
+    const authHeader = req.headers.get('Authorization') ?? '';
 
-    // Get the user from auth (REQUIRED for this function)
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const url = new URL(req.url);
+    let body: { user_id?: string } = {};
+    if (req.method === 'POST') {
+      try {
+        body = await req.json();
+      } catch {
+        // ignore
+      }
+    }
+
     const {
       data: { user },
       error: authError
-    } = await supabaseClient.auth.getUser()
+    } = await supabaseClient.auth.getUser();
 
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Not authenticated' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
-        }
-      );
-    }
+    let requestUserId: string;
+    let dbClient: ReturnType<typeof createClient>;
 
-    // Get user_id from request body or query params (support both)
-    let requestUserId = user.id;
-    if (req.method === 'POST') {
-      try {
-        const body = await req.json();
-        requestUserId = body.user_id || user.id;
-      } catch {
-        // If body parsing fails, use query params or default to authenticated user
-        const url = new URL(req.url);
-        requestUserId = url.searchParams.get('user_id') || user.id;
+    if (user && !authError) {
+      requestUserId = body.user_id || url.searchParams.get('user_id') || user.id;
+      if (requestUserId !== user.id) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
       }
+      dbClient = supabaseClient;
     } else {
-      const url = new URL(req.url);
-      requestUserId = url.searchParams.get('user_id') || user.id;
-    }
-
-    // Verify user matches (security: users can only query their own status)
-    if (requestUserId !== user.id) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) {
+        requestUserId = body.user_id || url.searchParams.get('user_id') || '';
+        if (!requestUserId && typeof body === 'object' && body !== null) {
+          const uuidKey = Object.keys(body).find((k) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k));
+          if (uuidKey) requestUserId = uuidKey;
         }
-      );
+        if (!requestUserId) {
+          return new Response(
+            JSON.stringify({ error: 'user_id required (body or query) when using service role (dashboard test)' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+        dbClient = createClient(supabaseUrl, serviceRoleKey);
+      } else {
+        console.warn('match-status: auth failed', authError?.message ?? 'no user');
+        return new Response(
+          JSON.stringify({ error: 'Not authenticated' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
     }
 
     // Use CET timezone for date (Europe/Stockholm) – YYYY-MM-DD for DB
@@ -73,7 +81,7 @@ serve(async (req: Request) => {
     const now = new Date()
 
     // 1. Check user's onboarding status
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await dbClient
       .from('profiles')
       .select('onboarding_completed')
       .eq('id', requestUserId)
@@ -93,7 +101,7 @@ serve(async (req: Request) => {
       journey_phase = 'WAITING'
     } else {
       // Check if matches exist for today
-      const { data: todayMatches, error: matchError } = await supabaseClient
+      const { data: todayMatches, error: matchError } = await dbClient
         .from('matches')
         .select('id, created_at')
         .eq('user_id', requestUserId)
@@ -104,7 +112,7 @@ serve(async (req: Request) => {
 
       if (todayMatches && todayMatches.length > 0) {
         // Check if this is the first match ever
-        const { data: allMatches, error: allMatchError } = await supabaseClient
+        const { data: allMatches, error: allMatchError } = await dbClient
           .from('matches')
           .select('id')
           .eq('user_id', requestUserId)
@@ -120,7 +128,7 @@ serve(async (req: Request) => {
         }
       } else {
         // Check if pool exists (means matches are ready to be delivered)
-        const { data: matchPool } = await supabaseClient
+        const { data: matchPool } = await dbClient
           .from('user_daily_match_pools')
           .select('id')
           .eq('user_id', requestUserId)
@@ -132,7 +140,7 @@ serve(async (req: Request) => {
     }
 
     // 2. Count delivered matches today
-    const { data: deliveredMatches, error: deliveredError } = await supabaseClient
+    const { data: deliveredMatches, error: deliveredError } = await dbClient
       .from('matches')
       .select('id')
       .eq('user_id', requestUserId)

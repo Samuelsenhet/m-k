@@ -98,6 +98,8 @@ export default {
           strateger: "hsl(var(--strateger))",
           byggare: "hsl(var(--byggare))",
           upptackare: "hsl(var(--upptackare))",
+          debattoren: "hsl(var(--debattoren))",
+          vardaren: "hsl(var(--vardaren))",
         },
         dimension: {
           ei: "hsl(var(--dimension-ei))",

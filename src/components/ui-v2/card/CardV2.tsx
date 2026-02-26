@@ -1,19 +1,19 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { getRelationshipBorder } from "@/lib/relationship-depth";
 
-/* MÄÄK design system: white card, rounded-2xl, soft shadow */
+/* MÄÄK design system: white card, rounded-3xl, soft shadow (MaakPolished).
+ * FAS Relationship Depth: relationshipLevel 1–5 maps to surface/border/elevation (no premium/glow). */
 const cardV2Variants = cva(
-  "rounded-2xl transition-all duration-200",
+  "rounded-3xl border transition-all duration-200 text-card-foreground",
   {
     variants: {
       variant: {
         default:
-          "bg-card text-card-foreground shadow-elevation-1",
+          "bg-card shadow-elevation-1 border-border",
         interactive:
-          "bg-card text-card-foreground shadow-elevation-1 hover:shadow-elevation-2 cursor-pointer",
-        premium:
-          "bg-card text-card-foreground shadow-elevation-2",
+          "bg-card shadow-elevation-1 border-border hover:shadow-elevation-2 cursor-pointer",
         glass:
           "bg-white/80 backdrop-blur-md border border-sage-200/50 shadow-elevation-1",
       },
@@ -31,18 +31,42 @@ const cardV2Variants = cva(
   },
 );
 
+export type RelationshipLevel = 1 | 2 | 3 | 4 | 5;
+
+const RELATIONSHIP_LEVEL_CLASS: Record<RelationshipLevel, string> = {
+  1: "relationship-level-1",
+  2: "relationship-level-2",
+  3: "relationship-level-3",
+  4: "relationship-level-4",
+  5: "relationship-level-5",
+};
+
 export interface CardV2Props
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof cardV2Variants> {}
+    VariantProps<typeof cardV2Variants> {
+  /** FAS Relationship Depth: visual depth 1=first contact … 5=real connection. Overrides variant surface when set. */
+  relationshipLevel?: RelationshipLevel;
+}
 
 const CardV2 = React.forwardRef<HTMLDivElement, CardV2Props>(
-  ({ className, variant, padding, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(cardV2Variants({ variant, padding, className }))}
-      {...props}
-    />
-  ),
+  ({ className, variant, padding, relationshipLevel, ...props }, ref) => {
+    const borderClass =
+      relationshipLevel !== undefined && relationshipLevel !== null
+        ? getRelationshipBorder(relationshipLevel)
+        : "";
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          cardV2Variants({ variant, padding }),
+          relationshipLevel != null && RELATIONSHIP_LEVEL_CLASS[relationshipLevel],
+          borderClass,
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
 );
 CardV2.displayName = "CardV2";
 
@@ -72,4 +96,5 @@ const CardV2Footer = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
 );
 CardV2Footer.displayName = "CardV2Footer";
 
+/* eslint-disable react-refresh/only-export-components -- cardV2Variants shared with consumers */
 export { CardV2, CardV2Header, CardV2Title, CardV2Content, CardV2Footer, cardV2Variants };

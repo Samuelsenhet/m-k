@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, CardV2, CardV2Content, CardV2Footer, CardV2Header, CardV2Title, InputV2 } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignUp() {
@@ -54,16 +52,16 @@ export default function SignUp() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
-          <CardDescription>Create a new account to get started</CardDescription>
-        </CardHeader>
+      <CardV2 className="w-full max-w-md">
+        <CardV2Header>
+          <CardV2Title>Sign Up</CardV2Title>
+          <p className="text-sm text-muted-foreground">Create a new account to get started</p>
+        </CardV2Header>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardV2Content className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
-              <Input
+              <InputV2
                 id="fullName"
                 type="text"
                 placeholder="John Doe"
@@ -74,7 +72,7 @@ export default function SignUp() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
+              <InputV2
                 id="email"
                 type="email"
                 placeholder="you@example.com"
@@ -85,7 +83,7 @@ export default function SignUp() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <InputV2
                 id="password"
                 type="password"
                 placeholder="••••••••"
@@ -97,7 +95,7 @@ export default function SignUp() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
+              <InputV2
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
@@ -107,20 +105,20 @@ export default function SignUp() {
                 minLength={6}
               />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+          </CardV2Content>
+          <CardV2Footer className="flex flex-col space-y-4">
+            <ButtonPrimary type="submit" className="w-full" disabled={loading}>
               {loading ? 'Creating account...' : 'Sign Up'}
-            </Button>
+            </ButtonPrimary>
             <div className="text-sm text-center">
               Already have an account?{' '}
               <Link to="/login" className="text-primary hover:underline">
                 Login
               </Link>
             </div>
-          </CardFooter>
+          </CardV2Footer>
         </form>
-      </Card>
+      </CardV2>
     </div>
   );
 }

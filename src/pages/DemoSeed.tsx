@@ -1,17 +1,25 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import {
+  ButtonSecondary,
+  ButtonCoral,
+  AvatarV2,
+  AvatarV2Fallback,
+  CardV2,
+  CardV2Content,
+  MatchListItemCard,
+  ArchetypeBadge,
+} from '@/components/ui-v2';
+import type { ArchetypeKey } from '@/components/ui-v2/badge/ArchetypeBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageCircle, Heart, ArrowLeft, Sparkles, Users, Zap, Clock, X, Check, CheckCheck, Video, Mic, MoreVertical, Send, Search, Ban, Trash2 } from 'lucide-react';
+import { MessageCircle, Heart, ArrowLeft, Sparkles, Users, Zap, Clock, Video, Mic, MoreVertical, Send, Search, Ban, Trash2, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { BottomNav } from '@/components/navigation/BottomNav';
-import { MatchCountdown } from '@/components/matches/MatchCountdown';
+import { BottomNavV2 } from '@/components/ui-v2';
+import { COLORS } from '@/design/tokens';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { CATEGORY_INFO, ARCHETYPE_INFO } from '@/types/personality';
+import { ARCHETYPE_INFO } from '@/types/personality';
 import type { ArchetypeCode, PersonalityCategory } from '@/types/personality';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -33,15 +41,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const getCategoryBadgeClass = (category: string) => {
-  const classes: Record<string, string> = {
-    DIPLOMAT: 'badge-diplomat',
-    STRATEGER: 'badge-strateger',
-    BYGGARE: 'badge-byggare',
-    UPPTÄCKARE: 'badge-upptackare',
-  };
-  return classes[category] || 'bg-secondary text-secondary-foreground';
-};
+function toArchetypeKey(category: string): ArchetypeKey {
+  const key = category?.toLowerCase?.() ?? '';
+  if (['diplomat', 'strateger', 'byggare', 'upptackare'].includes(key)) return key as ArchetypeKey;
+  return 'diplomat';
+}
 
 // Ömsesidiga matchningar – redan matchade, kan chatta
 const DEMO_MUTUAL = [
@@ -90,8 +94,6 @@ const SEED_CHATS: Record<string, { from: 'me' | 'them'; text: string }[]> = {
     { from: 'me', text: 'Ja, gärna! Lördag?' },
   ],
 };
-
-const DEMO_EXPIRES_AT = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
 type DemoProfileMatch = (typeof DEMO_MUTUAL)[number] | (typeof DEMO_PENDING)[number];
 
@@ -142,30 +144,28 @@ export default function DemoSeed() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-20 safe-area-bottom">
+    <div className="min-h-screen flex flex-col pb-20 safe-area-bottom" style={{ background: COLORS.neutral.offWhite }}>
+      {/* Verifiering: om du ser denna text laddas rätt build (senast uppdaterad). */}
+      <p className="sr-only" aria-hidden>Demo-sida laddad – rätt projekt</p>
       {/* Profile sheet – opens when "Se profil" is clicked */}
       <Sheet open={!!profileMatchId} onOpenChange={(open) => !open && setProfileMatchId(null)}>
         <SheetContent side="right" className="flex flex-col p-0 w-full max-w-md">
           {profileMatch && (() => {
             const archetypeInfo = ARCHETYPE_INFO[profileMatch.archetype];
-            const categoryInfo = CATEGORY_INFO[profileMatch.category];
-            const hasScore = 'matchScore' in profileMatch && profileMatch.matchScore != null;
+            const archetypeKey = toArchetypeKey(profileMatch.category);
             return (
               <>
                 <SheetHeader className="p-4 border-b border-border shrink-0">
                   <SheetTitle className="text-xl font-bold text-foreground">{profileMatch.displayName}</SheetTitle>
                   <SheetDescription className="flex items-center gap-2 mt-1">
-                    <span className="text-2xl">{archetypeInfo?.emoji || categoryInfo?.emoji}</span>
-                    <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold', getCategoryBadgeClass(profileMatch.category))}>
-                      {archetypeInfo?.title || categoryInfo?.title}
-                    </span>
+                    <ArchetypeBadge archetype={archetypeKey} />
                   </SheetDescription>
                 </SheetHeader>
                 <ScrollArea className="flex-1">
                   <div className="p-4 space-y-6">
                     <div className="flex justify-center">
-                      <div className="w-24 h-24 rounded-2xl gradient-primary flex items-center justify-center text-5xl shadow-glow-primary text-primary-foreground">
-                        {archetypeInfo?.emoji || categoryInfo?.emoji || '💫'}
+                      <div className="w-24 h-24 rounded-2xl bg-primary/15 flex items-center justify-center text-5xl text-primary">
+                        {archetypeInfo?.emoji ?? '💫'}
                       </div>
                     </div>
                     {archetypeInfo && (
@@ -176,7 +176,7 @@ export default function DemoSeed() {
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Styrkor</p>
                         <div className="flex flex-wrap gap-2">
                           {archetypeInfo.strengths.map((s, i) => (
-                            <span key={i} className={cn('px-3 py-1.5 text-xs rounded-xl font-semibold', getCategoryBadgeClass(profileMatch.category))}>
+                            <span key={i} className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                               {s}
                             </span>
                           ))}
@@ -189,35 +189,27 @@ export default function DemoSeed() {
                         <p className="text-sm text-foreground italic border-l-4 border-primary pl-4">{profileMatch.bio}</p>
                       </div>
                     )}
-                    {hasScore && 'matchScore' in profileMatch && (
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                        <span className="text-sm font-medium text-muted-foreground">Matchning</span>
-                        <span className="text-2xl font-bold text-gradient">
-                          {profileMatch.matchScore}%
-                        </span>
-                      </div>
-                    )}
                     {'matchExplanation' in profileMatch && profileMatch.matchExplanation && (
-                      <div className="rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/10 to-primary/5 p-4 shadow-card">
-                        <p className="flex items-center gap-2 text-sm font-bold text-primary mb-2">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                      <CardV2 variant="default" padding="default" className="border-primary/20 bg-primary/5">
+                        <CardV2Content className="p-4">
+                          <p className="flex items-center gap-2 text-sm font-bold text-primary mb-2">
                             <Sparkles className="h-3.5 w-3.5" />
-                          </span>
-                          Varför ni matchade
-                        </p>
-                        <p className="text-sm text-muted-foreground leading-relaxed pl-9">{profileMatch.matchExplanation}</p>
-                      </div>
+                            Varför ni matchade
+                          </p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{profileMatch.matchExplanation}</p>
+                        </CardV2Content>
+                      </CardV2>
                     )}
                   </div>
                 </ScrollArea>
                 <SheetFooter className="p-4 border-t border-border gap-2 flex-row sm:flex-row">
-                  <Button variant="outline" onClick={() => setProfileMatchId(null)} className="flex-1">
+                  <ButtonSecondary onClick={() => setProfileMatchId(null)} className="flex-1">
                     Stäng
-                  </Button>
-                  <Button className="flex-1 gap-2 bg-gradient-rose-glow text-white shadow-glow-rose" onClick={() => closeProfileAndOpenChat(profileMatch.id)}>
+                  </ButtonSecondary>
+                  <ButtonCoral className="flex-1 gap-2" onClick={() => closeProfileAndOpenChat(profileMatch.id)}>
                     <MessageCircle className="w-4 h-4" />
                     Chatta
-                  </Button>
+                  </ButtonCoral>
                 </SheetFooter>
               </>
             );
@@ -238,6 +230,7 @@ export default function DemoSeed() {
           <h1 className="font-serif text-lg font-bold text-foreground flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             Määk demo
+            <span className="text-xs font-normal text-muted-foreground">(uppdaterad)</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Så här ser matchningar och chatt ut i appen – ingen inloggning.
@@ -264,251 +257,146 @@ export default function DemoSeed() {
           </Link>
         </TabsList>
 
-        {/* Matchningar-tab: samma layout som riktiga Matches-sidan */}
+        {/* Matchningar-tab: design system – CardV2, MatchListItemCard, inga procent */}
         <TabsContent value="matches" forceMount className="flex-1 m-0 overflow-auto data-[state=inactive]:hidden">
-          <div className="bg-gradient-premium min-h-full">
+          <div className="min-h-full" style={{ background: COLORS.neutral.offWhite }}>
             <div className="max-w-lg mx-auto px-4 py-6">
-              {/* Header som i appen */}
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground mb-1 font-heading">
+                    Dagens matchningar
+                  </h2>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    24h löpande • Kvalitetsfokus
+                  </p>
+                </div>
+              </div>
+
+              {/* Insight Card – CardV2 (design system) */}
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gradient mb-1">
-                  Dagens matchningar
-                </h2>
-                <p className="text-sm text-gray-600 flex items-center gap-1.5 font-medium">
-                  <Clock className="w-3.5 h-3.5 text-primary" />
-                  24h löpande • Kvalitetsfokus
-                </p>
-              </div>
-
-              {/* Info-kort */}
-              <div className="mb-6 card-premium p-5 bg-card/90 border-border">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center flex-shrink-0 shadow-glow-primary">
-                    <Zap className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-base mb-1.5 text-foreground">Smart Personlighetsanalys</h3>
-                    <p className="text-xs text-muted-foreground mb-3 font-medium">
-                      Baserad på 30 frågor • 16 arketyper • 4 kategorier
-                    </p>
-                    <div className="flex gap-2 flex-wrap">
-                      <span className="flex items-center gap-1.5 bg-primary/15 text-primary px-3 py-1.5 rounded-full text-xs font-semibold border border-primary/30">
-                        <Users className="w-3.5 h-3.5" />
-                        {similarCount} Likhets
-                      </span>
-                      <span className="flex items-center gap-1.5 bg-accent/15 text-accent px-3 py-1.5 rounded-full text-xs font-semibold border border-accent/30">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        {complementaryCount} Motsats
-                      </span>
+                <CardV2 variant="default" padding="default">
+                  <CardV2Content className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                        <Zap className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-base text-foreground mb-1">
+                          Smart personlighetsanalys
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Baserad på 30 frågor • 16 arketyper • 4 kategorier
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+                            <Users className="w-3.5 h-3.5" />
+                            {similarCount} Likhets-match
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-coral/30 bg-coral/10 px-3 py-1.5 text-xs font-semibold text-coral">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {complementaryCount} Motsats-match
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardV2Content>
+                </CardV2>
               </div>
 
-              {/* Dina matchningar – vibe stagger */}
-              <motion.div className="mb-8" initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.06 } } }}>
-                <motion.h3 className="text-2xl font-bold mb-5 flex items-center gap-2.5" variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }} transition={{ duration: 0.3 }}>
-                  <div className="w-8 h-8 rounded-xl bg-gradient-rose-glow flex items-center justify-center shadow-glow-rose">
-                    <Heart className="w-5 h-5 text-white" fill="white" />
-                  </div>
-                  <span className="text-gradient">
-                    Dina matchningar
-                  </span>
-                </motion.h3>
-                <div className="space-y-3">
-                  {DEMO_MUTUAL.map((match, idx) => {
-                    const archetypeInfo = ARCHETYPE_INFO[match.archetype];
-                    const categoryInfo = CATEGORY_INFO[match.category];
-                    return (
-                      <motion.div key={match.id} variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }} className="card-premium p-4 bg-card/90 border-border rounded-2xl vibe-card-hover">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center text-3xl shadow-glow-primary text-primary-foreground">
-                              {archetypeInfo?.emoji || categoryInfo?.emoji || '💫'}
-                            </div>
-                            <div>
-                              <p className="font-bold text-lg text-foreground">{match.displayName}</p>
-                              <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
-                                <span className="text-lg">{archetypeInfo?.emoji || categoryInfo?.emoji}</span>
-                                <span>{archetypeInfo?.title || categoryInfo?.title}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <Button size="sm" className="gap-2 bg-gradient-rose-glow text-white shadow-glow-rose" onClick={() => openChat(match.id)}>
-                            <MessageCircle className="w-4 h-4" />
-                            Chatta
-                          </Button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.div>
+              {/* Filter tabs – design system */}
+              <div className="mb-4">
+                <Tabs value={pendingFilter} onValueChange={(v) => setPendingFilter(v as 'all' | 'similar' | 'complementary')}>
+                  <TabsList className="grid w-full grid-cols-3 rounded-full bg-muted/50 p-1">
+                    <TabsTrigger value="all" className="rounded-full text-xs">
+                      Alla ({DEMO_PENDING.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="similar" className="rounded-full text-xs gap-1">
+                      <Users className="w-3 h-3" />
+                      Likhets-match ({similarCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="complementary" className="rounded-full text-xs gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Motsats-match ({complementaryCount})
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
-              {/* Dagens matchningar – filter och discoverykort */}
-              <div className="space-y-4">
-                <div className="grid w-full grid-cols-3 gap-1 p-1 rounded-lg bg-muted/50">
-                  {(['all', 'similar', 'complementary'] as const).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setPendingFilter(key)}
-                      className={cn(
-                        'rounded-md py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1',
-                        pendingFilter === key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {key === 'all' && `Alla (${DEMO_PENDING.length})`}
-                      {key === 'similar' && <><Users className="w-3 h-3" /> Likhets ({similarCount})</>}
-                      {key === 'complementary' && <><Sparkles className="w-3 h-3" /> Motsats ({complementaryCount})</>}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-center py-2 text-sm text-muted-foreground font-medium">
-                  {pendingFilter === 'similar' && 'Personer med liknande värderingar och personlighet'}
-                  {pendingFilter === 'complementary' && 'Kompletterande personligheter för balans'}
-                  {pendingFilter === 'all' && 'Synkflöde + Vågflöde matchningar'}
-                </p>
-
-                <div className="space-y-6">
-                  {filteredPending.map((match, index) => {
-                    const archetypeInfo = ARCHETYPE_INFO[match.archetype];
-                    const categoryInfo = CATEGORY_INFO[match.category];
-                    return (
-                      <motion.div
+              {/* Ömsesidiga matchningar – MatchListItemCard + ButtonCoral (Coral) */}
+              {DEMO_MUTUAL.length > 0 && (
+                <motion.div
+                  className="mb-8"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-foreground">
+                    <span className="flex w-8 h-8 items-center justify-center rounded-xl bg-coral/15 text-coral">
+                      <Heart className="w-4 h-4" fill="currentColor" />
+                    </span>
+                    Ömsesidiga matchningar ({DEMO_MUTUAL.length})
+                  </h2>
+                  <div className="space-y-3">
+                    {DEMO_MUTUAL.map((match) => (
+                      <MatchListItemCard
                         key={match.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <div className="card-premium overflow-hidden relative bg-card/90 border-border rounded-2xl vibe-card-hover">
-                          {/* Foto/emoji-sektion */}
-                          <div className="relative aspect-[4/3] bg-gradient-to-br from-muted to-muted/80 rounded-2xl overflow-hidden">
-                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                              <div className="text-center">
-                                <div className="text-6xl mb-2">{archetypeInfo?.emoji || categoryInfo?.emoji || '💫'}</div>
-                                <p className="text-sm text-muted-foreground">Demo – inga foton</p>
-                              </div>
-                            </div>
-                            <div className="absolute bottom-4 left-4 right-4 glass-dark rounded-2xl px-4 py-3 shadow-2xl max-w-[75%]">
-                              <div className="flex items-center gap-2.5 mb-1.5">
-                                <span className="font-bold text-xl text-white">{match.displayName}</span>
-                                <span className="text-2xl">{archetypeInfo?.emoji || categoryInfo?.emoji}</span>
-                              </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={cn('px-3 py-1 rounded-full text-xs font-bold', getCategoryBadgeClass(match.category))}>
-                                  {archetypeInfo?.title || categoryInfo?.title}
-                                </span>
-                                <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-glow-primary">
-                                  {match.matchScore}% match
-                                </span>
-                              </div>
-                            </div>
-                            <div className={cn(
-                              'absolute top-4 left-4 glass-dark px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg',
-                              match.matchType === 'similar' ? 'text-primary border border-primary/30' : 'text-violet-300 border border-violet-400/30'
-                            )}>
-                              {match.matchType === 'similar' ? (
-                                <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Liknande</span>
-                              ) : (
-                                <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> Kompletterande</span>
-                              )}
-                            </div>
-                            <div className="flex flex-col gap-3 items-end absolute top-4 right-4 z-10">
-                              <button
-                                type="button"
-                                onClick={() => toast.info('Demo – i appen passar du denna match')}
-                                className="glass-dark rounded-full p-3 shadow-lg hover:bg-red-500/30 transition-premium active:scale-90"
-                                aria-label="Passa"
-                              >
-                                <X className="w-5 h-5 text-white" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openChat(match.id)}
-                                className="glass-dark rounded-full p-3 shadow-lg bg-primary hover:opacity-90 transition-premium active:scale-90"
-                                aria-label="Chatta"
-                              >
-                                <MessageCircle className="w-5 h-5 text-white" />
-                              </button>
-                            </div>
-                          </div>
+                        displayName={match.displayName}
+                        archetype={toArchetypeKey(match.category)}
+                        previewText={ARCHETYPE_INFO[match.archetype]?.description?.slice(0, 60) + '…'}
+                        avatarSrc={null}
+                        avatarFallback={match.initial}
+                        isNewToday={false}
+                        relationshipLevel={3}
+                        onChat={() => openChat(match.id)}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
-                          {/* Kortets nedre del: namn, arketyp, beskrivning, styrkor, bio, score, knappar */}
-                          <div className="p-6 pt-6 bg-white/90 backdrop-blur-sm">
-                            <div className="flex items-start justify-between mb-4">
-                              <div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-1">{match.displayName}</h3>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-2xl">{archetypeInfo?.emoji || categoryInfo?.emoji}</span>
-                                  <span className={cn('px-3 py-1 rounded-full text-xs font-bold', getCategoryBadgeClass(match.category))}>
-                                    {archetypeInfo?.title || categoryInfo?.title}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-3xl font-bold text-gradient">
-                                  {match.matchScore}%
-                                </div>
-                                <div className="text-xs text-muted-foreground font-medium">matchning</div>
-                                <MatchCountdown expiresAt={DEMO_EXPIRES_AT()} className="mt-1 justify-end" />
-                              </div>
-                            </div>
-                            {archetypeInfo && (
-                              <p className="text-sm text-gray-700 mb-4 line-clamp-2 font-medium leading-relaxed">
-                                {archetypeInfo.description}
-                              </p>
-                            )}
-                            {archetypeInfo && (
-                              <div className="flex flex-wrap gap-2 mb-5">
-                                {archetypeInfo.strengths.slice(0, 3).map((strength, i) => (
-                                  <span key={i} className={cn('px-3 py-1.5 text-xs rounded-xl font-semibold', getCategoryBadgeClass(match.category))}>
-                                    {strength}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            {match.bio && (
-                              <p className="text-sm text-muted-foreground mb-5 italic font-medium leading-relaxed border-l-4 border-primary pl-4">
-                                "{match.bio}"
-                              </p>
-                            )}
-                            <div className="mb-5">
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                                <motion.div
-                                  className="h-full gradient-primary rounded-full shadow-glow-rose"
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${match.matchScore}%` }}
-                                  transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-3">
-                              <Button
-                                variant="outline"
-                                className="flex-1 gap-2"
-                                onClick={() => toast.info('Demo – i appen passar du')}
-                              >
-                                <X className="w-5 h-5" />
-                                Passa
-                              </Button>
-                              <Button
-                                className="flex-1 gap-2 bg-gradient-rose-glow text-white shadow-glow-rose"
-                                onClick={() => openChat(match.id)}
-                              >
-                                <MessageCircle className="w-5 h-5" />
-                                Chatta
-                              </Button>
-                              <Button variant="secondary" className="shrink-0" onClick={() => openProfile(match.id)}>
-                                Se profil
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+              {/* Dagens matchningar – MatchListItemCard, Se profil via klick på rad */}
+              <div className="space-y-3 mb-8">
+                {filteredPending.map((match, index) => {
+                  const preview =
+                    'matchExplanation' in match && match.matchExplanation
+                      ? match.matchExplanation.split(/[.\n]/)[0]?.trim().slice(0, 60) + '…'
+                      : 'bio' in match && match.bio
+                        ? match.bio.slice(0, 60) + (match.bio.length > 60 ? '…' : '')
+                        : undefined;
+                  return (
+                    <motion.div
+                      key={match.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.04 }}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        if (!(e.target as HTMLElement).closest('button')) openProfile(match.id);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && openProfile(match.id)}
+                      className="cursor-pointer"
+                    >
+                      <MatchListItemCard
+                        displayName={match.displayName}
+                        archetype={toArchetypeKey(match.category)}
+                        previewText={preview ?? undefined}
+                        avatarSrc={null}
+                        avatarFallback={match.initial}
+                        isNewToday
+                        relationshipLevel={1}
+                        onChat={() => openChat(match.id)}
+                        onViewProfile={() => openProfile(match.id)}
+                      />
+                    </motion.div>
+                  );
+                })}
               </div>
+
+              <p className="text-center text-sm text-muted-foreground py-4">
+                Nya matchningar kommer i morgon.
+              </p>
             </div>
           </div>
         </TabsContent>
@@ -528,11 +416,11 @@ export default function DemoSeed() {
                   <ArrowLeft className="w-4 h-4" />
                 </button>
                 <div className="relative shrink-0">
-                  <Avatar className="w-10 h-10 rounded-full border-2 border-white/30 shadow">
-                    <AvatarFallback className="bg-primary/20 text-primary-foreground text-sm font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+                  <AvatarV2 className="w-10 h-10 rounded-full border-2 border-white/30 shadow">
+                    <AvatarV2Fallback className="bg-primary/20 text-primary-foreground text-sm font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
                       {selectedMatch.initial}
-                    </AvatarFallback>
-                  </Avatar>
+                    </AvatarV2Fallback>
+                  </AvatarV2>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--msn-title-bar-bg,#0ea5a4)]" aria-hidden />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -695,9 +583,9 @@ export default function DemoSeed() {
                               onClick={() => setSelectedMatchId(match.id)}
                               className="flex flex-col items-center gap-2 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl p-1 transition-colors hover:bg-muted/50"
                             >
-                              <Avatar className="w-14 h-14 rounded-full border-2 border-primary/20 bg-primary/10">
-                                <AvatarFallback className="bg-primary/20 text-primary text-lg font-semibold">{match.initial}</AvatarFallback>
-                              </Avatar>
+                              <AvatarV2 className="w-14 h-14 rounded-full border-2 border-primary/20 bg-primary/10">
+                                <AvatarV2Fallback className="bg-primary/20 text-primary text-lg font-semibold">{match.initial}</AvatarV2Fallback>
+                              </AvatarV2>
                               <span className="text-xs font-medium text-foreground truncate max-w-[72px]">{match.displayName}</span>
                             </button>
                           ))}
@@ -716,9 +604,9 @@ export default function DemoSeed() {
                             selectedMatchId === match.id && 'bg-primary/5'
                           )}
                         >
-                          <Avatar className="w-12 h-12 rounded-full border-2 border-primary/20 bg-primary/10 shrink-0">
-                            <AvatarFallback className="bg-primary/20 text-primary font-semibold">{match.initial}</AvatarFallback>
-                          </Avatar>
+                          <AvatarV2 className="w-12 h-12 rounded-full border-2 border-primary/20 bg-primary/10 shrink-0">
+                            <AvatarV2Fallback className="bg-primary/20 text-primary font-semibold">{match.initial}</AvatarV2Fallback>
+                          </AvatarV2>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <h4 className="font-semibold text-foreground truncate">{match.displayName}</h4>
@@ -755,12 +643,12 @@ export default function DemoSeed() {
 
       <div className="border-t border-border p-3 text-center">
         <Link to="/">
-          <Button variant="outline" size="sm">
+          <ButtonSecondary size="sm">
             Gå till Määk-appen
-          </Button>
+          </ButtonSecondary>
         </Link>
       </div>
-      <BottomNav />
+      <BottomNavV2 currentPath="/demo-seed" />
     </div>
   );
 }

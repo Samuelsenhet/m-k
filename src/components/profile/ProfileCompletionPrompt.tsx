@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, CardV2, CardV2Content } from '@/components/ui-v2';
 import { Progress } from '@/components/ui/progress';
 import { Camera, Heart, Sparkles, X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -25,7 +24,7 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
     try {
       const profileKey = await getProfilesAuthKey(user.id);
       if (!profileKey) {
-        console.error('ProfileCompletionPrompt: Failed to get profile key');
+        if (import.meta.env.DEV) console.error('ProfileCompletionPrompt: Failed to get profile key');
         return;
       }
 
@@ -72,7 +71,7 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
     setCompletion(Math.round((filled / total) * 100));
     setMissingItems(missing.slice(0, 3));
     } catch (error) {
-      console.error('ProfileCompletionPrompt: Error checking completion', error);
+      if (import.meta.env.DEV) console.error('ProfileCompletionPrompt: Error checking completion', error);
     }
   }, [user]);
 
@@ -94,7 +93,7 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
       >
-        <Card className="shadow-card border-primary/20 overflow-hidden">
+        <CardV2 padding="none" className="border-primary/20 overflow-hidden">
           <div className="gradient-primary p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-primary-foreground">
@@ -109,7 +108,7 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
               </button>
             </div>
           </div>
-          <CardContent className="p-4 space-y-3">
+          <CardV2Content className="p-4 space-y-3">
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Profilstyrka</span>
@@ -142,13 +141,13 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
               </div>
             )}
 
-            <Button asChild size="sm" className="w-full bg-primary text-white hover:bg-primary/90 border-primary [&_svg]:text-white">
+            <ButtonPrimary asChild size="sm" className="w-full">
               <Link to="/profile" className="text-white">
                 Redigera profil
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonPrimary>
+          </CardV2Content>
+        </CardV2>
       </motion.div>
     </AnimatePresence>
   );

@@ -35,8 +35,14 @@ const ButtonSecondary = React.forwardRef<HTMLButtonElement, ButtonSecondaryProps
         )}
         {...props}
       >
-        {Icon && <Icon className="w-5 h-5" />}
-        {children}
+        {asChild ? (
+          children
+        ) : (
+          <>
+            {Icon && <Icon className="w-5 h-5" />}
+            {children}
+          </>
+        )}
       </Comp>
     );
   },

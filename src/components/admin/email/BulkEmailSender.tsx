@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, ButtonSecondary, CardV2, CardV2Content, InputV2 } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { Send, Calendar, Filter, Users } from 'lucide-react';
 import { toast } from 'sonner';
@@ -118,12 +116,12 @@ export default function BulkEmailSender() {
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Skapa utskick</h2>
 
-      <Card>
-        <CardContent className="pt-6 space-y-4">
+      <CardV2 padding="none">
+        <CardV2Content className="pt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="campaign-name">Kampanjnamn</Label>
-              <Input
+              <InputV2
                 id="campaign-name"
                 value={campaign.name}
                 onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
@@ -174,7 +172,7 @@ export default function BulkEmailSender() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Skicka vid (datum/tid)</Label>
-                <Input
+                <InputV2
                   type="datetime-local"
                   className="h-9"
                   value={campaign.scheduled_for}
@@ -197,23 +195,22 @@ export default function BulkEmailSender() {
           </p>
 
           <div className="flex flex-wrap gap-2">
-            <Button
+            <ButtonPrimary
               onClick={sendCampaign}
               disabled={loading || !campaign.name.trim() || !campaign.template_id}
               className="gap-2"
             >
               <Send className="w-4 h-4" />
               {campaign.scheduled_for ? 'Schemalägg' : 'Skicka nu'}
-            </Button>
-            <Button
-              variant="outline"
+            </ButtonPrimary>
+            <ButtonSecondary
               onClick={() => setCampaign({ name: '', template_id: '', filters: {}, scheduled_for: '' })}
             >
               Rensa
-            </Button>
+            </ButtonSecondary>
           </div>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
     </div>
   );
 }

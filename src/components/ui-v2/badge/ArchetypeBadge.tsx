@@ -6,6 +6,8 @@ const ARCHETYPES = {
   strateger: { label: "Strategen", emoji: "🎯", class: "bg-personality-strateger/15 text-personality-strateger border-personality-strateger/30" },
   byggare: { label: "Byggaren", emoji: "🏗️", class: "bg-personality-byggare/15 text-personality-byggare border-personality-byggare/30" },
   upptackare: { label: "Upptäckaren", emoji: "🧭", class: "bg-personality-upptackare/15 text-personality-upptackare border-personality-upptackare/30" },
+  debattoren: { label: "Debattören", emoji: "💡", class: "bg-personality-debattoren/15 text-personality-debattoren border-personality-debattoren/30" },
+  vardaren: { label: "Värdaren", emoji: "💝", class: "bg-personality-vardaren/15 text-personality-vardaren border-personality-vardaren/30" },
 } as const;
 
 export type ArchetypeKey = keyof typeof ARCHETYPES;

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Trophy, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ButtonIcon } from '@/components/ui-v2';
 import { Achievement } from '@/hooks/useAchievements';
 
 interface AchievementToastProps {
@@ -49,14 +49,12 @@ export function AchievementToast({ achievement, onClose }: AchievementToastProps
                 +{achievement.points} {isSwedish ? 'poäng' : 'points'}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
+            <ButtonIcon
               className="flex-shrink-0 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
               onClick={onClose}
             >
               <X className="w-4 h-4" />
-            </Button>
+            </ButtonIcon>
           </div>
         </div>
       </motion.div>

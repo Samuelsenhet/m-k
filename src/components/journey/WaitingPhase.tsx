@@ -1,23 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
+import { ButtonPrimary } from '@/components/ui-v2';
 import { Clock, Heart, Sparkles, ArrowRight } from 'lucide-react';
 import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
+import { useEmotionalState } from '@/hooks/useEmotionalState';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
+import { SCREEN_CONTAINER_CLASS } from '@/layout/screenLayout';
+import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface WaitingPhaseProps {
   timeRemaining: string; // e.g., "18h 42m"
   nextMatchAvailable: string; // ISO timestamp
 }
 
-const MAAK_WAITING_COPY = 'Jag är här medan vi väntar. Bra saker får ta tid.';
-
 export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhaseProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const mascot = useMascot(MASCOT_SCREEN_STATES.WAITING);
+  const emotionalConfig = { screen: "waiting" as const };
+  const { surfaceClass: emotionalSurfaceClass } = useEmotionalState(emotionalConfig);
+  const mascot = useMascot(MASCOT_SCREEN_STATES.WAITING, { emotionalConfig });
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
 
   const tips = [
@@ -50,41 +54,35 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
   const TipIcon = currentTip.icon;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
+    <div className={cn("min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20", emotionalSurfaceClass, SCREEN_CONTAINER_CLASS)}>
       <div className="w-full max-w-lg space-y-6">
-        {/* Mascot + Määk relation copy */}
-        <div className="flex justify-center">
-          <Mascot {...mascot} />
-        </div>
         <p className="text-center text-sm text-muted-foreground">
-          {MAAK_WAITING_COPY}
+          {t('maak.waiting')}
         </p>
 
         {/* Main Message Card */}
-        <Card className="border-primary/20">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Din första matchning kommer snart!</CardTitle>
-            <CardDescription className="text-base mt-2">
+        <CardV2 padding="none" className="border border-primary/20">
+          <CardV2Header className="text-center p-6 pb-0">
+            <CardV2Title className="text-2xl">Din första matchning kommer snart!</CardV2Title>
+            <p className="text-sm text-muted-foreground mt-2">
               Vi förbereder dina personliga matchningar baserat på din personlighet
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Countdown Timer */}
-            <div className="flex items-center justify-center gap-3 p-4 bg-muted rounded-lg">
-              <Clock className="w-6 h-6 text-primary" />
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary">{timeRemaining}</div>
-                <div className="text-sm text-muted-foreground">till dina matchningar är redo</div>
+            </p>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-4 space-y-6">
+            {/* Countdown Timer + Mascot (waiting_tea) */}
+            <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
+              {mascot.shouldShow && (
+                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20">
+                  <Mascot {...mascot} size="small" placement="inline" />
+                </div>
+              )}
+              <div className="flex items-center gap-3 min-w-0">
+                <Clock className="w-6 h-6 text-primary flex-shrink-0" />
+                <div className="text-center sm:text-left">
+                  <div className="text-3xl font-bold text-primary">{timeRemaining}</div>
+                  <div className="text-sm text-muted-foreground">till dina matchningar är redo</div>
+                </div>
               </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Onboarding klar</span>
-                <span>100%</span>
-              </div>
-              <Progress value={100} className="h-2" />
             </div>
 
             {/* Tips Carousel */}
@@ -127,16 +125,16 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
             </div>
 
             {/* Continue button – lets user leave waiting screen */}
-            <Button
+            <ButtonPrimary
               className="w-full mt-2"
               size="lg"
               onClick={() => navigate('/profile')}
             >
               Fortsätt utforska appen
               <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonPrimary>
+          </CardV2Content>
+        </CardV2>
 
         <p className="text-center text-sm text-muted-foreground px-4">
           Medan du väntar kan du lägga till mer om dig i profilen – lugn och i din takt.
