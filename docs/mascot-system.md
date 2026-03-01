@@ -10,8 +10,9 @@ Production-ready mascot implementation for the MÄÄK dating app.
 
 - **Figma:** [MÄÄK-MASCOT](https://www.figma.com/design/KF4TVJwqqTHbddcDklYrAc/M%C3%84%C3%84K-MASCOT)
 - **Workspace:** [docs/mascot-workspace/](mascot-workspace/README.md) – export spec, token map, expressions/scenarios, asset checklist
+- **Backup:** [docs/mascot-workspace-backup/](mascot-workspace-backup/README.md) – when new assets live here, run `npm run mascot:sync-from-backup` to copy them to `public/mascot/`
 
-Export from Figma according to the workspace spec; place PNGs in `public/mascot/` with the token names listed there. Do not use other image sources for mascot visuals.
+Export from Figma according to the workspace spec; place PNGs in `public/mascot/` with the token names listed there (or in the backup folder and sync with `mascot:sync-from-backup`). Do not use other image sources for mascot visuals.
 
 ---
 

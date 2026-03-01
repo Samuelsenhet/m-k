@@ -78,13 +78,18 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error(t('ai_assistant.error_fetch'));
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
           userId: user.id,
           type,
           matchedUserId,
         },
-        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (error) throw error;

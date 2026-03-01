@@ -7,6 +7,9 @@ import { Camera, Heart, Sparkles, X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface ProfileCompletionPromptProps {
   onDismiss?: () => void;
@@ -95,10 +98,11 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
       >
         <CardV2 padding="none" className="border-primary/20 overflow-hidden">
           <div className="gradient-primary p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-primary-foreground">
-                <Sparkles className="w-5 h-5" />
-                <span className="font-medium text-sm">Slutför din profil</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-primary-foreground min-w-0">
+                {mascot.shouldShow && <Mascot {...mascot} className="flex-shrink-0" />}
+                <Sparkles className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium text-sm truncate">Slutför din profil</span>
               </div>
               <button 
                 onClick={handleDismiss}

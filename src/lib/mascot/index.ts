@@ -104,29 +104,35 @@ export const MASCOT_SCREEN_STATES = {
   SAMLINGAR_EMPTY: "samlingar_empty",
   /** First identity intro (Landing hero). Token: calm_idle. Goal from emotion. */
   MAAK_INTRO: "maak_intro",
-  /** Onboarding welcome – Määk as guide. Token: calm_idle. Goal from emotion. */
+  /** Onboarding welcome – Määk as guide. Token: onboarding (extra). */
   ONBOARDING_WELCOME: "onboarding_welcome",
+  /** Onboarding photo step – Määk teaching. Token: teaches (extra). */
+  ONBOARDING_PHOTO: "onboarding_photo",
   /** Matches success list – subtle presence, no intervention. Token: calm_idle, size small, placement corner. Goal from emotion. */
   MATCHES_SUCCESS: "matches_success",
+  /** Profile completion prompt – encourage user. Token: encouraging (extra). */
+  PROFILE_ENCOURAGE: "profile_encourage",
 } as const;
 
 export type MascotScreenState = (typeof MASCOT_SCREEN_STATES)[keyof typeof MASCOT_SCREEN_STATES];
 
-/** Design system token map (MaakUnifiedDesignSystem_1.jsx). */
-const STATE_TOKEN_MAP: Record<string, BaseMascotToken> = {
+/** Design system token map. Core tokens + extras from workspace (teaches, encouraging, reassures, icon, onboarding, social). */
+const STATE_TOKEN_MAP: Record<string, MascotToken> = {
   first_match: "mascot_lighting_lantern",
   empty_matches: "mascot_planting_seed",
-  samlingar_empty: "mascot_planting_seed",
-  home_idle: "mascot_calm_idle",
+  samlingar_empty: "social",
+  home_idle: "icon",
   profile_empty: "mascot_practicing_mirror",
   landing_hero: "mascot_ai_open_hand",
-  landing_problem: "mascot_ai_thinking",
+  landing_problem: "reassures",
   no_chats: "mascot_practicing_mirror",
   waiting_phase: "mascot_waiting_tea",
   loading: "mascot_waiting_tea",
   maak_intro: "mascot_calm_idle",
-  onboarding_welcome: "mascot_calm_idle",
+  onboarding_welcome: "onboarding",
+  onboarding_photo: "teaches",
   matches_success: "mascot_calm_idle",
+  profile_encourage: "encouraging",
 };
 
 /** Design system layout: hero = empty/onboarding, medium = AI/sekundär, icon = logo. */
@@ -141,7 +147,7 @@ export type MascotSpacingPreset = "stack-gap" | "inline-tight" | "floating-safe"
 /** Animation types for state-based mascot movement. */
 export type MascotAnimationType = "idle-breathe" | "gentle-float" | "celebrate-bounce" | "none";
 
-export function getMascotTokenForState(state: string): BaseMascotToken {
+export function getMascotTokenForState(state: string): MascotToken {
   return STATE_TOKEN_MAP[state] ?? "mascot_calm_idle";
 }
 
@@ -161,6 +167,8 @@ export function getMascotLayoutForState(state: string): MascotLayoutConfig {
     return { size: "icon", placement: "inline", spacingPreset: "inline-tight" };
   if (state === "matches_success")
     return { size: "small", placement: "corner", spacingPreset: "floating-safe" };
+  if (state === "profile_encourage")
+    return { size: "small", placement: "inline", spacingPreset: "inline-tight" };
   if (
     state === "empty_matches" ||
     state === "no_chats" ||
@@ -168,7 +176,8 @@ export function getMascotLayoutForState(state: string): MascotLayoutConfig {
     state === "loading" ||
     state === "landing_hero" ||
     state === "maak_intro" ||
-    state === "onboarding_welcome"
+    state === "onboarding_welcome" ||
+    state === "onboarding_photo"
   )
     return { size: "hero", placement: "center", spacingPreset: "stack-gap" };
   if (state?.startsWith("ai_"))
@@ -189,6 +198,8 @@ const MASCOT_ANIMATION_MAP: Record<string, MascotAnimationType> = {
   landing_problem: "idle-breathe",
   maak_intro: "idle-breathe",
   onboarding_welcome: "idle-breathe",
+  onboarding_photo: "idle-breathe",
+  profile_encourage: "idle-breathe",
   waiting_phase: "gentle-float",
   loading: "gentle-float",
   empty_matches: "gentle-float",

@@ -75,6 +75,7 @@ export function ChatWindow({
   matchedUserName,
   matchedUserAvatar,
   matchedUserVerified,
+  relationshipLevel,
   icebreakers = [],
   onBack,
   onStartVideo,

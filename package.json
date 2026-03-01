@@ -20,6 +20,7 @@
     "mascot:backup": "node scripts/backup-mascot-workspace.mjs",
     "mascot:verify": "node scripts/verify-mascot.mjs",
     "mascot:sync": "node scripts/sync-mascot-from-workspace.mjs",
+    "mascot:sync-from-backup": "node scripts/sync-mascot-from-backup.mjs",
     "mascot:extract": "node scripts/extract-mascot.mjs",
     "mascot:sprite": "node scripts/build-mascot-sprite.mjs",
     "mascot:clean": "node scripts/crop-mascot-clean.mjs",

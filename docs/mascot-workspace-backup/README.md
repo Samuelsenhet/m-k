@@ -48,10 +48,12 @@ Never as decoration. Never hyperactive. All behavior is driven by emotional stat
 - **Component:** `src/components/system/Mascot.tsx` – renders PNG or composite sprite
 - **Assets:** `public/mascot/*.png` and optional `mascot_sheet_ai.png`
 
-Source images live in this folder (`docs/mascot-workspace/`). To copy them into the app with the correct token names, run:
+**This folder is the backup** (`docs/mascot-workspace-backup/`). When new mascot images are placed here, sync them into the app with:
 
 ```bash
-npm run mascot:sync
+npm run mascot:sync-from-backup
 ```
 
-The mapping from workspace filenames to app tokens is defined in `scripts/sync-mascot-from-workspace.mjs`. If you updated any of the four AI tokens, run `npm run mascot:sprite` after sync to rebuild the AI sprite sheet.
+This copies PNGs to `public/mascot/` using the token mapping in `scripts/sync-mascot-from-backup.mjs` (includes backup-specific filenames such as `no-chat.png`, `empty-states.png`, `calm.png`). After sync, if any AI token was updated, run `npm run mascot:sprite`.
+
+To use the main workspace instead: put assets in `docs/mascot-workspace/` and run `npm run mascot:sync`.

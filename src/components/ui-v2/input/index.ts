@@ -1,4 +1,5 @@
-export { InputV2, inputVariants } from "./Input";
+export { InputV2, type InputV2Props } from "./Input";
+export { inputVariants } from "./inputVariants";
 export {
   InputOTPV2,
   InputOTPV2Group,

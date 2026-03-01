@@ -85,7 +85,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const onlineCount = useOnlineCount(user?.id);
-  const photoStepMascot = useMascot(MASCOT_SCREEN_STATES.ONBOARDING_WELCOME);
+  const photoStepMascot = useMascot(MASCOT_SCREEN_STATES.ONBOARDING_PHOTO);
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [direction, setDirection] = useState(1);
