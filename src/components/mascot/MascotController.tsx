@@ -12,7 +12,7 @@ import { CardV2 } from "@/components/ui-v2";
 
 /** Demo: pick a mascot token and see the asset. Replaces pose/expression with token-based system. */
 export const MascotController = () => {
-  const [token, setToken] = useState<MascotToken>(MASCOT_ASSET_NAMES[0]);
+  const [token, setToken] = useState<MascotToken>(MASCOT_ALL_IMAGES[0]);
 
   return (
     <div className="flex flex-col items-center gap-6 p-8">
