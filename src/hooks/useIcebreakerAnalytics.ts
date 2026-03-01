@@ -31,8 +31,7 @@ export function useIcebreakerAnalytics() {
           was_used: false,
         });
       } catch (error) {
-        // Fire-and-forget: log but don't throw
-        console.error('Failed to track icebreaker shown:', error);
+        if (import.meta.env.DEV) console.error('Failed to track icebreaker shown:', error);
       }
     },
     [user]
@@ -70,8 +69,7 @@ export function useIcebreakerAnalytics() {
           });
         }
       } catch (error) {
-        // Fire-and-forget: log but don't throw
-        console.error('Failed to track icebreaker used:', error);
+        if (import.meta.env.DEV) console.error('Failed to track icebreaker used:', error);
       }
     },
     [user]
@@ -108,8 +106,7 @@ export function useIcebreakerAnalytics() {
             .eq('id', analytics.id);
         }
       } catch (error) {
-        // Fire-and-forget: log but don't throw
-        console.error('Failed to track icebreaker response:', error);
+        if (import.meta.env.DEV) console.error('Failed to track icebreaker response:', error);
       }
     },
     [user]
@@ -137,8 +134,7 @@ export function useIcebreakerAnalytics() {
 
         await supabase.from('icebreaker_analytics').insert(records);
       } catch (error) {
-        // Fire-and-forget: log but don't throw
-        console.error('Failed to track icebreakers shown:', error);
+        if (import.meta.env.DEV) console.error('Failed to track icebreakers shown:', error);
       }
     },
     [user]

@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, CardV2, CardV2Content, CardV2Header, CardV2Title, InputV2, InterestChipV2 } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PhotoUpload } from './PhotoUpload';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Save, User, Heart, Info, Sparkles, Shield } from 'lucide-react';
+import { Loader2, Save, User, Heart, Info, Sparkles, Shield, Coffee, Plane, Music, Palette, BookOpen, Dumbbell, Utensils, Gamepad2, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { getProfilesAuthKey } from '@/lib/profiles';
@@ -55,9 +53,27 @@ interface ProfileEditorProps {
   onComplete?: () => void;
 }
 
+const PRESET_INTERESTS: { id: string; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'coffee', label: 'Kaffe', Icon: Coffee },
+  { id: 'travel', label: 'Resor', Icon: Plane },
+  { id: 'music', label: 'Musik', Icon: Music },
+  { id: 'art', label: 'Konst', Icon: Palette },
+  { id: 'reading', label: 'Läsning', Icon: BookOpen },
+  { id: 'fitness', label: 'Träning', Icon: Dumbbell },
+  { id: 'cooking', label: 'Matlagning', Icon: Utensils },
+  { id: 'gaming', label: 'Spel', Icon: Gamepad2 },
+  { id: 'photography', label: 'Fotografi', Icon: Camera },
+];
+
+function parseInterestsList(value: string | undefined): string[] {
+  if (!value?.trim()) return [];
+  return value.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+}
+
 export function ProfileEditor({ onComplete }: ProfileEditorProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const achievementsCtx = useAchievementsContextOptional();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
@@ -102,7 +118,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      if (import.meta.env.DEV) console.error('Error fetching profile:', error);
       toast.error(t('common.error') + '. ' + t('common.retry'));
     } else if (data) {
       setProfile({
@@ -148,7 +164,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
       .order('display_order');
 
     if (error) {
-      console.error('Error fetching photos:', error);
+      if (import.meta.env.DEV) console.error('Error fetching photos:', error);
       toast.error(t('common.error') + '. ' + t('common.retry'));
     } else {
       const photoSlots: PhotoSlot[] = Array.from({ length: 6 }, (_, i) => {
@@ -239,31 +255,31 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
   return (
     <div className="space-y-4 pb-20">
       {/* Photos Section */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-serif text-base flex items-center gap-2">
+      <CardV2 padding="none">
+        <CardV2Header className="p-5 pb-2">
+          <CardV2Title className="font-serif text-base flex items-center gap-2">
             <User className="w-4 h-4 text-primary" />
             Foton
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          </CardV2Title>
+        </CardV2Header>
+        <CardV2Content>
           <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
 
       {/* Basic Info */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-serif text-base flex items-center gap-2">
+      <CardV2 padding="none">
+        <CardV2Header className="p-5 pb-2">
+          <CardV2Title className="font-serif text-base flex items-center gap-2">
             <Heart className="w-4 h-4 text-primary" />
             Grundläggande
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </CardV2Title>
+        </CardV2Header>
+        <CardV2Content className="p-5 pt-0 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="display_name" className="text-xs">Namn</Label>
-              <Input
+              <InputV2
                 id="display_name"
                 value={profile.display_name}
                 onChange={(e) => updateField('display_name', e.target.value)}
@@ -273,7 +289,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pronouns" className="text-xs">Pronomen</Label>
-              <Input
+              <InputV2
                 id="pronouns"
                 value={profile.pronouns}
                 onChange={(e) => updateField('pronouns', e.target.value)}
@@ -354,13 +370,6 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                 <SelectItem value="klura_ut">{t('profile.dating_klura_ut')}</SelectItem>
               </SelectContent>
             </Select>
-            <Textarea
-              value={profile.dating_intention_extra}
-              onChange={(e) => updateField('dating_intention_extra', e.target.value)}
-              placeholder={t('profile.dating_intention_placeholder')}
-              rows={2}
-              className="resize-none"
-            />
           </div>
 
           {/* Relationstyper */}
@@ -379,41 +388,87 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                 <SelectItem value="ta_reda_pa">{t('profile.relation_ta_reda_pa')}</SelectItem>
               </SelectContent>
             </Select>
-            <Textarea
-              value={profile.relationship_type_extra}
-              onChange={(e) => updateField('relationship_type_extra', e.target.value)}
-              placeholder={t('profile.relationship_type_placeholder')}
-              rows={2}
-              className="resize-none"
-            />
           </div>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
 
       {/* More About Me */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-serif text-base flex items-center gap-2">
+      <CardV2 padding="none">
+        <CardV2Header className="p-5 pb-2">
+          <CardV2Title className="font-serif text-base flex items-center gap-2">
             <Info className="w-4 h-4 text-primary" />
             Mer om mig
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="interested_in" className="text-xs">{t('profile.interests_title', 'Intressen')}</Label>
-            <Textarea
-              id="interested_in"
-              value={profile.interested_in}
-              onChange={(e) => updateField('interested_in', e.target.value)}
-              placeholder={t('profile.interests_placeholder', 't.ex. konst, resor, matlagning, träning...')}
-              rows={2}
-              className="resize-none"
+          </CardV2Title>
+        </CardV2Header>
+        <CardV2Content className="p-5 pt-0 space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs">{t('profile.interests_title', 'Intressen')}</Label>
+            <div className="flex flex-wrap gap-2">
+              {(() => {
+                const selectedSet = new Set(parseInterestsList(profile.interested_in));
+                return PRESET_INTERESTS.map(({ id, label, Icon }) => {
+                  const selected = selectedSet.has(label);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        const list = parseInterestsList(profile.interested_in);
+                        const next = selected ? list.filter((x) => x !== label) : [...list, label];
+                        updateField('interested_in', next.join(', '));
+                      }}
+                      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+                    >
+                      <InterestChipV2
+                        label={label}
+                        icon={<Icon className="size-3.5" />}
+                        variant="dark"
+                        selected={selected}
+                        className="cursor-pointer"
+                      />
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {parseInterestsList(profile.interested_in)
+                .filter((label) => !PRESET_INTERESTS.some((p) => p.label === label))
+                .map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => {
+                      const list = parseInterestsList(profile.interested_in).filter((x) => x !== label);
+                      updateField('interested_in', list.join(', '));
+                    }}
+                    className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+                  >
+                    <InterestChipV2 label={label} variant="dark" selected className="cursor-pointer" />
+                  </button>
+                ))}
+            </div>
+            <InputV2
+              id="interested_in_custom"
+              placeholder={t('profile.interests_placeholder', 'Lägg till eget (t.ex. konst, resor)...')}
+              className="h-9 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const input = (e.target as HTMLInputElement).value.trim();
+                  if (input) {
+                    const list = parseInterestsList(profile.interested_in);
+                    if (!list.includes(input)) updateField('interested_in', [...list, input].join(', '));
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }
+              }}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="height" className="text-xs">Längd (cm)</Label>
-              <Input
+              <InputV2
                 id="height"
                 type="number"
                 value={profile.height}
@@ -424,7 +479,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="hometown" className="text-xs">Bor i</Label>
-              <Input
+              <InputV2
                 id="hometown"
                 value={profile.hometown}
                 onChange={(e) => updateField('hometown', e.target.value)}
@@ -461,7 +516,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="instagram" className="text-xs">Instagram</Label>
-              <Input
+              <InputV2
                 id="instagram"
                 value={profile.instagram}
                 onChange={(e) => updateField('instagram', e.target.value)}
@@ -471,7 +526,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="linkedin" className="text-xs">LinkedIn</Label>
-              <Input
+              <InputV2
                 id="linkedin"
                 value={profile.linkedin}
                 onChange={(e) => updateField('linkedin', e.target.value)}
@@ -484,7 +539,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="work" className="text-xs">Jobb</Label>
-              <Input
+              <InputV2
                 id="work"
                 value={profile.work}
                 onChange={(e) => updateField('work', e.target.value)}
@@ -494,7 +549,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="education" className="text-xs">Utbildning</Label>
-              <Input
+              <InputV2
                 id="education"
                 value={profile.education}
                 onChange={(e) => updateField('education', e.target.value)}
@@ -503,18 +558,18 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
 
       {/* Lifestyle */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-serif text-base flex items-center gap-2">
+      <CardV2 padding="none">
+        <CardV2Header className="p-5 pb-2">
+          <CardV2Title className="font-serif text-base flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
             Livsstil
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </CardV2Title>
+        </CardV2Header>
+        <CardV2Content className="p-5 pt-0 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Alkohol</Label>
@@ -596,18 +651,18 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
 
       {/* Privacy Settings */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-serif text-base flex items-center gap-2">
+      <CardV2 padding="none">
+        <CardV2Header className="p-5 pb-2">
+          <CardV2Title className="font-serif text-base flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
             {t('privacy.title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </CardV2Title>
+        </CardV2Header>
+        <CardV2Content className="p-5 pt-0 space-y-4">
           <p className="text-sm text-muted-foreground">
             {t('privacy.description')}
           </p>
@@ -653,14 +708,14 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
 
       {/* Save Button */}
-      <Button 
+      <ButtonPrimary 
         onClick={handleSave} 
         disabled={saving}
-        className="w-full gradient-primary text-primary-foreground"
+        className="w-full"
       >
         {saving ? (
           <>
@@ -673,7 +728,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             Spara ändringar
           </>
         )}
-      </Button>
+      </ButtonPrimary>
     </div>
   );
 }

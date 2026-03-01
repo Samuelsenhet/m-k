@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Clock, User, Sparkles, Heart } from "lucide-react";
+import { User, Sparkles, Heart, Clock } from "lucide-react";
 import { CardV2, CardV2Content, CardV2Header, CardV2Title } from "@/components/ui-v2";
 import { ButtonGhost } from "@/components/ui-v2";
-import { Progress } from "@/components/ui/progress";
 import { Mascot } from "@/components/system/Mascot";
 import { useMascot } from "@/hooks/useMascot";
+import { getEmotionalState } from "@/lib/emotional-state";
 import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
 import { TimeRemaining } from "@/hooks/useUserJourney";
 import { useNavigate } from "react-router-dom";
@@ -14,23 +14,14 @@ interface WaitingPeriodScreenProps {
   profileCompletion?: number;
 }
 
-const MAAK_WAITING_COPY = "Jag är här medan vi väntar. Bra saker får ta tid.";
-
 export const WaitingPeriodScreen = ({
   timeRemaining,
   profileCompletion = 0,
 }: WaitingPeriodScreenProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const mascot = useMascot(MASCOT_SCREEN_STATES.WAITING);
-
-  // Calculate progress (24 hours total)
-  const totalSeconds = 24 * 60 * 60;
-  const remainingSeconds =
-    timeRemaining.hours * 3600 +
-    timeRemaining.minutes * 60 +
-    timeRemaining.seconds;
-  const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+  const emotionalConfig = { screen: "waiting" as const };
+  const mascot = useMascot(MASCOT_SCREEN_STATES.WAITING, { emotionalConfig });
 
   const tips = [
     {
@@ -54,12 +45,9 @@ export const WaitingPeriodScreen = ({
   return (
     <div className="min-h-screen bg-background p-4 flex flex-col items-center justify-center">
       <div className="w-full max-w-md space-y-6">
-        {/* Mascot + Määk relation copy */}
-        <div className="flex justify-center">
-          <Mascot {...mascot} />
-        </div>
+        {mascot.shouldShow && <Mascot {...mascot} />}
         <p className="text-center text-sm text-muted-foreground">
-          {MAAK_WAITING_COPY}
+          {t("maak.waiting")}
         </p>
 
         {/* Main Card */}
@@ -100,14 +88,6 @@ export const WaitingPeriodScreen = ({
                   <p className="text-xs text-muted-foreground">sek</p>
                 </div>
               </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
-                {Math.round(progress)}% klar
-              </p>
             </div>
 
             {/* Profile Completion Prompt */}

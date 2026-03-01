@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mascot } from "@/components/system/Mascot";
-import { MASCOT_ASSET_NAMES, type MascotToken } from "@/lib/mascot";
+import { MASCOT_ALL_IMAGES, type MascotToken } from "@/lib/mascot";
 import {
   Select,
   SelectContent,
@@ -28,9 +28,9 @@ export const MascotController = () => {
               <SelectValue placeholder="Välj token" />
             </SelectTrigger>
             <SelectContent>
-              {MASCOT_ASSET_NAMES.map((name) => (
+              {MASCOT_ALL_IMAGES.map((name) => (
                 <SelectItem key={name} value={name}>
-                  {name.replace("mascot_", "")}
+                  {name.replace(/^mascot_/, "")}
                 </SelectItem>
               ))}
             </SelectContent>

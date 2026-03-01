@@ -1,8 +1,10 @@
 import { Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Mascot } from "@/components/system/Mascot";
 import { useMascot } from "@/hooks/useMascot";
 import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
+import type { EmotionalConfig } from "@/lib/emotional-state";
 import { ButtonGhost } from "../button/ButtonGhost";
 
 interface ChatEmptyStateV2Props {
@@ -11,6 +13,8 @@ interface ChatEmptyStateV2Props {
   onAIClick?: () => void;
   aiLabel?: string;
   className?: string;
+  /** When provided, mascot goal is derived from emotion; mascot only renders when emotion !== "neutral". */
+  emotionalConfig?: EmotionalConfig;
 }
 
 export function ChatEmptyStateV2({
@@ -19,15 +23,17 @@ export function ChatEmptyStateV2({
   onAIClick,
   aiLabel,
   className,
+  emotionalConfig,
 }: ChatEmptyStateV2Props) {
-  const mascot = useMascot(MASCOT_SCREEN_STATES.NO_CHATS);
+  const { t } = useTranslation();
+  const mascot = useMascot(MASCOT_SCREEN_STATES.NO_CHATS, emotionalConfig ? { emotionalConfig } : undefined);
 
   return (
     <div className={cn("flex flex-col items-center justify-center gap-4 py-12 px-4", className)}>
-      <Mascot {...mascot} className="mb-2" />
+      {mascot.shouldShow && <Mascot {...mascot} />}
 
       <p className="text-muted-foreground text-sm text-center">
-        Starta konversationen med en icebreaker!
+        {t("chat.startConversation")}
       </p>
 
       {icebreakers.length > 0 && (

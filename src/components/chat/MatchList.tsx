@@ -2,14 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { sv, enUS } from 'date-fns/locale';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { getProfilesAuthKey } from '@/lib/profiles';
-import { ChatListItemCard, AvatarWithRing } from '@/components/ui-v2';
-import { Mascot } from '@/components/system/Mascot';
-import { useMascot } from '@/hooks/useMascot';
+import { ChatListItemCard, AvatarWithRing, EmptyStateWithMascot, LoadingStateWithMascot } from '@/components/ui-v2';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface Match {
@@ -49,7 +46,6 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const dateLocale = i18n.language === 'sv' ? sv : enUS;
-  const noChatsMascot = useMascot(MASCOT_SCREEN_STATES.NO_CHATS);
 
   const query = searchQuery.trim().toLowerCase();
   const displayName = (m: Match) => m.matched_profile?.display_name ?? 'Användare';
@@ -70,7 +66,7 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
         .order('created_at', { ascending: false });
 
       if (matchesError) {
-        console.error('Error fetching matches:', matchesError);
+        if (import.meta.env.DEV) console.error('Error fetching matches:', matchesError);
         setLoading(false);
         return;
       }
@@ -153,7 +149,7 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
 
       setMatches(matchesWithProfiles);
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      if (import.meta.env.DEV) console.error('Error fetching matches:', error);
     } finally {
       setLoading(false);
     }
@@ -169,25 +165,23 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
     return data.publicUrl;
   };
 
+  const chatListEmotionalConfig = { screen: "chat" as const, hasMessages: false };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
+      <LoadingStateWithMascot className="py-12" emotionalConfig={chatListEmotionalConfig} />
     );
   }
 
   if (matches.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Mascot {...noChatsMascot} className="mb-4" />
-        <h3 className="font-heading font-semibold text-foreground mb-2">
-          {t('matches.noMatches')}
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          {t('chat.chooseIcebreaker')}
-        </p>
-      </div>
+      <EmptyStateWithMascot
+        screenState={MASCOT_SCREEN_STATES.NO_CHATS}
+        title={t('chat.noChats', t('matches.noMatches'))}
+        description="Övning ger färdighet! Hej! 👋"
+        className="py-12"
+        emotionalConfig={chatListEmotionalConfig}
+      />
     );
   }
 

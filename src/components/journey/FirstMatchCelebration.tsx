@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { CardV2, CardV2Content } from '@/components/ui-v2';
+import { ButtonPrimary } from '@/components/ui-v2';
 import { Heart, Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
+import { useTranslation } from 'react-i18next';
 
 interface FirstMatchCelebrationProps {
   specialMessage: string;
@@ -18,6 +19,7 @@ export function FirstMatchCelebration({
   matchCount,
   onContinue 
 }: FirstMatchCelebrationProps) {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(true);
   const mascot = useMascot(MASCOT_SCREEN_STATES.FIRST_MATCH);
 
@@ -64,12 +66,10 @@ export function FirstMatchCelebration({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <Card className="w-full max-w-md border-primary/50 shadow-2xl animate-in zoom-in-95 duration-500">
-        <CardContent className="p-8 text-center space-y-6">
-          {/* Animated Mascot */}
-          <div className="flex justify-center">
-            <Mascot {...mascot} />
-          </div>
+      <CardV2 padding="none" className="w-full max-w-md border border-primary/50 animate-in zoom-in-95 duration-500">
+        <CardV2Content className="p-8 text-center space-y-6">
+          {/* Animated Mascot (placement/spacing from M11) */}
+          <Mascot {...mascot} />
 
           {/* Celebration Message */}
           <div className="space-y-2">
@@ -81,16 +81,16 @@ export function FirstMatchCelebration({
             </p>
           </div>
 
-          {/* Voice Bubble from Mascot */}
+          {/* Määk – emotionell payoff */}
           <div className="relative p-4 bg-primary/5 rounded-2xl border border-primary/20">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-primary/5 border-l border-t border-primary/20 rotate-45" />
             <p className="text-sm font-medium">
-              "Lycka till med dina nya matchningar! Jag tror du kommer älska dem! 💫"
+              Jag sa ju att det var värt att vänta. 💛
             </p>
           </div>
 
           {/* Continue Button */}
-          <Button 
+          <ButtonPrimary 
             onClick={() => {
               setIsVisible(false);
               setTimeout(onContinue, 300);
@@ -100,14 +100,14 @@ export function FirstMatchCelebration({
           >
             Visa mina matchningar
             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
+          </ButtonPrimary>
 
           {/* Auto-dismiss hint */}
           <p className="text-xs text-muted-foreground">
             Stängs automatiskt om 5 sekunder...
           </p>
-        </CardContent>
-      </Card>
+        </CardV2Content>
+      </CardV2>
     </div>
   );
 }

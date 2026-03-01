@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, ButtonGhost, InputV2, ProgressSteps } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,6 +14,9 @@ import {
   Users, Brain, Briefcase, SkipForward, ChevronRight, Shield, ShieldCheck
 } from 'lucide-react';
 import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { type PersonalityTestResult, ARCHETYPE_INFO, type ArchetypeCode } from '@/types/personality';
@@ -83,6 +85,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const onlineCount = useOnlineCount(user?.id);
+  const photoStepMascot = useMascot(MASCOT_SCREEN_STATES.ONBOARDING_WELCOME);
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [direction, setDirection] = useState(1);
@@ -293,7 +296,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
       toast.success('Din profil är skapad!');
       onComplete();
     } catch (error) {
-      console.error('Error saving profile:', error);
+      if (import.meta.env.DEV) console.error('Error saving profile:', error);
       toast.error('Kunde inte spara profilen');
     } finally {
       setSaving(false);
@@ -366,20 +369,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         </div>
 
         {/* Step Indicators */}
-        <div className="flex justify-center gap-1 mb-2">
-          {STEPS.map((step, index) => (
-            <div
-              key={step.id}
-              className={cn(
-                'h-1.5 rounded-full transition-all duration-300',
-                index === currentStep
-                  ? 'w-8 bg-primary'
-                  : index < currentStep
-                  ? 'w-4 bg-primary/50'
-                  : 'w-4 bg-muted'
-              )}
-            />
-          ))}
+        <div className="mb-2 px-4">
+          <ProgressSteps current={currentStep + 1} total={STEPS.length} />
         </div>
       </div>
 
@@ -415,7 +406,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="firstName" className="text-sm">Förnamn *</Label>
-                      <Input
+                      <InputV2
                         id="firstName"
                         value={profile.firstName}
                         onChange={(e) => updateProfile('firstName', e.target.value)}
@@ -425,7 +416,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="lastName" className="text-sm">Efternamn</Label>
-                      <Input
+                      <InputV2
                         id="lastName"
                         name="lastName"
                         value={profile.lastName}
@@ -455,7 +446,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Längd (cm)</Label>
-                      <Input
+                      <InputV2
                         type="number"
                         value={profile.height}
                         onChange={(e) => updateProfile('height', e.target.value)}
@@ -470,7 +461,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-sm">Instagram</Label>
-                      <Input
+                      <InputV2
                         value={profile.instagram}
                         onChange={(e) => updateProfile('instagram', e.target.value)}
                         placeholder="@användarnamn"
@@ -479,7 +470,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">LinkedIn</Label>
-                      <Input
+                      <InputV2
                         value={profile.linkedin}
                         onChange={(e) => updateProfile('linkedin', e.target.value)}
                         placeholder="@användarnamn"
@@ -601,7 +592,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-sm">Hemstad</Label>
-                    <Input
+                    <InputV2
                       value={profile.hometown}
                       onChange={(e) => updateProfile('hometown', e.target.value)}
                       placeholder="Stockholm"
@@ -611,7 +602,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
                   <div className="space-y-1.5">
                     <Label className="text-sm">Arbete</Label>
-                    <Input
+                    <InputV2
                       value={profile.work}
                       onChange={(e) => updateProfile('work', e.target.value)}
                       placeholder="Titel @ Företag"
@@ -621,7 +612,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
                   <div className="space-y-1.5">
                     <Label className="text-sm">Utbildning</Label>
-                    <Input
+                    <InputV2
                       value={profile.education}
                       onChange={(e) => updateProfile('education', e.target.value)}
                       placeholder="Program @ Universitet"
@@ -701,13 +692,11 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               </div>
             )}
 
-            {/* Step 3: Photos */}
+            {/* Step 3: Photos – design system 6-slot grid + Mascot teaching */}
             {currentStep === 3 && (
               <div className="space-y-5">
-                <div className="text-center mb-6">
-                  <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
-                    <Camera className="w-7 h-7 text-primary-foreground" />
-                  </div>
+                <div className="text-center mb-4">
+                  <Mascot {...photoStepMascot} />
                   <h1 className="text-xl font-serif font-bold text-foreground mb-1">
                     Visa dig själv
                   </h1>
@@ -718,7 +707,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
                 <div className="bg-card/50 border border-border rounded-xl p-4 mb-4">
                   <p className="text-sm text-center italic text-muted-foreground">
-                    "{PHOTO_PROMPTS[0]}" - Berätta genom dina bilder
+                    &quot;{PHOTO_PROMPTS[0]}&quot; – Berätta genom dina bilder
                   </p>
                 </div>
 
@@ -875,32 +864,24 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
       <div className="p-4 border-t border-border bg-card">
         <div className="container max-w-md mx-auto flex gap-3">
           {currentStep > 0 && (
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="gap-2"
-            >
+            <ButtonGhost onClick={handleBack} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Tillbaka
-            </Button>
-          )}
-          
-          {/* Skip button for optional steps */}
-          {(currentStep === 2 || currentStep === 5) && (
-            <Button
-              variant="ghost"
-              onClick={handleSkip}
-              className="gap-2"
-            >
-              Hoppa över
-              <SkipForward className="w-4 h-4" />
-            </Button>
+            </ButtonGhost>
           )}
 
-          <Button
+          {/* Skip button for optional steps */}
+          {(currentStep === 2 || currentStep === 5) && (
+            <ButtonGhost onClick={handleSkip} className="gap-2">
+              Hoppa över
+              <SkipForward className="w-4 h-4" />
+            </ButtonGhost>
+          )}
+
+          <ButtonPrimary
             onClick={handleNext}
             disabled={!canProceed() || saving}
-            className="flex-1 gradient-primary text-primary-foreground border-0 gap-2"
+            className="flex-1 gap-2"
           >
             {currentStep === STEPS.length - 1 ? (
               <>
@@ -918,7 +899,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
-          </Button>
+          </ButtonPrimary>
         </div>
       </div>
     </div>

@@ -61,7 +61,7 @@ export const useSubscription = () => {
         });
       }
     } catch (err) {
-      console.error('Error fetching subscription:', err);
+      if (import.meta.env.DEV) console.error('Error fetching subscription:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch subscription'));
     } finally {
       setLoading(false);

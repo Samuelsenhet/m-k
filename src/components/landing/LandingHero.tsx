@@ -8,7 +8,7 @@ import { useMascot } from "@/hooks/useMascot";
 import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
 import { useAuth } from "@/contexts/useAuth";
 import { hasSeenMaekIntro, setMaekIntroSeen } from "@/constants/mascot";
-import { ButtonPrimary, ButtonSecondary } from "@/components/ui-v2";
+import { ButtonPrimary } from "@/components/ui-v2";
 import { COLORS, FONTS } from "@/design/tokens";
 
 const LANDING_MAX_WIDTH = "max-w-lg";
@@ -42,7 +42,7 @@ export function LandingHero() {
       aria-labelledby="hero-heading"
     >
       <div className={LANDING_MAX_WIDTH + " mx-auto space-y-8"}>
-        <Mascot {...mascot} className="mx-auto" />
+        <Mascot {...mascot} />
 
         {/* MÄÄK intro – first visit only */}
         {showIntro && (
@@ -82,10 +82,10 @@ export function LandingHero() {
             style={{ background: COLORS.neutral.white }}
           >
             <div
-              className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center"
+              className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden"
               style={{ background: COLORS.sage[100] }}
             >
-              <span className="text-5xl">🌿</span>
+              <Mascot {...mascot} size="medium" placement="center" className="scale-90" />
             </div>
             <h3 className="font-semibold text-sm" style={{ color: COLORS.primary[800] }}>
               Sofia, Debattören
@@ -194,9 +194,6 @@ export function LandingHero() {
           <ButtonPrimary fullWidth size="lg" onClick={handleStart}>
             Kom igång gratis
           </ButtonPrimary>
-          <ButtonSecondary fullWidth size="lg" onClick={() => navigate("/phone-auth")}>
-            Jag har redan ett konto
-          </ButtonSecondary>
         </div>
 
         {/* Terms */}

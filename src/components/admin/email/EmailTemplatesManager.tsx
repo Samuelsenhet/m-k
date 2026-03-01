@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { ButtonPrimary, ButtonSecondary, ButtonIcon, CardV2, CardV2Content, InputV2 } from '@/components/ui-v2';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit2, Eye, Copy, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -43,7 +41,7 @@ export default function EmailTemplatesManager() {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching templates:', error);
+      if (import.meta.env.DEV) console.error('Error fetching templates:', error);
       setTemplates([]);
     } else {
       setTemplates((data ?? []) as EmailTemplateRow[]);
@@ -71,7 +69,7 @@ export default function EmailTemplatesManager() {
     if (editing.id) {
       const { error } = await supabase.from('email_templates').update(payload).eq('id', editing.id);
       if (error) {
-        console.error('Error updating template:', error);
+        if (import.meta.env.DEV) console.error('Error updating template:', error);
         return;
       }
     } else {
@@ -96,7 +94,7 @@ export default function EmailTemplatesManager() {
       description: t.description,
     });
     if (error) {
-      console.error('Error copying template:', error);
+      if (import.meta.env.DEV) console.error('Error copying template:', error);
       return;
     }
     fetchTemplates();
@@ -106,7 +104,7 @@ export default function EmailTemplatesManager() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl font-semibold">E-postmallar</h2>
-        <Button
+        <ButtonPrimary
           onClick={() =>
             setEditing({
               name: '',
@@ -119,18 +117,18 @@ export default function EmailTemplatesManager() {
           }
         >
           Ny mall
-        </Button>
+        </ButtonPrimary>
       </div>
 
       {editing && (
-        <Card className="border-primary/30">
-          <CardContent className="pt-6 space-y-4">
+        <CardV2 className="border-primary/30" padding="none">
+          <CardV2Content className="pt-6 space-y-4">
             <h3 className="font-medium">{editing.id ? 'Redigera mall' : 'Ny mall'}</h3>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Namn (intern nyckel)</label>
-                <Input
+                <InputV2
                   value={editing.name ?? ''}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                   placeholder="t.ex. report_received"
@@ -155,7 +153,7 @@ export default function EmailTemplatesManager() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Ämne (SV)</label>
-              <Input
+              <InputV2
                 value={editing.subject_sv ?? ''}
                 onChange={(e) => setEditing({ ...editing, subject_sv: e.target.value })}
                 placeholder="Ämnesrad svenska"
@@ -163,7 +161,7 @@ export default function EmailTemplatesManager() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Ämne (EN)</label>
-              <Input
+              <InputV2
                 value={editing.subject_en ?? ''}
                 onChange={(e) => setEditing({ ...editing, subject_en: e.target.value })}
                 placeholder="Subject line English"
@@ -192,13 +190,12 @@ export default function EmailTemplatesManager() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button onClick={saveTemplate}>Spara</Button>
-              <Button variant="outline" onClick={() => setEditing(null)}>
+              <ButtonPrimary onClick={saveTemplate}>Spara</ButtonPrimary>
+              <ButtonSecondary onClick={() => setEditing(null)}>
                 Avbryt
-              </Button>
+              </ButtonSecondary>
               {editing.body_sv && (
-                <Button
-                  variant="outline"
+                <ButtonSecondary
                   size="sm"
                   onClick={() =>
                     setPreview(
@@ -208,29 +205,29 @@ export default function EmailTemplatesManager() {
                 >
                   <Eye className="w-4 h-4 mr-1" />
                   Förhandsvisa
-                </Button>
+                </ButtonSecondary>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       )}
 
       {preview && (
-        <Card>
-          <CardContent className="pt-6">
+        <CardV2 padding="none">
+          <CardV2Content className="pt-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-medium">Förhandsvisning</h3>
-              <Button variant="ghost" size="icon" onClick={() => setPreview(null)} aria-label="Stäng">
+              <ButtonIcon onClick={() => setPreview(null)} aria-label="Stäng">
                 <X className="w-4 h-4" />
-              </Button>
+              </ButtonIcon>
             </div>
             <p className="text-sm text-muted-foreground mb-2">{preview.subject_sv}</p>
             <div
               className="rounded-md border bg-muted/30 p-4 prose prose-sm max-w-none dark:prose-invert"
               dangerouslySetInnerHTML={{ __html: preview.body_sv || '' }}
             />
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       )}
 
       {loading ? (
@@ -281,33 +278,27 @@ export default function EmailTemplatesManager() {
                   </td>
                   <td className="p-3">
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      <ButtonIcon
                         className="h-8 w-8"
                         onClick={() => setEditing(t)}
                         aria-label="Redigera"
                       >
                         <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      </ButtonIcon>
+                      <ButtonIcon
                         className="h-8 w-8"
                         onClick={() => setPreview(t)}
                         aria-label="Förhandsvisa"
                       >
                         <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                      </ButtonIcon>
+                      <ButtonIcon
                         className="h-8 w-8"
                         onClick={() => copyTemplate(t)}
                         aria-label="Kopiera"
                       >
                         <Copy className="w-4 h-4" />
-                      </Button>
+                      </ButtonIcon>
                     </div>
                   </td>
                 </tr>

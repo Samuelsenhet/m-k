@@ -23,9 +23,10 @@ const Index = () => {
       if (authLoading) return;
       
       if (!user) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e6c73ee0-4f15-4e9c-bb4a-1e38631f27a6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Index.tsx:checkExistingResult',message:'Index state resolved',data:{appState:'landing',hasUser:false},timestamp:Date.now(),hypothesisId:'index-flow',runId:'app-flow'})}).catch(()=>{});
-        // #endregion
+        const ingestUrl = import.meta.env.VITE_INGEST_URL;
+        if (ingestUrl) {
+          fetch(ingestUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'Index.tsx:checkExistingResult', message: 'Index state resolved', data: { appState: 'landing', hasUser: false }, timestamp: Date.now(), hypothesisId: 'index-flow', runId: 'app-flow' }) }).catch(() => {});
+        }
         setAppState('landing');
         return;
       }

@@ -69,7 +69,7 @@ export const usePhoneAuth = () => {
 
   const handleError = (err: unknown, fallback: string) => {
     if (import.meta.env.DEV) {
-      console.error('Phone auth error:', err);
+      if (import.meta.env.DEV) console.error('Phone auth error:', err);
     }
     
     let errorMessage = fallback;

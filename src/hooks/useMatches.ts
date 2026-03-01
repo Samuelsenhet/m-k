@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/useAuth";
 import { getProfilesAuthKey } from "@/lib/profiles";
+import type { TFunction } from "i18next";
 
 type Match = {
   id: string;
@@ -27,29 +29,27 @@ type Match = {
   special_event_message?: string | null;
 };
 
-const getErrorMessage = (error: unknown, fallback: string) => {
+const getErrorMessage = (error: unknown, t: TFunction, fallbackKey: string): string => {
+  const isNetworkError = (msg: string) =>
+    msg === "Failed to fetch" || /network|internet|load/i.test(msg);
+  const isEdgeFunctionError = (msg: string) =>
+    /non-2xx|Edge Function|status code|FunctionsHttpError/i.test(msg);
+  const getMessage = (message: string): string => {
+    if (isNetworkError(message)) return t("matches.network_error");
+    if (isEdgeFunctionError(message)) return t("matches.server_error");
+    return message;
+  };
   if (error instanceof Error) {
-    return error.message || fallback;
+    return getMessage(error.message) || t(fallbackKey);
   }
   if (typeof error === "object" && error && "message" in error) {
     const message = (error as { message?: string }).message;
     if (typeof message === "string" && message.length > 0) {
-      return message;
+      return getMessage(message);
     }
   }
-  return fallback;
+  return t(fallbackKey);
 };
-
-/** Detect Edge Function / non-2xx so we can show a friendly server_error message. */
-function isEdgeFunctionError(err: unknown): boolean {
-  if (typeof err === "object" && err !== null) {
-    const status = (err as { status?: number }).status;
-    if (typeof status === "number" && status >= 400) return true;
-    const msg = String((err as { message?: string }).message ?? "");
-    if (/edge function|functions\.invoke|non-2xx/i.test(msg)) return true;
-  }
-  return false;
-}
 
 import type { MatchDailyMatch } from "@/types/api";
 const mapMatch = (m: MatchDailyMatch): Match => ({
@@ -75,25 +75,21 @@ const mapMatch = (m: MatchDailyMatch): Match => ({
 });
 
 export function useMatches() {
+  const { t } = useTranslation();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<unknown>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 5;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id;
+  const fetchingRef = useRef(false);
 
   const fetchMatches = useCallback(async () => {
-    if (!user) return;
-
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) {
-      setError("Du måste vara inloggad för att se matchningar");
-      setLoading(false);
-      return;
-    }
+    if (!userId || authLoading || fetchingRef.current) return;
+    fetchingRef.current = true;
 
     setLoading(true);
     setError(null);
@@ -102,68 +98,76 @@ export function useMatches() {
     setNextCursor(null);
     setHasMore(true);
 
-    const invokeMatchDaily = async (accessToken: string) => {
-      const result = await supabase.functions.invoke("match-daily", {
-        body: { user_id: user.id, page_size: PAGE_SIZE },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      return result;
-    };
-
     try {
-      let result = await invokeMatchDaily(token);
-      if (result.error) {
-        // Retry once after refresh (helps 401) and short delay (helps 429)
-        await new Promise((r) => setTimeout(r, 1000));
-        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
-        const retryToken = refreshed?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
-        if (retryToken) result = await invokeMatchDaily(retryToken);
-      }
-      const { data, error } = result;
-      // 202 + journey_phase WAITING: success response, no matches yet
-      if (data && (data as { journey_phase?: string }).journey_phase === 'WAITING') {
-        setMatches([]);
-        setHasMore(false);
-        setLoading(false);
+      // getSession auto-refreshes if the token is close to expiry.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setError(t("matches.must_be_logged_in"));
         return;
       }
+
+      const invokeMatchDaily = (accessToken: string) =>
+        supabase.functions.invoke("match-daily", {
+          body: { user_id: userId, page_size: PAGE_SIZE },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+      let { data, error } = await invokeMatchDaily(session.access_token);
+
+      // On error, refresh the token once and retry.
+      if (error) {
+        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+        if (refreshed?.access_token) {
+          ({ data, error } = await invokeMatchDaily(refreshed.access_token));
+        }
+      }
+
       if (error) throw error;
+
+      // 202/WAITING: pool not ready yet – show waiting state
+      if (data && (data as { journey_phase?: string }).journey_phase === "WAITING") {
+        setMatches([]);
+        setHasMore(false);
+        return;
+      }
+
       if (!data || !Array.isArray(data.matches)) {
         setMatches([]);
         setHasMore(false);
-        setLoading(false);
         return;
       }
+
       setMatches((data.matches as MatchDailyMatch[]).map(mapMatch));
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
       if (import.meta.env.DEV) {
-        console.error("Error fetching matches:", err);
+        console.debug("[match-daily] error:", err);
       }
-      const is401 = typeof err === "object" && err !== null && "status" in (err as { status?: number }) && (err as { status: number }).status === 401;
-      if (is401) {
-        setError("Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund.");
-      } else if (isEdgeFunctionError(err)) {
-        setError("server_error");
-      } else {
-        setError(getErrorMessage(err, "Kunde inte hämta matchningar. Kontrollera att du är inloggad."));
-      }
-      setErrorDetail(err instanceof Error ? err.message : String(err));
+      setErrorDetail(err);
+      setError(getErrorMessage(err, t, "matches.loading_error_check_login"));
+      setMatches([]);
       setHasMore(false);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  }, [user]);
+    // Intentionally omit `t` from deps – avoid refetch on language change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, authLoading]);
 
   // Fetch more matches using cursor
   const fetchMoreMatches = useCallback(async () => {
     if (!user || !nextCursor || !hasMore) return;
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
+    if (import.meta.env.DEV && !token) {
+      console.warn("[match-daily] fetchMoreMatches: no access_token, skipping invoke.");
+    }
     if (!token) return;
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
     try {
       const {
         data,
@@ -195,13 +199,16 @@ export function useMatches() {
       setNextCursor(data.next_cursor || null);
       setHasMore(!!data.next_cursor);
     } catch (err: unknown) {
-      console.error("Error fetching more matches:", err);
-      setError(getErrorMessage(err, "Kunde inte hämta fler matchningar"));
+      if (import.meta.env.DEV) {
+        console.error("Error fetching more matches:", err);
+      }
+      setErrorDetail(err);
+      setError(getErrorMessage(err, t, "matches.load_more_error"));
       setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [user, nextCursor, hasMore]);
+  }, [user, nextCursor, hasMore, t]);
 
   const generateIcebreakers = async (
     matchId: string,
@@ -283,9 +290,8 @@ export function useMatches() {
               .select("display_name")
               .eq(profileKey, userId)
               .single();
-          if (profileError) {
+          if (profileError && import.meta.env.DEV) {
             console.error("Profile fetch failed", profileError);
-            // Optionally report to Sentry or similar here
           }
 
           // Use dynamic archetype fallback
@@ -308,7 +314,7 @@ export function useMatches() {
         prev.map((m) => (m.id === matchId ? { ...m, status: "liked" } : m))
       );
     } catch (err: unknown) {
-      console.error("Error liking match:", err);
+      if (import.meta.env.DEV) console.error("Error liking match:", err);
     }
   };
 

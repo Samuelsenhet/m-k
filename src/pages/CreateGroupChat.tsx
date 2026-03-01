@@ -4,11 +4,9 @@ import { useAuth } from "@/contexts/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Users, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ButtonPrimary, InputV2, AvatarV2, AvatarV2Fallback, AvatarV2Image } from "@/components/ui-v2";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CardV2 } from "@/components/ui-v2";
 import { getProfilesAuthKey } from "@/lib/profiles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -117,7 +115,7 @@ export default function CreateGroupChat() {
         .single();
 
       if (groupError || !group) {
-        console.error(groupError);
+        if (import.meta.env.DEV) console.error(groupError);
         toast.error(t("groupChat.errorCreate"));
         return;
       }
@@ -128,7 +126,7 @@ export default function CreateGroupChat() {
       );
 
       if (membersError) {
-        console.error(membersError);
+        if (import.meta.env.DEV) console.error(membersError);
         toast.error(t("groupChat.errorCreate"));
         return;
       }
@@ -159,7 +157,7 @@ export default function CreateGroupChat() {
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-4 gap-6">
         <div className="space-y-2">
           <Label htmlFor="group-name">{t("groupChat.groupName")}</Label>
-          <Input
+          <InputV2
             id="group-name"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
@@ -183,9 +181,10 @@ export default function CreateGroupChat() {
             <ul className="space-y-2" role="list">
               {matches.map((m) => (
                 <li key={m.matched_user_id}>
-                  <Card
+                  <CardV2
+                    padding="sm"
                     className={cn(
-                      "p-3 flex items-center gap-3 cursor-pointer transition-colors",
+                      "flex items-center gap-3 cursor-pointer transition-colors",
                       selectedIds.has(m.matched_user_id)
                         ? "ring-2 ring-primary bg-primary/5"
                         : "hover:bg-muted/50"
@@ -199,12 +198,12 @@ export default function CreateGroupChat() {
                       className="sr-only"
                       aria-label={m.display_name}
                     />
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarImage src={m.avatar_url ?? undefined} alt="" />
-                      <AvatarFallback className="bg-primary/20 text-primary text-sm">
+                    <AvatarV2 className="h-10 w-10 shrink-0">
+                      <AvatarV2Image src={m.avatar_url ?? undefined} alt="" />
+                      <AvatarV2Fallback className="bg-primary/20 text-primary text-sm">
                         {(m.display_name || "?").slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                      </AvatarV2Fallback>
+                    </AvatarV2>
                     <span className="font-medium text-foreground truncate flex-1">
                       {m.display_name}
                     </span>
@@ -213,7 +212,7 @@ export default function CreateGroupChat() {
                         {t("common.confirm")}
                       </span>
                     )}
-                  </Card>
+                  </CardV2>
                 </li>
               ))}
             </ul>
@@ -221,7 +220,7 @@ export default function CreateGroupChat() {
         </div>
 
         <div className="mt-auto pt-4">
-          <Button
+          <ButtonPrimary
             type="submit"
             className="w-full gap-2"
             disabled={
@@ -239,7 +238,7 @@ export default function CreateGroupChat() {
                 {t("groupChat.create")}
               </>
             )}
-          </Button>
+          </ButtonPrimary>
           {selectedIds.size > 0 && selectedIds.size < 2 && (
             <p className="text-sm text-muted-foreground mt-2 text-center">
               {t("groupChat.minTwoRequired")}

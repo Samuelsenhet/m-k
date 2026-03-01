@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useMatches } from "@/hooks/useMatches";
 import { MatchList } from "@/components/chat/MatchList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { VideoChatWindow } from "@/components/chat/VideoChatWindow";
@@ -10,8 +11,12 @@ import { CreateGroupModal } from "@/components/chat/CreateGroupModal";
 import { GroupChatRoom } from "@/components/chat/GroupChatRoom";
 import { useGroups } from "@/hooks/useGroups";
 import type { SamlingGroup } from "@/hooks/useGroups";
-import { MessageCircle, ArrowLeft, Search, Users, Plus } from "lucide-react";
+import { Search, Users, Plus, Filter } from "lucide-react";
 import { BottomNav } from "@/components/navigation/BottomNav";
+import { ButtonIcon, InputSearchV2 } from "@/components/ui-v2";
+import { PageHeader } from "@/components/layout";
+import { SCREEN_CONTAINER_CLASS } from "@/layout/screenLayout";
+import { COLORS } from "@/design/tokens";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
 import { getProfilesAuthKey } from "@/lib/profiles";
 import { isDemoEnabled } from "@/config/supabase";
@@ -38,12 +43,12 @@ interface SelectedMatch {
 }
 
 // Move CallHistoryDisplay outside parent for performance
-function CallHistoryDisplay({ logs, className }: { logs: CallLogEntry[]; className?: string }) {
+function CallHistoryDisplay({ logs, className, title }: { logs: CallLogEntry[]; className?: string; title: string }) {
   if (logs.length === 0) return null;
   return (
     <div className={className ?? "p-4 border-t border-border bg-card"}>
-      <h3 className="font-semibold text-sm mb-2 text-gray-600">
-        Samtalshistorik
+      <h3 className="font-semibold text-sm mb-2 text-muted-foreground">
+        {title}
       </h3>
       <div className="space-y-2">
         {logs.slice(0, 3).map((log, index) => (
@@ -87,6 +92,10 @@ export default function Chat() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const { groups, createGroup, leaveGroup, refreshGroups } = useGroups();
   const [pendingOpenGroupId, setPendingOpenGroupId] = useState<string | null>(null);
+  const [chatTab, setChatTab] = useState<"chatt" | "samling">("chatt");
+  const { matches } = useMatches();
+  const openMatch = selectedMatch ? matches.find((m) => m.id === selectedMatch.id) : undefined;
+  const relationshipLevel = openMatch?.status === "mutual" ? 3 : openMatch ? 2 : undefined;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -114,7 +123,7 @@ export default function Chat() {
 
         if (error || !match) {
           if (import.meta.env.DEV) {
-            console.error("Match not found:", error);
+            if (import.meta.env.DEV) console.error("Match not found:", error);
           }
           return;
         }
@@ -269,7 +278,10 @@ export default function Chat() {
       <VideoChatWindow
         roomId={selectedMatch.id}
         icebreakers={icebreakers}
-        onEndCall={() => handleEndCall(180)} // Example: 3 min call
+        onEndCall={() => setVideoCallActive(false)}
+        onEndCallWithDuration={(duration) => handleEndCall(duration)}
+        callerName={selectedMatch.matched_profile?.display_name ?? "Användare"}
+        callerAvatar={selectedMatch.matched_profile?.avatar_url ?? undefined}
       />
     );
   }
@@ -285,7 +297,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16">
+    <div className="min-h-screen flex flex-col bg-background pb-24 safe-area-bottom">
       {selectedMatch ? (
         <div className="flex flex-1 flex-col min-h-0 msn-chat">
           <ChatWindow
@@ -300,107 +312,133 @@ export default function Chat() {
             matchedUserVerified={
               selectedMatch.matched_profile?.id_verification_status === "approved"
             }
+            relationshipLevel={relationshipLevel}
             icebreakers={icebreakers}
             onBack={handleBack}
             onStartVideo={() => setVideoCallActive(true)}
             showPostVideoCard={showPostVideoCard}
             onDismissPostVideoCard={() => setShowPostVideoCard(false)}
           />
-          <CallHistoryDisplay logs={callLogs} className="msn-list-card border-t border-border mx-2 mb-2 rounded p-3 text-sm shrink-0" />
+          <CallHistoryDisplay logs={callLogs} title={t('chat.call_history')} className="msn-list-card border-t border-border mx-2 mb-2 rounded p-3 text-sm shrink-0" />
         </div>
       ) : (
-        <>
-          {/* Chat list header: back + centered Chats */}
-          <div className="flex items-center justify-between px-3 py-3 safe-area-top bg-background border-b border-border">
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="p-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-              aria-label={t("common.back")}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="font-semibold text-lg text-foreground absolute left-1/2 -translate-x-1/2">
-              {t("chat.chats")}
-            </h1>
-            <div className="flex items-center gap-1 shrink-0">
-              <Link
-                to="/group-chat"
-                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs font-medium"
+        <div className={SCREEN_CONTAINER_CLASS}>
+          <div className="space-y-6">
+            <PageHeader
+              title={t("chat.chats")}
+              actions={
+                <div className="flex gap-2 shrink-0">
+                  <ButtonIcon variant="ghost" size="sm" aria-label={t("chat.filter", "Filter")}>
+                    <Filter className="w-4 h-4" />
+                  </ButtonIcon>
+                  <ButtonIcon
+                    variant="ghost"
+                    size="sm"
+                    aria-label={t("chat.search")}
+                    onClick={() => document.getElementById("chat-search")?.focus()}
+                  >
+                    <Search className="w-4 h-4" />
+                  </ButtonIcon>
+                  {isDemoEnabled && (
+                    <Link to="/demo-seed" className="p-2 rounded-full text-xs font-medium shrink-0" style={{ color: COLORS.neutral.gray }}>
+                      Demo
+                    </Link>
+                  )}
+                </div>
+              }
+            />
+
+            {/* Tabs: Chatt | Samling */}
+            <div className="flex rounded-xl p-1 min-h-[44px]" style={{ background: COLORS.sage[100] }}>
+              <button
+                type="button"
+                onClick={() => setChatTab("chatt")}
+                className="flex-1 py-3 px-4 text-center font-semibold rounded-lg transition-colors min-h-[44px] flex items-center justify-center"
+                style={{
+                  color: chatTab === "chatt" ? COLORS.primary[800] : COLORS.neutral.gray,
+                  background: chatTab === "chatt" ? COLORS.neutral.white : "transparent",
+                  boxShadow: chatTab === "chatt" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                }}
               >
-                {t("groupChat.title")}
-              </Link>
-              {isDemoEnabled && (
-              <Link
-                to="/demo-seed"
-                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-xs font-medium"
+                Chatt
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatTab("samling")}
+                className="flex-1 py-3 px-4 text-center font-semibold rounded-lg transition-colors min-h-[44px] flex items-center justify-center"
+                style={{
+                  color: chatTab === "samling" ? COLORS.primary[800] : COLORS.neutral.gray,
+                  background: chatTab === "samling" ? COLORS.neutral.white : "transparent",
+                  boxShadow: chatTab === "samling" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                }}
               >
-                Demo
-              </Link>
-            )}
+                Samling
+              </button>
             </div>
-          </div>
-          {/* Search bar */}
-          <div className="px-3 py-2 bg-background border-b border-border shrink-0">
-            <div className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-muted/30 px-3 py-2.5 focus-within:border-primary/60 focus-within:bg-background transition-colors">
-              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-              <input
+
+            {chatTab === "chatt" && (
+              <InputSearchV2
+                leftIcon={<Search className="w-4 h-4" style={{ color: COLORS.neutral.gray }} />}
                 id="chat-search"
                 name="chatSearch"
-                type="search"
                 value={chatSearchQuery}
                 onChange={(e) => setChatSearchQuery(e.target.value)}
                 placeholder={t("chat.search")}
                 aria-label={t("chat.search")}
-                className="flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                className="min-w-0"
               />
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto bg-background">
-            {/* Samlingar (gruppchatter) */}
-            <div className="px-3 pt-4 pb-2 border-b border-border">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Samlingar
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateGroup(true)}
-                  className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 hover:bg-primary/90"
-                  aria-label={t("chat.createGroup")}
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-              {groups.length > 0 ? (
-                <div className="space-y-2">
-                  {groups.map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setSelectedGroup(g)}
-                      className="w-full flex items-center gap-3 p-3 rounded-2xl bg-muted/50 hover:bg-muted transition-colors text-left"
-                    >
-                      <GroupAvatar members={g.members} size={52} showCount />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground truncate">{g.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{g.members.map((m) => m.display_name ?? "?").join(", ")}</p>
-                      </div>
-                    </button>
-                  ))}
+            )}
+
+            {chatTab === "samling" ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: COLORS.primary[800] }}>
+                    <Users className="w-4 h-4" />
+                    Samlingar
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateGroup(true)}
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 hover:opacity-90"
+                    style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
+                    aria-label={t("chat.createGroup")}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("groupChat.inlineEmpty")}</p>
-              )}
-            </div>
-            <MatchList
-              onSelectMatch={handleSelectMatch}
-              selectedMatchId={selectedMatch?.id}
-              searchQuery={chatSearchQuery}
-            />
+                {groups.length > 0 ? (
+                  <div className="space-y-2">
+                    {groups.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setSelectedGroup(g)}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl transition-colors text-left"
+                        style={{ background: COLORS.neutral.white }}
+                      >
+                        <GroupAvatar members={g.members} size={52} showCount />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate" style={{ color: COLORS.neutral.dark }}>{g.name}</p>
+                          <p className="text-xs truncate" style={{ color: COLORS.neutral.gray }}>{g.members.map((m) => m.display_name ?? "?").join(", ")}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: COLORS.neutral.gray }}>{t("groupChat.inlineEmpty")}</p>
+                )}
+              </div>
+            ) : (
+              <div className="min-h-[200px]">
+                <MatchList
+                  onSelectMatch={handleSelectMatch}
+                  selectedMatchId={selectedMatch?.id}
+                  searchQuery={chatSearchQuery}
+                />
+              </div>
+            )}
           </div>
-        </>
+        </div>
       )}
       <CreateGroupModal
         open={showCreateGroup}

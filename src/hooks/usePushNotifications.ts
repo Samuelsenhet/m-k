@@ -80,7 +80,7 @@ export function usePushNotifications() {
         tag,
       });
     } catch (error: unknown) {
-      console.error('Failed to send notification:', error);
+      if (import.meta.env.DEV) console.error('Failed to send notification:', error);
     }
   }, [state.permission]);
 

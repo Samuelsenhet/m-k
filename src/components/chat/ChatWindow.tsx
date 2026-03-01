@@ -3,18 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChatBubbleV2, ChatInputBarV2, ChatHeaderV2, ChatEmptyStateV2, ButtonPrimary, ButtonGhost, ButtonIcon, ButtonSecondary } from '@/components/ui-v2';
+import { ChatBubbleV2, ChatInputBarV2, ChatHeaderV2, ChatEmptyStateV2, ButtonPrimary, ButtonGhost, ButtonIcon, ButtonSecondary, AvatarV2, AvatarV2Image, AvatarV2Fallback } from '@/components/ui-v2';
+import { COLORS } from '@/design/tokens';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Loader2, Sparkles, Brain, Laugh, Heart, Coffee, MessageCircle, HelpCircle, Paperclip, Video, Mic, Image, MoreVertical, AlertCircle, Ban, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { VerifiedBadge } from '@/components/ui/verified-badge';
+import { VerifiedBadge } from '@/components/ui-v2';
 import { TypingIndicator } from './TypingIndicator';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useIcebreakerAnalytics } from '@/hooks/useIcebreakerAnalytics';
 import { useAchievementsContextOptional } from '@/contexts/AchievementsContext';
+import { useEmotionalState } from '@/hooks/useEmotionalState';
 import type { IcebreakerCategory } from '@/types/api';
 import {
   DropdownMenu,
@@ -59,6 +60,8 @@ interface ChatWindowProps {
   matchedUserName: string;
   matchedUserAvatar?: string;
   matchedUserVerified?: boolean;
+  /** FAS Relationship Depth: optional 1–5 for header divider accent */
+  relationshipLevel?: 1 | 2 | 3 | 4 | 5;
   icebreakers?: string[];
   onBack: () => void;
   onStartVideo?: () => void;
@@ -108,6 +111,12 @@ export function ChatWindow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const { surfaceClass: emotionalSurfaceClass } = useEmotionalState({
+    screen: "chat",
+    relationshipLevel: relationshipLevel ?? undefined,
+    hasMessages: messages.length > 0,
+  });
+
   const fetchMessages = useCallback(async () => {
     const { data, error } = await supabase
       .from('messages')
@@ -116,7 +125,7 @@ export function ChatWindow({
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching messages:', error);
+      if (import.meta.env.DEV) console.error('Error fetching messages:', error);
     } else {
       setMessages(data || []);
       if (data && data.length > 0) {
@@ -235,7 +244,7 @@ export function ChatWindow({
       if (!result) return;
       const { data, error } = result;
       if (error) {
-        console.error('Post-video AI error:', error);
+        if (import.meta.env.DEV) console.error('Post-video AI error:', error);
         toast.error(t('chat.postVideoError'));
         return;
       }
@@ -289,7 +298,7 @@ export function ChatWindow({
     });
 
     if (error) {
-      console.error('Error sending message:', error);
+      if (import.meta.env.DEV) console.error('Error sending message:', error);
       setNewMessage(content);
       toast.error('Meddelandet kunde inte skickas. Försök igen.');
     } else if (achievementsCtx) {
@@ -328,13 +337,19 @@ export function ChatWindow({
     setAiIcebreakers([]);
 
     try {
-      // Use the enhanced generate-icebreakers endpoint with category
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error(t('chat.followup_error'));
+        setLoadingAI(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('generate-icebreakers', {
         body: {
           matchId,
           matchedUserId,
           category,
         },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (error) throw error;
@@ -354,7 +369,7 @@ export function ChatWindow({
         toast.error(t('chat.followup_error'));
       }
     } catch (error) {
-      console.error('AI Icebreaker error:', error);
+      if (import.meta.env.DEV) console.error('AI Icebreaker error:', error);
       toast.error(t('chat.followup_error'));
     } finally {
       setLoadingAI(false);
@@ -400,7 +415,7 @@ export function ChatWindow({
         setFollowupsRemaining(data.remainingToday);
       }
     } catch (error) {
-      console.error('Followup error:', error);
+      if (import.meta.env.DEV) console.error('Followup error:', error);
       toast.error(t('chat.followup_error'));
     } finally {
       setLoadingFollowups(false);
@@ -435,17 +450,22 @@ export function ChatWindow({
     <div className="msn-chat flex flex-1 flex-col min-h-0 min-w-0">
       {/* FAS 7 – Chat header V2: AvatarWithRing, video, dropdown unchanged */}
       <ChatHeaderV2
+        variant="light"
         onBack={onBack}
         avatarSrc={matchedUserAvatar}
         displayName={matchedUserName}
         verified={matchedUserVerified}
+        relationshipLevel={relationshipLevel}
         online
+        onlineLabel={t('chat.online_now')}
+        backLabel={t('common.back')}
+        videoLabel={t('chat.videoCall')}
         showVideoButton={showKemiCheckIcon}
         onVideoClick={onStartVideo}
         rightSlot={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" className="p-2 text-primary-foreground hover:opacity-80 transition-opacity rounded-full" aria-label={t('chat.more_options', 'Fler alternativ')}>
+              <button type="button" className="p-2 hover:opacity-80 transition-opacity rounded-full [color:inherit]" aria-label={t('chat.more_options', 'Fler alternativ')}>
                 <MoreVertical className="w-4 h-4" />
               </button>
             </DropdownMenuTrigger>
@@ -533,7 +553,7 @@ export function ChatWindow({
       </AlertDialog>
 
       {/* MÄÄK Action Toolbar – dating/relationship goals */}
-      <div className="msn-toolbar flex items-center gap-1 px-2 py-1.5 shrink-0 flex-wrap">
+      <div className="msn-toolbar flex items-center gap-1 px-4 py-1.5 shrink-0 flex-wrap">
         <button type="button" className="msn-toolbar-btn p-2 flex flex-col items-center gap-0.5 text-[10px]" title={t('chat.sendPhoto')} aria-label={t('chat.sendPhoto')} onClick={() => toast.info(t('chat.coming_soon'))}>
           <Paperclip className="w-4 h-4" />
           <span>{t('chat.sendPhoto')}</span>
@@ -700,7 +720,7 @@ export function ChatWindow({
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Messages area */}
         <div className="msn-messages-area flex-1 flex flex-col min-w-0 overflow-hidden rounded-br">
-          <ScrollArea className="flex-1 px-3 py-4">
+          <ScrollArea className="flex-1 px-4 py-4">
             {/* AI-Wingman: suggest booking Kemi-Check when conversation is going well (e.g. 20+ messages) */}
             {showKemiCheckSuggestion && (
               <div className="mb-4 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 shadow-sm space-y-3">
@@ -770,15 +790,36 @@ export function ChatWindow({
                   if (aiIcebreakers.length === 0) generateAIIcebreakers();
                 }}
                 aiLabel={t('chat.ai_icebreakers')}
+                emotionalConfig={{
+                  screen: "chat",
+                  relationshipLevel: relationshipLevel ?? undefined,
+                  hasMessages: false,
+                }}
               />
             ) : (
-              <div className="space-y-2 pb-4" role="list" aria-label={t('chat.messages')}>
+              <div
+                className={cn(
+                  "pb-4",
+                  relationshipLevel != null && relationshipLevel >= 4 && "space-y-5",
+                  relationshipLevel === 3 && "space-y-4",
+                  (relationshipLevel == null || relationshipLevel <= 2) && "space-y-2",
+                )}
+                role="list"
+                aria-label={t("chat.messages")}
+              >
+                {/* Date divider – design system: "Idag" with sage-200 lines */}
+                <div className="flex items-center gap-4 mb-4" style={{ color: COLORS.neutral.gray }}>
+                  <div className="flex-1 h-px" style={{ background: COLORS.sage[200] }} />
+                  <span className="text-xs">{t("chat.today", "Idag")}</span>
+                  <div className="flex-1 h-px" style={{ background: COLORS.sage[200] }} />
+                </div>
                 {messages.map((message) => (
                   <ChatBubbleV2
                     key={message.id}
                     message={message}
-                    variant={message.sender_id === user?.id ? 'own' : 'them'}
+                    variant={message.sender_id === user?.id ? "own" : "them"}
                     isOwn={message.sender_id === user?.id}
+                    relationshipLevel={relationshipLevel}
                   />
                 ))}
                 {partnerTyping && (
@@ -791,8 +832,17 @@ export function ChatWindow({
             )}
           </ScrollArea>
 
-          {/* FAS 7 – Chat input bar V2: textarea, quick actions, token styling */}
-          <div className="px-3 py-3 shrink-0 border-t border-border bg-background">
+          {/* FAS Conversation Depth + Emotional: input surface by level; emotional surface when warm */}
+          <div
+            className={cn(
+              "px-4 py-3 shrink-0 border-t bg-background",
+              relationshipLevel != null && relationshipLevel >= 4 && "border-t-primary/30 bg-[hsl(var(--relationship-glow-calm))] shadow-[0_-4px_20px_hsl(var(--primary)/0.08)]",
+              relationshipLevel === 3 && "border-t-primary/20 bg-[hsl(var(--relationship-glow-calm))] backdrop-blur-[2px]",
+              relationshipLevel != null && relationshipLevel <= 2 && "border-border",
+              relationshipLevel == null && "border-border",
+              emotionalSurfaceClass,
+            )}
+          >
             <ChatInputBarV2
               value={newMessage}
               onChange={(value) => {
@@ -800,7 +850,13 @@ export function ChatWindow({
                 broadcastTyping();
               }}
               onSubmit={handleSubmit}
-              placeholder={t('chat.writeYourMessage')}
+              placeholder={
+                relationshipLevel != null && relationshipLevel >= 4
+                  ? t("chat.placeholderDepthDeep", "Skriv något ni vill dela…")
+                  : relationshipLevel != null && relationshipLevel >= 3
+                    ? t("chat.placeholderDepthMutual", "Skriv till varandra…")
+                    : t("chat.typeMessage")
+              }
               disabled={sending}
               sending={sending}
               onImageClick={() => toast.info(t('chat.coming_soon'))}
@@ -818,26 +874,26 @@ export function ChatWindow({
         <div className="msn-avatar-panel w-24 sm:w-28 flex flex-col border-l shrink-0 overflow-auto">
           <div className="p-2 border-b border-border/80">
             <p className="text-[10px] font-semibold text-muted-foreground mb-1" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>{t('chat.myMatch')}</p>
-            <Avatar className="w-14 h-14 mx-auto rounded border-2 border-border shadow">
-              <AvatarImage src={matchedUserAvatar} alt={matchedUserName} />
-              <AvatarFallback className="bg-primary/15 text-foreground text-lg font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+            <AvatarV2 className="w-14 h-14 mx-auto rounded border-2 border-border shadow">
+              <AvatarV2Image src={matchedUserAvatar} alt={matchedUserName} />
+              <AvatarV2Fallback className="bg-primary/15 text-foreground text-lg font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
                 {matchedUserName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+              </AvatarV2Fallback>
+            </AvatarV2>
           </div>
           <div className="p-2">
             <p className="text-[10px] font-semibold text-muted-foreground mb-1" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>You</p>
-            <Avatar className="w-14 h-14 mx-auto rounded border-2 border-border shadow">
-              <AvatarFallback className="bg-secondary text-foreground text-lg font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
+            <AvatarV2 className="w-14 h-14 mx-auto rounded border-2 border-border shadow">
+              <AvatarV2Fallback className="bg-secondary text-foreground text-lg font-bold" style={{ fontFamily: 'var(--font-sans), Tahoma, Arial, sans-serif' }}>
                 {user?.email?.charAt(0).toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
+              </AvatarV2Fallback>
+            </AvatarV2>
           </div>
         </div>
       </div>
 
       {/* MSN Footer */}
-      <div className="msn-footer px-3 py-1.5 text-center shrink-0 text-xs safe-area-bottom">
+      <div className="msn-footer px-4 py-1.5 text-center shrink-0 text-xs safe-area-bottom">
         {t('chat.footerTagline')}
       </div>
 

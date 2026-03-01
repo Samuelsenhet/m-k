@@ -46,6 +46,8 @@
     --strateger: 220 70% 50%;
     --byggare: 145 55% 42%;
     --upptackare: 45 95% 50%;
+    --debattoren: 187 93% 37%;
+    --vardaren: 330 81% 60%;
 
     --dimension-ei: 280 60% 55%;
     --dimension-sn: 220 70% 50%;
@@ -68,10 +70,17 @@
     --radius-2xl: 1.75rem;
     --radius-full: 9999px;
 
+    /* FAS – Relationship Depth Visual System (no hex; use existing vars) */
+    --relationship-surface-1: var(--card);
+    --relationship-surface-2: var(--tertiary);
+    --relationship-surface-3: var(--surface);
+    --relationship-accent-soft: hsl(var(--primary) / 0.12);
+    --relationship-glow-calm: hsl(var(--primary) / 0.08);
+
     /* FAS 1 – Design token foundation (semantic layer)
      * UNIFIED COLOR SYSTEM: Primary #4B6E48, Coral #F97068, Sage #B2AC88, Cream #F5F4F1, Text Dark #253D2C */
     --color-primary: 116 21% 36%;
-    --color-coral: 6 92% 69%;
+    --color-coral: 8 100% 64%;
     --color-sage: 52 22% 61%;
     --color-cream: 40 14% 95%;
     --color-dark: 120 25% 19%;
@@ -82,9 +91,9 @@
     --color-foreground: var(--color-dark);
     /* MÄÄK design system – button gradients & shadows */
     --gradient-primary-button: linear-gradient(135deg, #4B6E48 0%, #5FA886 100%);
-    --gradient-coral-button: linear-gradient(135deg, #F97068 0%, #FF9080 100%);
-    --shadow-primary-button: 0 4px 14px rgba(75, 110, 72, 0.21);
-    --shadow-coral-button: 0 4px 14px rgba(249, 112, 104, 0.21);
+    --gradient-coral-button: linear-gradient(135deg, #FF6B54 0%, #E84D35 100%);
+    --shadow-primary-button: 0 4px 20px rgba(75, 110, 72, 0.35);
+    --shadow-coral-button: 0 4px 20px rgba(255, 107, 84, 0.35);
 
     /* FAS 1 – Elevation (shadows for cards, PiP, floating elements) */
     --elevation-1: 0 2px 12px -2px hsl(var(--color-dark) / 0.06);
@@ -118,6 +127,8 @@
     --gradient-strateger: linear-gradient(135deg, hsl(220 70% 50%), hsl(200 65% 55%));
     --gradient-byggare: linear-gradient(135deg, hsl(145 55% 42%), hsl(116 25% 42%));
     --gradient-upptackare: linear-gradient(135deg, hsl(45 95% 50%), hsl(35 90% 55%));
+    --gradient-debattoren: linear-gradient(135deg, hsl(187 93% 37%), hsl(190 85% 45%));
+    --gradient-vardaren: linear-gradient(135deg, hsl(330 81% 60%), hsl(340 75% 65%));
 
     --shadow-soft: 0 2px 12px -2px hsl(120 25% 19% / 0.06);
     --shadow-card: 0 4px 20px -4px hsl(120 25% 19% / 0.08);
@@ -166,6 +177,8 @@
     --strateger: 220 75% 58%;
     --byggare: 145 55% 50%;
     --upptackare: 45 95% 55%;
+    --debattoren: 187 93% 45%;
+    --vardaren: 330 81% 65%;
 
     --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
@@ -231,12 +244,64 @@
     background: var(--gradient-upptackare);
   }
 
+  .gradient-debattoren {
+    background: var(--gradient-debattoren);
+  }
+
+  .gradient-vardaren {
+    background: var(--gradient-vardaren);
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
 
   .shadow-card {
     box-shadow: var(--shadow-card);
+  }
+
+  /* FAS M11 – Mascot placement intelligence (corner floating, safe-area, scroll fade) */
+  .mascot-corner-safe {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+    right: 0;
+    pointer-events: none;
+  }
+  .mascot-corner-fade {
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+  .mascot-inline-wrap {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+  }
+
+  /* FAS – Relationship Depth: card levels 1–5 (surface, border, elevation) */
+  .relationship-level-1 {
+    background: hsl(var(--relationship-surface-1));
+    border-color: hsl(var(--border));
+    box-shadow: var(--elevation-1);
+  }
+  .relationship-level-2 {
+    background: hsl(var(--relationship-surface-2));
+    border-color: hsl(var(--border));
+    box-shadow: var(--elevation-1);
+  }
+  .relationship-level-3 {
+    background: hsl(var(--relationship-surface-3));
+    border-color: hsl(var(--primary) / 0.2);
+    box-shadow: var(--elevation-2);
+  }
+  .relationship-level-4 {
+    background: hsl(var(--relationship-surface-3));
+    border-color: hsl(var(--primary) / 0.25);
+    box-shadow: var(--elevation-2);
+  }
+  .relationship-level-5 {
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+    box-shadow: var(--elevation-1);
   }
 
   .shadow-glow {
@@ -273,6 +338,18 @@
     background: hsl(var(--upptackare) / 0.15);
     color: hsl(var(--upptackare));
     border: 1px solid hsl(var(--upptackare) / 0.3);
+  }
+
+  .badge-debattoren {
+    background: hsl(var(--debattoren) / 0.15);
+    color: hsl(var(--debattoren));
+    border: 1px solid hsl(var(--debattoren) / 0.3);
+  }
+
+  .badge-vardaren {
+    background: hsl(var(--vardaren) / 0.15);
+    color: hsl(var(--vardaren));
+    border: 1px solid hsl(var(--vardaren) / 0.3);
   }
 
   /* MSN Messenger layout with MÄÄK (Eucalyptus Grove) palette – strong “window” vibe */

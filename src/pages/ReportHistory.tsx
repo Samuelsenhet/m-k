@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonIcon, ButtonSecondary, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { ChevronLeft, AlertCircle, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +52,7 @@ export default function ReportHistory() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching reports:', error);
+        if (import.meta.env.DEV) console.error('Error fetching reports:', error);
         setReports([]);
       } else {
         setReports((data ?? []) as ReportRow[]);
@@ -76,11 +75,11 @@ export default function ReportHistory() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+          <ButtonIcon asChild>
             <Link to="/profile" state={{ openSettings: true }}>
               <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold">{t('report.history_title')}</h1>
         </div>
       </div>
@@ -92,15 +91,15 @@ export default function ReportHistory() {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : reports.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 flex flex-col items-center gap-3 text-center">
+          <CardV2 padding="none">
+            <CardV2Content className="p-6 flex flex-col items-center gap-3 text-center">
               <AlertCircle className="w-10 h-10 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">{t('report.history_empty')}</p>
-              <Button asChild variant="outline">
+              <ButtonSecondary asChild>
                 <Link to="/report">{t('report.report_problem')}</Link>
-              </Button>
-            </CardContent>
-          </Card>
+              </ButtonSecondary>
+            </CardV2Content>
+          </CardV2>
         ) : (
           <ul className="space-y-3">
             {reports.map((r) => {
@@ -108,34 +107,34 @@ export default function ReportHistory() {
               const Icon = config.icon;
               return (
                 <li key={r.id}>
-                  <Card>
-                    <CardHeader className="pb-2">
+                  <CardV2 padding="none">
+                    <CardV2Header className="p-6 pb-2">
                       <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="font-serif text-sm flex items-center gap-2">
+                        <CardV2Title className="font-serif text-sm flex items-center gap-2">
                           <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
                           {t(`report.violation_${r.violation_type}`)}
-                        </CardTitle>
+                        </CardV2Title>
                         <span className="text-xs text-muted-foreground shrink-0">
                           {format(new Date(r.created_at), 'd MMM yyyy', { locale: sv })}
                         </span>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
+                    </CardV2Header>
+                    <CardV2Content className="p-6 pt-0 space-y-2">
                       <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>
                       <p className="text-xs font-medium text-foreground">
                         {t(config.labelKey)}
                       </p>
-                    </CardContent>
-                  </Card>
+                    </CardV2Content>
+                  </CardV2>
                 </li>
               );
             })}
           </ul>
         )}
 
-        <Button variant="outline" className="w-full" asChild>
+        <ButtonSecondary className="w-full" asChild>
           <Link to="/reporting">{t('report.view_policy')}</Link>
-        </Button>
+        </ButtonSecondary>
       </div>
       <BottomNav />
     </div>

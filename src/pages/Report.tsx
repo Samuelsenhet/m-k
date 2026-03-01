@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonPrimary, ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ChevronLeft, AlertCircle, Upload, X } from 'lucide-react';
@@ -79,7 +78,7 @@ export default function Report() {
           .from('report-evidence')
           .upload(path, file, { upsert: false });
         if (uploadError) {
-          console.error('Evidence upload error:', uploadError);
+          if (import.meta.env.DEV) console.error('Evidence upload error:', uploadError);
           toast.error(t('report.upload_error'));
           setSubmitting(false);
           return;
@@ -104,7 +103,7 @@ export default function Report() {
         .single();
 
       if (error) {
-        console.error('Report insert error:', error);
+        if (import.meta.env.DEV) console.error('Report insert error:', error);
         toast.error(t('report.submit_error'));
         setSubmitting(false);
         return;
@@ -123,14 +122,14 @@ export default function Report() {
             },
           });
         } catch (e) {
-          console.warn('Report confirmation email failed:', e);
+          if (import.meta.env.DEV) console.warn('Report confirmation email failed:', e);
         }
       }
 
       setSubmitted(true);
       toast.success(t('report.received'));
     } catch (err) {
-      console.error(err);
+      if (import.meta.env.DEV) console.error(err);
       toast.error(t('report.submit_error'));
     } finally {
       setSubmitting(false);
@@ -148,20 +147,20 @@ export default function Report() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background pb-20 flex flex-col items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
-          <CardHeader>
-            <CardTitle className="font-serif flex items-center gap-2">
+        <CardV2 className="max-w-lg w-full" padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-primary" />
               {t('report.received_title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            </CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4 text-sm text-muted-foreground">
             <p>{t('report.received_message')}</p>
-            <Button asChild className="w-full">
+            <ButtonPrimary asChild className="w-full">
               <Link to="/profile">{t('common.back')}</Link>
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonPrimary>
+          </CardV2Content>
+        </CardV2>
         <BottomNav />
       </div>
     );
@@ -172,15 +171,15 @@ export default function Report() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
           {context === 'general' ? (
-            <Button variant="ghost" size="icon" asChild>
+            <ButtonIcon asChild>
               <Link to="/profile" state={{ openSettings: true }}>
                 <ChevronLeft className="w-5 h-5" />
               </Link>
-            </Button>
+            </ButtonIcon>
           ) : (
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ButtonIcon onClick={() => navigate(-1)}>
               <ChevronLeft className="w-5 h-5" />
-            </Button>
+            </ButtonIcon>
           )}
           <h1 className="font-serif text-lg font-bold">{t('report.title')}</h1>
         </div>
@@ -188,11 +187,11 @@ export default function Report() {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         <p className="text-sm text-muted-foreground">{t('report.intro')}</p>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-base">{t('report.form_title')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <CardV2 padding="none">
+          <CardV2Header className="p-6">
+            <CardV2Title className="font-serif text-base">{t('report.form_title')}</CardV2Title>
+          </CardV2Header>
+          <CardV2Content className="p-6 pt-0 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="violation">{t('report.violation_type')} *</Label>
               <Select value={violationType} onValueChange={setViolationType} required>
@@ -270,15 +269,15 @@ export default function Report() {
               />
             </div>
 
-            <Button
+            <ButtonPrimary
               className="w-full"
               onClick={submitReport}
               disabled={submitting || !violationType || !description.trim()}
             >
               {submitting ? t('common.sending') : t('report.submit')}
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonPrimary>
+          </CardV2Content>
+        </CardV2>
 
         <p className="text-xs text-muted-foreground text-center">
           <Link to="/reporting" className="underline hover:text-foreground">

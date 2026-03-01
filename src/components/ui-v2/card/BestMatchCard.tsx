@@ -43,7 +43,7 @@ const BestMatchCard = React.forwardRef<HTMLDivElement, BestMatchCardProps>(
             <img
               src={imageSrc}
               alt={imageAlt ?? name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain bg-transparent"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">

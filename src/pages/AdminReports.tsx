@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ButtonPrimary, ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { ChevronLeft, Shield, Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/navigation/BottomNav';
 import {
@@ -70,7 +69,7 @@ export default function AdminReports() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching reports:', error);
+        if (import.meta.env.DEV) console.error('Error fetching reports:', error);
         setReports([]);
       } else {
         setReports((data ?? []) as ReportRow[]);
@@ -88,7 +87,7 @@ export default function AdminReports() {
       .update({ status })
       .eq('id', reportId);
     if (error) {
-      console.error('Error updating report:', error);
+      if (import.meta.env.DEV) console.error('Error updating report:', error);
     } else {
       setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, status } : r)));
     }
@@ -107,9 +106,9 @@ export default function AdminReports() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 pb-20">
         <p className="text-muted-foreground text-center mb-4">{t('admin.access_denied')}</p>
-        <Button asChild>
+        <ButtonPrimary asChild>
           <Link to="/profile">{t('common.back')}</Link>
-        </Button>
+        </ButtonPrimary>
         <BottomNav />
       </div>
     );
@@ -119,11 +118,11 @@ export default function AdminReports() {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-<Link to="/profile" state={{ openSettings: true }}>
-            <ChevronLeft className="w-5 h-5" />
+<ButtonIcon asChild>
+            <Link to="/profile" state={{ openSettings: true }}>
+              <ChevronLeft className="w-5 h-5" />
             </Link>
-          </Button>
+          </ButtonIcon>
           <h1 className="font-serif text-lg font-bold flex items-center gap-2">
             <Shield className="w-5 h-5" />
             {t('admin.reports_title')}
@@ -136,25 +135,25 @@ export default function AdminReports() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : reports.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 text-center text-muted-foreground">
+          <CardV2 padding="none">
+            <CardV2Content className="pt-6 text-center text-muted-foreground">
               {t('admin.no_reports')}
-            </CardContent>
-          </Card>
+            </CardV2Content>
+          </CardV2>
         ) : (
           <ul className="space-y-3">
             {reports.map((r) => (
               <li key={r.id}>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="font-serif text-sm flex items-center justify-between gap-2">
+                <CardV2 padding="none">
+                  <CardV2Header className="pb-2">
+                    <CardV2Title className="font-serif text-sm flex items-center justify-between gap-2">
                       <span>{t(`report.violation_${r.violation_type}`)}</span>
                       <span className="text-xs font-normal text-muted-foreground">
                         {format(new Date(r.created_at), 'd MMM yyyy HH:mm', { locale: sv })}
                       </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
+                    </CardV2Title>
+                  </CardV2Header>
+                  <CardV2Content className="space-y-2">
                     <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>
                     <p className="text-xs text-muted-foreground">
                       {t('report.context_evidence')}: {r.context}
@@ -180,8 +179,8 @@ export default function AdminReports() {
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </CardV2Content>
+                </CardV2>
               </li>
             ))}
           </ul>

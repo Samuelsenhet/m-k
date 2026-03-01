@@ -4,8 +4,6 @@ import { ProgressSteps } from "../navigation";
 import { ButtonPrimary } from "../button/ButtonPrimary";
 import { Mascot } from "@/components/system/Mascot";
 import { COLORS } from "@/design/tokens";
-import { useMascot } from "@/hooks/useMascot";
-import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
 
 export interface PhotoUploadScreenProps {
   photos: (string | null)[];
@@ -27,7 +25,6 @@ export function PhotoUploadScreen({
   totalSteps = 6,
 }: PhotoUploadScreenProps) {
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const mascot = useMascot(MASCOT_SCREEN_STATES.ONBOARDING_WELCOME);
 
   const handleSlotClick = (index: number) => {
     fileInputRefs.current[index]?.click();
@@ -55,7 +52,7 @@ export function PhotoUploadScreen({
 
       {/* Mascot guidance */}
       <div className="flex items-start gap-3 mb-6">
-        <Mascot {...mascot} size="small" placement="inline" className="flex-shrink-0" />
+        <Mascot token="mascot_calm_idle" size="small" placement="inline" className="flex-shrink-0" />
         <div
           className="flex-1 p-4 rounded-2xl rounded-tl-sm"
           style={{ background: COLORS.sage[50] }}

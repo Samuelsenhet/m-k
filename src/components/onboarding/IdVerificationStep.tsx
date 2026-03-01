@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, ButtonSecondary } from '@/components/ui-v2';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck, Upload, FileImage, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -171,7 +171,7 @@ export function IdVerificationStep({
       toast.success('ID skickat för verifiering. Du får besked när det är granskat.');
       onSubmit();
     } catch (err) {
-      console.error('ID verification submit error:', err);
+      if (import.meta.env.DEV) console.error('ID verification submit error:', err);
       toast.error('Kunde inte skicka in. Försök igen.');
     } finally {
       setSubmitting(false);
@@ -213,9 +213,9 @@ export function IdVerificationStep({
         <p className="text-muted-foreground text-sm">
           Din identitet har verifierats. Du kan gå vidare.
         </p>
-        <Button onClick={onSubmit} className="w-full">
+        <ButtonPrimary onClick={onSubmit} className="w-full">
           Fortsätt
-        </Button>
+        </ButtonPrimary>
       </div>
     );
   }
@@ -232,9 +232,9 @@ export function IdVerificationStep({
         <p className="text-muted-foreground text-sm">
           Din ID-verifiering kunde inte godkännas. Kontakta support om du har frågor.
         </p>
-        <Button variant="outline" onClick={onSubmit}>
+        <ButtonSecondary onClick={onSubmit}>
           Fortsätt ändå
-        </Button>
+        </ButtonSecondary>
       </div>
     );
   }
@@ -251,7 +251,7 @@ export function IdVerificationStep({
         <p className="text-muted-foreground text-sm">
           Ditt ID har skickats in och väntar på verifiering. Du får besked när det är klart.
         </p>
-        <Button onClick={onSubmit}>Fortsätt</Button>
+        <ButtonPrimary onClick={onSubmit}>Fortsätt</ButtonPrimary>
       </div>
     );
   }
@@ -283,15 +283,14 @@ export function IdVerificationStep({
           {frontPreview ? (
             <div className="relative rounded-xl border border-border overflow-hidden bg-muted/30">
               <img src={frontPreview} alt="ID framsida" className="w-full h-40 object-contain" />
-              <Button
+              <ButtonSecondary
                 type="button"
-                variant="secondary"
                 size="sm"
                 className="absolute top-2 right-2"
                 onClick={clearFront}
               >
                 Byt
-              </Button>
+              </ButtonSecondary>
             </div>
           ) : (
             <button
@@ -318,15 +317,14 @@ export function IdVerificationStep({
           {backPreview ? (
             <div className="relative rounded-xl border border-border overflow-hidden bg-muted/30">
               <img src={backPreview} alt="ID baksida" className="w-full h-40 object-contain" />
-              <Button
+              <ButtonSecondary
                 type="button"
-                variant="secondary"
                 size="sm"
                 className="absolute top-2 right-2"
                 onClick={clearBack}
               >
                 Byt
-              </Button>
+              </ButtonSecondary>
             </div>
           ) : (
             <button
@@ -345,7 +343,7 @@ export function IdVerificationStep({
         Dina uppgifter hanteras säkert och används endast för verifiering. Efter granskning kan dokumenten arkiveras enligt vår integritetspolicy.
       </p>
 
-      <Button
+      <ButtonPrimary
         onClick={handleSubmit}
         disabled={submitting || (!frontFile && !profileFrontPath)}
         className="w-full"
@@ -358,7 +356,7 @@ export function IdVerificationStep({
         ) : (
           'Skicka in för verifiering'
         )}
-      </Button>
+      </ButtonPrimary>
     </div>
   );
 }

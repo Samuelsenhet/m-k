@@ -2,10 +2,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { ButtonIcon, ButtonPrimary, ButtonSecondary } from '@/components/ui-v2';
+import { CardV2 } from '@/components/ui-v2';
 import { Progress } from '@/components/ui/progress';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Loader2, ImageIcon, GripVertical, Crown, Upload, CheckCircle, AlertCircle, Info, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Loader2, Camera, GripVertical, Crown, Upload, CheckCircle, AlertCircle, Info, Sparkles } from 'lucide-react';
+import { COLORS } from '@/design/tokens';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -65,6 +65,9 @@ interface UploadQueueItem {
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_CONCURRENT_UPLOADS = 2;
+
+/** Max profile photos (US-015). Single source for limit + count indicator. */
+export const PROFILE_PHOTO_MAX = 6;
 
 function validateFile(file: File, t: (key: string, options?: Record<string, unknown>) => string): { valid: boolean; error?: string } {
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -157,14 +160,20 @@ function SortablePhotoCard({
   const isPrimary = index === 0;
 
   return (
-    <Card
+    <CardV2
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        ...(!hasPhoto && {
+          border: `2px dashed ${COLORS.sage[300]}`,
+          background: isPrimary ? COLORS.coral[50] : COLORS.neutral.cream,
+        }),
+      }}
+      padding="none"
       className={cn(
         'relative aspect-[3/4] overflow-hidden border-2 transition-all',
-        hasPhoto
-          ? 'border-transparent card-premium shadow-glow-rose/20'
-          : 'border-dashed border-border bg-muted/30 hover:border-primary/50 cursor-pointer',
+        hasPhoto && 'border-transparent card-premium shadow-glow-rose/20',
+        !hasPhoto && 'hover:border-primary/50 cursor-pointer',
         isPrimary && hasPhoto && 'ring-2 ring-primary ring-offset-2',
         isPrimary && !hasPhoto && 'ring-2 ring-primary ring-offset-2',
         isDragging && 'ring-2 ring-primary/50 shadow-xl scale-105',
@@ -238,10 +247,10 @@ function SortablePhotoCard({
           </div>
 
           {/* Delete button */}
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute top-1 right-1 w-6 h-6 min-h-[24px] touch-manipulation active:scale-95 disabled:opacity-50"
+          <ButtonIcon
+            variant="coral"
+            aria-label="Ta bort foto"
+            className="absolute top-1 right-1 !w-6 !h-6 min-h-[24px] touch-manipulation active:scale-95 disabled:opacity-50"
             onClick={(e) => {
               e.stopPropagation();
               onDeleteClick(index);
@@ -253,7 +262,7 @@ function SortablePhotoCard({
             ) : (
               <Trash2 className="w-3 h-3" />
             )}
-          </Button>
+          </ButtonIcon>
 
           {/* Photo prompt overlay */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
@@ -263,16 +272,16 @@ function SortablePhotoCard({
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
           {isPrimary ? (
-            <Plus className="w-8 h-8 text-primary mb-1" />
+            <Camera className="w-8 h-8 mb-1" style={{ color: COLORS.coral[500] }} />
           ) : (
-            <ImageIcon className="w-6 h-6 text-muted-foreground mb-1" />
+            <Plus className="w-6 h-6 mb-1" style={{ color: COLORS.neutral.gray }} />
           )}
-          <p className="text-xs text-muted-foreground line-clamp-2">
+          <p className="text-xs line-clamp-2" style={{ color: COLORS.neutral.gray }}>
             {PHOTO_PROMPTS[index]}
           </p>
         </div>
       )}
-    </Card>
+    </CardV2>
   );
 }
 
@@ -282,7 +291,7 @@ function DragOverlayCard({ photo, index, t }: { photo: PhotoSlot; index: number;
   const isPrimary = index === 0;
 
   return (
-    <Card className="aspect-[3/4] overflow-hidden border-2 border-primary shadow-2xl card-premium animate-scale-in">
+    <CardV2 padding="none" className="aspect-[3/4] overflow-hidden border-2 border-primary shadow-2xl card-premium animate-scale-in">
       <img
         src={getPublicUrl(photo.storage_path)}
         alt={`Foto ${index + 1}`}
@@ -297,11 +306,11 @@ function DragOverlayCard({ photo, index, t }: { photo: PhotoSlot; index: number;
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
         <p className="text-xs text-white truncate">{PHOTO_PROMPTS[index]}</p>
       </div>
-    </Card>
+    </CardV2>
   );
 }
 
-export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUploadProps) {
+export function PhotoUpload({ photos, onPhotosChange, maxPhotos = PROFILE_PHOTO_MAX }: PhotoUploadProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -377,14 +386,14 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
           });
 
           if (error) {
-            console.error('Error updating photo order:', error);
+            if (import.meta.env.DEV) console.error('Error updating photo order:', error);
             toast.error(t('profile.photos.order_failed'));
           } else {
             toast.success(t('profile.photos.order_updated'));
           }
         }
       } catch (error) {
-        console.error('Error saving photo order:', error);
+        if (import.meta.env.DEV) console.error('Error saving photo order:', error);
         toast.error(t('profile.photos.order_failed'));
       } finally {
         setSaving(false);
@@ -501,7 +510,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       }, 1500);
 
     } catch (error) {
-      console.error('Upload error:', error);
+      if (import.meta.env.DEV) console.error('Upload error:', error);
 
       const isBucketNotFound =
         error &&
@@ -711,7 +720,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       onPhotosChange(newPhotos);
       toast.success(t('profile.photos.deleted'));
     } catch (error) {
-      console.error('Delete error:', error);
+      if (import.meta.env.DEV) console.error('Delete error:', error);
       toast.error(t('profile.photos.delete_failed'));
     } finally {
       setDeleting(null);
@@ -755,7 +764,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
                 </button>
               </TooltipTrigger>
               <TooltipContent className="max-w-[200px] text-center">
-                <p>Du kan ladda upp max {maxPhotos} foton. Det första fotot blir ditt huvudfoto.</p>
+                <p>{t('profile.photos.info_tooltip', { count: maxPhotos })}</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -763,7 +772,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
             {isAtMaxPhotos ? (
               <Badge className="gradient-rose-glow text-white border-0 flex items-center gap-1 shadow-glow-rose/30">
                 <Sparkles className="w-3 h-3" />
-                Komplett
+                {t('profile.photos.complete')}
               </Badge>
             ) : (
               <Badge variant="secondary" className="font-mono">
@@ -782,7 +791,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
           multiple
           className="hidden"
           onChange={(e) => selectedSlot !== null && handleUpload(e, selectedSlot)}
-          aria-label="Ladda upp profilbilder"
+          aria-label={t('profile.photos.upload_photos')}
         />
 
         <DndContext
@@ -796,23 +805,41 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
             {photos.slice(0, maxPhotos).map((photo, index) => {
               const uploadItem = getUploadForSlot(index);
               return (
-                <SortablePhotoCard
+                <div
                   key={photo.id || `slot-${index}`}
-                  photo={photo}
-                  index={index}
-                  isUploading={!!uploadItem}
-                  uploadProgress={uploadItem?.progress ?? 0}
-                  uploadFileName={uploadItem?.file.name}
-                  uploadStatus={uploadItem?.status}
-                  isDragging={activeId === (photo.id || `empty-${index}`)}
-                  isDeleting={deleting === index}
-                  canDelete={canDeletePhotos}
-                  onDeleteClick={handleDeleteClick}
-                  onUpload={triggerUpload}
-                  t={t}
-                />
+                  className={cn(index === 0 && 'col-span-2 row-span-2')}
+                >
+                  <SortablePhotoCard
+                    photo={photo}
+                    index={index}
+                    isUploading={!!uploadItem}
+                    uploadProgress={uploadItem?.progress ?? 0}
+                    uploadFileName={uploadItem?.file.name}
+                    uploadStatus={uploadItem?.status}
+                    isDragging={activeId === (photo.id || `empty-${index}`)}
+                    isDeleting={deleting === index}
+                    canDelete={canDeletePhotos}
+                    onDeleteClick={handleDeleteClick}
+                    onUpload={triggerUpload}
+                    t={t}
+                  />
+                </div>
               );
             })}
+          </div>
+          {/* Tips – design system primary-50 */}
+          <div
+            className="p-4 rounded-xl mt-4"
+            style={{ background: COLORS.primary[50] }}
+          >
+            <p className="text-sm font-medium mb-2" style={{ color: COLORS.primary[700] }}>
+              💡 Tips för bra foton
+            </p>
+            <ul className="text-sm space-y-1" style={{ color: COLORS.neutral.slate }}>
+              <li>• Visa ditt ansikte tydligt</li>
+              <li>• Använd bra belysning</li>
+              <li>• Visa dina intressen</li>
+            </ul>
           </div>
         </SortableContext>
 
@@ -823,33 +850,30 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
         </DragOverlay>
       </DndContext>
 
-      {/* Upload button - ShimmerButton */}
+      {/* Upload button – ButtonPrimary / ButtonSecondary */}
       <div className="flex justify-center">
         {isAtMaxPhotos ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="w-full max-w-xs">
-                <ShimmerButton
-                  variant="secondary"
+                <ButtonSecondary
                   size="default"
                   icon={Sparkles}
                   disabled
                   className="w-full opacity-70"
                 >
-                  Max antal foton uppnått
-                </ShimmerButton>
+                  {t('profile.photos.max_reached_button')}
+                </ButtonSecondary>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Du har laddat upp max antal foton ({maxPhotos}). Ta bort ett foto för att ladda upp fler.</p>
+              <p>{t('profile.photos.max_reached_tooltip', { count: maxPhotos })}</p>
             </TooltipContent>
           </Tooltip>
         ) : (
-          <ShimmerButton
-            variant="primary"
+          <ButtonPrimary
             size="default"
             icon={Upload}
-            loading={hasActiveUploads}
             onClick={() => {
               // Find first empty slot
               const emptySlotIndex = photos.findIndex(p => !p.storage_path);
@@ -858,28 +882,28 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
               } else if (photoCount < maxPhotos) {
                 triggerUpload(photoCount);
               } else {
-                toast.error('Du har laddat upp max antal foton');
+                toast.error(t('profile.photos.max_reached'));
               }
             }}
             disabled={hasActiveUploads}
             className="w-full max-w-xs"
           >
-            {hasActiveUploads ? 'Laddar upp...' : 'Ladda upp foton'}
-          </ShimmerButton>
+            {hasActiveUploads ? t('profile.photos.uploading') : t('profile.photos.upload_photos')}
+          </ButtonPrimary>
         )}
       </div>
 
       <div className="text-center space-y-1">
         <p className="text-xs text-muted-foreground">
-          Ladda upp 4-6 foton. Max 5MB per bild. JPG, PNG eller WebP.
+          {t('profile.photos.help_text')}
         </p>
         <p className="text-xs text-primary/70">
-          Det första fotot blir ditt huvudfoto. Dra för att ändra ordning.
+          {t('profile.photos.reorder_hint_full')}
         </p>
         {isAtMaxPhotos && (
           <p className="text-xs text-emerald-600 font-medium flex items-center justify-center gap-1">
             <Sparkles className="w-3 h-3" />
-            Grattis! Du har laddat upp alla foton.
+            {t('profile.photos.complete_congrats')}
           </p>
         )}
       </div>
@@ -887,7 +911,7 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = 6 }: PhotoUplo
       {saving && (
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <Loader2 className="w-3 h-3 animate-spin" />
-          Sparar ordning...
+          {t('profile.photos.saving_order')}
         </div>
       )}
 

@@ -10,18 +10,19 @@ const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(({ className, value, ...props }, ref) => {
-  const thumbCount = Array.isArray(value) && value.length > 0 ? value.length : 1;
+  const current = value ?? props.defaultValue;
+  const count = Array.isArray(current) ? current.length : 1;
   return (
     <SliderPrimitive.Root
       ref={ref}
-      className={cn("relative flex w-full touch-none select-none items-center", className)}
       value={value}
+      className={cn("relative flex w-full touch-none select-none items-center", className)}
       {...props}
     >
       <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
         <SliderPrimitive.Range className="absolute h-full bg-primary" />
       </SliderPrimitive.Track>
-      {Array.from({ length: thumbCount }, (_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <SliderPrimitive.Thumb key={i} className={thumbClass} />
       ))}
     </SliderPrimitive.Root>

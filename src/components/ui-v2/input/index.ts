@@ -5,3 +5,4 @@ export {
   InputOTPV2Slot,
   InputOTPV2Separator,
 } from "./InputOTP";
+export { InputSearchV2 } from "./InputSearch";

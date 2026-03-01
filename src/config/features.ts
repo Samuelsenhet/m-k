@@ -10,3 +10,10 @@ export const FEATURE_AB_TESTS =
 /** Use onboarding v2 flow when true; otherwise current onboarding. */
 export const FEATURE_ONBOARDING_V2 =
   import.meta.env.VITE_FEATURE_ONBOARDING_V2 === "true";
+
+/**
+ * Stable baseline mode: disables emotional system and mascot auto-sync.
+ * When true, useMascot and useEmotionalState return neutral/base state only.
+ * Set to false when re-enabling relationship depth, emotional surfaces, mascot sync.
+ */
+export const STABLE_MODE = true;

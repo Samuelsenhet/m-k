@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/useAuth';
 import { ButtonPrimary, ButtonGhost } from '@/components/ui-v2';
-import { COLORS, FONTS } from '@/design/tokens';
+import { COLORS } from '@/design/tokens';
 import { SCREEN_CONTAINER_CLASS, SCREEN_CONTENT_WIDTH_CLASS } from '@/layout/screenLayout';
 import { useTranslation } from 'react-i18next';
 import { useOnlineCount } from '@/hooks/useOnlineCount';
@@ -47,17 +47,17 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         <div className="flex items-center gap-1.5">
           {user ? (
             <>
-              <ButtonGhost asChild size="icon" className="h-10 w-10">
+              <ButtonGhost asChild size="sm" className="h-10 w-10">
                 <Link to="/matches" className="flex items-center justify-center" aria-label="Matcher">
                   <Heart className="w-5 h-5 shrink-0" />
                 </Link>
               </ButtonGhost>
-              <ButtonGhost asChild size="icon" className="h-10 w-10">
+              <ButtonGhost asChild size="sm" className="h-10 w-10">
                 <Link to="/chat" className="flex items-center justify-center" aria-label="Chatt">
                   <MessageCircle className="w-5 h-5 shrink-0" />
                 </Link>
               </ButtonGhost>
-              <ButtonGhost asChild size="icon" className="h-10 w-10">
+              <ButtonGhost asChild size="sm" className="h-10 w-10">
                 <Link to="/profile" className="flex items-center justify-center" aria-label="Profil">
                   <User className="w-5 h-5 shrink-0" />
                 </Link>
@@ -71,7 +71,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         </div>
       </nav>
 
-      {/* Hero – floating card mockup */}
+      {/* Profile cards section – like reference */}
       <div className={`relative pt-4 pb-6 ${SCREEN_CONTAINER_CLASS}`}>
         <div className="relative mx-auto w-72">
           {/* Background cards */}
@@ -85,23 +85,43 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             style={{ background: COLORS.primary[100] }}
             aria-hidden
           />
-          {/* Left overlay: circle only (no bubble) */}
-          <div className="absolute top-4 left-0 z-20" aria-hidden>
-            <div className="w-11 h-11 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden bg-muted" />
+
+          {/* Left overlay: circle only */}
+          <div
+            className="absolute top-4 left-0 z-20"
+            aria-hidden
+          >
+            <div
+              className="w-11 h-11 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden bg-muted"
+            />
           </div>
 
-          {/* Main card */}
+          {/* Right overlay: like / super like */}
           <div
-            className="relative z-10 rounded-3xl shadow-xl p-4 mx-auto w-52"
+            className="absolute top-12 right-0 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-2xl z-20 bg-white/90"
+            aria-hidden
+          >
+            😍
+          </div>
+          <div
+            className="absolute top-24 right-2 w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-lg z-20 bg-white/90"
+            aria-hidden
+          >
+            🙅
+          </div>
+
+          {/* Main profile card */}
+          <div
+            className="relative z-10 rounded-3xl shadow-elevation-2 p-4 mx-auto w-60"
             style={{ background: COLORS.neutral.white }}
           >
             <div
-              className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center"
+              className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden"
               style={{ background: COLORS.sage[100] }}
             >
-              <span className="text-5xl" aria-hidden>🌿</span>
+              <span className="text-6xl" aria-hidden>🌿</span>
             </div>
-            <h3 className="font-semibold" style={{ color: COLORS.primary[800] }}>
+            <h3 className="font-semibold text-base" style={{ color: COLORS.primary[800] }}>
               Sofia, Debattören
             </h3>
             <p className="text-xs mb-2" style={{ color: COLORS.neutral.gray }}>
@@ -122,32 +142,10 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               </span>
             </div>
           </div>
-
-          {/* Floating elements */}
-          <div
-            className="absolute top-0 left-2 w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
-            style={{ background: COLORS.primary[100] }}
-            aria-hidden
-          >
-            <span>💡</span>
-          </div>
-          <div
-            className="absolute top-16 right-0 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
-            style={{ background: COLORS.primary[100] }}
-            aria-hidden
-          >
-            <MessageCircle className="w-6 h-6" style={{ color: COLORS.primary[500] }} />
-          </div>
-          <div
-            className="absolute bottom-16 left-0 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
-            style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
-          >
-            Likhets-match
-          </div>
         </div>
 
-        {/* Dots */}
-        <div className="flex justify-center gap-2 mb-6">
+        {/* Pagination dots */}
+        <div className="flex justify-center gap-2 mt-4 mb-6" aria-hidden>
           <div className="w-2 h-2 rounded-full" style={{ background: COLORS.sage[300] }} />
           <div className="w-6 h-2 rounded-full" style={{ background: COLORS.primary[500] }} />
           <div className="w-2 h-2 rounded-full" style={{ background: COLORS.sage[300] }} />
@@ -158,11 +156,8 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       <div className={`text-center mb-8 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
         <h1
           id="landing-heading"
-          className="text-3xl font-bold mb-3"
-          style={{
-            fontFamily: FONTS.serif,
-            color: COLORS.primary[800],
-          }}
+          className="text-3xl font-bold mb-3 font-serif"
+          style={{ color: COLORS.primary[800] }}
         >
           Hitta kärlek som
           <br />
@@ -173,7 +168,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}
-          >
+            >
             matchar din själ
           </span>
         </h1>
@@ -194,7 +189,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
           { icon: Shield, label: 'Säker &', sub: 'verifierad' },
           { icon: Heart, label: 'Meningsfulla', sub: 'kopplingar' },
         ].map((f, i) => (
-          <div key={i} className="text-center">
+          <div key={i} className="text-center" role="listitem">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
               style={{ background: COLORS.primary[100] }}
@@ -211,7 +206,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         ))}
       </div>
 
-      {/* Online-räkning – diskret */}
+      {/* Online-räkning – diskret, smälter in */}
       {hasValidSupabaseConfig && (
         <p
           className={`text-center text-sm tabular-nums mb-6 ${SCREEN_CONTENT_WIDTH_CLASS}`}
