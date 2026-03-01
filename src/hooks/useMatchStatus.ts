@@ -48,7 +48,16 @@ export function useMatchStatus() {
         }
       }
 
-      if (error) throw new Error(error.message ?? 'match-status failed');
+      if (error) {
+        const errObj = error as { message?: string; context?: { status?: number } };
+        const is401 = errObj?.context?.status === 401 || /401|unauthorized/i.test(errObj?.message ?? '');
+        if (import.meta.env.DEV && is401) {
+          console.warn(
+            '[match-status] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401'
+          );
+        }
+        throw new Error(error.message ?? 'match-status failed');
+      }
       if (data != null) setStatus(data as MatchStatus);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));

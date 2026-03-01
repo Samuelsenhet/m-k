@@ -1,6 +1,8 @@
 # MÄÄK – Personality-based dating app
 
-A Swedish personality-based dating platform with phone auth, daily matches (similar & complementary), real-time chat, video calls (Kemi-Check), and a design system built around the **Eucalyptus Grove** palette (forest green, sage, off-white). PRP-compliant with user journey phases and GDPR onboarding.
+**Määk är en iOS-app.** En svensk personlighetsbaserad dejtingplattform med telefoninloggning, dagliga matcher (liknande & komplementära), realtidschatt, videoanrop (Kemi-Check) och designsystem kring paletten **Eucalyptus Grove** (skogsgrön, salvia, off-white). PRP-anpassad med användarresa och GDPR-onboarding.
+
+Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor** (en kodbas, en leveransplattform: iOS).
 
 ## Tech stack
 
@@ -9,29 +11,36 @@ A Swedish personality-based dating platform with phone auth, daily matches (simi
 - **Backend**: Supabase (PostgreSQL, Realtime, Edge Functions)
 - **Auth**: Phone (SMS OTP via Twilio)
 - **i18n**: react-i18next (Swedish + English)
-- **PWA**: Service worker, install prompt
+- **Plattform**: Capacitor (iOS); webbbuild används i utveckling och som källa till iOS-appen
 
 ## Setup
 
 **Config:** See `src/config/supabase.ts` for `isSupabaseConfigured` and `isDemoEnabled`. **Important:** Open **this folder** in Cursor (File → Open Folder → select the `m-k` project root). Run `npm run dev` from here so the app finds your `.env` file. If you open a different copy of the repo (e.g. a worktree), `.env` won’t be there and login won’t work.
 
 1. Clone the repo.
-2. Copy `.env.example` to `.env` and add your Supabase and Twilio credentials (see [Supabase Dashboard](https://supabase.com/dashboard)).
-3. Install dependencies: `npm install`
-4. **Supabase one-time setup**
+2. **Node.js:** Använd Node 22 (projektet kräver `>=22.0.0`). Med nvm: `nvm install 22 && nvm use` (`.nvmrc` finns). För EAS (`eas build`, `eas device:create`) kräver Expo/React Native Node **≥20.19.4** – uppgradera om du ser `EBADENGINE` eller `ConfigError`.
+3. Copy `.env.example` to `.env` and add your Supabase and Twilio credentials (see [Supabase Dashboard](https://supabase.com/dashboard)).
+4. Install dependencies: `npm install`
+5. **Supabase one-time setup**
    - Option A: `npx supabase db push`
    - Option B: In Supabase → SQL Editor, run `supabase/ONE_TIME_SETUP.sql`
    - If you hit “Could not find the 'alcohol' column” or profile save errors after onboarding, run `supabase/ADD_PROFILE_COLUMNS.sql` once.
-5. Start dev server: `npm run dev` (default port 8080)
+6. Start dev server: `npm run dev` (default port 8080)
 
 ## Scripts
 
 | Command           | Description                    |
 |-------------------|--------------------------------|
 | `npm run dev`     | Start dev server (Vite)        |
-| `npm run build`   | Production build               |
-| `npm run preview` | Preview production build      |
+| `npm run build`   | Production build (webb → används av iOS) |
+| `npm run preview` | Preview production build       |
 | `npm run lint`    | ESLint + spellcheck            |
+| **iOS (EAS)**     |                                |
+| `npm run ios:build` | Bygg webb + synka till `ios/` (cap sync) |
+| `npm run ios:sync`  | Synka `dist/` till iOS-projekt |
+| `npm run ios:open` | Öppna iOS-projektet i Xcode (valfritt) |
+| `npm run ios:eas-build` | Bygg iOS i molnet (EAS Build) |
+| `eas device:create` | Registrera enhet för internal distribution (kör efter `npm i -g eas-cli`) |
 
 **Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
 
@@ -93,9 +102,9 @@ src/
 - **Design**: Eucalyptus Grove (primary green, sage, off-white), serif titles (Playfair), soft shadows and card layout
 - **Other**: Achievements, AI assistant panel, PWA, i18n (sv/en), GDPR consent onboarding
 
-## Deployment
+## Deployment (iOS)
 
-The app is built for deployment on **Vercel** with a Supabase backend. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (and optional `VITE_SUPABASE_PROJECT_ID`) in your Vercel project. Use `npm run vercel:env` to add env vars from the CLI if needed.
+Appen levereras som **iOS-app** via **EAS**. Bygg webb och synka till iOS med `npm run ios:build`. Bygg i molnet med `npm run ios:eas-build` (eller `eas build --platform ios`). Registrera enheter för internal distribution med `eas device:create` (kräver `npm i -g eas-cli`). Xcode lokalt är valfritt: `npm run ios:open`. För valfri webbdeploy (Vercel): konfigurera `VITE_SUPABASE_*` och `npm run vercel:env` vid behov.
 
 ## Editing the code
 

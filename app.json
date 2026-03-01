@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "sdkVersion": "52.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "21707dde-e5f5-4ab1-a588-2f35b1939733"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.samuelsenhet.maak",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  },
+  "ios": {
+    "bundleIdentifier": "com.samuelsenhet.maak",
+    "infoPlist": {
+      "ITSAppUsesNonExemptEncryption": false
+    }
+  },
+  "android": {
+    "package": "com.samuelsenhet.vite_react_shadcn_ts"
+  }
+}

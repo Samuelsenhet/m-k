@@ -343,28 +343,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
           </div>
         </div>
 
-        {/* Om mig – stone/sand för bra kontrast på mörk bakgrund */}
-        <div>
-          <h3 className="text-sm font-semibold text-white mb-2">{t('profile.about_me', 'Om mig')}</h3>
-          <p style={{ color: COLORS.neutral.stone }}>
-            {profile?.bio || t('profile.bio_placeholder', 'Berätta något om dig själv...')}
-          </p>
-        </div>
-
-        {/* Intressen – InterestChipV2 (design system US-016) */}
-        <div>
-          <h3 className="text-sm font-semibold text-white mb-3">{t('profile.interests_title', 'Intressen')}</h3>
-          <div className="flex flex-wrap gap-2">
-            {interestsList.length > 0
-              ? interestsList.map((label) => (
-                  <InterestChipV2 key={label} label={label} variant="dark" />
-                ))
-              : (
-                  <span className="text-sm" style={{ color: COLORS.neutral.stone }}>{t('profile.interests_empty', 'Lägg till intressen')}</span>
-                )}
-          </div>
-        </div>
-
         {/* Info items – MapPin, Briefcase, GraduationCap */}
         <div className="space-y-3">
           {locationLabel && (
@@ -413,12 +391,27 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
             <div className="flex justify-center pt-2 pb-4" aria-hidden>
               <div className="w-12 h-1 bg-muted-foreground/40 rounded-full" />
             </div>
-            {profile?.bio && (
-              <div>
-                <h2 className="text-xl font-bold text-foreground mb-2">Om mig</h2>
-                <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
+            {/* Om mig – i Visa mer */}
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">{t('profile.about_me', 'Om mig')}</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                {profile?.bio || t('profile.bio_placeholder', 'Berätta något om dig själv...')}
+              </p>
+            </div>
+
+            {/* Intressen – i Visa mer */}
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">{t('profile.interests_title', 'Intressen')}</h2>
+              <div className="flex flex-wrap gap-2">
+                {interestsList.length > 0
+                  ? interestsList.map((label) => (
+                      <InterestChipV2 key={label} label={label} variant="default" />
+                    ))
+                  : (
+                      <span className="text-sm text-muted-foreground">{t('profile.interests_empty', 'Lägg till intressen')}</span>
+                    )}
               </div>
-            )}
+            </div>
 
             {(profile?.dating_intention || profile?.relationship_type || profile?.dating_intention_extra || profile?.relationship_type_extra) && (
               <div className="space-y-3">

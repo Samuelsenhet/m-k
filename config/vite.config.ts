@@ -54,7 +54,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB – mascot PNGs are ~2.5 MB
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // 8 MB – mascot + landing images (e.g. landing-profile-elin.png ~7 MB)
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {

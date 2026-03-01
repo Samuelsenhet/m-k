@@ -122,7 +122,16 @@ export function useMatches() {
         }
       }
 
-      if (error) throw error;
+      if (error) {
+        const errObj = error as { message?: string; context?: { status?: number } };
+        const is401 = errObj?.context?.status === 401 || /401|unauthorized/i.test(errObj?.message ?? '');
+        if (import.meta.env.DEV && is401) {
+          console.warn(
+            '[match-daily] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401'
+          );
+        }
+        throw error;
+      }
 
       // 202/WAITING: pool not ready yet – show waiting state
       if (data && (data as { journey_phase?: string }).journey_phase === "WAITING") {

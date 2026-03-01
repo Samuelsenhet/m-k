@@ -30,10 +30,13 @@
     "edge:align-and-deploy": "node scripts/ensure-supabase-project-and-deploy.mjs",
     "test:edge-match-daily": "node scripts/invoke-match-daily-test.mjs",
     "preview": "vite preview --config config/vite.config.ts",
+    "ios:build": "npm run build && npx cap sync ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:eas-build": "eas build --platform ios",
     "vercel:env": "npx vercel env add VITE_SUPABASE_URL production && npx vercel env add VITE_SUPABASE_PUBLISHABLE_KEY production && npx vercel env add VITE_SUPABASE_PROJECT_ID production"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
@@ -99,6 +102,10 @@
     "vite-plugin-pwa": "^1.2.0",
     "zod": "^3.25.76"
   },
+  "overrides": {
+    "serialize-javascript": ">=7.0.3",
+    "tar": ">=7.5.8"
+  },
   "engines": {
     "node": ">=22.0.0"
   },
@@ -123,6 +130,7 @@
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "sharp": "^0.34.5",
+    "expo": "^52.0.0",
     "supabase": "^2.76.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
