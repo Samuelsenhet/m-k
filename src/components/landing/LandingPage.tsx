@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Brain, Shield, Heart, MessageCircle, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
@@ -13,6 +13,30 @@ import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
+const LANDING_SLIDES = [
+  {
+    image: '/landing-profile-sofia.png',
+    name: 'Sofia',
+    archetype: 'Debattören',
+    bio: 'Smart och nyfiken tänkare...',
+    tags: ['Musik', 'Fika'],
+  },
+  {
+    image: '/landing-profile-merbel.png',
+    name: 'Merbel',
+    archetype: 'Värdaren',
+    bio: 'Lekfull och omtänksam...',
+    tags: ['Resor', 'Mat'],
+  },
+  {
+    image: '/landing-profile-erik.png',
+    name: 'Erik',
+    archetype: 'Strategen',
+    bio: 'Driven och nyfiken...',
+    tags: ['Träning', 'Böcker'],
+  },
+];
+
 interface LandingPageProps {
   onStart?: () => void;
 }
@@ -23,6 +47,17 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
   const { t } = useTranslation();
   const onlineCount = useOnlineCount(user?.id);
   const landingMascot = useMascot(MASCOT_SCREEN_STATES.LANDING_HERO);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slide = LANDING_SLIDES[currentSlide];
+  const prevSlide = LANDING_SLIDES[(currentSlide - 1 + LANDING_SLIDES.length) % LANDING_SLIDES.length];
+  const nextSlide = LANDING_SLIDES[(currentSlide + 1) % LANDING_SLIDES.length];
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % LANDING_SLIDES.length);
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleStart = () => {
     if (user) navigate('/onboarding');
@@ -71,113 +106,12 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         </div>
       </nav>
 
-      {/* Profile cards section – like reference */}
-      <div className={`relative pt-4 pb-6 ${SCREEN_CONTAINER_CLASS}`}>
-        <div className="relative mx-auto w-72">
-          {/* Background cards */}
-          <div
-            className="absolute top-6 -left-4 w-48 h-64 rounded-3xl rotate-[-12deg] opacity-50"
-            style={{ background: COLORS.coral[100] }}
-            aria-hidden
-          />
-          <div
-            className="absolute top-8 -right-2 w-48 h-64 rounded-3xl rotate-[8deg] opacity-50"
-            style={{ background: COLORS.primary[100] }}
-            aria-hidden
-          />
-
-          {/* Left overlay: circle only */}
-          <div
-            className="absolute top-4 left-0 z-20"
-            aria-hidden
-          >
-            <div
-              className="w-11 h-11 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden bg-muted"
-            />
-          </div>
-
-          {/* Right overlay: like / super like */}
-          <div
-            className="absolute top-12 right-0 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-2xl z-20 bg-white/90"
-            aria-hidden
-          >
-            😍
-          </div>
-          <div
-            className="absolute top-24 right-2 w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-lg z-20 bg-white/90"
-            aria-hidden
-          >
-            🙅
-          </div>
-
-          {/* Main profile card */}
-          <div
-            className="relative z-10 rounded-3xl shadow-elevation-2 p-4 mx-auto w-60"
-            style={{ background: COLORS.neutral.white }}
-          >
-            <div
-              className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden"
-              style={{ background: COLORS.sage[100] }}
-            >
-              <span className="text-6xl" aria-hidden>🌿</span>
-            </div>
-            <h3 className="font-semibold text-base" style={{ color: COLORS.primary[800] }}>
-              Sofia, Debattören
-            </h3>
-            <p className="text-xs mb-2" style={{ color: COLORS.neutral.gray }}>
-              Smart och nyfiken tänkare...
-            </p>
-            <div className="flex flex-wrap gap-1">
-              <span
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: COLORS.sage[100], color: COLORS.sage[700] }}
-              >
-                Musik
-              </span>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: COLORS.sage[100], color: COLORS.sage[700] }}
-              >
-                Fika
-              </span>
-            </div>
-          </div>
+      {/* Landing mascot + intro */}
+      <div className={`text-center mt-4 mb-8 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
+        <div className="flex justify-center mb-0">
+          <Mascot {...landingMascot} />
         </div>
-
-        {/* Pagination dots */}
-        <div className="flex justify-center gap-2 mt-4 mb-6" aria-hidden>
-          <div className="w-2 h-2 rounded-full" style={{ background: COLORS.sage[300] }} />
-          <div className="w-6 h-2 rounded-full" style={{ background: COLORS.primary[500] }} />
-          <div className="w-2 h-2 rounded-full" style={{ background: COLORS.sage[300] }} />
-        </div>
-      </div>
-
-      {/* Title + landing mascot */}
-      <div className={`text-center mb-8 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
-        <h1
-          id="landing-heading"
-          className="text-3xl font-bold mb-3 font-serif"
-          style={{ color: COLORS.primary[800] }}
-        >
-          Hitta kärlek som
-          <br />
-          <span
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.primary[500]} 0%, ${COLORS.primary[400]} 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-            >
-            matchar din själ
-          </span>
-        </h1>
-        {landingMascot.shouldShow && (
-          <div className="flex justify-center my-4">
-            <Mascot {...landingMascot} />
-          </div>
-        )}
-        <p className="whitespace-pre-line" style={{ color: COLORS.neutral.slate }}>
+        <p className="whitespace-pre-line mt-0 mb-0" style={{ color: COLORS.neutral.slate }}>
           {t('maak.intro')}
         </p>
       </div>
@@ -204,6 +138,95 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* Profile cards section */}
+      <div className={`relative pt-4 pb-6 ${SCREEN_CONTAINER_CLASS}`}>
+        <div className="relative mx-auto w-72">
+          {/* Background cards – previous/next profile, byts med slide */}
+          <div
+            className="absolute top-6 -left-4 w-48 h-64 rounded-3xl rotate-[-12deg] opacity-50 overflow-hidden transition-opacity duration-300"
+            style={{ background: COLORS.sage[100] }}
+            aria-hidden
+          >
+            <img
+              src={prevSlide.image}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div
+            className="absolute top-8 -right-2 w-48 h-64 rounded-3xl rotate-[8deg] opacity-50 overflow-hidden transition-opacity duration-300"
+            style={{ background: COLORS.sage[100] }}
+            aria-hidden
+          >
+            <img
+              src={nextSlide.image}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Left overlay: sitting mascot */}
+          <div
+            className="absolute top-4 left-0 z-20 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden bg-white/90"
+            aria-hidden
+          >
+            <img
+              src="/mascot/sitting.png"
+              alt=""
+              className="w-full h-full object-contain object-center"
+            />
+          </div>
+
+          {/* Right overlay: chat + pass */}
+          <div
+            className="absolute top-12 right-0 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-2xl z-20 bg-white/90"
+            aria-hidden
+          >
+            💬
+          </div>
+          <div
+            className="absolute top-28 right-0 w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-lg z-20 bg-white/90"
+            aria-hidden
+          >
+            🙅
+          </div>
+
+          {/* Main profile card */}
+          <div
+            className="relative z-10 rounded-3xl shadow-elevation-2 p-4 mx-auto w-60"
+            style={{ background: COLORS.neutral.white }}
+          >
+            <div
+              className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden bg-muted"
+            >
+              <img
+                key={currentSlide}
+                src={slide.image}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="font-semibold text-base" style={{ color: COLORS.primary[800] }}>
+              {slide.name}, {slide.archetype}
+            </h3>
+            <p className="text-xs mb-2" style={{ color: COLORS.neutral.gray }}>
+              {slide.bio}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {slide.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ background: COLORS.sage[100], color: COLORS.sage[700] }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Online-räkning – diskret, smälter in */}

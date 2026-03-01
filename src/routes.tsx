@@ -32,6 +32,11 @@ import ReportHistory from "@/pages/ReportHistory";
 import Report from "@/pages/Report";
 import Appeal from "@/pages/Appeal";
 import AdminReports from "@/pages/AdminReports";
+import AdminEmail from "@/pages/AdminEmail";
+import AdminAppeals from "@/pages/AdminAppeals";
+import GroupChatList from "@/pages/GroupChatList";
+import CreateGroupChat from "@/pages/CreateGroupChat";
+import GroupChatWindow from "@/pages/GroupChatWindow";
 import LaunchChecklist from "@/pages/LaunchChecklist";
 import NotFound from "@/pages/NotFound";
 

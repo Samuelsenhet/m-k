@@ -65,13 +65,9 @@ export interface MascotCompositeConfig {
  * Optional: tokens that use a composite sheet instead of a single PNG.
  * If a token is listed here, Mascot will render a slice of the sheet; otherwise it uses /mascot/{token}.png.
  * Sheet built with: node scripts/build-mascot-sprite.mjs
+ * Set to {} when mascot_sheet_ai.png is not present so single PNGs in public/mascot/ are used.
  */
-export const MASCOT_COMPOSITE_MAP: Partial<Record<BaseMascotToken, MascotCompositeConfig>> = {
-  mascot_ai_listening: { sheet: "mascot_sheet_ai.png", columns: 4, index: 0 },
-  mascot_ai_thinking: { sheet: "mascot_sheet_ai.png", columns: 4, index: 1 },
-  mascot_ai_open_hand: { sheet: "mascot_sheet_ai.png", columns: 4, index: 2 },
-  mascot_ai_tiny_sparkle: { sheet: "mascot_sheet_ai.png", columns: 4, index: 3 },
-};
+export const MASCOT_COMPOSITE_MAP: Partial<Record<BaseMascotToken, MascotCompositeConfig>> = {};
 
 export type MascotAsset =
   | { type: "single"; src: string }
@@ -123,7 +119,7 @@ const STATE_TOKEN_MAP: Record<string, MascotToken> = {
   samlingar_empty: "social",
   home_idle: "icon",
   profile_empty: "mascot_practicing_mirror",
-  landing_hero: "mascot_ai_open_hand",
+  landing_hero: "onboarding",
   landing_problem: "reassures",
   no_chats: "mascot_practicing_mirror",
   waiting_phase: "mascot_waiting_tea",

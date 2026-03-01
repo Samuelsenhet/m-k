@@ -72,6 +72,7 @@
     "loading_error_check_login": "Could not load matches. Make sure you are logged in.",
     "error_title": "We're having trouble loading matches",
     "error_reassure": "Something went wrong – I'll try again",
+    "until_ready": "until your matches are ready",
     "must_be_logged_in": "You must be logged in to see matches",
     "auth_verify_failed": "We couldn't verify your login. Try logging out and in again, or try again in a moment.",
     "server_error": "The service isn't responding right now. Check that you're logged in and try again – or wait a moment.",
@@ -240,6 +241,7 @@
     "relation_ta_reda_pa": "Figuring out my relationship type",
     "interests_title": "Interests",
     "interests_placeholder": "e.g. art, travel, cooking, fitness...",
+    "interests_empty": "Add interests",
     "prev_photo": "Previous photo",
     "next_photo": "Next photo"
   },

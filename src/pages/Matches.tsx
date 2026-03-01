@@ -154,6 +154,7 @@ export default function Matches() {
         detail={detailForDev ?? (import.meta.env.DEV ? error : undefined)}
         retryLabel={t('matches.retry')}
         onRetry={refreshMatches}
+        nextMatchAvailable={matchStatus?.next_reset_time ?? getNextMidnightISO()}
       />
     );
   }

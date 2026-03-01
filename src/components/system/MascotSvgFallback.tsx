@@ -24,10 +24,11 @@ export interface MascotSvgFallbackProps {
  * No old mascot design – single source of truth for visuals is Figma (public/mascot/*.png).
  */
 export function MascotSvgFallback({
+  token: _token,
   size = "medium",
   placement = "center",
   className,
-  ...rest
+  "aria-hidden": ariaHidden,
 }: MascotSvgFallbackProps) {
   const sizeClass = cn(
     SIZE_MAP[size],
@@ -43,11 +44,11 @@ export function MascotSvgFallback({
     <div
       role="img"
       aria-label="MÄÄK"
+      aria-hidden={ariaHidden}
       className={cn(
         "relative flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20",
         sizeClass,
       )}
-      {...rest}
     >
       <span
         className={cn(

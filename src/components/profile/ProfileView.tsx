@@ -69,10 +69,20 @@ function toArchetypeKey(category: string | undefined): ArchetypeKey | undefined 
   return undefined;
 }
 
-/** Parse interested_in string to array of labels for InterestChipV2 */
+/** Parse interested_in to labels for InterestChipV2; dedupe case-insensitively. */
 function parseInterests(interestedIn: string | null | undefined): string[] {
   if (!interestedIn || typeof interestedIn !== 'string') return [];
-  return interestedIn.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+  const seen = new Set<string>();
+  return interestedIn
+    .split(/[,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((s) => {
+      const key = s.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 /** Safe height formatter: never call .trim() on non-string. */
@@ -333,11 +343,11 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
           </div>
         </div>
 
-        {/* Om mig */}
+        {/* Om mig – stone/sand för bra kontrast på mörk bakgrund */}
         <div>
           <h3 className="text-sm font-semibold text-white mb-2">{t('profile.about_me', 'Om mig')}</h3>
-          <p style={{ color: COLORS.neutral.gray }}>
-            {profile?.bio || t('profile.bio_placeholder', 'Lägg till en beskrivning om dig själv...')}
+          <p style={{ color: COLORS.neutral.stone }}>
+            {profile?.bio || t('profile.bio_placeholder', 'Berätta något om dig själv...')}
           </p>
         </div>
 
@@ -347,10 +357,10 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
           <div className="flex flex-wrap gap-2">
             {interestsList.length > 0
               ? interestsList.map((label) => (
-                  <InterestChipV2 key={label} label={label} />
+                  <InterestChipV2 key={label} label={label} variant="dark" />
                 ))
               : (
-                  <span className="text-sm" style={{ color: COLORS.neutral.gray }}>Lägg till intressen</span>
+                  <span className="text-sm" style={{ color: COLORS.neutral.stone }}>{t('profile.interests_empty', 'Lägg till intressen')}</span>
                 )}
           </div>
         </div>

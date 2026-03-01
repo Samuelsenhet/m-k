@@ -65,9 +65,20 @@ const PRESET_INTERESTS: { id: string; label: string; Icon: React.ComponentType<{
   { id: 'photography', label: 'Fotografi', Icon: Camera },
 ];
 
+/** Parse and dedupe (case-insensitive) so "Musik" and "musik" don't both show. */
 function parseInterestsList(value: string | undefined): string[] {
   if (!value?.trim()) return [];
-  return value.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+  const seen = new Set<string>();
+  return value
+    .split(/[,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((s) => {
+      const key = s.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 export function ProfileEditor({ onComplete }: ProfileEditorProps) {
@@ -194,12 +205,14 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         bio: profile.bio || null,
         gender: profile.gender || null,
         looking_for: profile.looking_for || null,
+        interested_in: profile.interested_in?.trim() || null,
         height: profile.height ? parseInt(profile.height) : null,
         work: profile.work || null,
         education: profile.education || null,
         hometown: profile.hometown || null,
         country: profile.country || null,
         instagram: profile.instagram || null,
+        linkedin: profile.linkedin || null,
         religion: profile.religion || null,
         politics: profile.politics || null,
         smoking: profile.smoking || null,
@@ -401,20 +414,23 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
           </CardV2Title>
         </CardV2Header>
         <CardV2Content className="p-5 pt-0 space-y-4">
-          <div className="space-y-2">
-            <Label className="text-xs">{t('profile.interests_title', 'Intressen')}</Label>
+          <div className="space-y-3">
+            <Label className="text-xs block">{t('profile.interests_title', 'Intressen')}</Label>
             <div className="flex flex-wrap gap-2">
               {(() => {
-                const selectedSet = new Set(parseInterestsList(profile.interested_in));
+                const list = parseInterestsList(profile.interested_in);
+                const selectedLower = new Set(list.map((s) => s.toLowerCase()));
                 return PRESET_INTERESTS.map(({ id, label, Icon }) => {
-                  const selected = selectedSet.has(label);
+                  const selected = selectedLower.has(label.toLowerCase());
                   return (
                     <button
                       key={id}
                       type="button"
                       onClick={() => {
                         const list = parseInterestsList(profile.interested_in);
-                        const next = selected ? list.filter((x) => x !== label) : [...list, label];
+                        const next = selected
+                          ? list.filter((x) => x.toLowerCase() !== label.toLowerCase())
+                          : [...list.filter((x) => x.toLowerCase() !== label.toLowerCase()), label];
                         updateField('interested_in', next.join(', '));
                       }}
                       className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
@@ -422,7 +438,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                       <InterestChipV2
                         label={label}
                         icon={<Icon className="size-3.5" />}
-                        variant="dark"
+                        variant="default"
                         selected={selected}
                         className="cursor-pointer"
                       />
@@ -433,18 +449,20 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {parseInterestsList(profile.interested_in)
-                .filter((label) => !PRESET_INTERESTS.some((p) => p.label === label))
+                .filter((label) => !PRESET_INTERESTS.some((p) => p.label.toLowerCase() === label.toLowerCase()))
                 .map((label) => (
                   <button
                     key={label}
                     type="button"
                     onClick={() => {
-                      const list = parseInterestsList(profile.interested_in).filter((x) => x !== label);
+                      const list = parseInterestsList(profile.interested_in).filter(
+                        (x) => x.toLowerCase() !== label.toLowerCase(),
+                      );
                       updateField('interested_in', list.join(', '));
                     }}
                     className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
                   >
-                    <InterestChipV2 label={label} variant="dark" selected className="cursor-pointer" />
+                    <InterestChipV2 label={label} variant="default" selected className="cursor-pointer" />
                   </button>
                 ))}
             </div>
@@ -458,7 +476,8 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
                   const input = (e.target as HTMLInputElement).value.trim();
                   if (input) {
                     const list = parseInterestsList(profile.interested_in);
-                    if (!list.includes(input)) updateField('interested_in', [...list, input].join(', '));
+                    const exists = list.some((x) => x.toLowerCase() === input.toLowerCase());
+                    if (!exists) updateField('interested_in', [...list, input].join(', '));
                     (e.target as HTMLInputElement).value = '';
                   }
                 }

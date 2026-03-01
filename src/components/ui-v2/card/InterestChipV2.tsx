@@ -5,16 +5,20 @@ export interface InterestChipV2Props extends React.HTMLAttributes<HTMLSpanElemen
   label: string;
   icon?: React.ReactNode;
   variant?: "default" | "dark";
+  /** Visual “selected” state (e.g. in ProfileEditor); not passed to DOM */
+  selected?: boolean;
 }
 
 const InterestChipV2 = React.forwardRef<HTMLSpanElement, InterestChipV2Props>(
-  ({ className, label, icon, variant = "default", ...props }, ref) => (
+  ({ className, label, icon, variant = "default", selected, ...props }, ref) => (
     <span
       ref={ref}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
         variant === "default" && "border-border bg-muted/80 text-foreground",
         variant === "dark" && "border-white/20 bg-white/10 text-white",
+        selected && variant === "dark" && "border-white/50 bg-white/20",
+        selected && variant === "default" && "border-primary/50 bg-primary/10 text-primary",
         className,
       )}
       {...props}

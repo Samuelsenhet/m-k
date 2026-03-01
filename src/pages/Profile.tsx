@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useNavigate, useLocation, useLoaderData } from 'react-router-dom';
-import type { ProfileLoaderData } from '@/routes';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -33,8 +32,12 @@ interface PersonalityResultRow {
 const SETTINGS_SUBPAGES = ['/terms', '/privacy', '/reporting', '/about', '/report', '/report-history', '/appeal', '/admin/reports'];
 
 export default function Profile() {
-  const loaderData = useLoaderData() as ProfileLoaderData | undefined;
-  const initialProfile = loaderData?.profileData ?? null;
+  // Profile data is fetched below when user is present (no data router in use)
+  const initialProfile: {
+    displayName: string | null;
+    archetype: string | null;
+    isModerator: boolean;
+  } | null = null;
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,6 +46,7 @@ export default function Profile() {
   const [archetype, setArchetype] = useState<string | null>(initialProfile?.archetype ?? null);
   const [displayName, setDisplayName] = useState<string | null>(initialProfile?.displayName ?? null);
   const [isEditing, setIsEditing] = useState(false);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -475,12 +479,13 @@ export default function Profile() {
                 <X className="w-5 h-5" />
               </ButtonIcon>
             </div>
-            <ProfileEditor onComplete={() => setIsEditing(false)} />
+            <ProfileEditor onComplete={() => { setIsEditing(false); setProfileRefreshKey((k) => k + 1); }} />
           </div>
         ) : (
           <div className={SCREEN_CONTAINER_CLASS}>
             <div className="space-y-6">
               <ProfileView
+                key={profileRefreshKey}
                 onEdit={() => setIsEditing(true)}
                 archetype={archetype}
                 onSettings={() => setSettingsOpen(true)}

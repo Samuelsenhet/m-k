@@ -2,10 +2,10 @@ import * as React from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
 import { Dot } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { COLORS } from "@/design/tokens";
 
 /**
- * V2 OTP input – token-based styling, keyboard navigation supported by input-otp.
+ * V2 OTP input – same look as standard Input (rounded-md, border, ring on focus).
+ * Keyboard navigation via input-otp.
  */
 const InputOTPV2 = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
@@ -13,7 +13,10 @@ const InputOTPV2 = React.forwardRef<
 >(({ className, containerClassName, ...props }, ref) => (
   <OTPInput
     ref={ref}
-    containerClassName={cn("flex items-center gap-2 has-[:disabled]:opacity-50", containerClassName)}
+    containerClassName={cn(
+      "relative flex w-full h-10 items-center rounded-md border border-input bg-background px-3 py-2 ring-offset-background has-[:focus]:outline-none has-[:focus]:ring-2 has-[:focus]:ring-ring has-[:focus]:ring-offset-2 has-[:disabled]:opacity-50",
+      containerClassName,
+    )}
     className={cn("disabled:cursor-not-allowed", className)}
     aria-label="Verifieringskod"
     {...props}
@@ -23,7 +26,14 @@ InputOTPV2.displayName = "InputOTPV2";
 
 const InputOTPV2Group = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex items-center", className)} {...props} />
+    <div
+      ref={ref}
+      className={cn(
+        "flex w-full h-full items-center justify-center gap-1 min-w-0",
+        className,
+      )}
+      {...props}
+    />
   ),
 );
 InputOTPV2Group.displayName = "InputOTPV2Group";
@@ -51,16 +61,11 @@ const InputOTPV2Slot = React.forwardRef<HTMLDivElement, InputOTPV2SlotProps>(
       <div
         ref={ref}
         className={cn(
-          "relative flex w-12 h-14 items-center justify-center border-y border-r border-input bg-background text-sm text-center transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-          "focus-within:z-10 focus-within:ring-2 focus-within:ring-[color:var(--otp-ring)] focus-within:ring-offset-2",
-          isActive && "z-10 ring-2 ring-[color:var(--otp-ring)] ring-offset-2",
+          "relative flex flex-1 min-w-0 items-center justify-center text-base font-medium text-foreground text-center md:text-sm",
+          "focus-within:z-10 focus-within:outline-none",
           className,
         )}
-        style={{
-          ["--otp-ring" as string]: COLORS.primary[400],
-          borderColor: COLORS.sage[200],
-          ...(slotStyle as React.CSSProperties),
-        }}
+        style={slotStyle as React.CSSProperties}
         {...rest}
       >
         {display}

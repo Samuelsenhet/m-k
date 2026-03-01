@@ -72,6 +72,7 @@
     "loading_error_check_login": "Kunde inte hämta matchningar. Kontrollera att du är inloggad.",
     "error_title": "Vi har problem att hämta matchningar just nu",
     "error_reassure": "Det blev lite fel – jag försöker igen",
+    "until_ready": "till dina matchningar är redo",
     "must_be_logged_in": "Du måste vara inloggad för att se matchningar",
     "auth_verify_failed": "Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund.",
     "server_error": "Tjänsten svarar inte just nu. Kontrollera att du är inloggad och försök igen – eller vänta en stund.",
@@ -258,6 +259,7 @@
     "relation_ta_reda_pa": "Ta reda på min relationstyp",
     "interests_title": "Intressen",
     "interests_placeholder": "t.ex. konst, resor, matlagning, träning...",
+    "interests_empty": "Lägg till intressen",
     "prev_photo": "Föregående foto",
     "next_photo": "Nästa foto"
   },
