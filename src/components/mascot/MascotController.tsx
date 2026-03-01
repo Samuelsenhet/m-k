@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
+import { CardV2 } from "@/components/ui-v2";
 
 /** Demo: pick a mascot token and see the asset. Replaces pose/expression with token-based system. */
 export const MascotController = () => {
@@ -16,9 +16,9 @@ export const MascotController = () => {
 
   return (
     <div className="flex flex-col items-center gap-6 p-8">
-      <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10">
+      <CardV2 padding="lg" className="bg-gradient-to-br from-primary/5 to-primary/10">
         <Mascot token={token} size="hero" placement="center" />
-      </Card>
+      </CardV2>
 
       <div className="flex gap-4 flex-wrap justify-center">
         <div className="flex flex-col gap-2">

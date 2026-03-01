@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
 import { MapPin, User, Pencil, ChevronUp, Settings } from 'lucide-react';
@@ -15,6 +15,7 @@ import {
   ArchetypeBadge,
   InterestChipV2,
 } from '@/components/ui-v2';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
@@ -86,9 +87,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
   const [photos, setPhotos] = useState<PhotoSlot[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [matchCount, setMatchCount] = useState(0);
   const [showFullInfo, setShowFullInfo] = useState(false);
-  const sheetTouchStartY = useRef<number>(0);
 
   const archetypeInfo = archetype ? ARCHETYPE_INFO[archetype as ArchetypeCode] : null;
   const profileEmptyMascot = useMascot(MASCOT_SCREEN_STATES.PROFILE_EMPTY);
@@ -97,7 +96,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
     if (!user) return;
 
     const profileKey = await getProfilesAuthKey(user.id);
-    const [profileRes, photosRes, matchesRes] = await Promise.all([
+    const [profileRes, photosRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('display_name, bio, date_of_birth, hometown, country, work, height, interested_in, instagram, linkedin, id_verification_status, education, gender, dating_intention, dating_intention_extra, relationship_type, relationship_type_extra')
@@ -108,11 +107,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
         .select('*')
         .eq('user_id', user.id)
         .order('display_order'),
-      supabase
-        .from('matches')
-        .select('id', { count: 'exact' })
-        .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
-        .eq('status', 'mutual')
     ]);
 
     try {
@@ -124,9 +118,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
       }
       if (photosRes.data) {
         setPhotos(photosRes.data.filter(p => p.storage_path));
-      }
-      if (matchesRes.count !== null) {
-        setMatchCount(matchesRes.count);
       }
     } catch (error) {
       if (import.meta.env.DEV) console.error('Error fetching profile:', error);
@@ -219,18 +210,18 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
         </button>
       </div>
 
-      {/* Hero: profile image 3:4 */}
-      <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
+      {/* Hero: profile image – fixed height, face visible */}
+      <div className="relative w-full min-h-[20rem] h-80">
         {photos.length > 0 ? (
           <>
             <img
               src={getPublicUrl(photos[currentPhotoIndex].storage_path)}
               alt={profile?.display_name || 'Profilfoto'}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
             />
             {photos.length > 1 && (
               <>
-                <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
+                <div className="absolute bottom-8 left-4 right-4 flex gap-1 z-10">
                   {photos.map((_, index) => (
                     <div
                       key={index}
@@ -260,7 +251,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
       </div>
 
       {/* Content on warm-dark: use primary-foreground for legibility */}
-      <div className="p-4 pb-8 space-y-4 text-primary-foreground">
+      <div className="pt-6 p-4 pb-8 space-y-4 text-primary-foreground">
         <div className="flex flex-wrap items-baseline gap-2">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             {profile?.display_name || 'Ingen namn'}
@@ -279,7 +270,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
         )}
         <div className="flex flex-wrap items-center gap-3 text-sm text-primary-foreground/80">
           {profile?.id_verification_status === 'approved' && <span>Verifierad</span>}
-          {matchCount > 0 && <span>{matchCount} {matchCount === 1 ? 'match' : 'matcher'}</span>}
         </div>
         {profile?.bio ? (
           <section>
@@ -319,37 +309,19 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
           </ButtonPrimary>
           <button
             type="button"
-            onClick={() => setShowFullInfo(!showFullInfo)}
+            onClick={() => setShowFullInfo(true)}
             className="w-full flex items-center justify-center gap-2 py-2.5 text-primary-foreground/80 hover:text-primary-foreground transition-colors rounded-md border border-primary-foreground/20 hover:bg-primary-foreground/10"
           >
-            <ChevronUp className={cn('w-5 h-5 shrink-0 transition-transform', showFullInfo && 'rotate-180')} />
-            <span className="text-sm font-medium">{showFullInfo ? 'Dölj' : 'Visa mer'}</span>
+            <ChevronUp className="w-5 h-5 shrink-0" />
+            <span className="text-sm font-medium">Visa mer</span>
           </button>
         </div>
       </div>
 
-      {/* Scrollable Info Section - Expandable (Visa mer) */}
-      {showFullInfo && (
-        <div
-          className="absolute bottom-0 left-0 right-0 z-30 bg-card border-t border-border rounded-t-3xl max-h-[70vh] overflow-y-auto overflow-x-hidden animate-slide-up overscroll-contain shadow-elevation-2"
-          style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
-        >
+      {/* Visa mer – Sheet from bottom */}
+      <Sheet open={showFullInfo} onOpenChange={setShowFullInfo}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl">
           <div className="p-6 space-y-6 pb-safe-bottom">
-            <div
-              className="flex justify-center pt-2 pb-4 cursor-grab active:cursor-grabbing touch-manipulation"
-              onClick={() => setShowFullInfo(false)}
-              onTouchStart={(e) => { sheetTouchStartY.current = e.touches[0].clientY; }}
-              onTouchEnd={(e) => {
-                const endY = e.changedTouches[0].clientY;
-                if (endY - sheetTouchStartY.current > 50) setShowFullInfo(false);
-              }}
-              role="button"
-              tabIndex={0}
-              aria-label="Dra ner för att stänga"
-              onKeyDown={(e) => e.key === 'Enter' && setShowFullInfo(false)}
-            >
-              <div className="w-12 h-1 bg-muted-foreground/40 rounded-full pointer-events-none" />
-            </div>
             {profile?.bio && (
               <div>
                 <h2 className="text-xl font-bold text-foreground mb-2">Om mig</h2>
@@ -539,8 +511,8 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
               {t('profile.edit_profile')}
             </ButtonPrimary>
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

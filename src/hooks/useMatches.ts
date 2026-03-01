@@ -40,6 +40,17 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+/** Detect Edge Function / non-2xx so we can show a friendly server_error message. */
+function isEdgeFunctionError(err: unknown): boolean {
+  if (typeof err === "object" && err !== null) {
+    const status = (err as { status?: number }).status;
+    if (typeof status === "number" && status >= 400) return true;
+    const msg = String((err as { message?: string }).message ?? "");
+    if (/edge function|functions\.invoke|non-2xx/i.test(msg)) return true;
+  }
+  return false;
+}
+
 import type { MatchDailyMatch } from "@/types/api";
 const mapMatch = (m: MatchDailyMatch): Match => ({
   id: m.match_id,
@@ -67,6 +78,7 @@ export function useMatches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 5;
@@ -85,6 +97,7 @@ export function useMatches() {
 
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
     setMatches([]);
     setNextCursor(null);
     setHasMore(true);
@@ -128,9 +141,15 @@ export function useMatches() {
       if (import.meta.env.DEV) {
         console.error("Error fetching matches:", err);
       }
-      const msg = getErrorMessage(err, "Kunde inte hämta matchningar. Kontrollera att du är inloggad.");
       const is401 = typeof err === "object" && err !== null && "status" in (err as { status?: number }) && (err as { status: number }).status === 401;
-      setError(is401 ? "Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund." : msg);
+      if (is401) {
+        setError("Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund.");
+      } else if (isEdgeFunctionError(err)) {
+        setError("server_error");
+      } else {
+        setError(getErrorMessage(err, "Kunde inte hämta matchningar. Kontrollera att du är inloggad."));
+      }
+      setErrorDetail(err instanceof Error ? err.message : String(err));
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -320,6 +339,7 @@ export function useMatches() {
     matches,
     loading,
     error,
+    errorDetail,
     refreshMatches: fetchMatches,
     fetchMoreMatches,
     hasMore,

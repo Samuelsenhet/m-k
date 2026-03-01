@@ -13,6 +13,7 @@
     "sending": "Sending...",
     "verifying": "Verifying...",
     "save_changes": "Save changes",
+    "profile": "Profile",
     "online_now_full": "There are {{count}} users online right now",
     "online_now_short": "{{count}} online right now",
     "online_badge": "{{count}} online"
@@ -24,6 +25,9 @@
   },
   "landing": {
     "users_seeking_love": "Already {{count}} Swedes seeking love here"
+  },
+  "maak": {
+    "intro": "MÄÄK is Sweden's smartest dating app with AI-driven personality matching. We help singles find someone who truly fits based on personality, values and communication."
   },
   "auth": {
     "phoneTitle": "Enter your phone number",
@@ -49,6 +53,8 @@
   },
   "matches": {
     "title": "Today's matches",
+    "server_error": "The service is not responding right now.",
+    "server_error_reassure": "Try again in a moment or contact support.",
     "noMatches": "No matches today",
     "expiresIn": "Expires in",
     "like": "Like",

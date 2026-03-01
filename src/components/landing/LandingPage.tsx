@@ -3,8 +3,15 @@ import { Brain, Shield, Heart, MessageCircle, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/useAuth';
-import { ButtonPrimary, ButtonSecondary, ButtonGhost } from '@/components/ui-v2';
+import { ButtonPrimary, ButtonGhost } from '@/components/ui-v2';
 import { COLORS, FONTS } from '@/design/tokens';
+import { SCREEN_CONTAINER_CLASS, SCREEN_CONTENT_WIDTH_CLASS } from '@/layout/screenLayout';
+import { useTranslation } from 'react-i18next';
+import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface LandingPageProps {
   onStart?: () => void;
@@ -13,6 +20,9 @@ interface LandingPageProps {
 export const LandingPage = ({ onStart }: LandingPageProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const onlineCount = useOnlineCount(user?.id);
+  const landingMascot = useMascot(MASCOT_SCREEN_STATES.LANDING_HERO);
 
   const handleStart = () => {
     if (user) navigate('/onboarding');
@@ -32,7 +42,7 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       }}
     >
       {/* Header */}
-      <nav className="flex justify-between items-center py-5 px-4 relative z-10" aria-label="Huvudnavigation">
+      <nav className={`flex justify-between items-center py-5 relative z-10 ${SCREEN_CONTENT_WIDTH_CLASS}`} aria-label="Huvudnavigation">
         <Logo size={48} />
         <div className="flex items-center gap-1.5">
           {user ? (
@@ -62,17 +72,23 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
       </nav>
 
       {/* Hero – floating card mockup */}
-      <div className="relative pt-4 px-6 pb-8">
-        <div className="relative mx-auto w-64 h-80 mb-8">
+      <div className={`relative pt-4 pb-6 ${SCREEN_CONTAINER_CLASS}`}>
+        <div className="relative mx-auto w-72">
           {/* Background cards */}
           <div
-            className="absolute top-6 -left-6 w-44 h-56 rounded-3xl rotate-[-12deg] opacity-60"
+            className="absolute top-6 -left-4 w-48 h-64 rounded-3xl rotate-[-12deg] opacity-50"
             style={{ background: COLORS.coral[100] }}
+            aria-hidden
           />
           <div
-            className="absolute top-8 -right-4 w-44 h-56 rounded-3xl rotate-[8deg] opacity-60"
+            className="absolute top-8 -right-2 w-48 h-64 rounded-3xl rotate-[8deg] opacity-50"
             style={{ background: COLORS.primary[100] }}
+            aria-hidden
           />
+          {/* Left overlay: circle only (no bubble) */}
+          <div className="absolute top-4 left-0 z-20" aria-hidden>
+            <div className="w-11 h-11 rounded-full border-2 border-white shadow-lg flex items-center justify-center overflow-hidden bg-muted" />
+          </div>
 
           {/* Main card */}
           <div
@@ -138,9 +154,10 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         </div>
       </div>
 
-      {/* Title */}
-      <div className="text-center px-6 mb-8">
+      {/* Title + landing mascot */}
+      <div className={`text-center mb-8 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
         <h1
+          id="landing-heading"
           className="text-3xl font-bold mb-3"
           style={{
             fontFamily: FONTS.serif,
@@ -160,13 +177,18 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             matchar din själ
           </span>
         </h1>
-        <p style={{ color: COLORS.neutral.slate }}>
-          Glöm ytliga swipes. MÄÄK matchar dig baserat på personlighet.
+        {landingMascot.shouldShow && (
+          <div className="flex justify-center my-4">
+            <Mascot {...landingMascot} />
+          </div>
+        )}
+        <p className="whitespace-pre-line" style={{ color: COLORS.neutral.slate }}>
+          {t('maak.intro')}
         </p>
       </div>
 
       {/* Features */}
-      <div className="flex justify-center gap-6 px-6 mb-10">
+      <div className={`flex justify-center gap-6 mb-10 ${SCREEN_CONTENT_WIDTH_CLASS}`} role="list" aria-label="Fördelar">
         {[
           { icon: Brain, label: 'Personlighets-', sub: 'matchning' },
           { icon: Shield, label: 'Säker &', sub: 'verifierad' },
@@ -189,24 +211,33 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         ))}
       </div>
 
+      {/* Online-räkning – diskret */}
+      {hasValidSupabaseConfig && (
+        <p
+          className={`text-center text-sm tabular-nums mb-6 ${SCREEN_CONTENT_WIDTH_CLASS}`}
+          style={{ color: COLORS.neutral.slate }}
+          role="status"
+          aria-live="polite"
+        >
+          {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
+        </p>
+      )}
+
       {/* Buttons */}
-      <div className="px-6 space-y-3 mb-6">
+      <div className={`space-y-3 mb-6 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
         <ButtonPrimary fullWidth size="lg" onClick={handleStart}>
           Kom igång gratis
         </ButtonPrimary>
-        <ButtonSecondary fullWidth size="lg" onClick={handleLogin}>
-          Jag har redan ett konto
-        </ButtonSecondary>
       </div>
 
       {/* Terms */}
-      <p className="text-center text-xs px-6 pb-8" style={{ color: COLORS.neutral.gray }}>
+      <p className={`text-center text-xs pb-8 ${SCREEN_CONTENT_WIDTH_CLASS}`} style={{ color: COLORS.neutral.gray }}>
         Genom att fortsätta godkänner du våra{' '}
         <Link to="/terms" className="font-medium underline" style={{ color: COLORS.primary[600] }}>
           Användarvillkor
         </Link>{' '}
         och{' '}
-        <Link to="/privacy" className="font-medium underline" style={{ color: COLORS.primary[600] }}>
+        <Link to="/terms#integritet" className="font-medium underline" style={{ color: COLORS.primary[600] }}>
           Integritetspolicy
         </Link>
       </p>

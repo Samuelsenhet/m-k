@@ -13,6 +13,7 @@
     "sending": "Skickar...",
     "verifying": "Verifierar...",
     "save_changes": "Spara ändringar",
+    "profile": "Profil",
     "online_now_full": "Just nu är det {{count}} användare online",
     "online_now_short": "Just nu är {{count}} online",
     "online_badge": "{{count}} online"
@@ -24,6 +25,9 @@
   },
   "landing": {
     "users_seeking_love": "Redan {{count}} svenskar söker kärlek här"
+  },
+  "maak": {
+    "intro": "MÄÄK är Sveriges smartaste dejtingapp med AI-driven personlighetsmatchning. Vi hjälper singlar att hitta någon som verkligen passar utifrån personlighet, värderingar och kommunikation."
   },
   "auth": {
     "phoneTitle": "Ange ditt telefonnummer",
@@ -49,6 +53,8 @@
   },
   "matches": {
     "title": "Dagens matchningar",
+    "server_error": "Tjänsten svarar inte just nu.",
+    "server_error_reassure": "Försök igen om en stund eller kontakta support.",
     "noMatches": "Inga matchningar idag",
     "expiresIn": "Löper ut om",
     "like": "Gilla",

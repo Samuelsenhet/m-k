@@ -44,6 +44,7 @@ export default function Profile() {
   const [verifyIdOpen, setVerifyIdOpen] = useState(false);
   const [privacyManageOpen, setPrivacyManageOpen] = useState(false);
   const [isModerator, setIsModerator] = useState<boolean | null>(null);
+  const onlineCount = useOnlineCount(user?.id ?? undefined);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -188,6 +189,11 @@ export default function Profile() {
           </SheetHeader>
           <ScrollArea className="flex-1 min-h-0 max-h-[70vh] w-full">
             <div className="px-6 py-4 space-y-4">
+              {hasValidSupabaseConfig && (
+                <p className="text-sm text-muted-foreground tabular-nums" role="status" aria-live="polite">
+                  {t('common.online_now_full', { count: onlineCount.toLocaleString('sv-SE') })}
+                </p>
+              )}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{t('settings.account')}</CardTitle>

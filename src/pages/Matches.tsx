@@ -24,6 +24,7 @@ import {
   CardV2Content,
   MatchCelebration,
 } from '@/components/ui-v2';
+import { MatchesErrorState } from '@/components/matches/MatchesErrorState';
 import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
@@ -65,7 +66,7 @@ const getCategoryBadgeClass = (category: string) => {
 export default function Matches() {
   const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  const { matches, loading, error, refreshMatches, passMatch } = useMatches();
+  const { matches, loading, error, errorDetail, refreshMatches, passMatch } = useMatches();
   const { status: matchStatus, isLoading: statusLoading } = useMatchStatus();
   const achievementsCtx = useAchievementsContextOptional();
   const navigate = useNavigate();
@@ -115,28 +116,17 @@ export default function Matches() {
     );
   }
 
-  // Honest error state: backend failed (e.g. 401) – do not show happy empty state
+  // Honest error state: backend failed (e.g. 401 / Edge) – friendly message, technical detail only in DEV
   if (error) {
+    const message = error === 'server_error' ? t('matches.server_error') : error;
     return (
-      <>
-        <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-6 pb-24">
-          <CardV2 className="w-full max-w-md border border-destructive/50 bg-destructive/10">
-            <CardV2Content className="p-6 text-center space-y-4">
-              <p className="font-semibold text-destructive">
-                Vi har problem att hämta matchningar just nu
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {error}
-              </p>
-              <ButtonPrimary onClick={() => refreshMatches()} fullWidth className="gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Försök igen
-              </ButtonPrimary>
-            </CardV2Content>
-          </CardV2>
-        </div>
-        <BottomNav />
-      </>
+      <MatchesErrorState
+        message={message}
+        reassure={t('matches.server_error_reassure', 'Försök igen om en stund eller kontakta support.')}
+        detail={import.meta.env.DEV ? errorDetail ?? undefined : undefined}
+        retryLabel={t('common.retry')}
+        onRetry={() => refreshMatches()}
+      />
     );
   }
 
