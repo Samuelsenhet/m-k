@@ -33,7 +33,6 @@
     "ios:build": "npm run build && npx cap sync ios",
     "ios:sync": "npx cap sync ios",
     "ios:open": "npx cap open ios",
-    "ios:eas-build": "eas build --platform ios",
     "vercel:env": "npx vercel env add VITE_SUPABASE_URL production && npx vercel env add VITE_SUPABASE_PUBLISHABLE_KEY production && npx vercel env add VITE_SUPABASE_PROJECT_ID production"
   },
   "dependencies": {
@@ -109,6 +108,9 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
+  },
   "devDependencies": {
     "@cspell/dict-sv": "^2.3.2",
     "@eslint/js": "^9.32.0",
@@ -129,8 +131,6 @@
     "jsdom": "^25.0.0",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
-    "sharp": "^0.34.5",
-    "expo": "^52.0.0",
     "supabase": "^2.76.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

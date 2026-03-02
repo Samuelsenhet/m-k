@@ -18,7 +18,7 @@ Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor
 **Config:** See `src/config/supabase.ts` for `isSupabaseConfigured` and `isDemoEnabled`. **Important:** Open **this folder** in Cursor (File → Open Folder → select the `m-k` project root). Run `npm run dev` from here so the app finds your `.env` file. If you open a different copy of the repo (e.g. a worktree), `.env` won’t be there and login won’t work.
 
 1. Clone the repo.
-2. **Node.js:** Använd Node 22 (projektet kräver `>=22.0.0`). Med nvm: `nvm install 22 && nvm use` (`.nvmrc` finns). För EAS (`eas build`, `eas device:create`) kräver Expo/React Native Node **≥20.19.4** – uppgradera om du ser `EBADENGINE` eller `ConfigError`.
+2. **Node.js:** Använd Node 22 (projektet kräver `>=22.0.0`). Med nvm: `nvm install 22 && nvm use` (`.nvmrc` finns).
 3. Copy `.env.example` to `.env` and add your Supabase and Twilio credentials (see [Supabase Dashboard](https://supabase.com/dashboard)).
 4. Install dependencies: `npm install`
 5. **Supabase one-time setup**
@@ -104,7 +104,7 @@ src/
 
 ## Deployment (iOS)
 
-Appen levereras som **iOS-app** via **EAS**. Bygg webb och synka till iOS med `npm run ios:build`. Bygg i molnet med `npm run ios:eas-build` (eller `eas build --platform ios`). Registrera enheter för internal distribution med `eas device:create` (kräver `npm i -g eas-cli`). Xcode lokalt är valfritt: `npm run ios:open`. För valfri webbdeploy (Vercel): konfigurera `VITE_SUPABASE_*` och `npm run vercel:env` vid behov.
+Appen levereras som **iOS-app** via **Capacitor**. Bygg webb och synka till iOS med `npm run ios:build`; öppna i Xcode med `npm run ios:open`. För valfri webbdeploy (Vercel): konfigurera `VITE_SUPABASE_*` och `npm run vercel:env` vid behov.
 
 ## Editing the code
 

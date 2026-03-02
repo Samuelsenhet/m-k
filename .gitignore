@@ -40,7 +40,11 @@ credentials.json
 
 # Capacitor
 android/
-ios/
+# Capacitor iOS (ios/ can be generated with npx cap add ios)
+ios/Pods/
+ios/App/Pods/
+ios/App/build/
+ios/**/xcuserdata/
 
 # MCP/Tool configs (may contain secrets)
 .roo/
