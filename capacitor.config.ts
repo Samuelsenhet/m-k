@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'se.maakapp.maak',
+  appId: 'com.samuelsenhet.maak',
   appName: 'MÄÄK',
   webDir: 'dist',
   plugins: {
