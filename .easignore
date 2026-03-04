@@ -1,0 +1,22 @@
+# EAS Build tarball exclusions (smaller upload).
+# When present, EAS uses this instead of .gitignore for the project tarball.
+# See: https://docs.expo.dev/build-reference/vcs/#uploading-the-project
+
+node_modules
+.git
+dist
+dist-ssr
+*.log
+logs
+.expo/
+docs/
+.cursor/
+.roo/
+*.local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
