@@ -1,33 +1,42 @@
 {
   "cli": {
-    "version": ">= 18.0.6",
+    "version": ">= 18.1.0",
     "appVersionSource": "remote"
   },
   "build": {
+    "e2e-test": {
+      "withoutCredentials": true,
+      "ios": {
+        "simulator": true,
+        "config": "capacitor-ios.yml"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "22.12.0",
+      "environment": "development",
+      "ios": { "config": "capacitor-ios.yml" }
+    },
+    "development-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
       "ios": {
-        "config": "capacitor-ios.yml",
-        "applicationArchivePath": "ios/App/build/App.ipa"
+        "simulator": true,
+        "config": "capacitor-ios.yml"
       }
     },
     "preview": {
       "distribution": "internal",
-      "node": "22.12.0",
-      "ios": {
-        "config": "capacitor-ios.yml",
-        "applicationArchivePath": "ios/App/build/App.ipa"
-      }
+      "environment": "preview",
+      "ios": { "config": "capacitor-ios.yml" }
     },
     "production": {
       "autoIncrement": true,
-      "node": "22.12.0",
-      "ios": {
-        "config": "capacitor-ios.yml",
-        "applicationArchivePath": "ios/App/build/App.ipa"
-      }
+      "environment": "production",
+      "ios": { "config": "capacitor-ios.yml" }
     }
   },
   "submit": {

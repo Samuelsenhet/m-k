@@ -54,6 +54,9 @@ mcp.json
 *.py
 __pycache__/
 
+# Expo (EAS only; do not commit)
+.expo/
+
 # Misc
 .vercel
 .env*.local

@@ -1,0 +1,6 @@
+# Maestro E2E flow: launch app and assert home screen.
+# appId: iOS bundle identifier (Android would use applicationId from app.json).
+appId: com.samuelsenhet.maak
+---
+- launchApp
+- assertVisible: 'Welcome!'

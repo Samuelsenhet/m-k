@@ -10,9 +10,9 @@ Production-ready mascot implementation for the MÄÄK dating app.
 
 - **Figma:** [MÄÄK-MASCOT](https://www.figma.com/design/KF4TVJwqqTHbddcDklYrAc/M%C3%84%C3%84K-MASCOT)
 - **Workspace:** [docs/mascot-workspace/](mascot-workspace/README.md) – export spec, token map, expressions/scenarios, asset checklist
-- **Backup:** [docs/mascot-workspace-backup/](mascot-workspace-backup/README.md) – when new assets live here, run `npm run mascot:sync-from-backup` to copy them to `public/mascot/`
+- **Backup (källbilder):** [docs/mascot-workspace-backup/](mascot-workspace-backup/README.md) – när nya assets ligger här, kör `npm run mascot:sync-from-backup` för att kopiera till `public/mascot/`
 
-Export from Figma according to the workspace spec; place PNGs in `public/mascot/` with the token names listed there (or in the backup folder and sync with `mascot:sync-from-backup`). Do not use other image sources for mascot visuals.
+Export from Figma according to the workspace spec; place PNGs in `public/mascot/` with the token names in [FIGMA_EXPORT_SPEC.md](mascot-workspace/FIGMA_EXPORT_SPEC.md). You can also put source PNGs in `docs/mascot-workspace/` and run `npm run mascot:sync` to copy them into `public/mascot/` with the correct token names (the sync script maps workspace filenames, including variants and typos like `encauraging.png`, to the app tokens so images display correctly). Do not use other image sources for mascot visuals.
 
 ---
 
@@ -275,6 +275,35 @@ Function > emotion.
 3. Add layout rule in `getMascotLayoutForState` if needed
 4. Add animation in `MASCOT_ANIMATION_MAP`
 5. Use in component: `useMascot(MASCOT_SCREEN_STATES.NEW_STATE)`
+
+---
+
+## 12. Mascot scripts and sharp (development)
+
+Scripts that process mascot assets (`mascot:sprite`, `mascot:clean`, `mascot:fix`, `normalize-mascot.mjs`, `generate-icons.js`, `remove-background.js`) require the **sharp** devDependency. Sharp is not used at runtime or during the app build; it is only used when you run these scripts locally. **EAS Build** installs only production dependencies (`npm ci --omit=dev`), so sharp is never installed on the build worker — build-from-source and the notes below apply only to local development.
+
+### If sharp builds from source
+
+Sharp normally uses prebuilt binaries. If no prebuilt is available for your platform, it may try to build from source. For that you need:
+
+- **C++17 compiler**
+- **node-addon-api** version 7+
+- **node-gyp** version 9+ and its dependencies
+
+If `node-addon-api` or `node-gyp` cannot be found:
+
+```sh
+npm install --save-dev node-addon-api node-gyp
+```
+
+### Environment variables
+
+- **`SHARP_IGNORE_GLOBAL_LIBVIPS=1`** — Never use a globally installed libvips; use only sharp’s prebuilt binaries.
+- **`SHARP_FORCE_GLOBAL_LIBVIPS=1`** — Always try to use system libvips (even if missing or outdated).
+
+### Cross-compiling
+
+Use the `--platform`, `--arch`, and `--libc` npm flags (or `npm_config_platform`, `npm_config_arch`, `npm_config_libc` environment variables) to configure the target environment.
 
 ---
 

@@ -1,12 +1,12 @@
-name: Create Production Builds
+name: Create Preview Builds
 
 on:
   push:
-    branches: ['main']
+    branches: ['develop']
 
 jobs:
   build_ios:
     type: build
     params:
       platform: ios
-      profile: production
+      profile: preview

@@ -1,0 +1,26 @@
+# Create development builds with EAS Workflows.
+# Development builds include Expo dev tools and run on device, emulator, or simulator.
+# Run: eas workflow:run .eas/workflows/create-development-builds.yml
+# See: https://docs.expo.dev/build-reference/eas-workflows/#create-development-builds
+
+name: Create development builds
+
+jobs:
+  android_development_build:
+    name: Build Android
+    type: build
+    params:
+      platform: android
+      profile: development
+  ios_device_development_build:
+    name: Build iOS device
+    type: build
+    params:
+      platform: ios
+      profile: development
+  ios_simulator_development_build:
+    name: Build iOS simulator
+    type: build
+    params:
+      platform: ios
+      profile: development-simulator

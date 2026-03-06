@@ -92,6 +92,7 @@ Fix any errors before pushing.
 
 - **Vercel:** Push to the connected branch, or run `vercel --prod` after `vercel link`.
 - After changing env vars, trigger a **Redeploy** so the new values are used.
+- For iOS app builds, see [IOS_EAS_BUILD.md](IOS_EAS_BUILD.md).
 
 ---
 

@@ -20,6 +20,7 @@
 | **Deploy (Vercel, domän)** | [DEPLOY.md](DEPLOY.md), [VERCEL_SETUP.md](VERCEL_SETUP.md), [DOMAIN_SETUP.md](DOMAIN_SETUP.md) |
 | **iOS build (EAS)** | [IOS_EAS_BUILD.md](IOS_EAS_BUILD.md) |
 | **Första iOS-build (EAS)** | [EAS_FIRST_IOS_BUILD.md](EAS_FIRST_IOS_BUILD.md) |
+| **EAS-miljövariabler** | [EAS_ENVIRONMENT_VARIABLES.md](EAS_ENVIRONMENT_VARIABLES.md) |
 | **Setup (ny utvecklare)** | [setup/SETUP_INSTRUCTIONS.md](setup/SETUP_INSTRUCTIONS.md), [PRE_DEV_CHECKLIST.md](PRE_DEV_CHECKLIST.md) |
 | **Full pass före deploy** | [FULL_PASS_BEFORE_DEPLOY.md](FULL_PASS_BEFORE_DEPLOY.md) |
 
@@ -41,6 +42,7 @@
 - **DEPLOY.md**, **VERCEL_SETUP.md**, **DOMAIN_SETUP.md** – Deploy och domän.
 - **IOS_EAS_BUILD.md** – iOS build on EAS (Capacitor, custom config, local and remote steps).
 - **EAS_FIRST_IOS_BUILD.md** – Första iOS-builden med EAS (prerequisites, login, köra build, installera).
+- **EAS_ENVIRONMENT_VARIABLES.md** – Hantera miljövariabler för EAS Build (skapa, visibility, användning i byggen).
 
 ### Verifiering och kvalitet
 - **VERIFICATION_CHECKLIST.md** – Manuell verifiering (US-017–US-029).

@@ -1,48 +1,6 @@
 # Asset checklist – public/mascot/
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
-image.png
 
-After exporting from Figma, ensure these files exist in `public/mascot/`.
+After exporting from Figma, ensure these files exist in `public/mascot/`.  
 
 ## Required PNGs (one per token)
 

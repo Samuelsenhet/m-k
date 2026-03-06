@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./config/vitest.setup.ts'],
+    setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
   },
   resolve: {
     alias: {

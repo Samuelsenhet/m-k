@@ -26,11 +26,11 @@ On the EAS build worker, the pipeline is defined in [.eas/build/capacitor-ios.ym
 
 1. **Checkout** – Clone the repository.
 2. **NPM token** – Create **.npmrc** if `NPM_TOKEN` is set (for private packages).
-3. **Install node modules** – `npm install` in the project root.
+3. **Install node modules** – `npm ci --omit=dev` (production deps only; no devDependencies like sharp).
 4. **Remove Expo/React Native (first pass)** – So the iOS app links only to Capacitor; then `npm prune`.
 5. **Resolve build config** – EAS resolves the build configuration.
 6. **Remove Expo/RN (second pass)** – Again before cap sync.
-7. **Build web and sync to iOS** – Runs `npm run ios:build` (Vite build + `npx cap sync ios`).
+7. **Build web and sync to iOS** – Runs `npm run build`, then if **ios/App/Podfile** is missing runs `npx cap add ios`, then `npx cap sync ios`. So the iOS project can be generated on the worker if not committed.
 8. **Remove Expo/RN (third pass)** – Again before pod install.
 9. **Pod install** – In **ios/App**: optionally prepend `use_modular_headers!` to the Podfile if missing (for Capacitor static library), then `pod install`.
 10. **Configure iOS credentials** – Create keychain, import distribution certificate, write provisioning profile to **~/Library/MobileDevice/Provisioning Profiles**.
@@ -57,22 +57,64 @@ eas build --platform ios
 
 When prompted, choose a profile:
 
-| Profile       | Use case                          | Notes                                      |
-|---------------|------------------------------------|--------------------------------------------|
-| development   | Internal dev client                | `distribution: internal`, dev client       |
-| preview       | Internal testing                  | `distribution: internal`                   |
-| production    | App Store / TestFlight            | `autoIncrement: true`, production signing  |
+| Profile                | Use case                          | Notes                                      |
+|------------------------|------------------------------------|--------------------------------------------|
+| development            | Internal dev client (device)       | `distribution: internal`, dev client     |
+| development-simulator  | iOS Simulator only                 | `simulator: true`, no device signing        |
+| preview                | Internal testing                  | `distribution: internal`                   |
+| production             | App Store / TestFlight            | `autoIncrement: true`, production signing  |
 
-All profiles use the same iOS config: **capacitor-ios.yml** (see [eas.json](../eas.json)).
+All profiles use the same iOS config: **capacitor-ios.yml** in `.eas/build/` (see [eas.json](../eas.json)). **Always pass a profile** when building (e.g. `eas build --platform ios --profile production`) so EAS uses this custom config instead of the default install step.
+
+### Development builds via EAS Workflows
+
+To create development builds for all platforms (Android, iOS device, iOS simulator) in one go, run the workflow:
+
+```sh
+eas workflow:run .eas/workflows/create-development-builds.yml
+```
+
+This runs three build jobs in parallel: Android (`development`), iOS device (`development`), and iOS simulator (`development-simulator`). See [Create development builds with EAS Workflows](https://docs.expo.dev/build-reference/eas-workflows/#create-development-builds).
+
+---
+
+## Troubleshooting
+
+### "npm ci --include=dev exited with non-zero code: 1"
+
+This means EAS ran the **default** install step (with devDependencies) instead of the custom config. Fix:
+
+1. **Use an explicit profile** so the custom config is used:  
+   `eas build --platform ios --profile production` (or `preview` / `development`). Do not rely on the default when prompted.
+2. **Check eas.json** – Each profile must have `"ios": { "config": "capacitor-ios.yml" }`. The custom config runs `npm ci --omit=dev` (no sharp/devDependencies).
+3. **If you still see the error** – Ensure **package-lock.json** is committed and in sync (`npm install` locally, then commit). Use Node 22 (see `.nvmrc`).
 
 ---
 
 ## Config reference
 
-- **[eas.json](../eas.json)** – `build.<profile>.ios.config` is set to `"capacitor-ios.yml"` for development, preview, and production.
+For the full **eas.json** schema and options, see [Configuration with eas.json](https://docs.expo.dev/build/eas-json/) in the Expo docs.
+
+- **[eas.json](../eas.json)** – `build.<profile>.ios.config` is set to `"capacitor-ios.yml"` for development, preview, and production (file in `.eas/build/`). Each profile also sets `environment` (development / preview / production) for EAS env handling.
 - **[.eas/build/capacitor-ios.yml](../.eas/build/capacitor-ios.yml)** – Full custom pipeline (checkout, install, remove Expo/RN, ios:build, pod install, credentials, Gymfile template, Fastlane, artifact upload).
 
 The artifact path (e.g. default **ios/build/App.ipa**) can be overridden in **eas.json** with `build.<profile>.ios.applicationArchivePath` if needed; this project does not set it.
+
+---
+
+## EAS Workflows
+
+Workflows live in **.eas/workflows/** and automate builds (and optionally submit). This project uses an iOS-only production workflow.
+
+- **Run the production workflow from the CLI:**  
+  `npx eas-cli@latest workflow:run create-production-builds.yml`  
+  This starts a production iOS build (same outcome as `eas build --platform ios --profile production`).
+
+- **GitHub trigger:** The production workflow is configured with `on: push: branches: ['main']`. To run it automatically on push to `main`, link your GitHub repo in your project’s [EAS GitHub settings](https://expo.dev/accounts/[account]/projects/[projectName]/github) (install the Expo GitHub app, then select the repo). After that, pushes to `main` will trigger the workflow; you can see runs on the project’s [workflows page](https://expo.dev/accounts/[account]/projects/[projectName]/workflows).
+
+- **Preview builds:** A separate workflow **create-preview-builds.yml** runs iOS builds with `profile: preview` (internal distribution), optionally on push to another branch (e.g. `develop`). Run it with `npx eas-cli@latest workflow:run create-preview-builds.yml`.
+
+For workflow syntax and more triggers, see [EAS Workflows](https://docs.expo.dev/eas/workflows/introduction/) and [Workflow syntax](https://docs.expo.dev/eas/workflows/syntax/) in the Expo docs.
 
 ---
 

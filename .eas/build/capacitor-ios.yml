@@ -1,29 +1,66 @@
 # EAS custom build for Capacitor iOS (no expo prebuild).
 # Builds Vite app, syncs to ios/ with cap sync, then builds with Fastlane.
 # Capacitor project lives at ios/App/App.xcodeproj, scheme "App".
+# Node 22 is required by Capacitor CLI; EAS default image may use Node 20.
 build:
   name: Capacitor iOS
   steps:
     - eas/checkout
     - eas/use_npm_token
-    - eas/install_node_modules
+    - run:
+        name: Use Node 22 (Capacitor CLI requirement)
+        command: |
+          export NVM_DIR="$HOME/.nvm"
+          if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          else
+            . "$NVM_DIR/nvm.sh"
+          fi
+          nvm install 22
+          nvm use 22
+          nvm alias default 22
+          node -v
+          npm -v
+    # Production deps only: avoids sharp (dev-only, mascot scripts) on EAS; SHARP_* prevents build-from-source if ever used
+    - run:
+        name: Install production dependencies only
+        command: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
+          export SHARP_IGNORE_GLOBAL_LIBVIPS=1
+          npm ci --omit=dev
     - run:
         name: Remove Expo/React Native so iOS links only Capacitor
         command: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
           rm -rf node_modules/expo node_modules/react-native node_modules/@react-native node_modules/expo-* node_modules/@expo 2>/dev/null || true
           npm prune
     - eas/resolve_build_config
     - run:
         name: Ensure no Expo/RN before cap sync (second pass)
         command: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
           rm -rf node_modules/expo node_modules/react-native node_modules/@react-native node_modules/expo-* node_modules/@expo 2>/dev/null || true
           npm prune 2>/dev/null || true
     - run:
         name: Build web and sync to iOS
-        command: npm run ios:build
+        command: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
+          npm run build
+          if [ ! -f ios/App/Podfile ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
     - run:
         name: Remove Expo/RN again before pod install (third pass)
         command: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
           rm -rf node_modules/expo node_modules/react-native node_modules/@react-native node_modules/expo-* node_modules/@expo 2>/dev/null || true
           npm prune 2>/dev/null || true
     - run:
@@ -38,12 +75,12 @@ build:
     - eas/configure_ios_version
     - eas/generate_gymfile_from_template:
         inputs:
-          credentials: ${ eas.job.secrets.buildCredentials }
+          credentials: ${eas.job.secrets.buildCredentials}
           extra:
             SCHEME: App
           template: |
             suppress_xcode_output(true)
-            project("App/App.xcodeproj")
+            project("ios/App/App.xcodeproj")
             clean(<%- CLEAN %>)
             scheme("<%- SCHEME %>")
             <% if (BUILD_CONFIGURATION) { %>

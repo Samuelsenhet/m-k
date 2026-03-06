@@ -12,7 +12,7 @@
  * After sync, if any AI token was updated, run: npm run mascot:sprite
  */
 
-import { readdirSync, copyFileSync, existsSync, statSync, writeFileSync } from "fs";
+import { readdirSync, copyFileSync, existsSync, statSync, writeFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -27,17 +27,27 @@ function normalizeName(basename) {
   return basename.replace(/#/g, "-");
 }
 
-/** Token → list of workspace filenames (first existing wins). */
+/** Core token → list of workspace filenames (first existing wins). */
 const TOKEN_TO_SOURCE = {
-  mascot_calm_idle: ["calm#1.png", "calm#2.png"],
+  mascot_calm_idle: ["calm#1.png", "calm#2.png", "calm.png"],
   mascot_ai_listening: ["listening.png"],
-  mascot_ai_thinking: ["thinking#1.png", "thinking#2.png"],
-  mascot_ai_open_hand: ["ai-assistant.png", "explains#1.png"],
+  mascot_ai_thinking: ["thinking#1.png", "thinking#2.png", "thinking.png"],
+  mascot_ai_open_hand: ["ai-assistant.png", "explains#1.png", "explains#2.png", "explains#3.png", "explains#4.png"],
   mascot_ai_tiny_sparkle: ["celebrates-gently.png"],
-  mascot_waiting_tea: ["waiting.png", "loading.png"],
-  mascot_planting_seed: ["empty-matches#2.png"],
-  mascot_practicing_mirror: ["no-chats.png"],
-  mascot_lighting_lantern: ["first-match.png", "new-match.png"],
+  mascot_waiting_tea: ["waiting.png", "waiting#2.png", "waiting#3.png", "loading.png", "chat-waiting.png"],
+  mascot_planting_seed: ["empty-matches#2.png", "empty-matches.png", "emply-states.png", "empry-matches.png"],
+  mascot_practicing_mirror: ["no-chats.png", "no-chats#2.png"],
+  mascot_lighting_lantern: ["first-match.png", "new-match.png", "view-match.png"],
+};
+
+/** Extra tokens (STATE_TOKEN_MAP): app filename → workspace candidates (typos / variants). */
+const EXTRA_TOKEN_TO_SOURCE = {
+  onboarding: ["onboarding.png"],
+  teaches: ["teaches.png"],
+  icon: ["icon.png"],
+  social: ["social.png", "social#2.png"],
+  encouraging: ["encouraging.png", "encauraging.png", "encouranging#2.png"],
+  reassures: ["reassures.png"],
 };
 
 const AI_TOKENS = new Set([
@@ -51,6 +61,9 @@ function main() {
   if (!existsSync(WORKSPACE_DIR) || !statSync(WORKSPACE_DIR).isDirectory()) {
     console.error("Workspace not found:", WORKSPACE_DIR);
     process.exit(1);
+  }
+  if (!existsSync(PUBLIC_MASCOT)) {
+    mkdirSync(PUBLIC_MASCOT, { recursive: true });
   }
 
   const allPngs = readdirSync(WORKSPACE_DIR).filter((f) => f.toLowerCase().endsWith(".png"));
@@ -70,11 +83,23 @@ function main() {
     const srcPath = join(WORKSPACE_DIR, sourceFile);
     const destPath = join(PUBLIC_MASCOT, `${token}.png`);
     copyFileSync(srcPath, destPath);
-    copied.push({ token, from: sourceFile });
+    copied.push({ token: `${token}.png`, from: sourceFile });
     if (AI_TOKENS.has(token)) aiUpdated = true;
   }
 
   const extraNames = [];
+
+  for (const [destToken, candidates] of Object.entries(EXTRA_TOKEN_TO_SOURCE)) {
+    const sourceFile = candidates.find((f) => workspaceSet.has(f));
+    if (!sourceFile) continue;
+    usedSources.add(sourceFile);
+    const srcPath = join(WORKSPACE_DIR, sourceFile);
+    const destPath = join(PUBLIC_MASCOT, `${destToken}.png`);
+    copyFileSync(srcPath, destPath);
+    copied.push({ token: `${destToken}.png`, from: sourceFile });
+    if (!extraNames.includes(destToken)) extraNames.push(destToken);
+  }
+
   for (const file of allPngs) {
     if (usedSources.has(file)) continue;
     const normalized = normalizeName(file.replace(/\.png$/i, ""));
@@ -82,7 +107,7 @@ function main() {
     const destPath = join(PUBLIC_MASCOT, `${normalized}.png`);
     copyFileSync(srcPath, destPath);
     copied.push({ token: `${normalized}.png`, from: file });
-    extraNames.push(normalized);
+    if (!extraNames.includes(normalized)) extraNames.push(normalized);
   }
   extraNames.sort();
   writeFileSync(EXTRA_IMAGES_JSON, JSON.stringify(extraNames, null, 2) + "\n", "utf8");

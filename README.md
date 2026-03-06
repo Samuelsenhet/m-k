@@ -36,13 +36,15 @@ Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor
 | `npm run preview` | Preview production build       |
 | `npm run lint`    | ESLint + spellcheck            |
 | **iOS (EAS)**     |                                |
-| `npm run ios:build` | Bygg webb + synka till `ios/` (cap sync) |
-| `npm run ios:sync`  | Synka `dist/` till iOS-projekt |
-| `npm run ios:open` | Öppna iOS-projektet i Xcode (valfritt) |
+| `npm run ios:build` | Bygg webb + synka till `ios/` (cap sync). **Kör detta efter `npx cap add ios`** om du får "web assets directory (./dist) must contain an index.html". |
+| `npm run ios:sync`  | Synka `dist/` till iOS-projekt (kräver att `npm run build` redan körts) |
+| `npm run ios:open` | Öppna iOS-projektet i Xcode (öppnar `ios/App/App.xcodeproj`; använd inte `.xcworkspace` – den finns inte i denna setup) |
 | `npm run ios:eas-build` | Bygg iOS i molnet (EAS Build) |
 | `eas device:create` | Registrera enhet för internal distribution (kör efter `npm i -g eas-cli`) |
 
 **Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
+
+**Mascot scripts** (`mascot:sprite`, `mascot:clean`, `mascot:fix`, etc.) require the **sharp** devDependency. If sharp builds from source on your machine, see [docs/mascot-system.md](docs/mascot-system.md) §12 (build-from-source, env vars, cross-compile).
 
 ## Deployment
 

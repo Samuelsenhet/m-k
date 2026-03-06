@@ -75,7 +75,7 @@ export default function EmailTemplatesManager() {
     } else {
       const { error } = await supabase.from('email_templates').insert(payload);
       if (error) {
-        console.error('Error inserting template:', error);
+        if (import.meta.env.DEV) console.error('Error inserting template:', error);
         return;
       }
     }
