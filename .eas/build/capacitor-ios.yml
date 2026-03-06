@@ -64,13 +64,17 @@ build:
           rm -rf node_modules/expo node_modules/react-native node_modules/@react-native node_modules/expo-* node_modules/@expo 2>/dev/null || true
           npm prune 2>/dev/null || true
     - run:
-        name: Fix Podfile for Capacitor static library (modular headers)
+        name: Fix Podfile for Capacitor static library (modular headers) or skip if SPM
         working_directory: ios/App
         command: |
-          if [ -f Podfile ] && ! grep -q "use_modular_headers" Podfile; then
-            echo "use_modular_headers!" | cat - Podfile > Podfile.tmp && mv Podfile.tmp Podfile
+          if [ -f Podfile ]; then
+            if ! grep -q "use_modular_headers" Podfile; then
+              echo "use_modular_headers!" | cat - Podfile > Podfile.tmp && mv Podfile.tmp Podfile
+            fi
+            pod install
+          else
+            echo "No Podfile (Capacitor may use Swift Package Manager); skipping pod install"
           fi
-          pod install
     - eas/configure_ios_credentials
     - eas/configure_ios_version
     - eas/generate_gymfile_from_template:

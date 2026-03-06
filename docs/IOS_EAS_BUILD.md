@@ -4,6 +4,24 @@ This page describes how the iOS app is built on EAS Build in this project. Use i
 
 This project uses a **custom** EAS build config (Capacitor + Vite, no Expo prebuild). The steps below reflect that setup. For the standard Expo iOS flow, see [EAS Build – iOS build process](https://docs.expo.dev/build-reference/ios-builds/) in the Expo docs.
 
+## Standard EAS iOS process (reference)
+
+In the default EAS iOS flow (when no custom build config is used):
+
+- **Local:** Commit check (if `requireCommit`), prepare credentials (local **credentials.json** or EAS), bare-project check if applicable, create tarball, upload to S3 and send build request.
+- **Remote:** New macOS VM; download and unpack tarball; create **.npmrc** if `NPM_TOKEN` set; run `eas-build-pre-install` if defined; run **`npm install`** (or `yarn install`); run `npx expo-doctor`; restore credentials (keychain, distribution certificate, provisioning profile); for **managed** projects run `npx expo prebuild`; restore cache; run **`pod install`** in **ios/**; `eas-build-post-install`; update Xcode with profile ID; create **Gymfile** if missing (default); run `fastlane gym`; cache; upload artifacts; optional `eas-build-on-success` / `eas-build-on-error` / `eas-build-on-complete`.
+
+Full details: [EAS Build – iOS build process](https://docs.expo.dev/build-reference/ios-builds/).
+
+## How this project differs
+
+- **Custom config:** All iOS profiles use [.eas/build/capacitor-ios.yml](.eas/build/capacitor-ios.yml); the standard default steps are replaced by this file.
+- **Install:** `npm ci --omit=dev` (not `npm install`); no devDependencies (avoids sharp on EAS).
+- **No Expo prebuild:** We use an existing Capacitor **ios/** (or generate with `cap add ios` on the worker); no `npx expo prebuild`.
+- **Node:** Explicit Node 22 via nvm on the worker (Capacitor CLI requirement).
+- **Gymfile:** Generated from the custom config template (project **ios/App/App.xcodeproj**, scheme **App**); we do not commit **ios/Gymfile**.
+- **Pod install:** Runs only if **ios/App/Podfile** exists (Capacitor 8 SPM may omit it); optional `use_modular_headers!` fix before `pod install`.
+
 ---
 
 ## Local steps (EAS CLI)
@@ -64,7 +82,7 @@ When prompted, choose a profile:
 | preview                | Internal testing                  | `distribution: internal`                   |
 | production             | App Store / TestFlight            | `autoIncrement: true`, production signing  |
 
-All profiles use the same iOS config: **capacitor-ios.yml** in `.eas/build/` (see [eas.json](../eas.json)). **Always pass a profile** when building (e.g. `eas build --platform ios --profile production`) so EAS uses this custom config instead of the default install step.
+All profiles use the same iOS config: **capacitor-ios.yml** in `.eas/build/` (see [eas.json](../eas.json)). If you omit the `--profile` flag, EAS CLI defaults to the profile named **production** (if it exists). To be explicit, use e.g. `eas build --platform ios --profile production`.
 
 ### Development builds via EAS Workflows
 
