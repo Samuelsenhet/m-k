@@ -8,7 +8,8 @@
       "withoutCredentials": true,
       "ios": {
         "simulator": true,
-        "config": "capacitor-ios.yml"
+        "config": "capacitor-ios.yml",
+        "scheme": "App"
       },
       "android": {
         "buildType": "apk"
@@ -18,25 +19,26 @@
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
-      "ios": { "config": "capacitor-ios.yml" }
+      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     },
     "development-simulator": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
         "simulator": true,
-        "config": "capacitor-ios.yml"
+        "config": "capacitor-ios.yml",
+        "scheme": "App"
       }
     },
     "preview": {
       "distribution": "internal",
       "environment": "preview",
-      "ios": { "config": "capacitor-ios.yml" }
+      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     },
     "production": {
       "autoIncrement": true,
       "environment": "production",
-      "ios": { "config": "capacitor-ios.yml" }
+      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     }
   },
   "submit": {
