@@ -46,8 +46,15 @@ class AppDelegate: ExpoAppDelegate {
     continue userActivity: NSUserActivity,
     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
   ) -> Bool {
-    let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
+    var invoked = false
+    let wrappedHandler: ([UIUserActivityRestoring]?) -> Void = { restorables in
+      guard !invoked else { return }
+      invoked = true
+      restorationHandler(restorables)
+    }
+    let rctResult = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: wrappedHandler)
+    let superResult = super.application(application, continue: userActivity, restorationHandler: wrappedHandler)
+    return superResult || rctResult
   }
 }
 

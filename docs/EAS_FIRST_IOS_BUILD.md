@@ -86,5 +86,7 @@ If the build fails, check the logs on the build details page and refer to [IOS_E
 ## Next steps
 
 - [IOS_EAS_BUILD.md](IOS_EAS_BUILD.md) – Local and remote build steps, config reference, differences from standard EAS iOS.
+- [EAS_UPLOAD_AND_CREDENTIALS.md](EAS_UPLOAD_AND_CREDENTIALS.md) – What gets uploaded to EAS, `requireCommit`, sensitive files, and .easignore.
+- [EAS_ENVIRONMENT_VARIABLES.md](EAS_ENVIRONMENT_VARIABLES.md) – How to set and use env vars for EAS builds.
 - [Configuration with eas.json](https://docs.expo.dev/build/eas-json/) – Build profiles and options.
 - [EAS Submit](https://docs.expo.dev/submit/introduction/) – Submit builds to the App Store.

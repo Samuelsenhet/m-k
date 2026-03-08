@@ -59,6 +59,8 @@ __pycache__/
 
 # Brownfield iOS build temporary backup (Capacitor ios/ while prebuild runs)
 ios.capacitor.backup/
+# General iOS backup / archive
+ios.backup/
 
 # Misc
 .vercel

@@ -184,11 +184,11 @@ open class ExpoBrownfieldAppDelegate: UIResponder, UIApplicationDelegate {
 #endif
 
   open func application(_ application: UIApplication, didUpdate userActivity: NSUserActivity) {
-    return ExpoAppDelegateSubscriberManager.application(application, didUpdate: userActivity)
+    ExpoAppDelegateSubscriberManager.application(application, didUpdate: userActivity)
   }
 
   open func application(_ application: UIApplication, didFailToContinueUserActivityWithType userActivityType: String, error: Error) {
-    return ExpoAppDelegateSubscriberManager.application(application, didFailToContinueUserActivityWithType: userActivityType, error: error)
+    ExpoAppDelegateSubscriberManager.application(application, didFailToContinueUserActivityWithType: userActivityType, error: error)
   }
 
 #if os(iOS)

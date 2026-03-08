@@ -72,10 +72,12 @@ public class ReactNativeHostManager {
 
   /**
    * Cleans up the previous instance of React Native
-   * to prevent memory leaks
+   * to prevent memory leaks.
+   * Uses KVC on private _reactHost; may break if React Native internals change.
    */
   public func cleanupPreviousInstance() {
     if let rootViewFactory = reactNativeFactory?.rootViewFactory {
+      guard rootViewFactory.responds(to: NSSelectorFromString("setValue:forKey:")) else { return }
       rootViewFactory.setValue(nil, forKey: "_reactHost")
       reactNativeDelegate = nil
       reactNativeFactory = nil
@@ -94,7 +96,7 @@ public class ReactNativeHostManager {
 
     // Needed to set up delegates (e.g. for expo-dev-menu)
     reactNativeFactory.startReactNative(
-      withModuleName: "main",
+      withModuleName: moduleName,
       in: nil,
       launchOptions: nil
     )

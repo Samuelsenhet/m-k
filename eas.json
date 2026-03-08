@@ -1,7 +1,8 @@
 {
   "cli": {
     "version": ">= 18.1.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "requireCommit": true
   },
   "build": {
     "e2e-test": {
@@ -9,8 +10,7 @@
       "ios": {
         "simulator": true,
         "config": "capacitor-ios.yml",
-        "scheme": "App",
-        "projectPath": "ios/App"
+        "scheme": "App"
       },
       "android": {
         "buildType": "apk"
@@ -20,7 +20,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
-      "ios": { "config": "capacitor-ios.yml", "scheme": "App", "projectPath": "ios/App" }
+      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     },
     "development-simulator": {
       "developmentClient": true,
@@ -28,19 +28,18 @@
       "ios": {
         "simulator": true,
         "config": "capacitor-ios.yml",
-        "scheme": "App",
-        "projectPath": "ios/App"
+        "scheme": "App"
       }
     },
     "preview": {
       "distribution": "internal",
       "environment": "preview",
-      "ios": { "config": "capacitor-ios.yml", "scheme": "App", "projectPath": "ios/App" }
+      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     },
     "production": {
       "autoIncrement": true,
       "environment": "production",
-      "ios": { "config": "capacitor-ios.yml", "scheme": "App", "projectPath": "ios/App" }
+      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     }
   },
   "submit": {

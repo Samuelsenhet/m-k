@@ -58,15 +58,15 @@
       <string>_expo._tcp</string>
     </array>
     <key>NSCameraUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your camera</string>
+    <string>Used to capture photos for profiles and scan QR codes.</string>
     <key>NSContactsUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your contacts</string>
+    <string>Used to import and share contacts for inviting friends.</string>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
+    <string>Used by Expo Dev Launcher to discover local development servers during debugging.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>Used to record audio for voice messages and video capture.</string>
     <key>NSMotionUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your device motion</string>
+    <string>Used to detect device motion for activity tracking and UI gestures.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

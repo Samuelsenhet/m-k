@@ -5,6 +5,7 @@ public class ReactNativeViewController: UIViewController {
   private let moduleName: String
   private let initialProps: [AnyHashable: Any]?
   private let launchOptions: [AnyHashable: Any]?
+  private var savedGestureStates: (Bool?, [(UIGestureRecognizer, Bool)])?
 
   @objc
   public init(
@@ -37,6 +38,22 @@ public class ReactNativeViewController: UIViewController {
       print(
         "Please make sure ReactNativeHostManager.shared.initialize() has been called prior to using the view controller"
       )
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        let label = UILabel()
+        label.text = "Kunde inte ladda vyn. Kontrollera att ReactNativeHostManager.shared.initialize() anropats."
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        self.view = UIView()
+        self.view?.backgroundColor = .systemBackground
+        self.view?.addSubview(label)
+        NSLayoutConstraint.activate([
+          label.leadingAnchor.constraint(equalTo: self.view!.leadingAnchor, constant: 24),
+          label.trailingAnchor.constraint(equalTo: self.view!.trailingAnchor, constant: -24),
+          label.centerYAnchor.constraint(equalTo: self.view!.centerYAnchor),
+        ])
+      }
     }
 
     NotificationCenter.default.addObserver(
@@ -69,17 +86,32 @@ public class ReactNativeViewController: UIViewController {
     }
 
     DispatchQueue.main.async { [weak self] in
-      self?.navigationController?.interactivePopGestureRecognizer?.isEnabled = enabled
-      self?.navigationController?.view?.gestureRecognizers?.forEach { gesture in
-        if gesture === self?.navigationController?.interactivePopGestureRecognizer {
-          return
-        }
-
-        if gesture is UIScreenEdgePanGestureRecognizer
-          || gesture is UIPanGestureRecognizer {
+      guard let self else { return }
+      let nav = self.navigationController
+      let prevPop = nav?.interactivePopGestureRecognizer?.isEnabled
+      let recognizers = nav?.view?.gestureRecognizers ?? []
+      let prevStates: [(UIGestureRecognizer, Bool)] = recognizers.compactMap { r in
+        (r === nav?.interactivePopGestureRecognizer) ? nil : (r, r.isEnabled)
+      }
+      self.savedGestureStates = (prevPop, prevStates)
+      nav?.interactivePopGestureRecognizer?.isEnabled = enabled
+      recognizers.forEach { gesture in
+        if gesture !== nav?.interactivePopGestureRecognizer,
+           gesture is UIScreenEdgePanGestureRecognizer || gesture is UIPanGestureRecognizer {
           gesture.isEnabled = enabled
         }
       }
+    }
+  }
+
+  override public func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    if let (popEnabled, recognizerStates) = savedGestureStates {
+      navigationController?.interactivePopGestureRecognizer?.isEnabled = popEnabled ?? true
+      for (recognizer, enabled) in recognizerStates {
+        recognizer.isEnabled = enabled
+      }
+      savedGestureStates = nil
     }
   }
 }
