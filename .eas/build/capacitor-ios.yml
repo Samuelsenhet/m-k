@@ -146,7 +146,8 @@ build:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
           npm run build
-          if [ ! -f ios/App/Podfile ]; then
+          # Only run "cap add ios" if the native iOS project is missing (e.g. first-time). If ios/App exists (committed), skip add to avoid "ios platform already exists".
+          if [ ! -d ios/App ] || [ ! -f ios/App/App.xcodeproj/project.pbxproj ]; then
             npx cap add ios
           fi
           npx cap sync ios
