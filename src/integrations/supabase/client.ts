@@ -3,12 +3,18 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Get environment variables (support both current and legacy names)
-const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID || '';
-const SUPABASE_URL_ENV = import.meta.env.VITE_SUPABASE_URL || '';
+// Get environment variables: Vite (import.meta.env) or Expo/Metro (process.env)
+const getEnv = (viteKey: string, expoKey: string): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env as Record<string, string>)[viteKey]) {
+    return (import.meta.env as Record<string, string>)[viteKey];
+  }
+  return (typeof process !== 'undefined' && process.env && (process.env as Record<string, string>)[expoKey]) || '';
+};
+const SUPABASE_PROJECT_ID = getEnv('VITE_SUPABASE_PROJECT_ID', 'EXPO_PUBLIC_SUPABASE_PROJECT_ID') || '';
+const SUPABASE_URL_ENV = getEnv('VITE_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL') || '';
 const SUPABASE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  getEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ||
+  getEnv('VITE_SUPABASE_ANON_KEY', 'EXPO_PUBLIC_SUPABASE_ANON_KEY') ||
   '';
 
 // Construct Supabase URL from project ID if URL is not provided
@@ -48,7 +54,8 @@ const isValidKey = SUPABASE_PUBLISHABLE_KEY &&
   !SUPABASE_PUBLISHABLE_KEY.includes('your-anon') &&
   !SUPABASE_PUBLISHABLE_KEY.includes('placeholder');
 
-if (import.meta.env.DEV && (!isValidUrl || !isValidKey)) {
+const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV !== false || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development');
+if (isDev && (!isValidUrl || !isValidKey)) {
   const missing = [];
   if (!isValidUrl) missing.push('VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID');
   if (!isValidKey) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY');
@@ -66,7 +73,7 @@ export const hasValidSupabaseConfig = hasValidConfig;
 // Export the URL for use in other parts of the app
 export const SUPABASE_URL_EXPORT = SUPABASE_URL;
 
-if (import.meta.env.DEV && !hasValidConfig) {
+if (isDev && !hasValidConfig) {
   console.warn(
     '[MÄÄK] Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env. Demo: /demo-seed.'
   );
@@ -76,6 +83,17 @@ if (import.meta.env.DEV && !hasValidConfig) {
 const urlForClient = hasValidConfig ? SUPABASE_URL : 'https://placeholder.supabase.co';
 const keyForClient = hasValidConfig ? SUPABASE_PUBLISHABLE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder';
 
+// Auth storage: use localStorage on web/Capacitor; in Expo Go (React Native) use in-memory fallback
+const memoryStorage: Record<string, string> = {};
+const authStorage =
+  typeof localStorage !== 'undefined'
+    ? localStorage
+    : {
+        getItem: (key: string) => (key in memoryStorage ? memoryStorage[key] : null),
+        setItem: (key: string, value: string) => { memoryStorage[key] = value; },
+        removeItem: (key: string) => { delete memoryStorage[key]; },
+      };
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
@@ -84,7 +102,7 @@ export const supabase = createClient<Database>(
   keyForClient,
   {
     auth: {
-      storage: localStorage,
+      storage: authStorage,
       persistSession: true,
       autoRefreshToken: true,
     }

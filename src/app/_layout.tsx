@@ -13,6 +13,7 @@ import { AuthProvider } from "@/contexts/AuthProvider";
 import { ConsentProvider } from "@/contexts/ConsentProvider";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
+import { Platform } from "react-native";
 
 const queryClient = new QueryClient();
 
@@ -20,9 +21,13 @@ const queryClient = new QueryClient();
 const isVercelEnabled =
   typeof window !== "undefined" && !(window as { Capacitor?: unknown }).Capacitor;
 
+/** HelmetProvider is web-only; skip in Expo Go / React Native to avoid document errors. */
+const WrapWithHelmet = ({ children }: { children: React.ReactNode }) =>
+  Platform.OS === "web" ? <HelmetProvider>{children}</HelmetProvider> : <>{children}</>;
+
 export default function RootLayout() {
   return (
-    <HelmetProvider>
+    <WrapWithHelmet>
       <QueryClientProvider client={queryClient}>
         <ConsentProvider>
           <AuthProvider>
@@ -40,6 +45,6 @@ export default function RootLayout() {
           </AuthProvider>
         </ConsentProvider>
       </QueryClientProvider>
-    </HelmetProvider>
+    </WrapWithHelmet>
   );
 }

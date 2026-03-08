@@ -1,5 +1,6 @@
 {
   "name": "MÄÄK",
+  "slug": "maak",
   "scheme": "maak",
   "web": {
     "output": "single"
