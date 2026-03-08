@@ -21,6 +21,20 @@
   "owner": "samuelsenhet",
   "plugins": [
     "expo-router",
-    "expo-brownfield"
+    [
+      "expo-brownfield",
+      {
+        "ios": {
+          "targetName": "MaakBrownfield",
+          "bundleIdentifier": "com.samuelsenhet.maak.brownfield"
+        },
+        "android": {
+          "libraryName": "maakbrownfield",
+          "group": "com.samuelsenhet",
+          "package": "com.samuelsenhet.maak.brownfield",
+          "version": "1.0.0"
+        }
+      }
+    ]
   ]
 }

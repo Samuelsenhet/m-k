@@ -98,6 +98,22 @@ This runs three build jobs in parallel: Android (`development`), iOS device (`de
 
 ## Troubleshooting
 
+### Why can Android succeed but iOS fail?
+
+Android and iOS use **different build pipelines** in this project:
+
+- **Android:** Uses the **default** EAS build (no `config` override in **eas.json**). Steps: checkout → `npm install` (or similar) → optional `expo-doctor` → Gradle build. No custom YAML.
+- **iOS:** Uses the **custom** config [.eas/build/capacitor-ios.yml](.eas/build/capacitor-ios.yml). Steps: checkout → Node 22 → `npm ci --omit=dev` → remove Expo/RN → build web + `cap sync ios` → scheme creation → pod install → credentials → Fastlane. **expo-doctor is not run** in this pipeline.
+
+So a successful Android build and a failed iOS build usually mean the failure is **iOS-specific**, for example:
+
+- **Missing ios/App/Podfile** – The custom config runs `npx cap add ios` only if the Podfile is missing; ensure **ios/** is committed or that the worker can create it (Node 22, `cap sync`).
+- **Scheme "App" does not exist** – The shared scheme must reference the **App target** (PBXNativeTarget), not the App group; the YAML uses `awk` to extract the correct BlueprintIdentifier.
+- **Credentials** – iOS needs distribution certificate and provisioning profile; Android uses a different signing path.
+- **Local only:** "Volume out of space" or "Failed to resolve package dependencies" in Xcode – free disk space on your Mac or fix CocoaPods/SPM in **ios/App**.
+
+The **"Request timed out"** from `npx expo-doctor` is a **network timeout** during the Expo config schema check. It does **not** run in the iOS EAS pipeline, so it is not the cause of EAS iOS failures. If you run expo-doctor, run it from the **project root** (m-k); for EAS iOS, check the **build logs** on expo.dev for the actual error.
+
 ### "npm ci --include=dev exited with non-zero code: 1"
 
 This means EAS ran the **default** install step (with devDependencies) instead of the custom config. Fix:

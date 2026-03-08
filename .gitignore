@@ -57,6 +57,9 @@ __pycache__/
 # Expo (EAS only; do not commit)
 .expo/
 
+# Brownfield iOS build temporary backup (Capacitor ios/ while prebuild runs)
+ios.capacitor.backup/
+
 # Misc
 .vercel
 .env*.local
