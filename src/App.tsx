@@ -12,6 +12,10 @@ import { router } from "@/routes";
 
 const queryClient = new QueryClient();
 
+/** Only load Vercel scripts in browser; skip in Capacitor/native WebView to avoid 404s. */
+const isVercelEnabled =
+  typeof window !== "undefined" && !(window as { Capacitor?: unknown }).Capacitor;
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
@@ -20,8 +24,12 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <SpeedInsights />
-            <Analytics />
+            {isVercelEnabled && (
+              <>
+                <SpeedInsights />
+                <Analytics />
+              </>
+            )}
             <RouterProvider router={router} />
           </TooltipProvider>
         </AuthProvider>

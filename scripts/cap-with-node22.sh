@@ -3,6 +3,8 @@
 # Usage: scripts/cap-with-node22.sh <cap-args...>
 # Example: scripts/cap-with-node22.sh sync ios
 set -e
+# Avoid nvm warning when npm was installed globally (e.g. Homebrew /usr/local)
+unset npm_config_prefix 2>/dev/null || true
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 if [[ -s "$NVM_DIR/nvm.sh" ]]; then
   . "$NVM_DIR/nvm.sh"

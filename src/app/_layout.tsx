@@ -16,6 +16,10 @@ import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
+/** Only load Vercel scripts in browser; skip in Capacitor/native WebView to avoid 404s. */
+const isVercelEnabled =
+  typeof window !== "undefined" && !(window as { Capacitor?: unknown }).Capacitor;
+
 export default function RootLayout() {
   return (
     <HelmetProvider>
@@ -25,8 +29,12 @@ export default function RootLayout() {
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <SpeedInsights />
-              <Analytics />
+              {isVercelEnabled && (
+                <>
+                  <SpeedInsights />
+                  <Analytics />
+                </>
+              )}
               <Stack />
             </TooltipProvider>
           </AuthProvider>

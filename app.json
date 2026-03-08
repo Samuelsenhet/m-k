@@ -20,6 +20,7 @@
   },
   "owner": "samuelsenhet",
   "plugins": [
-    "expo-router"
+    "expo-router",
+    "expo-brownfield"
   ]
 }

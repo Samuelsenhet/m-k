@@ -36,11 +36,14 @@ Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor
 | `npm run preview` | Preview production build       |
 | `npm run lint`    | ESLint + spellcheck            |
 | **iOS (EAS)**     |                                |
+| `npm run ios`      | Bygg webb, synka till `ios/` och öppna Xcode (kör sedan Run i Xcode för simulator eller enhet). Om du får "Unable to retrieve simulator list" har du inga iOS-simulatorer – öppna Xcode → Window → Devices and Simulators och lägg till en simulator, eller använd en fysisk enhet. |
 | `npm run ios:build` | Bygg webb + synka till `ios/` (cap sync). **Kör detta efter `npx cap add ios`** om du får "web assets directory (./dist) must contain an index.html". |
 | `npm run ios:sync`  | Synka `dist/` till iOS-projekt (kräver att `npm run build` redan körts) |
 | `npm run ios:open` | Öppna iOS-projektet i Xcode (öppnar `ios/App/App.xcodeproj`; använd inte `.xcworkspace` – den finns inte i denna setup) |
 | `npm run ios:eas-build` | Bygg iOS i molnet (EAS Build) |
 | `eas device:create` | Registrera enhet för internal distribution (kör efter `npm i -g eas-cli`) |
+
+**Do not run `eas build:configure`** – that command is for Expo/React Native projects and expects an AppDelegate. This app uses a custom Capacitor workflow (`.eas/build/capacitor-ios.yml`); EAS is already configured in `eas.json`. See [docs/EAS_FIRST_IOS_BUILD.md](docs/EAS_FIRST_IOS_BUILD.md) or [docs/IOS_EAS_BUILD.md](docs/IOS_EAS_BUILD.md) if present.
 
 **Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
 
