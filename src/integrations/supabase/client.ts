@@ -3,12 +3,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Get environment variables: Vite (import.meta.env) or Expo/Metro (process.env)
+// Get environment variables from process.env only (works in both Vite and Metro/Hermes).
+// Vite build injects VITE_* via define in vite.config; Metro/EAS use EXPO_PUBLIC_*.
 const getEnv = (viteKey: string, expoKey: string): string => {
-  if (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env as Record<string, string>)[viteKey]) {
-    return (import.meta.env as Record<string, string>)[viteKey];
-  }
-  return (typeof process !== 'undefined' && process.env && (process.env as Record<string, string>)[expoKey]) || '';
+  const env = typeof process !== 'undefined' ? process.env : undefined;
+  if (!env) return '';
+  return (env as Record<string, string>)[expoKey] ?? (env as Record<string, string>)[viteKey] ?? '';
 };
 const SUPABASE_PROJECT_ID = getEnv('VITE_SUPABASE_PROJECT_ID', 'EXPO_PUBLIC_SUPABASE_PROJECT_ID') || '';
 const SUPABASE_URL_ENV = getEnv('VITE_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL') || '';
@@ -54,13 +54,7 @@ const isValidKey = SUPABASE_PUBLISHABLE_KEY &&
   !SUPABASE_PUBLISHABLE_KEY.includes('your-anon') &&
   !SUPABASE_PUBLISHABLE_KEY.includes('placeholder');
 
-let isDev = false;
-try {
-  isDev = (typeof import.meta !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV !== false) ||
-    (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development');
-} catch {
-  isDev = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
-}
+const isDev = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
 if (isDev && (!isValidUrl || !isValidKey)) {
   const missing = [];
   if (!isValidUrl) missing.push('VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID');
