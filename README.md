@@ -47,7 +47,7 @@ Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor
 
 **Main app is Capacitor-only.** For embedding the Expo/React Native module in another native app (brownfield), see [docs/BROWNFIELD.md](docs/BROWNFIELD.md). Use `npm run brownfield:build:ios` or `npm run brownfield:build:android` to build the embeddable XCFramework (iOS) or AAR (Android).
 
-**Expo Go:** Du kan köra appen i Expo Go med `npm run expo:start` (eller `npx expo start`), skanna QR-koden och öppna i Expo Go-appen. Sätt i `.env` antingen `VITE_SUPABASE_*` (för Vite) eller `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_SUPABASE_PROJECT_ID` (för Metro/Expo Go). På telefon: använd samma nätverk som datorn eller kör `npx expo start --tunnel`.
+**Expo Go:** Du kan köra appen i Expo Go med `npm run expo:start` (eller `npx expo start`), skanna QR-koden och öppna i Expo Go-appen. Sätt i `.env` antingen `VITE_SUPABASE_*` (för Vite) eller `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_SUPABASE_PROJECT_ID` (för Metro/Expo Go). På telefon: använd samma nätverk som datorn eller kör `npx expo start --tunnel`. **iOS:** Projektet använder SDK 55; Expo Go i App Store är fortfarande SDK 54. Installera Expo Go för SDK 55 via TestFlight: [testflight.apple.com/join/GZJxxfUU](https://testflight.apple.com/join/GZJxxfUU).
 
 **Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
 

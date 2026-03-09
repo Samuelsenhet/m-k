@@ -8,11 +8,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { ConsentProvider } from "@/contexts/ConsentProvider";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Analytics } from "@vercel/analytics/react";
 import { Platform } from "react-native";
 
 const queryClient = new QueryClient();
@@ -21,30 +18,43 @@ const queryClient = new QueryClient();
 const isVercelEnabled =
   typeof window !== "undefined" && !(window as { Capacitor?: unknown }).Capacitor;
 
-/** HelmetProvider is web-only; skip in Expo Go / React Native to avoid document errors. */
-const WrapWithHelmet = ({ children }: { children: React.ReactNode }) =>
-  Platform.OS === "web" ? <HelmetProvider>{children}</HelmetProvider> : <>{children}</>;
+/** Web-only providers: loaded lazily so Metro web bundling doesn't fail on optional deps. */
+function WebOnlyProviders({ children }: { children: React.ReactNode }) {
+  if (Platform.OS !== "web") return <>{children}</>;
+  try {
+    const { HelmetProvider } = require("react-helmet-async");
+    const { SpeedInsights } = require("@vercel/speed-insights/react");
+    const { Analytics } = require("@vercel/analytics/react");
+    return (
+      <HelmetProvider>
+        {children}
+        {isVercelEnabled && (
+          <>
+            <SpeedInsights />
+            <Analytics />
+          </>
+        )}
+      </HelmetProvider>
+    );
+  } catch {
+    return <>{children}</>;
+  }
+}
 
 export default function RootLayout() {
   return (
-    <WrapWithHelmet>
+    <WebOnlyProviders>
       <QueryClientProvider client={queryClient}>
         <ConsentProvider>
           <AuthProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              {isVercelEnabled && (
-                <>
-                  <SpeedInsights />
-                  <Analytics />
-                </>
-              )}
               <Stack />
             </TooltipProvider>
           </AuthProvider>
         </ConsentProvider>
       </QueryClientProvider>
-    </WrapWithHelmet>
+    </WebOnlyProviders>
   );
 }

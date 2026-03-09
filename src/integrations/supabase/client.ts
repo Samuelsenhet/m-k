@@ -54,7 +54,13 @@ const isValidKey = SUPABASE_PUBLISHABLE_KEY &&
   !SUPABASE_PUBLISHABLE_KEY.includes('your-anon') &&
   !SUPABASE_PUBLISHABLE_KEY.includes('placeholder');
 
-const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV !== false || (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development');
+let isDev = false;
+try {
+  isDev = (typeof import.meta !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV !== false) ||
+    (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development');
+} catch {
+  isDev = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
+}
 if (isDev && (!isValidUrl || !isValidKey)) {
   const missing = [];
   if (!isValidUrl) missing.push('VITE_SUPABASE_URL or VITE_SUPABASE_PROJECT_ID');
