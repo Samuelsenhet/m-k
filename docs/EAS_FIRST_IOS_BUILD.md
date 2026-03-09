@@ -57,7 +57,7 @@ When prompted, choose a profile:
 
 | Profile      | Use case                    | Notes                                      |
 |-------------|-----------------------------|--------------------------------------------|
-| development | Internal dev client         | Internal distribution, dev client         |
+| development | Internal (device)           | Internal distribution                      |
 | preview     | Internal testing            | Internal distribution                      |
 | production  | App Store / TestFlight      | Auto-increment build number, store signing |
 

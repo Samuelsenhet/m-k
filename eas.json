@@ -17,14 +17,13 @@
       }
     },
     "development": {
-      "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
       "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
     },
     "development-simulator": {
-      "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "ios": {
         "simulator": true,
         "config": "capacitor-ios.yml",

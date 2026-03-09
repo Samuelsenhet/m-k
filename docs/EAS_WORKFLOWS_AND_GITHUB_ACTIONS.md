@@ -39,6 +39,7 @@ This project uses a **custom Capacitor iOS config** ([.eas/build/capacitor-ios.y
 
 ## References
 
+- [Get started with EAS Workflows](https://docs.expo.dev/eas/workflows/get-started/) – first workflow, run locally, GitHub triggers.
 - [EAS Workflows introduction](https://docs.expo.dev/eas/workflows/introduction/)
 - [EAS Workflows syntax](https://docs.expo.dev/eas/workflows/syntax/)
 - [IOS_EAS_BUILD.md](IOS_EAS_BUILD.md) – iOS build process and workflow CLI usage

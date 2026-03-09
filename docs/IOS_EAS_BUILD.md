@@ -77,7 +77,7 @@ When prompted, choose a profile:
 
 | Profile                | Use case                          | Notes                                      |
 |------------------------|------------------------------------|--------------------------------------------|
-| development            | Internal dev client (device)       | `distribution: internal`, dev client     |
+| development            | Internal (device)                  | `distribution: internal`, no dev client |
 | development-simulator  | iOS Simulator only                 | `simulator: true`, no device signing        |
 | preview                | Internal testing                  | `distribution: internal`                   |
 | production             | App Store / TestFlight            | `autoIncrement: true`, production signing  |
