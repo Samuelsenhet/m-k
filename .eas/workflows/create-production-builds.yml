@@ -10,3 +10,8 @@ jobs:
     params:
       platform: ios
       profile: production
+  build_android:
+    type: build
+    params:
+      platform: android
+      profile: production

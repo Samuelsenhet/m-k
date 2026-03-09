@@ -141,14 +141,14 @@ The artifact path (e.g. default **ios/build/App.ipa**) can be overridden in **ea
 Workflows live in **.eas/workflows/** and automate builds (and optionally submit). This project uses an iOS-only production workflow.
 
 - **Run the production workflow from the CLI:**  
-  `npx eas-cli@latest workflow:run create-production-builds.yml`  
-  This starts a production iOS build (same outcome as `eas build --platform ios --profile production`).
+  `npx eas-cli@latest workflow:run .eas/workflows/create-production-builds.yml`  
+  (The workflow file path is required.) This starts a production iOS + Android build (same outcome as running the build profile for each platform).
 
 - **GitHub trigger:** The production workflow is configured with `on: push: branches: ['main']`. To run it automatically on push to `main`, link your GitHub repo in your project’s [EAS GitHub settings](https://expo.dev/accounts/[account]/projects/[projectName]/github) (install the Expo GitHub app, then select the repo). After that, pushes to `main` will trigger the workflow; you can see runs on the project’s [workflows page](https://expo.dev/accounts/[account]/projects/[projectName]/workflows).
 
-- **Preview builds:** A separate workflow **create-preview-builds.yml** runs iOS builds with `profile: preview` (internal distribution), optionally on push to another branch (e.g. `develop`). Run it with `npx eas-cli@latest workflow:run create-preview-builds.yml`.
+- **Preview builds:** A separate workflow **create-preview-builds.yml** runs iOS + Android builds with `profile: preview` (internal distribution), optionally on push to another branch (e.g. `develop`). Run it with `npx eas-cli@latest workflow:run .eas/workflows/create-preview-builds.yml`.
 
-For workflow syntax and more triggers, see [EAS Workflows](https://docs.expo.dev/eas/workflows/introduction/) and [Workflow syntax](https://docs.expo.dev/eas/workflows/syntax/) in the Expo docs.
+For how EAS Workflows and GitHub Actions fit together (who runs what, Expo GitHub App, optional GHA-triggered workflow), see [EAS_WORKFLOWS_AND_GITHUB_ACTIONS.md](EAS_WORKFLOWS_AND_GITHUB_ACTIONS.md). For workflow syntax and more triggers, see [EAS Workflows](https://docs.expo.dev/eas/workflows/introduction/) and [Workflow syntax](https://docs.expo.dev/eas/workflows/syntax/) in the Expo docs.
 
 ---
 

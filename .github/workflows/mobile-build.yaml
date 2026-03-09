@@ -1,0 +1,77 @@
+# Lint, test, then run EAS Workflow (production builds).
+# Requires GitHub secret EXPO_TOKEN. See docs/EAS_WORKFLOWS_AND_GITHUB_ACTIONS.md.
+name: Lint, test, and EAS production build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint_and_test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+  run_eas_workflow:
+    name: Run EAS Workflow
+    runs-on: ubuntu-latest
+    needs: [lint_and_test]
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Run EAS Workflow (production builds)
+        id: workflow
+        run: |
+          npx eas-cli@latest workflow:run .eas/workflows/create-production-builds.yml --wait --json > "$RUNNER_TEMP/eas-result.json"
+          echo "Workflow finished. Result saved to $RUNNER_TEMP/eas-result.json"
+
+      - name: Parse workflow result
+        run: |
+          FILE="$RUNNER_TEMP/eas-result.json"
+          if [ ! -f "$FILE" ]; then
+            echo "::warning::No result file found."
+            exit 0
+          fi
+          SUCCESS=$(jq -r '.status == "SUCCESS"' "$FILE" 2>/dev/null || echo "false")
+          echo "Workflow status: $(jq -r '.status // "unknown"' "$FILE" 2>/dev/null)"
+          if [ "$SUCCESS" != "true" ]; then
+            echo "::warning::EAS Workflow did not complete with SUCCESS. Check the EAS dashboard for details."
+          fi
+          # Output build URLs if present (job outputs vary by workflow)
+          jq -r '.jobs[]? | select(.outputs.buildUrl?) | .outputs.buildUrl' "$FILE" 2>/dev/null | while read -r url; do
+            [ -n "$url" ] && echo "Build URL: $url"
+          done
