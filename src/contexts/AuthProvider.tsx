@@ -23,7 +23,7 @@ function AuthProvider({ children }: AuthProviderProps) {
       })
       .catch((error) => {
         if (!isMounted) return;
-        if (import.meta.env.DEV) console.error("Failed to retrieve auth session:", error);
+        if (process.env.NODE_ENV === "development") console.error("Failed to retrieve auth session:", error);
         setUser(null);
       })
       .finally(() => {
@@ -66,7 +66,7 @@ function AuthProvider({ children }: AuthProviderProps) {
 
   const signOut: AuthContextType["signOut"] = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error && import.meta.env.DEV) console.error("Error signing out:", error);
+    if (error && process.env.NODE_ENV === "development") console.error("Error signing out:", error);
     return { error };
   };
 

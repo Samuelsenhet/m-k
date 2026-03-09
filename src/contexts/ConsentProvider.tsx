@@ -31,7 +31,7 @@ const ConsentProvider = ({ children }: ConsentProviderProps) => {
           setConsent(parsed);
         }
       } catch (error) {
-        if (import.meta.env.DEV) console.error("Failed to parse consent preferences:", error);
+        if (process.env.NODE_ENV === "development") console.error("Failed to parse consent preferences:", error);
       }
     }
     setIsLoading(false);
