@@ -27,7 +27,7 @@ Preview and production EAS workflows build both **iOS** (custom Capacitor config
 
 ## Fingerprint, build-or-update, and repack
 
-Expo’s article [How to integrate EAS Workflows with GitHub Actions](https://expo.dev/blog) describes:
+Expo’s article [How to integrate EAS Workflows with GitHub Actions](https://expo.dev/blog/how-to-integrate-eas-workflows-with-github-actions) describes:
 
 - **Fingerprint + build or update** – Only run a full native build when native code changed; otherwise publish an EAS Update (JS bundle). Saves time when most commits are JS-only.
 - **Repack for E2E** – Reuse an existing build with the same native fingerprint, re-bundle JS, re-sign, then run Maestro instead of doing a full build every PR.
@@ -42,4 +42,4 @@ This project uses a **custom Capacitor iOS config** ([.eas/build/capacitor-ios.y
 - [EAS Workflows introduction](https://docs.expo.dev/eas/workflows/introduction/)
 - [EAS Workflows syntax](https://docs.expo.dev/eas/workflows/syntax/)
 - [IOS_EAS_BUILD.md](IOS_EAS_BUILD.md) – iOS build process and workflow CLI usage
-- Expo article: **How to integrate EAS Workflows with GitHub Actions** – triggering workflows from GHA, fingerprint, build-or-update, repack.
+- Expo article: [How to integrate EAS Workflows with GitHub Actions](https://expo.dev/blog/how-to-integrate-eas-workflows-with-github-actions) – triggering workflows from GHA, fingerprint, build-or-update, repack.

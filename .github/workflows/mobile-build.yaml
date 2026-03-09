@@ -56,15 +56,15 @@ jobs:
       - name: Run EAS Workflow (production builds)
         id: workflow
         run: |
-          npx eas-cli@latest workflow:run .eas/workflows/create-production-builds.yml --wait --json > "$RUNNER_TEMP/eas-result.json"
+          eas workflow:run .eas/workflows/create-production-builds.yml --wait --json > "$RUNNER_TEMP/eas-result.json"
           echo "Workflow finished. Result saved to $RUNNER_TEMP/eas-result.json"
 
       - name: Parse workflow result
         run: |
           FILE="$RUNNER_TEMP/eas-result.json"
           if [ ! -f "$FILE" ]; then
-            echo "::warning::No result file found."
-            exit 0
+            echo "::error::No result file found for $FILE"
+            exit 1
           fi
           SUCCESS=$(jq -r '.status == "SUCCESS"' "$FILE" 2>/dev/null || echo "false")
           echo "Workflow status: $(jq -r '.status // "unknown"' "$FILE" 2>/dev/null)"
