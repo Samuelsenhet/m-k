@@ -37,5 +37,9 @@
         }
       }
     ]
-  ]
+  ],
+  "runtimeVersion": "1.0.0",
+  "updates": {
+    "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb"
+  }
 }
