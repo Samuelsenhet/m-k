@@ -82,7 +82,7 @@ When prompted, choose a profile:
 | preview                | Internal testing                  | `distribution: internal`                   |
 | production             | App Store / TestFlight            | `autoIncrement: true`, production signing  |
 
-All profiles use the same iOS config: **capacitor-ios.yml** in `.eas/build/` (see [eas.json](../eas.json)). If you omit the `--profile` flag, EAS CLI defaults to the profile named **production** (if it exists). To be explicit, use e.g. `eas build --platform ios --profile production`.
+Device profiles use **capacitor-ios.yml**; the **development-simulator** profile uses **capacitor-ios-simulator.yml** (see [eas.json](../eas.json)). If you omit the `--profile` flag, EAS CLI defaults to the profile named **production** (if it exists). To be explicit, use e.g. `eas build --platform ios --profile production`.
 
 ### Development builds via EAS Workflows
 
@@ -107,6 +107,17 @@ You can run the app on an iOS Simulator in two ways:
 ---
 
 ## Troubleshooting
+
+### Simulator build: "Preparing credentials" / "Cannot read properties of undefined (reading 'data')"
+
+When building with `development-simulator` (or any profile with `withoutCredentials: true` and `ios.simulator: true`), EAS built-in steps like `eas/configure_ios_version` and `eas/run_fastlane` can try to read credential data that is not set for simulator builds, causing the build to fail.
+
+This project avoids that by using a **custom simulator workflow** [.eas/build/capacitor-ios-simulator.yml](.eas/build/capacitor-ios-simulator.yml) that:
+
+- Skips `eas/configure_ios_credentials` and `eas/configure_ios_version` (replaced with a simple run step and version taken from the Xcode project).
+- Builds with **xcodebuild** directly instead of `eas/run_fastlane`, so no EAS step reads `buildCredentials`.
+
+If you see this error again, ensure the latest `.eas/build/capacitor-ios-simulator.yml` is committed and that you are using the `development-simulator` profile.
 
 ### Local iOS Simulator setup
 

@@ -280,5 +280,17 @@ build:
           disable_xcpretty(true)
           GYMFILE
           echo "Wrote Gymfile for simulator build"
-    - eas/run_fastlane
+    # Use xcodebuild directly to avoid eas/run_fastlane (which reads buildCredentials and fails when withoutCredentials)
+    - run:
+        name: Build for iOS Simulator (xcodebuild)
+        working_directory: ios
+        command: |
+          xcodebuild -project App/App.xcodeproj -scheme App \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            build
+          mkdir -p build
+          cp -r build/DerivedData/Build/Products/Release-iphonesimulator/App.app build/App.app 2>/dev/null || cp -r build/DerivedData/Build/Products/Debug-iphonesimulator/App.app build/App.app
+          echo "App built at build/App.app"
     - eas/find_and_upload_build_artifacts
