@@ -290,7 +290,10 @@ build:
             -configuration Release \
             -derivedDataPath build/DerivedData \
             build
-          mkdir -p build
-          cp -r build/DerivedData/Build/Products/Release-iphonesimulator/App.app build/App.app 2>/dev/null || cp -r build/DerivedData/Build/Products/Debug-iphonesimulator/App.app build/App.app
-          echo "App built at build/App.app"
+          # EAS find_and_upload_build_artifacts looks for ios/build/Build/Products/*simulator/*.app
+          APP_OUT=build/DerivedData/Build/Products/Release-iphonesimulator/App.app
+          [ ! -d "$APP_OUT" ] && APP_OUT=build/DerivedData/Build/Products/Debug-iphonesimulator/App.app
+          mkdir -p build/Build/Products/Release-iphonesimulator
+          cp -r "$APP_OUT" build/Build/Products/Release-iphonesimulator/App.app
+          echo "App placed at build/Build/Products/Release-iphonesimulator/App.app for EAS artifact upload"
     - eas/find_and_upload_build_artifacts
