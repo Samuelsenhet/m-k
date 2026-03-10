@@ -32,7 +32,7 @@
       "environment": "development",
       "ios": {
         "simulator": true,
-        "config": "capacitor-ios.yml",
+        "config": "capacitor-ios-simulator.yml",
         "scheme": "App"
       },
       "channel": "development-simulator"
