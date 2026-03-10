@@ -14,31 +14,46 @@
       },
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "e2e-test"
     },
     "development": {
       "distribution": "internal",
       "environment": "development",
-      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
+      "ios": {
+        "config": "capacitor-ios.yml",
+        "scheme": "App"
+      },
+      "channel": "development"
     },
     "development-simulator": {
+      "withoutCredentials": true,
       "distribution": "internal",
       "environment": "development",
       "ios": {
         "simulator": true,
         "config": "capacitor-ios.yml",
         "scheme": "App"
-      }
+      },
+      "channel": "development-simulator"
     },
     "preview": {
       "distribution": "internal",
       "environment": "preview",
-      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
+      "ios": {
+        "config": "capacitor-ios.yml",
+        "scheme": "App"
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "environment": "production",
-      "ios": { "config": "capacitor-ios.yml", "scheme": "App" }
+      "ios": {
+        "config": "capacitor-ios.yml",
+        "scheme": "App"
+      },
+      "channel": "production"
     }
   },
   "submit": {
