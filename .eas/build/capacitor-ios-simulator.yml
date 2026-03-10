@@ -258,7 +258,11 @@ build:
             echo "No Podfile (Capacitor may use Swift Package Manager); skipping pod install"
           fi
     # No eas/configure_ios_credentials — simulator build does not need keychain or provisioning
-    - eas/configure_ios_version
+    # Skip eas/configure_ios_version (it reads credential data and fails with "Cannot read properties of undefined (reading 'data')" when withoutCredentials)
+    - run:
+        name: Set iOS version (simulator; no credentials)
+        command: |
+          echo "Using existing version from ios/App/App.xcodeproj (no credential step)."
     - run:
         name: Generate Gymfile for iOS Simulator (no credentials)
         working_directory: ios
