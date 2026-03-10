@@ -8,7 +8,7 @@ import { useMascot } from '@/hooks/useMascot';
 import { useEmotionalState } from '@/hooks/useEmotionalState';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 import { SCREEN_CONTAINER_CLASS } from '@/layout/screenLayout';
-import { cn } from '@/lib/utils';
+import { cn, normalizeDisplayCommas } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
 interface WaitingPhaseProps {
@@ -116,11 +116,11 @@ export function WaitingPhase({ timeRemaining, nextMatchAvailable }: WaitingPhase
             <div className="text-center text-xs text-muted-foreground">
               Matchningar blir tillgängliga{' '}
               <time dateTime={nextMatchAvailable} className="font-medium">
-                {new Date(nextMatchAvailable).toLocaleString('sv-SE', {
+                {normalizeDisplayCommas(new Date(nextMatchAvailable).toLocaleString('sv-SE', {
                   weekday: 'long',
                   hour: '2-digit',
                   minute: '2-digit'
-                })}
+                }))}
               </time>
             </div>
 

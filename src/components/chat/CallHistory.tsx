@@ -1,4 +1,5 @@
 import React from 'react';
+import { normalizeDisplayCommas } from '@/lib/utils';
 
 export interface CallLogEntry {
   type: 'missed' | 'completed';
@@ -19,7 +20,7 @@ export const CallHistory: React.FC<CallHistoryProps> = ({ logs }) => (
         <li key={i} className="flex items-center gap-2 text-sm">
           <span className={`inline-block w-2 h-2 rounded-full ${log.type === 'missed' ? 'bg-red-500' : 'bg-green-500'}`}></span>
           <span>{log.type === 'missed' ? 'Missed call' : 'Completed call'} with {log.callerName}</span>
-          <span className="ml-auto text-muted-foreground">{new Date(log.timestamp).toLocaleString()}</span>
+          <span className="ml-auto text-muted-foreground">{normalizeDisplayCommas(new Date(log.timestamp).toLocaleString())}</span>
           {log.type === 'completed' && log.duration !== undefined && (
             <span className="ml-2 text-muted-foreground">{Math.floor(log.duration / 60)}m {log.duration % 60}s</span>
           )}

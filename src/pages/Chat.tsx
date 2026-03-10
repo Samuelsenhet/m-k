@@ -19,6 +19,7 @@ import { SCREEN_CONTAINER_CLASS } from "@/layout/screenLayout";
 import { COLORS } from "@/design/tokens";
 import { IncomingCallNotification } from "@/components/chat/IncomingCallNotification";
 import { getProfilesAuthKey } from "@/lib/profiles";
+import { normalizeDisplayCommas } from "@/lib/utils";
 import { isDemoEnabled } from "@/config/supabase";
 import { useTranslation } from "react-i18next";
 // Removed problematic import - check if CallHistory exists
@@ -58,7 +59,7 @@ function CallHistoryDisplay({ logs, className, title }: { logs: CallLogEntry[]; 
           >
             <span className="truncate">{log.callerName}</span>
             <span className="text-muted-foreground text-xs">
-              {new Date(log.timestamp).toLocaleDateString("sv-SE")}
+              {normalizeDisplayCommas(new Date(log.timestamp).toLocaleDateString("sv-SE"))}
               {log.type === "completed" &&
                 log.duration &&
                 ` • ${Math.floor(log.duration / 60)} min`}

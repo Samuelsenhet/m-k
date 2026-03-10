@@ -1,7 +1,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import { Check, CheckCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeDisplayCommas } from "@/lib/utils";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { COLORS } from "@/design/tokens";
@@ -42,7 +42,7 @@ const ChatBubbleV2 = React.memo(function ChatBubbleV2({
         role="listitem"
       >
         <div className="max-w-[85%] px-3 py-1.5 rounded-full bg-muted/80 text-muted-foreground text-xs">
-          {message.content}
+          {normalizeDisplayCommas(message.content)}
         </div>
       </motion.div>
     );
@@ -79,7 +79,7 @@ const ChatBubbleV2 = React.memo(function ChatBubbleV2({
               : { background: COLORS.neutral.cream, color: COLORS.neutral.charcoal }
         }
       >
-        <p className="leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+        <p className="leading-relaxed whitespace-pre-wrap break-words">{normalizeDisplayCommas(message.content)}</p>
         <div className={cn("flex items-center gap-1.5 mt-1", isOwn ? "justify-end" : "justify-start")}>
           <span className={cn("text-xs", isOwn ? "text-white/70" : "text-muted-foreground")}>
             {format(new Date(message.created_at), "HH:mm", { locale: sv })}

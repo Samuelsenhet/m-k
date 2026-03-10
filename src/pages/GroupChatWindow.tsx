@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, normalizeDisplayCommas } from "@/lib/utils";
 import { format } from "date-fns";
 import { sv, enUS } from "date-fns/locale";
 import { toast } from "sonner";
@@ -334,7 +334,7 @@ export default function GroupChatWindow() {
                         : "bg-muted text-foreground rounded-bl-md"
                     )}
                   >
-                    <p className="leading-relaxed">{msg.content}</p>
+                    <p className="leading-relaxed">{normalizeDisplayCommas(msg.content)}</p>
                     <span
                       className={cn(
                         "text-xs mt-1 block",

@@ -5,7 +5,7 @@ import type { RelationshipLevel } from '@/components/ui-v2/card/CardV2';
 import { getRelationshipBorder } from '@/lib/relationship-depth';
 import { COLORS } from '@/design/tokens';
 import { Camera, MapPin, ArrowLeft, Send, MoreVertical, ChevronUp, AlertCircle, Sparkles, X, MessageCircle, ChevronRight } from 'lucide-react';
-import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
+import { cn, getInstagramUsername, getLinkedInUsername, normalizeDisplayCommas } from '@/lib/utils';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { toast } from 'sonner';
@@ -373,7 +373,7 @@ export function MatchProfileView({
               {profile?.bio && (
                 <div>
                   <h2 className="text-xl font-bold text-white mb-2">Om mig</h2>
-                  <p className="text-white/80 leading-relaxed">{profile.bio}</p>
+                  <p className="text-white/80 leading-relaxed">{normalizeDisplayCommas(profile.bio)}</p>
                 </div>
               )}
 

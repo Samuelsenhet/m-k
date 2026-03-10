@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeDisplayCommas } from "@/lib/utils";
 import { CardV2, CardV2Content, CardV2Header } from "../card";
 import { ArchetypeBadge, type ArchetypeKey } from "../badge/ArchetypeBadge";
 import { MatchTypeBadge, type MatchTypeV2 } from "../badge/MatchTypeBadge";
@@ -64,7 +64,7 @@ function MatchCardClassic({
           <ArchetypeBadge archetype={profile.archetype} />
 
           {profile.bio && (
-            <p className="text-foreground/90">{profile.bio}</p>
+            <p className="text-foreground/90">{normalizeDisplayCommas(profile.bio)}</p>
           )}
 
           {profile.traits && profile.traits.length > 0 && (

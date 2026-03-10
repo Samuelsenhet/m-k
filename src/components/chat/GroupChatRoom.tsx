@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, Send, MoreHorizontal, LogOut } from "lucide-react";
 import { GroupAvatar } from "./GroupAvatar";
 import type { SamlingGroup } from "@/hooks/useGroups";
-import { cn } from "@/lib/utils";
+import { cn, normalizeDisplayCommas } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,7 +141,7 @@ export function GroupChatRoom({ group, currentUserId, onBack, leaveGroup }: Grou
                     isOwn ? "bg-primary text-primary-foreground rounded-br-md ml-auto" : "bg-muted rounded-bl-md"
                   )}
                 >
-                  {msg.content}
+                  {normalizeDisplayCommas(msg.content)}
                 </div>
               </div>
             );

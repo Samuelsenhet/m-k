@@ -5,7 +5,7 @@ import { MapPin, User, Pencil, ChevronUp, Settings, Shield, Edit2, Briefcase, Gr
 import { VerifiedBadge } from '@/components/ui-v2';
 import { COLORS } from '@/design/tokens';
 import { useTranslation } from 'react-i18next';
-import { cn, getInstagramUsername, getLinkedInUsername } from '@/lib/utils';
+import { cn, getInstagramUsername, getLinkedInUsername, normalizeDisplayCommas } from '@/lib/utils';
 import { ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY, CATEGORY_INFO, ArchetypeCode, type PersonalityCategory } from '@/types/personality';
 import { getProfilesAuthKey } from '@/lib/profiles';
 import { toast } from 'sonner';
@@ -395,7 +395,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
             <div>
               <h2 className="text-xl font-bold text-foreground mb-2">{t('profile.about_me', 'Om mig')}</h2>
               <p className="text-muted-foreground leading-relaxed">
-                {profile?.bio || t('profile.bio_placeholder', 'Berätta något om dig själv...')}
+                {normalizeDisplayCommas(profile?.bio || t('profile.bio_placeholder', 'Berätta något om dig själv...'))}
               </p>
             </div>
 

@@ -94,9 +94,34 @@ eas workflow:run .eas/workflows/create-development-builds.yml
 
 This runs three build jobs in parallel: Android (`development`), iOS device (`development`), and iOS simulator (`development-simulator`). See [Create development builds with EAS Workflows](https://docs.expo.dev/build-reference/eas-workflows/#create-development-builds).
 
+### Running on iOS Simulator
+
+You can run the app on an iOS Simulator in two ways:
+
+- **Local:** Use **Open on iOS** from `npx expo start` (or `npm run expo:start`). If you see **"Can't determine id of Simulator app"**, fix your local setup first: see [Local iOS Simulator setup](#local-ios-simulator-setup) below.
+- **EAS:** Build for simulator in the cloud and install on your Mac. The project has profiles **development-simulator** and **e2e-test** (both use `ios.simulator: true` in [eas.json](../eas.json)). Run a build, then install the artifact on the Simulator:
+  - Build: `eas build -p ios --profile development-simulator` (or `e2e-test` for E2E). Building does not require a working local Simulator.
+  - Install: When the build is done, run `eas build:run -p ios` (or `eas build:run -p ios --latest`) to download and install it on your local Simulator. Your Mac must have the Simulator set up for this step (see [Local iOS Simulator setup](#local-ios-simulator-setup)).
+  - See [Build for iOS Simulators](https://docs.expo.dev/build-reference/ios-simulators/) in the Expo docs for more detail.
+
 ---
 
 ## Troubleshooting
+
+### Local iOS Simulator setup
+
+If you see **"Can't determine id of Simulator app"** when using **Open on iOS** from `npx expo start` (or `npm run expo:start`), the Expo CLI cannot find the iOS Simulator. Common causes: the system developer path is not pointing to full Xcode, or the iOS Simulator runtime is not installed.
+
+**Fix (required for local "Open on iOS"):**
+
+1. Point developer tools to Xcode:  
+   `sudo xcode-select -s /Applications/Xcode.app`
+2. Confirm the path:  
+   `xcode-select -p` should print `/Applications/Xcode.app/Contents/Developer`
+3. Ensure Xcode is installed and an iOS platform (Simulator) is installed: **Xcode → Settings → Platforms → iOS**.
+4. Optional: open the Simulator once: `open -a Simulator` or **Xcode → Open Developer Tool → Simulator**.
+
+Then run `npx expo start` and press **i** or choose **Open on iOS**.
 
 ### Why can Android succeed but iOS fail?
 
