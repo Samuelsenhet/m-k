@@ -68,13 +68,14 @@ target 'MK' do
       target.build_phases.each do |phase|
         next unless phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
         # Mark scripts that intentionally run every build
-        if phase.name&.include?('[Hermes]') || phase.name&.include?('[CP-User]') || phase.name&.include?('[Expo Dev Launcher]')
+        if phase.name&.include?('[Hermes]') || phase.name&.include?('[CP-User]') || phase.name&.include?('[Expo Dev Launcher]') || phase.name&.include?('[EXUpdates]') || phase.name&.include?('[Expo]')
           phase.always_out_of_date = '1'
         end
       end
     end
 
     # Suppress nullability and deprecation warnings from third-party pods
+    # Also fix deployment target for pods with outdated values
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         # Disable nullability completeness warnings (from Expo, RN legacy headers)
@@ -84,6 +85,11 @@ target 'MK' do
         warning_flags = '-Wno-nullability-completeness -Wno-deprecated-declarations -Wno-incomplete-umbrella'
         unless existing_flags.include?(warning_flags)
           config.build_settings['OTHER_CFLAGS'] = "#{existing_flags} #{warning_flags}"
+        end
+        # Fix deployment target for pods with outdated values (minimum 12.0)
+        deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if deployment_target && deployment_target.to_f < 12.0
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
         end
       end
     end
