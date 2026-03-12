@@ -1,6 +1,7 @@
 internal import Expo
 import React
 import ReactAppDependencyProvider
+import UIKit
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -21,7 +22,11 @@ class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
 
 #if os(iOS) || os(tvOS)
-    window = UIWindow(frame: UIScreen.main.bounds)
+    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+      window = UIWindow(windowScene: windowScene)
+    } else {
+      window = UIWindow(frame: UIScreen.main.bounds)
+    }
     factory.startReactNative(
       withModuleName: "main",
       in: window,
@@ -32,6 +37,7 @@ class AppDelegate: ExpoAppDelegate {
   }
 
   // Linking API
+  @available(iOS, deprecated: 26.0, message: "Use UIScene lifecycle instead")
   public override func application(
     _ app: UIApplication,
     open url: URL,

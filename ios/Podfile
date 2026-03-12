@@ -68,7 +68,7 @@ target 'MK' do
       target.build_phases.each do |phase|
         next unless phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
         # Mark scripts that intentionally run every build
-        if phase.name&.include?('[Hermes]') || phase.name&.include?('[CP-User]')
+        if phase.name&.include?('[Hermes]') || phase.name&.include?('[CP-User]') || phase.name&.include?('[Expo Dev Launcher]')
           phase.always_out_of_date = '1'
         end
       end
