@@ -61,5 +61,17 @@ target 'MK' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # Fix Xcode warning: "Run script build phase will be run during every build"
+    # by setting alwaysOutOfDate = 1 for script phases that intentionally run every build
+    installer.pods_project.targets.each do |target|
+      target.build_phases.each do |phase|
+        next unless phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        # Mark scripts that intentionally run every build
+        if phase.name&.include?('[Hermes]') || phase.name&.include?('[CP-User]')
+          phase.always_out_of_date = '1'
+        end
+      end
+    end
   end
 end
