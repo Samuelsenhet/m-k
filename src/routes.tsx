@@ -113,7 +113,7 @@ async function reportAction({
   request,
 }: ActionFunctionArgs): Promise<ReportActionData> {
   if (request.method !== "POST") return { ok: false, error: "Method not allowed" };
-  const formData = await request.formData();
+  const formData = await request.formData() as unknown as globalThis.FormData;
   const violationType = String(formData.get("violation_type") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const reportedUserId = formData.get("reported_user_id")

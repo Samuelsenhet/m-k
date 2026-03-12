@@ -24,6 +24,7 @@ interface ProfileData {
   hometown: string;
   country: string;
   instagram: string;
+  linkedin: string;
   religion: string;
   politics: string;
   smoking: string;
@@ -33,6 +34,7 @@ interface ProfileData {
   dating_intention_extra: string;
   relationship_type: string;
   relationship_type_extra: string;
+  interested_in: string;
 }
 
 interface PrivacySettings {

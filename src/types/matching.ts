@@ -11,7 +11,7 @@ export interface DimensionScore {
   N: number; // Neuroticism
 }
 
-export interface DimensionScoreBreakdown {
+export interface MatchScoreBreakdown {
   personality_similarity: number; // 0-40 points (40% weight)
   archetype_alignment: number;    // 0-30 points (30% weight)
   interest_overlap: number;       // 0-30 points (30% weight)
@@ -30,7 +30,7 @@ export interface CandidateInPool {
   composite_score: number; // 0-100 (total score)
   similarity_score: number; // For similar matches
   complementary_score: number; // For complementary matches
-  dimension_scores: DimensionScoreBreakdown;
+  dimension_scores: MatchScoreBreakdown;
   
   // Profile data for display/delivery
   display_name: string;

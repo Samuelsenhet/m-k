@@ -1,45 +1,49 @@
 {
-  "name": "MÄÄK",
-  "slug": "maak",
-  "scheme": "maak",
-  "web": {
-    "output": "single"
-  },
-  "ios": {
-    "bundleIdentifier": "com.samuelsenhet.maak",
-    "infoPlist": {
-      "ITSAppUsesNonExemptEncryption": false
-    }
-  },
-  "android": {
-    "package": "com.samuelsenhet.vite_react_shadcn_ts"
-  },
-  "extra": {
-    "eas": {
-      "projectId": "4d900a70-4327-4740-83cc-4ac6745ef8eb"
-    }
-  },
-  "owner": "samuelsenhet",
-  "plugins": [
-    "expo-router",
-    [
-      "expo-brownfield",
-      {
-        "ios": {
-          "targetName": "MaakBrownfield",
-          "bundleIdentifier": "com.samuelsenhet.maak.brownfield"
-        },
-        "android": {
-          "libraryName": "maakbrownfield",
-          "group": "com.samuelsenhet",
-          "package": "com.samuelsenhet.maak.brownfield",
-          "version": "1.0.0"
-        }
+  "expo": {
+    "name": "MÄÄK",
+    "slug": "maak",
+    "scheme": "maak",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "output": "single",
+      "bundler": "metro"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.samuelsenhet.maak",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
-    ]
-  ],
-  "runtimeVersion": "1.0.0",
-  "updates": {
-    "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb"
+    },
+    "android": {
+      "package": "com.samuelsenhet.maak",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4d900a70-4327-4740-83cc-4ac6745ef8eb"
+      }
+    },
+    "owner": "samuelsenhet",
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "root": "./src/app"
+        }
+      ],
+      "expo-font"
+    ],
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb"
+    }
   }
 }

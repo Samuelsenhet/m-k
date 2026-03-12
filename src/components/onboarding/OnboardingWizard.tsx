@@ -44,6 +44,7 @@ interface ProfileData {
   gender: string;
   height: string;
   instagram: string;
+  linkedin: string;
   sexuality: string;
   lookingFor: string;
   hometown: string;
@@ -84,6 +85,7 @@ const PHOTO_PROMPTS = [
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const achievementsCtx = useAchievementsContextOptional();
   const onlineCount = useOnlineCount(user?.id);
   const photoStepMascot = useMascot(MASCOT_SCREEN_STATES.ONBOARDING_PHOTO);
   const [currentStep, setCurrentStep] = useState(0);

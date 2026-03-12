@@ -1,0 +1,11 @@
+{
+	"appId": "com.samuelsenhet.maak",
+	"appName": "MÄÄK",
+	"webDir": "dist",
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 0
+		}
+	},
+	"packageClassList": []
+}

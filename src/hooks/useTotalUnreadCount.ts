@@ -19,10 +19,12 @@ export function useTotalUnreadCount(): number {
     let cancelled = false;
 
     async function fetchUnread() {
+      const userId = user?.id;
+      if (!userId) return;
       const { data: matches } = await supabase
         .from("matches")
         .select("id")
-        .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`);
+        .or(`user_id.eq.${userId},matched_user_id.eq.${userId}`);
       const matchIds = (matches ?? []).map((m) => m.id);
       if (matchIds.length === 0) {
         if (!cancelled) setCount(0);
@@ -32,8 +34,8 @@ export function useTotalUnreadCount(): number {
         .from("messages")
         .select("id", { count: "exact", head: true })
         .in("match_id", matchIds)
-        .neq("sender_id", user.id)
-        .eq("is_read", false);
+        .neq("sender_id", userId)
+        .is("read_at", null);
       if (!cancelled) setCount(unreadCount ?? 0);
     }
 

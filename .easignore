@@ -9,7 +9,12 @@ dist-ssr
 *.log
 logs
 .expo/
-docs/
+
+# Docs - exclude markdown but keep mascot assets needed by build scripts
+docs/*.md
+docs/AGENTS.md
+docs/MAAK_UNIVERSAL_AGENT_GUIDE.md
+
 .cursor/
 .roo/
 *.local
@@ -20,3 +25,18 @@ docs/
 *.key
 secrets.json
 credentials.json
+
+# iOS backups (not needed for EAS)
+ios.backup/
+ios.capacitor-backup/
+ios.capacitor.backup/
+
+# Capacitor (using Expo managed workflow)
+capacitor.config.ts
+capacitor.config.json
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

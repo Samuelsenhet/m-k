@@ -2,57 +2,34 @@
   "cli": {
     "version": ">= 18.1.0",
     "appVersionSource": "remote",
-    "requireCommit": true
+    "requireCommit": false
   },
   "build": {
-    "e2e-test": {
-      "withoutCredentials": true,
-      "ios": {
-        "simulator": true,
-        "config": "capacitor-ios.yml",
-        "scheme": "App"
-      },
-      "android": {
-        "buildType": "apk"
-      },
-      "channel": "e2e-test"
-    },
-    "development": {
+    "expo-dev": {
+      "developmentClient": true,
       "distribution": "internal",
-      "environment": "development",
       "ios": {
-        "config": "capacitor-ios.yml",
-        "scheme": "App"
+        "simulator": true
       },
-      "channel": "development"
+      "channel": "expo-dev"
     },
-    "development-simulator": {
-      "withoutCredentials": true,
+    "expo-dev-device": {
+      "developmentClient": true,
       "distribution": "internal",
-      "environment": "development",
       "ios": {
-        "simulator": true,
-        "config": "capacitor-ios-simulator.yml",
-        "scheme": "App"
+        "resourceClass": "m-medium"
       },
-      "channel": "development-simulator"
+      "channel": "expo-dev"
     },
     "preview": {
       "distribution": "internal",
-      "environment": "preview",
       "ios": {
-        "config": "capacitor-ios.yml",
-        "scheme": "App"
+        "simulator": true
       },
       "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
-      "environment": "production",
-      "ios": {
-        "config": "capacitor-ios.yml",
-        "scheme": "App"
-      },
       "channel": "production"
     }
   },

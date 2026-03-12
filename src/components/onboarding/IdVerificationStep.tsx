@@ -28,6 +28,7 @@ export function IdVerificationStep({
   onSubmit,
 }: IdVerificationStepProps) {
   const { user } = useAuth();
+  const achievementsCtx = useAchievementsContextOptional();
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export function IdVerificationStep({
     if (status === 'approved' && achievementsCtx) {
       achievementsCtx.checkAndAwardAchievement('id_verified');
     }
-  }, [status]);
+  }, [status, achievementsCtx]);
 
   const validateFile = (file: File): boolean => {
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
@@ -123,8 +124,8 @@ export function IdVerificationStep({
     setSubmitting(true);
     try {
       const profileKey = await getProfilesAuthKey(user.id);
-      let frontPath: string | null = initialFrontPath;
-      let backPath: string | null = initialBackPath;
+      let frontPath: string | null = initialFrontPathProp ?? null;
+      let backPath: string | null = initialBackPathProp ?? null;
 
       if (frontFile) {
         const ext = frontFile.name.split('.').pop() || 'jpg';
@@ -239,7 +240,7 @@ export function IdVerificationStep({
     );
   }
 
-  if (status === 'pending' && initialFrontPath && !frontFile) {
+  if (status === 'pending' && initialFrontPathProp && !frontFile) {
     return (
       <div className="space-y-6 text-center py-8">
         <div className="flex justify-center">

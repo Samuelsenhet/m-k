@@ -21,14 +21,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     if (loading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
-    const inTabsGroup = segments[0] === "(tabs)";
 
     if (!user && !inAuthGroup) {
       router.replace("/(auth)/login");
     } else if (user && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   if (loading) {
     return (
@@ -43,12 +42,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function WebOnlyProviders({ children }: { children: React.ReactNode }) {
   if (Platform.OS !== "web") return <>{children}</>;
-  try {
-    const { HelmetProvider } = require("react-helmet-async");
-    return <HelmetProvider>{children}</HelmetProvider>;
-  } catch {
-    return <>{children}</>;
-  }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { HelmetProvider } = require("react-helmet-async");
+  return <HelmetProvider>{children}</HelmetProvider>;
 }
 
 export default function RootLayout() {
