@@ -1,112 +1,144 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { Link, router } from "expo-router";
+import React from "react";
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { Link, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { StatusBar } from "expo-status-bar";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+
+import { Button } from "@/components/native";
+
+const COLORS = {
+  background: "#0A0A0A",
+  primary: "#D4AF37",
+  text: "#FFFFFF",
+  textSecondary: "#AAAAAA",
+  divider: "#333333",
+};
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
+
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <StatusBar style="light" />
       <View style={styles.content}>
-        <Text style={styles.logo}>MĀĀK</Text>
-        <Text style={styles.title}>Välkommen tillbaka</Text>
-        <Text style={styles.subtitle}>
-          Logga in för att fortsätta hitta din perfekta matchning
-        </Text>
+        <Animated.View entering={FadeInUp.duration(600)} style={styles.header}>
+          <Text style={styles.logo}>MĀĀK</Text>
+          <Text style={styles.tagline}>{t("auth.tagline")}</Text>
+        </Animated.View>
 
-        <Link href="/(auth)/phone-auth" asChild>
-          <Pressable style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Logga in med telefon</Text>
-          </Pressable>
-        </Link>
+        <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.form}>
+          <Text style={styles.title}>{t("auth.welcome_back")}</Text>
+          <Text style={styles.subtitle}>{t("auth.login_subtitle")}</Text>
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>eller</Text>
-          <View style={styles.dividerLine} />
-        </View>
+          <Button
+            title={t("auth.login_with_phone")}
+            onPress={() => router.push("/(auth)/phone-auth")}
+            variant="primary"
+            fullWidth
+            size="lg"
+            style={styles.button}
+          />
 
-        <Link href="/(auth)/onboarding" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Skapa nytt konto</Text>
-          </Pressable>
-        </Link>
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t("auth.or")}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Button
+            title={t("auth.create_account")}
+            onPress={() => router.push("/(auth)/onboarding")}
+            variant="outline"
+            fullWidth
+            size="lg"
+          />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(400).duration(600)} style={styles.footer}>
+          <Text style={styles.footerText}>
+            {t("auth.terms_notice")}
+          </Text>
+        </Animated.View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    backgroundColor: "#f8f7f4",
+    backgroundColor: COLORS.background,
   },
   content: {
-    width: "100%",
-    maxWidth: 340,
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  header: {
     alignItems: "center",
-    gap: 16,
+    marginBottom: 48,
   },
   logo: {
-    fontSize: 48,
+    fontSize: 56,
     fontWeight: "bold",
-    color: "#4b6e48",
-    marginBottom: 8,
+    color: COLORS.primary,
+    letterSpacing: 4,
+  },
+  tagline: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginTop: 8,
+  },
+  form: {
+    width: "100%",
+    maxWidth: 340,
+    alignSelf: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "600",
+    fontSize: 28,
+    fontWeight: "700",
+    color: COLORS.text,
     textAlign: "center",
-    color: "#1a1a1a",
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b6860",
+    color: COLORS.textSecondary,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 32,
   },
-  primaryButton: {
-    width: "100%",
-    backgroundColor: "#4b6e48",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
+  button: {
+    marginBottom: 16,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    width: "100%",
-    marginVertical: 8,
+    marginVertical: 24,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: COLORS.divider,
   },
   dividerText: {
     paddingHorizontal: 16,
-    color: "#6b6860",
+    color: COLORS.textSecondary,
     fontSize: 14,
   },
-  secondaryButton: {
-    width: "100%",
-    backgroundColor: "transparent",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#4b6e48",
+  footer: {
+    marginTop: 48,
     alignItems: "center",
   },
-  secondaryButtonText: {
-    color: "#4b6e48",
-    fontSize: 16,
-    fontWeight: "600",
+  footerText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    maxWidth: 280,
+    lineHeight: 18,
   },
 });

@@ -1,39 +1,74 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from "react-native";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInDown, FadeInUp, FadeOutUp } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+
+import { Button, Input } from "@/components/native";
+import { usePhoneAuth } from "@/hooks/usePhoneAuth";
+import { toast } from "@/components/native/Toast";
+
+const COLORS = {
+  background: "#0A0A0A",
+  primary: "#D4AF37",
+  text: "#FFFFFF",
+  textSecondary: "#AAAAAA",
+};
 
 export default function PhoneAuthScreen() {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { sendOtp, verifyOtp, loading, error } = usePhoneAuth();
 
-  const handleSendOtp = async () => {
-    if (phoneNumber.length < 10) return;
-    setLoading(true);
-    // TODO: Integrate with Supabase phone auth
-    setTimeout(() => {
-      setStep("otp");
-      setLoading(false);
-    }, 1000);
+  const [step, setStep] = useState<"phone" | "verify">("phone");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+
+  const handleSendCode = async () => {
+    if (!phone || phone.length < 10) {
+      toast.error(t("auth.invalid_phone"));
+      return;
+    }
+
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const success = await sendOtp(phone);
+    if (success) {
+      setStep("verify");
+      toast.success(t("auth.code_sent"));
+    }
   };
 
-  const handleVerifyOtp = async () => {
-    if (otp.length < 6) return;
-    setLoading(true);
-    // TODO: Verify OTP with Supabase
-    setTimeout(() => {
-      setLoading(false);
+  const handleVerifyCode = async () => {
+    if (!code || code.length < 6) {
+      toast.error(t("auth.invalid_code"));
+      return;
+    }
+
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const success = await verifyOtp(phone, code);
+    if (success) {
+      toast.success(t("auth.login_success"));
       router.replace("/(tabs)");
-    }, 1000);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === "verify") {
+      setStep("phone");
+      setCode("");
+    } else {
+      router.back();
+    }
   };
 
   return (
@@ -41,61 +76,82 @@ export default function PhoneAuthScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <StatusBar style="light" />
+
+      <View style={styles.header}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </Pressable>
+      </View>
+
       <View style={styles.content}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>← Tillbaka</Text>
-        </Pressable>
-
-        <Text style={styles.title}>
-          {step === "phone" ? "Ange ditt telefonnummer" : "Verifiera din kod"}
-        </Text>
-        <Text style={styles.subtitle}>
-          {step === "phone"
-            ? "Vi skickar en verifieringskod via SMS"
-            : `Vi skickade en kod till ${phoneNumber}`}
-        </Text>
-
         {step === "phone" ? (
-          <TextInput
-            style={styles.input}
-            placeholder="+46 70 123 45 67"
-            placeholderTextColor="#9ca3af"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-            autoFocus
-          />
+          <Animated.View
+            entering={FadeInUp.duration(400)}
+            exiting={FadeOutUp.duration(300)}
+            style={styles.stepContainer}
+          >
+            <Text style={styles.title}>{t("auth.enter_phone")}</Text>
+            <Text style={styles.subtitle}>{t("auth.phone_subtitle")}</Text>
+
+            <Input
+              label={t("auth.phone_number")}
+              placeholder="+46 70 123 45 67"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              containerStyle={styles.input}
+            />
+
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            <Button
+              title={t("auth.send_code")}
+              onPress={handleSendCode}
+              variant="primary"
+              fullWidth
+              size="lg"
+              loading={loading}
+              style={styles.button}
+            />
+          </Animated.View>
         ) : (
-          <TextInput
-            style={styles.input}
-            placeholder="123456"
-            placeholderTextColor="#9ca3af"
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            maxLength={6}
-            autoFocus
-          />
-        )}
+          <Animated.View
+            entering={FadeInDown.duration(400)}
+            style={styles.stepContainer}
+          >
+            <Text style={styles.title}>{t("auth.verify_code")}</Text>
+            <Text style={styles.subtitle}>
+              {t("auth.code_sent_to", { phone })}
+            </Text>
 
-        <Pressable
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={step === "phone" ? handleSendOtp : handleVerifyOtp}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading
-              ? "Vänta..."
-              : step === "phone"
-                ? "Skicka kod"
-                : "Verifiera"}
-          </Text>
-        </Pressable>
+            <Input
+              label={t("auth.verification_code")}
+              placeholder="000000"
+              value={code}
+              onChangeText={setCode}
+              keyboardType="number-pad"
+              maxLength={6}
+              containerStyle={styles.input}
+            />
 
-        {step === "otp" && (
-          <Pressable onPress={() => setStep("phone")} style={styles.changeLink}>
-            <Text style={styles.changeLinkText}>Ändra telefonnummer</Text>
-          </Pressable>
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            <Button
+              title={t("auth.verify")}
+              onPress={handleVerifyCode}
+              variant="primary"
+              fullWidth
+              size="lg"
+              loading={loading}
+              style={styles.button}
+            />
+
+            <Pressable onPress={handleSendCode} disabled={loading}>
+              <Text style={styles.resendText}>{t("auth.resend_code")}</Text>
+            </Pressable>
+          </Animated.View>
         )}
       </View>
     </KeyboardAvoidingView>
@@ -105,69 +161,59 @@ export default function PhoneAuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f7f4",
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     flex: 1,
     justifyContent: "center",
     padding: 24,
-    maxWidth: 400,
-    alignSelf: "center",
+  },
+  stepContainer: {
     width: "100%",
-  },
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 24,
-  },
-  backButtonText: {
-    color: "#4b6e48",
-    fontSize: 16,
+    maxWidth: 340,
+    alignSelf: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "600",
+    fontSize: 28,
+    fontWeight: "700",
+    color: COLORS.text,
     textAlign: "center",
     marginBottom: 8,
-    color: "#1a1a1a",
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b6860",
+    color: COLORS.textSecondary,
     textAlign: "center",
     marginBottom: 32,
   },
   input: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 18,
-    textAlign: "center",
     marginBottom: 16,
   },
   button: {
-    backgroundColor: "#4b6e48",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
+    marginTop: 8,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  changeLink: {
-    marginTop: 16,
-    alignItems: "center",
-  },
-  changeLinkText: {
-    color: "#4b6e48",
+  errorText: {
+    color: "#EF4444",
     fontSize: 14,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  resendText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 24,
+    textDecorationLine: "underline",
   },
 });

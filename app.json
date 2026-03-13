@@ -1,14 +1,16 @@
 {
   "expo": {
-    "name": "MÄÄK",
+    "name": "MĀĀK",
     "slug": "maak",
     "scheme": "maak",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "web": {
-      "output": "single",
-      "bundler": "metro"
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0A"
     },
     "experiments": {
       "typedRoutes": true
@@ -17,14 +19,23 @@
       "bundleIdentifier": "com.samuelsenhet.maak",
       "supportsTablet": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "MĀĀK needs camera access to take profile photos and verify your identity.",
+        "NSPhotoLibraryUsageDescription": "MĀĀK needs photo library access to select profile photos.",
+        "NSContactsUsageDescription": "MĀĀK can help you find friends who are also using the app."
       }
     },
     "android": {
       "package": "com.samuelsenhet.maak",
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0A"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_CONTACTS",
+        "android.permission.VIBRATE"
+      ]
     },
     "extra": {
       "eas": {
@@ -39,7 +50,35 @@
           "root": "./src/app"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MĀĀK needs access to your photos to let you choose profile pictures.",
+          "cameraPermission": "MĀĀK needs access to your camera to take profile photos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#D4AF37"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "MĀĀK needs camera access for ID verification and profile photos."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "MĀĀK can help you find friends who are also using the app."
+        }
+      ]
     ],
     "runtimeVersion": "1.0.0",
     "updates": {

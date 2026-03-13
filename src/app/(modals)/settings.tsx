@@ -1,82 +1,169 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch } from "react-native";
-import { router } from "expo-router";
-import { useState } from "react";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+
+import { useAuth } from "@/contexts/useAuth";
+import { Card, Switch, Button } from "@/components/native";
+import { toast } from "@/components/native/Toast";
+
+const COLORS = {
+  background: "#0A0A0A",
+  card: "#1A1A1A",
+  primary: "#D4AF37",
+  text: "#FFFFFF",
+  textSecondary: "#AAAAAA",
+  border: "#333333",
+  destructive: "#EF4444",
+};
 
 export default function SettingsModal() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [matchAlerts, setMatchAlerts] = useState(true);
+  const [messageAlerts, setMessageAlerts] = useState(true);
 
-  const handleSignOut = () => {
-    // TODO: Implement sign out with Supabase
+  const handleSignOut = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await signOut();
+    toast.success(t("settings.signed_out"));
     router.replace("/(auth)/login");
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      t("settings.delete_account_title"),
+      t("settings.delete_account_message"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("settings.delete"),
+          style: "destructive",
+          onPress: async () => {
+            toast.info(t("settings.delete_requested"));
+          },
+        },
+      ]
+    );
+  };
+
+  const menuItems = [
+    {
+      icon: "document-text-outline" as const,
+      label: t("settings.terms"),
+      onPress: () => {},
+    },
+    {
+      icon: "shield-checkmark-outline" as const,
+      label: t("settings.privacy"),
+      onPress: () => {},
+    },
+    {
+      icon: "help-circle-outline" as const,
+      label: t("settings.help"),
+      onPress: () => {},
+    },
+    {
+      icon: "information-circle-outline" as const,
+      label: t("settings.about"),
+      onPress: () => {},
+    },
+  ];
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Konto</Text>
-        
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>E-post</Text>
-          <Text style={styles.rowValue}>user@example.com</Text>
+      <Card variant="default" padding="md" style={styles.section}>
+        <Text style={styles.sectionTitle}>{t("settings.account")}</Text>
+        <View style={styles.infoRow}>
+          <View style={styles.infoLabel}>
+            <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
+            <Text style={styles.infoLabelText}>{t("settings.email")}</Text>
+          </View>
+          <Text style={styles.infoValue}>{user?.email ?? "-"}</Text>
         </View>
-        
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Telefon</Text>
-          <Text style={styles.rowValue}>+46 70 123 45 67</Text>
+        <View style={styles.infoRow}>
+          <View style={styles.infoLabel}>
+            <Ionicons name="call-outline" size={20} color={COLORS.textSecondary} />
+            <Text style={styles.infoLabelText}>{t("settings.phone")}</Text>
+          </View>
+          <Text style={styles.infoValue}>{user?.phone ?? "-"}</Text>
         </View>
+      </Card>
+
+      <Card variant="default" padding="md" style={styles.section}>
+        <Text style={styles.sectionTitle}>{t("settings.notifications")}</Text>
+        <Switch
+          label={t("settings.push_notifications")}
+          description={t("settings.push_notifications_desc")}
+          value={pushNotifications}
+          onValueChange={setPushNotifications}
+        />
+        <View style={styles.divider} />
+        <Switch
+          label={t("settings.email_notifications")}
+          description={t("settings.email_notifications_desc")}
+          value={emailNotifications}
+          onValueChange={setEmailNotifications}
+        />
+        <View style={styles.divider} />
+        <Switch
+          label={t("settings.match_alerts")}
+          description={t("settings.match_alerts_desc")}
+          value={matchAlerts}
+          onValueChange={setMatchAlerts}
+        />
+        <View style={styles.divider} />
+        <Switch
+          label={t("settings.message_alerts")}
+          description={t("settings.message_alerts_desc")}
+          value={messageAlerts}
+          onValueChange={setMessageAlerts}
+        />
+      </Card>
+
+      <Card variant="default" padding="none" style={styles.section}>
+        <Text style={[styles.sectionTitle, { paddingHorizontal: 16, paddingTop: 16 }]}>
+          {t("settings.about")}
+        </Text>
+        {menuItems.map((item, index) => (
+          <Pressable
+            key={index}
+            onPress={item.onPress}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons name={item.icon} size={22} color={COLORS.text} />
+              <Text style={styles.menuItemLabel}>{item.label}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+          </Pressable>
+        ))}
+      </Card>
+
+      <View style={styles.buttonSection}>
+        <Button
+          title={t("settings.sign_out")}
+          onPress={handleSignOut}
+          variant="secondary"
+          fullWidth
+          size="lg"
+        />
+        <Button
+          title={t("settings.delete_account")}
+          onPress={handleDeleteAccount}
+          variant="destructive"
+          fullWidth
+          size="lg"
+        />
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifikationer</Text>
-        
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Push-notiser</Text>
-          <Switch
-            value={pushNotifications}
-            onValueChange={setPushNotifications}
-            trackColor={{ false: "#d1d5db", true: "#4b6e48" }}
-          />
-        </View>
-        
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>E-postnotiser</Text>
-          <Switch
-            value={emailNotifications}
-            onValueChange={setEmailNotifications}
-            trackColor={{ false: "#d1d5db", true: "#4b6e48" }}
-          />
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Om</Text>
-        
-        <Pressable style={styles.linkRow}>
-          <Text style={styles.rowLabel}>Användarvillkor</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-        
-        <Pressable style={styles.linkRow}>
-          <Text style={styles.rowLabel}>Integritetspolicy</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-        
-        <Pressable style={styles.linkRow}>
-          <Text style={styles.rowLabel}>Om MĀĀK</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-      </View>
-
-      <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Logga ut</Text>
-      </Pressable>
-
-      <Pressable style={styles.deleteButton}>
-        <Text style={styles.deleteText}>Radera konto</Text>
-      </Pressable>
-
-      <Text style={styles.version}>Version 1.0.0</Text>
+      <Text style={styles.version}>MĀĀK v1.0.0</Text>
     </ScrollView>
   );
 }
@@ -84,85 +171,78 @@ export default function SettingsModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f7f4",
+    backgroundColor: COLORS.background,
   },
   content: {
     padding: 16,
-    paddingBottom: 48,
+    paddingBottom: 40,
   },
   section: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
     marginBottom: 16,
-    overflow: "hidden",
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6b6860",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    color: COLORS.textSecondary,
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  row: {
+  infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e0e0e0",
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  linkRow: {
+  infoLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  infoLabelText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 4,
+  },
+  menuItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e0e0e0",
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  rowLabel: {
-    fontSize: 16,
-    color: "#1a1a1a",
+  menuItemPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
-  rowValue: {
-    fontSize: 16,
-    color: "#6b6860",
-  },
-  chevron: {
-    fontSize: 20,
-    color: "#6b6860",
-  },
-  signOutButton: {
-    backgroundColor: "#4b6e48",
-    paddingVertical: 16,
-    borderRadius: 12,
+  menuItemLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    gap: 12,
   },
-  signOutText: {
-    color: "#ffffff",
+  menuItemLabel: {
     fontSize: 16,
-    fontWeight: "600",
+    color: COLORS.text,
   },
-  deleteButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#ef4444",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  deleteText: {
-    color: "#ef4444",
-    fontSize: 16,
-    fontWeight: "600",
+  buttonSection: {
+    marginTop: 8,
+    gap: 12,
   },
   version: {
     textAlign: "center",
-    color: "#9ca3af",
+    color: COLORS.textSecondary,
     fontSize: 12,
+    marginTop: 24,
   },
 });

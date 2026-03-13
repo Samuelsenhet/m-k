@@ -2,11 +2,8 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -18,7 +15,6 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
-    "supabase/tests",
-    "expo-snack"
+    "supabase/tests"
   ]
 }
