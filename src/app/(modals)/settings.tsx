@@ -7,7 +7,7 @@ import * as Haptics from "expo-haptics";
 
 import { useAuth } from "@/contexts/useAuth";
 import { Card, Switch, Button } from "@/components/native";
-import { toast } from "@/components/native/Toast";
+import { toast } from "@/components/native";
 
 const COLORS = {
   background: "#0A0A0A",

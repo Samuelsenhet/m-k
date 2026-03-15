@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -49,7 +49,7 @@ export default function ProfileTab() {
   const [fullProfile, setFullProfile] = useState<FullProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchFullProfile = async () => {
+  const fetchFullProfile = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
@@ -59,11 +59,11 @@ export default function ProfileTab() {
     if (data) {
       setFullProfile(data as FullProfile);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchFullProfile();
-  }, [user]);
+  }, [fetchFullProfile]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

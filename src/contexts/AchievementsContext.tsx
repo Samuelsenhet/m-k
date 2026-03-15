@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- context file exports Provider + hooks */
 import { createContext, useCallback, useContext, useState } from 'react';
 import { useAchievements, type Achievement } from '@/hooks/useAchievements';
-import { toast } from '@/components/native/Toast';
+import { toast } from "@/components/native";
 
 interface AchievementsContextValue {
   checkAndAwardAchievement: (code: string) => Promise<Achievement | null>;

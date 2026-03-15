@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 
 import { Button, Input } from "@/components/native";
 import { usePhoneAuth } from "@/hooks/usePhoneAuth";
-import { toast } from "@/components/native/Toast";
+import { toast } from "@/components/native";
 
 const COLORS = {
   background: "#0A0A0A",

@@ -37,10 +37,8 @@ dist
 secrets.json
 credentials.json
 
-# iOS
-ios/Pods/
-ios/build/
-ios/**/xcuserdata/
+# iOS (native folder removed; re-add with: npx expo prebuild)
+ios/
 *.xcworkspace/xcuserdata/
 
 # Android

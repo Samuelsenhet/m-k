@@ -39,19 +39,28 @@ export default function HomeTab() {
   const { user } = useAuth();
   const { matches, loading, error, refreshMatches, likeMatch, passMatch, hasMore, fetchMoreMatches } = useMatches();
 
-  const handleLike = async (matchId: string) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await likeMatch(matchId);
-  };
+  const handleLike = useCallback(
+    async (matchId: string) => {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await likeMatch(matchId);
+    },
+    [likeMatch]
+  );
 
-  const handlePass = async (matchId: string) => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await passMatch(matchId);
-  };
+  const handlePass = useCallback(
+    async (matchId: string) => {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await passMatch(matchId);
+    },
+    [passMatch]
+  );
 
-  const handleViewProfile = (userId: string) => {
-    router.push(`/(modals)/match/${userId}`);
-  };
+  const handleViewProfile = useCallback(
+    (userId: string) => {
+      router.push(`/(modals)/match/${userId}`);
+    },
+    [router]
+  );
 
   const renderMatchCard = useCallback(
     ({ item, index }: { item: ReturnType<typeof useMatches>["matches"][0]; index: number }) => {
@@ -140,7 +149,7 @@ export default function HomeTab() {
         </Animated.View>
       );
     },
-    [t, likeMatch, passMatch, router]
+    [t, handleLike, handlePass, handleViewProfile]
   );
 
   if (!user) {

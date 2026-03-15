@@ -15,33 +15,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "ios": {
-      "bundleIdentifier": "com.samuelsenhet.maak",
-      "supportsTablet": true,
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "MĀĀK needs camera access to take profile photos and verify your identity.",
-        "NSPhotoLibraryUsageDescription": "MĀĀK needs photo library access to select profile photos.",
-        "NSContactsUsageDescription": "MĀĀK can help you find friends who are also using the app."
-      }
-    },
-    "android": {
-      "package": "com.samuelsenhet.maak",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0A0A0A"
-      },
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.READ_CONTACTS",
-        "android.permission.VIBRATE"
-      ]
-    },
-    "extra": {
-      "eas": {
-        "projectId": "4d900a70-4327-4740-83cc-4ac6745ef8eb"
-      }
-    },
     "owner": "samuelsenhet",
     "plugins": [
       [
@@ -80,9 +53,6 @@
         }
       ]
     ],
-    "runtimeVersion": "1.0.0",
-    "updates": {
-      "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb"
-    }
+    "runtimeVersion": "1.0.0"
   }
 }

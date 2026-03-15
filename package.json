@@ -2,14 +2,18 @@
   "name": "maak-app",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "main": "expo-router/entry",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start",
     "start:clear": "expo start --clear",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:clean": "npx expo run:ios --no-build-cache",
+    "ios:prebuild": "expo prebuild && expo run:ios",
     "prebuild": "expo prebuild",
-    "test": "jest --config jest.config.cjs",
+    "test": "npx jest --config jest.config.cjs",
     "lint": "eslint . --max-warnings 0 && npm run spellcheck",
     "typecheck": "tsc --noEmit",
     "spellcheck": "cspell \"**/*.{ts,tsx,js,jsx,json,md}\" --no-progress --relative",
@@ -81,6 +85,7 @@
     "node": ">=22.0.0"
   },
   "devDependencies": {
+    "patch-package": "^8.0.0",
     "@cspell/dict-sv": "^2.3.2",
     "@eslint/js": "^9.32.0",
     "@testing-library/react-native": "^13.3.3",

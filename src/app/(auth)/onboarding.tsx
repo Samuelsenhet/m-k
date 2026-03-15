@@ -16,7 +16,7 @@ import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
 import { Button, Input, Select, Checkbox } from "@/components/native";
-import { toast } from "@/components/native/Toast";
+import { toast } from "@/components/native";
 import { supabase } from "@/integrations/supabase/client";
 
 const COLORS = {

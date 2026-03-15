@@ -1,84 +1,49 @@
-import { Tabs } from "expo-router";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { ThemeProvider, DarkTheme, DefaultTheme } from "@react-navigation/native";
-import { useColorScheme, Platform } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-
-type IconName = keyof typeof Ionicons.glyphMap;
+import { useColorScheme } from "react-native";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
-  const getTabBarIcon = (routeName: string, focused: boolean, color: string) => {
-    let iconName: IconName;
-
-    switch (routeName) {
-      case "index":
-        iconName = focused ? "home" : "home-outline";
-        break;
-      case "matches":
-        iconName = focused ? "heart" : "heart-outline";
-        break;
-      case "chat":
-        iconName = focused ? "chatbubbles" : "chatbubbles-outline";
-        break;
-      case "notifications":
-        iconName = focused ? "notifications" : "notifications-outline";
-        break;
-      case "profile":
-        iconName = focused ? "person" : "person-outline";
-        break;
-      default:
-        iconName = "help-outline";
-    }
-
-    return <Ionicons name={iconName} size={24} color={color} />;
-  };
-
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Tabs
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color }) => getTabBarIcon(route.name, focused, color),
-          tabBarActiveTintColor: "#4b6e48",
-          tabBarInactiveTintColor: "#6b6860",
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#ffffff",
-            borderTopColor: colorScheme === "dark" ? "#333" : "#e0e0e0",
-          },
-        })}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: "Hem",
-          }}
-        />
-        <Tabs.Screen
-          name="matches"
-          options={{
-            title: "Matchningar",
-          }}
-        />
-        <Tabs.Screen
-          name="chat"
-          options={{
-            title: "Chatt",
-          }}
-        />
-        <Tabs.Screen
-          name="notifications"
-          options={{
-            title: "Notiser",
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: "Profil",
-          }}
-        />
-      </Tabs>
+      <NativeTabs tintColor="#4b6e48">
+        <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger.Label>Hem</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "house", selected: "house.fill" }}
+            md="home"
+          />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="matches">
+          <NativeTabs.Trigger.Label>Matchningar</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "heart", selected: "heart.fill" }}
+            md="favorite"
+          />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="chat">
+          <NativeTabs.Trigger.Label>Chatt</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "bubble.left", selected: "bubble.left.fill" }}
+            md="chat"
+          />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="notifications">
+          <NativeTabs.Trigger.Label>Notiser</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "bell", selected: "bell.fill" }}
+            md="notifications"
+          />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="profile">
+          <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "person", selected: "person.fill" }}
+            md="person"
+          />
+        </NativeTabs.Trigger>
+      </NativeTabs>
     </ThemeProvider>
   );
 }

@@ -1,0 +1,26 @@
+diff --git a/node_modules/@expo/cli/build/src/start/doctor/apple/SimulatorAppPrerequisite.js b/node_modules/@expo/cli/build/src/start/doctor/apple/SimulatorAppPrerequisite.js
+index 886f915..d478856 100644
+--- a/node_modules/@expo/cli/build/src/start/doctor/apple/SimulatorAppPrerequisite.js
++++ b/node_modules/@expo/cli/build/src/start/doctor/apple/SimulatorAppPrerequisite.js
+@@ -114,7 +114,20 @@ const debug = require('debug')('expo:doctor:apple:simulatorApp');
+     return null;
+ }
+ async function getSimulatorAppIdAsync() {
+-    return await getSimulatorAppIdViaAppleScriptAsync() ?? await getSimulatorAppIdFromBundleAsync();
++    const fromAppleScript = await getSimulatorAppIdViaAppleScriptAsync();
++    if (fromAppleScript) return fromAppleScript;
++    const fromBundle = await getSimulatorAppIdFromBundleAsync();
++    if (fromBundle) return fromBundle;
++    // Fallback: simctl works but Simulator.app not in Developer/Applications (e.g. Xcode 16+).
++    try {
++        await (0, _spawnasync().default)('xcrun', [
++            'simctl',
++            'help'
++        ]);
++        return 'com.apple.iphonesimulator';
++    } catch  {
++        return null;
++    }
+ }
+ class SimulatorAppPrerequisite extends _Prerequisite.Prerequisite {
+     static #_ = this.instance = new SimulatorAppPrerequisite();
