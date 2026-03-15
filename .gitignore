@@ -41,9 +41,8 @@ credentials.json
 ios/
 *.xcworkspace/xcuserdata/
 
-# Android
-android/app/build/
-android/.gradle/
+# Android (native folder from prebuild; EAS runs prebuild on the worker)
+android/
 *.apk
 *.aab
 
