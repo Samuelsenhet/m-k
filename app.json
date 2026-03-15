@@ -64,7 +64,10 @@
       "package": "com.samuelsenhet.maak"
     },
     "ios": {
-      "bundleIdentifier": "com.samuelsenhet.maak"
+      "bundleIdentifier": "com.samuelsenhet.maak",
+      "entitlements": {
+        "aps-environment": "development"
+      }
     },
     "extra": {
       "router": {
