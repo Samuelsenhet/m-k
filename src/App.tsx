@@ -20,8 +20,13 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <SpeedInsights />
-            <Analytics />
+            {/* Avoid noisy Vercel debug logs in local dev (Cursor browser / localhost). */}
+            {import.meta.env.PROD ? (
+              <>
+                <SpeedInsights />
+                <Analytics />
+              </>
+            ) : null}
             <RouterProvider router={router} />
           </TooltipProvider>
         </AuthProvider>

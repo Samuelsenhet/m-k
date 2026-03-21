@@ -76,9 +76,15 @@ export default defineConfig(({ mode }) => ({
     }),
   ].filter(Boolean),
   resolve: {
+    // Single React instance: without this, pre-bundled deps (e.g. Radix) can resolve a
+    // different `react` than the app → "Invalid hook call" / `useRef` on null dispatcher.
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "../src"),
     },
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react/jsx-runtime"],
   },
   build: {
     rollupOptions: {

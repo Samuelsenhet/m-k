@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/useAuth';
+import { isSupabaseInvokeUnauthorized } from '@/lib/supabase-functions-errors';
 
 interface MatchStatus {
   journey_phase: 'WAITING' | 'READY' | 'FIRST_MATCH';
@@ -40,8 +41,8 @@ export function useMatchStatus() {
 
       let { data, error } = await invokeStatus(session.access_token);
 
-      // On error, refresh once and retry.
-      if (error) {
+      // On error, refresh once and retry (skip for 401 — wrong Edge secrets won't fix).
+      if (error && !isSupabaseInvokeUnauthorized(error)) {
         const { data: { session: refreshed } } = await supabase.auth.refreshSession();
         if (refreshed?.access_token) {
           ({ data, error } = await invokeStatus(refreshed.access_token));
@@ -49,14 +50,12 @@ export function useMatchStatus() {
       }
 
       if (error) {
-        const errObj = error as { message?: string; context?: { status?: number } };
-        const is401 = errObj?.context?.status === 401 || /401|unauthorized/i.test(errObj?.message ?? '');
-        if (import.meta.env.DEV && is401) {
+        if (import.meta.env.DEV && isSupabaseInvokeUnauthorized(error)) {
           console.warn(
-            '[match-status] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401'
+            "[match-status] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
           );
         }
-        throw new Error(error.message ?? 'match-status failed');
+        throw new Error(error.message ?? "match-status failed");
       }
       if (data != null) setStatus(data as MatchStatus);
     } catch (err) {

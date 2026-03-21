@@ -52,6 +52,7 @@ const getErrorMessage = (error: unknown, t: TFunction, fallbackKey: string): str
 };
 
 import type { MatchDailyMatch } from "@/types/api";
+import { isSupabaseInvokeUnauthorized } from "@/lib/supabase-functions-errors";
 const mapMatch = (m: MatchDailyMatch): Match => ({
   id: m.match_id,
   matchedUser: {
@@ -114,8 +115,8 @@ export function useMatches() {
 
       let { data, error } = await invokeMatchDaily(session.access_token);
 
-      // On error, refresh the token once and retry.
-      if (error) {
+      // On error, refresh the token once and retry (skip for 401 — wrong Edge secrets won't fix).
+      if (error && !isSupabaseInvokeUnauthorized(error)) {
         const { data: { session: refreshed } } = await supabase.auth.refreshSession();
         if (refreshed?.access_token) {
           ({ data, error } = await invokeMatchDaily(refreshed.access_token));
@@ -123,11 +124,9 @@ export function useMatches() {
       }
 
       if (error) {
-        const errObj = error as { message?: string; context?: { status?: number } };
-        const is401 = errObj?.context?.status === 401 || /401|unauthorized/i.test(errObj?.message ?? '');
-        if (import.meta.env.DEV && is401) {
+        if (import.meta.env.DEV && isSupabaseInvokeUnauthorized(error)) {
           console.warn(
-            '[match-daily] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401'
+            "[match-daily] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
           );
         }
         throw error;

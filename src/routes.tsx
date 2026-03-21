@@ -40,6 +40,17 @@ import GroupChatWindow from "@/pages/GroupChatWindow";
 import LaunchChecklist from "@/pages/LaunchChecklist";
 import NotFound from "@/pages/NotFound";
 
+/** Shown while route loaders run during initial hydration (React Router v7). */
+const routeHydrateFallback = (
+  <div
+    className="flex min-h-screen items-center justify-center bg-background"
+    role="status"
+    aria-live="polite"
+  >
+    <p className="text-sm text-muted-foreground">Laddar…</p>
+  </div>
+);
+
 // --- Loader/action types for useLoaderData / useActionData ---
 
 export type RootLoaderData = {
@@ -174,11 +185,13 @@ export const router = createBrowserRouter([
         path: "profile",
         element: <Profile />,
         loader: profileLoader,
+        hydrateFallbackElement: routeHydrateFallback,
       },
       {
         path: "matches",
         element: <Matches />,
         loader: async (): Promise<RootLoaderData> => rootLoader(),
+        hydrateFallbackElement: routeHydrateFallback,
       },
       { path: "chat", element: <Chat /> },
       { path: "match/:userId", element: <ViewMatchProfile /> },
