@@ -12,24 +12,28 @@ import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
 import { Mascot } from '@/components/system/Mascot';
 import { useMascot } from '@/hooks/useMascot';
 import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
+import landingProfileErik from '@/assets/landing/landing-profile-erik.png';
+import landingProfileMerbel from '@/assets/landing/landing-profile-merbel.png';
+import landingProfileSofia from '@/assets/landing/landing-profile-sofia.png';
 
+/** Importerade PNG:er (Vite hashar URL → undviker cache av gamla `/public/`-filer) */
 const LANDING_SLIDES = [
   {
-    image: '/landing-profile-sofia.png',
+    image: landingProfileSofia,
     name: 'Sofia',
     archetype: 'Debattören',
     bio: 'Smart och nyfiken tänkare...',
     tags: ['Musik', 'Fika'],
   },
   {
-    image: '/landing-profile-merbel.png',
+    image: landingProfileMerbel,
     name: 'Merbel',
     archetype: 'Värdaren',
     bio: 'Lekfull och omtänksam...',
     tags: ['Resor', 'Mat'],
   },
   {
-    image: '/landing-profile-erik.png',
+    image: landingProfileErik,
     name: 'Erik',
     archetype: 'Strategen',
     bio: 'Driven och nyfiken...',
@@ -76,8 +80,11 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         background: `linear-gradient(180deg, ${COLORS.sage[50]} 0%, ${COLORS.neutral.white} 100%)`,
       }}
     >
-      {/* Header */}
-      <nav className={`flex justify-between items-center py-5 relative z-10 ${SCREEN_CONTENT_WIDTH_CLASS}`} aria-label="Huvudnavigation">
+      {/* Header: desktop/tablet only — på mobil flyttas Logga in till CTA-raden */}
+      <nav
+        className={`hidden md:flex justify-between items-center py-5 relative z-10 ${SCREEN_CONTENT_WIDTH_CLASS}`}
+        aria-label="Huvudnavigation"
+      >
         <Logo size={48} />
         <div className="flex items-center gap-1.5">
           {user ? (
@@ -100,14 +107,38 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
             </>
           ) : (
             <ButtonGhost size="sm" onClick={handleLogin}>
-              Logga in
+              {t('landing.login')}
             </ButtonGhost>
           )}
         </div>
       </nav>
 
-      {/* Landing mascot + intro */}
-      <div className={`text-center mt-4 mb-8 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
+      {/* Inloggad: snabbnav på mobil (ersätter nav-raden) */}
+      {user ? (
+        <div
+          className={`flex md:hidden justify-center items-center gap-2 py-4 ${SCREEN_CONTENT_WIDTH_CLASS}`}
+          aria-label="Snabbnavigation"
+        >
+          <ButtonGhost asChild size="sm" className="h-11 w-11 shrink-0 rounded-xl">
+            <Link to="/matches" className="flex items-center justify-center" aria-label="Matcher">
+              <Heart className="w-5 h-5 shrink-0" />
+            </Link>
+          </ButtonGhost>
+          <ButtonGhost asChild size="sm" className="h-11 w-11 shrink-0 rounded-xl">
+            <Link to="/chat" className="flex items-center justify-center" aria-label="Chatt">
+              <MessageCircle className="w-5 h-5 shrink-0" />
+            </Link>
+          </ButtonGhost>
+          <ButtonGhost asChild size="sm" className="h-11 w-11 shrink-0 rounded-xl">
+            <Link to="/profile" className="flex items-center justify-center" aria-label="Profil">
+              <User className="w-5 h-5 shrink-0" />
+            </Link>
+          </ButtonGhost>
+        </div>
+      ) : null}
+
+      {/* Landing mascot + intro — extra luft överst på mobil när nav saknas */}
+      <div className={`text-center mt-4 mb-8 pt-4 md:pt-0 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
         <div className="flex justify-center mb-0">
           <Mascot {...landingMascot} />
         </div>
@@ -116,25 +147,27 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         </p>
       </div>
 
-      {/* Features */}
-      <div className={`flex justify-center gap-6 mb-10 ${SCREEN_CONTENT_WIDTH_CLASS}`} role="list" aria-label="Fördelar">
-        {[
-          { icon: Brain, label: 'Personlighets-', sub: 'matchning' },
-          { icon: Shield, label: 'Säker &', sub: 'verifierad' },
-          { icon: Heart, label: 'Meningsfulla', sub: 'kopplingar' },
-        ].map((f, i) => (
-          <div key={i} className="text-center" role="listitem">
+      {/* Features — w-12 h-12 ikonruta, primary[100] bakgrund, två textrader (samma som mobil) */}
+      <div className={`flex justify-center gap-6 mb-10 px-1 ${SCREEN_CONTENT_WIDTH_CLASS}`} role="list" aria-label={t('landing.features_a11y')}>
+        {(
+          [
+            { icon: Brain, titleKey: 'landing.feature_personality_title', subKey: 'landing.feature_personality_sub' },
+            { icon: Shield, titleKey: 'landing.feature_safe_title', subKey: 'landing.feature_safe_sub' },
+            { icon: Heart, titleKey: 'landing.feature_meaningful_title', subKey: 'landing.feature_meaningful_sub' },
+          ] as const
+        ).map((f, i) => (
+          <div key={i} className="min-w-0 max-w-[120px] flex-1 text-center" role="listitem">
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
-              style={{ background: COLORS.primary[100] }}
+              className="mx-auto mb-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: COLORS.primary[100] }}
             >
-              <f.icon className="w-6 h-6" style={{ color: COLORS.primary[600] }} />
+              <f.icon className="h-6 w-6 shrink-0" strokeWidth={1.75} style={{ color: COLORS.primary[600] }} aria-hidden />
             </div>
-            <p className="text-xs font-medium" style={{ color: COLORS.primary[800] }}>
-              {f.label}
+            <p className="text-xs font-medium leading-tight" style={{ color: COLORS.primary[800] }}>
+              {t(f.titleKey)}
             </p>
-            <p className="text-xs" style={{ color: COLORS.neutral.gray }}>
-              {f.sub}
+            <p className="mt-0.5 text-xs leading-tight" style={{ color: COLORS.neutral.gray }}>
+              {t(f.subKey)}
             </p>
           </div>
         ))}
@@ -241,11 +274,18 @@ export const LandingPage = ({ onStart }: LandingPageProps) => {
         </p>
       )}
 
-      {/* Buttons */}
+      {/* Buttons — på mobil: Logga in under primärknappen (desktop har Logga in i nav) */}
       <div className={`space-y-3 mb-6 ${SCREEN_CONTENT_WIDTH_CLASS}`}>
         <ButtonPrimary fullWidth size="lg" onClick={handleStart}>
-          Kom igång gratis
+          {t('landing.cta')}
         </ButtonPrimary>
+        {!user ? (
+          <div className="md:hidden">
+            <ButtonGhost fullWidth size="lg" className="h-14 w-full text-base" onClick={handleLogin}>
+              {t('landing.login')}
+            </ButtonGhost>
+          </div>
+        ) : null}
       </div>
 
       {/* Terms */}

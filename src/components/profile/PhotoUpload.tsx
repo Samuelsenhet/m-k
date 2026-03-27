@@ -224,7 +224,7 @@ function SortablePhotoCard({
           <img
             src={getPublicUrl(photo.storage_path)}
             alt={`Foto ${index + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-black/40"
           />
 
           {/* Primary badge */}
@@ -295,7 +295,7 @@ function DragOverlayCard({ photo, index, t }: { photo: PhotoSlot; index: number;
       <img
         src={getPublicUrl(photo.storage_path)}
         alt={`Foto ${index + 1}`}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain bg-black/40"
       />
       {isPrimary && (
         <div className="absolute top-1 left-1 bg-primary text-primary-foreground px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
@@ -801,13 +801,13 @@ export function PhotoUpload({ photos, onPhotosChange, maxPhotos = PROFILE_PHOTO_
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-3 gap-3 p-3 rounded-xl glass-dark">
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl glass-dark">
             {photos.slice(0, maxPhotos).map((photo, index) => {
               const uploadItem = getUploadForSlot(index);
               return (
                 <div
                   key={photo.id || `slot-${index}`}
-                  className={cn(index === 0 && 'col-span-2 row-span-2')}
+                  className={cn(index === 0 && 'col-span-2')}
                 >
                   <SortablePhotoCard
                     photo={photo}

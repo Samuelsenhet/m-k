@@ -59,6 +59,12 @@ if (import.meta.env.DEV && (!isValidUrl || !isValidKey)) {
 
 const hasValidConfig = isValidUrl && isValidKey;
 
+if (typeof window !== 'undefined') {
+  // #region agent log
+  fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-1',hypothesisId:'H5',location:'src/integrations/supabase/client.ts:61',message:'Supabase client config snapshot',data:{hasValidConfig,host:SUPABASE_URL ? new URL(SUPABASE_URL).host : null,onLine:typeof navigator!=='undefined'?navigator.onLine:null},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+}
+
 /** True when .env has valid Supabase URL and key. Use to show setup page instead of app when false. */
 export const SUPABASE_CONFIGURED = hasValidConfig;
 export const hasValidSupabaseConfig = hasValidConfig;

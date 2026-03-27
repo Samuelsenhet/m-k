@@ -16,21 +16,127 @@
     "save_changes": "Save changes",
     "online_now_full": "There are {{count}} users online right now",
     "online_now_short": "{{count}} online right now",
-    "online_badge": "{{count}} online"
+    "online_badge": "{{count}} online",
+    "user": "User",
+    "close": "Close",
+    "not_found_title": "Page not found",
+    "not_found_message": "This screen does not exist.",
+    "not_found_link": "Go to home"
   },
   "nav": {
     "matches": "Matches",
     "chat": "Chat",
     "profile": "Profile"
   },
+  "countries": {
+    "SE": "Sweden",
+    "NO": "Norway",
+    "DK": "Denmark",
+    "FI": "Finland",
+    "IS": "Iceland",
+    "DE": "Germany",
+    "GB": "United Kingdom",
+    "US": "United States"
+  },
   "landing": {
-    "users_seeking_love": "Already {{count}} Swedes seeking love here"
+    "users_seeking_love": "Already {{count}} Swedes seeking love here",
+    "cta": "Get started for free",
+    "login": "Log in",
+    "brand": "MÄÄK",
+    "features_a11y": "Benefits",
+    "feature_personality_title": "Personality",
+    "feature_personality_sub": "matching",
+    "feature_safe_title": "Safe &",
+    "feature_safe_sub": "verified",
+    "feature_meaningful_title": "Meaningful",
+    "feature_meaningful_sub": "connections",
+    "example_name": "Sofia, The Debater",
+    "example_bio": "Smart and curious thinker…",
+    "example_tag_1": "Music",
+    "example_tag_2": "Fika",
+    "examples": {
+      "sofia": {
+        "name": "Sofia",
+        "archetype": "The Debater",
+        "bio": "Smart and curious thinker...",
+        "tag_1": "Music",
+        "tag_2": "Fika"
+      },
+      "merbel": {
+        "name": "Merbel",
+        "archetype": "The Host",
+        "bio": "Playful and caring...",
+        "tag_1": "Travel",
+        "tag_2": "Food"
+      },
+      "erik": {
+        "name": "Erik",
+        "archetype": "The Strategist",
+        "bio": "Driven and curious...",
+        "tag_1": "Training",
+        "tag_2": "Books"
+      }
+    },
+    "terms_agree": "By continuing you agree to our",
+    "terms_link": "Terms of use",
+    "privacy_link": "Privacy policy",
+    "and": "and"
   },
   "maak": {
     "intro": "I'm Määk.\nI'm here with you, while we find someone who really fits.",
     "guide": "I'll guide you calmly through this.",
     "waiting": "I'm here while we wait. Good things take time.",
     "firstMatch": "I told you it was worth the wait. 💛"
+  },
+  "maak_moment_of_depth": {
+    "lines_01": "As physicists once imagined",
+    "lines_02": "Schrödinger's cat exists in two states at once.",
+    "lines_03": "Alive. And not.",
+    "lines_04": "Until we choose to look.",
+    "lines_05": "That's the paradox.",
+    "lines_06": "And it's exactly where modern dating lives today.",
+    "lines_07": "So many possibilities.",
+    "lines_08": "So many \"what ifs\".",
+    "lines_09": "So much uncertainty.",
+    "lines_10": "But nothing real. Because nothing becomes real…",
+    "lines_11": "Until we choose to engage.",
+    "lines_12": "Until we start a conversation.",
+    "lines_13": "At MÄÄK, we don't chase more options.",
+    "lines_14": "We help you discover what's real - one interaction at a time.",
+    "lines_15": "It's about the moment you decide to show up.",
+    "lines_16": "That's when something real begins.",
+    "continue_cta": "Continue the test"
+  },
+  "maak_matching_story": {
+    "title": "How MÄÄK matches you",
+    "body_1": "Your answers map how you connect-not an endless feed, but a thoughtful daily shortlist tailored to you.",
+    "body_2": "We use personality dimensions and compatibility signals to decide who can appear in your match pool.",
+    "body_3": "Less noise, more intention. Finish the test so we can match you with care."
+  },
+  "maak_narrative_variants": {
+    "matches_ready_title": "Your matches are ready",
+    "matches_ready_body": "You waited with intention. Now you can see who's there-one interaction at a time.",
+    "see_matches_cta": "See your matches",
+    "first_match_quote": "Told you it was worth the wait. 💛",
+    "chat_empty_title": "Nothing becomes real…",
+    "chat_empty_body": "…until you start the conversation. Send a line that feels true to you.",
+    "icebreaker_intro": "Real connections start with one message. Pick a suggestion or write your own.",
+    "landing_hero_line": "We don't chase more options-we help you discover what becomes real, one conversation at a time.",
+    "ai_suggestions_label": "AI conversation starters"
+  },
+  "waiting_phase": {
+    "first_match_title": "Your first match is on the way!",
+    "first_match_subtitle": "We're preparing your personal matches based on your personality.",
+    "countdown_hint": "until your matches are ready",
+    "tip_1_title": "Matching with meaning",
+    "tip_1_desc": "We look for someone who fits you-not just someone like you",
+    "tip_2_title": "Give it time",
+    "tip_2_desc": "Good matches take a little time",
+    "tip_3_title": "While you wait",
+    "tip_3_desc": "You can get to know yourself better in the meantime",
+    "next_reset_lead": "Matches will be available",
+    "continue_explore": "Keep exploring the app",
+    "footer_tip": "While you wait, add more to your profile-at your own pace."
   },
   "auth": {
     "phoneTitle": "Enter your phone number",
@@ -52,7 +158,22 @@
     "error_phone_required": "Phone number is required",
     "error_verification_failed": "Verification failed",
     "error_send_failed": "Could not send verification code",
-    "login_failed": "Login failed"
+    "login_failed": "Login failed",
+    "sms_code": "SMS code",
+    "phone_invalid_min": "Enter a valid phone number",
+    "phone_invalid_max": "Enter a valid phone number",
+    "phone_invalid_se": "Enter a valid Swedish mobile number",
+    "otp_length": "Code must be 6 digits",
+    "pick_day": "Select day",
+    "pick_month": "Select month",
+    "pick_year": "Select year",
+    "invalid_number": "Invalid number",
+    "invalid_code": "Invalid code",
+    "no_session_returned": "No session was returned",
+    "supabase_banner": "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to apps/mobile/.env (see .env.example).",
+    "label_phone": "Phone number",
+    "phone_placeholder": "7X XXX XX XX",
+    "otp_placeholder": "000000"
   },
   "matches": {
     "title": "Today's matches",
@@ -71,15 +192,36 @@
     "loading_error": "Could not load matches",
     "loading_error_check_login": "Could not load matches. Make sure you are logged in.",
     "error_title": "We're having trouble loading matches",
-    "error_reassure": "Something went wrong – I'll try again",
+    "error_reassure": "Something went wrong - I'll try again",
     "until_ready": "until your matches are ready",
     "must_be_logged_in": "You must be logged in to see matches",
     "auth_verify_failed": "We couldn't verify your login. Try logging out and in again, or try again in a moment.",
-    "server_error": "The service isn't responding right now. Check that you're logged in and try again – or wait a moment.",
+    "server_error": "The service isn't responding right now. Check that you're logged in and try again - or wait a moment.",
     "network_error": "No internet connection. Check your network and try again.",
+    "load_more": "Load more",
     "load_more_error": "Could not load more matches",
     "noMatchesDescription": "Come back tomorrow for new matches!",
-    "retry": "Try again"
+    "mutual_section": "Mutual matches ({{count}})",
+    "active_chats_section": "Active chats ({{count}})",
+    "discover_section": "Discover",
+    "footer_tomorrow": "New matches arrive tomorrow.",
+    "anonymous": "Anonymous",
+    "view_match_header": "Match",
+    "open_chat": "Open chat",
+    "chat_mutual": "Chat",
+    "insight_title": "Smart personality analysis",
+    "insight_subtitle": "30 questions · 16 archetypes · 4 categories",
+    "retry": "Try again",
+    "edge_auth_title": "Can't reach match server (401)",
+    "edge_auth_body": "You're signed in, but Edge Functions rejected the request. Usually this is a Supabase project mismatch in the browser (.env / stale session) or functions deployed to the wrong project.",
+    "edge_auth_steps": "Try this:",
+    "edge_auth_step1": "Sign out below or clear Local Storage (keys starting with sb-) for localhost, then try again.",
+    "edge_auth_step2": "In the project folder: supabase link --project-ref jappgthiyedycwhttpcu and npm run edge:fix-401 (deploys match-status and match-daily).",
+    "edge_auth_step3": "Ensure .env has VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY from the same project as in the Supabase Dashboard.",
+    "edge_auth_doc": "More help: docs/EDGE_401_QUICK_FIX.md and docs/LAUNCH_401_CHECKLIST.md in the repo.",
+    "edge_auth_retry": "Try again",
+    "edge_auth_sign_out": "Sign out and sign in again",
+    "next_reset_prefix": "Next:"
   },
   "chat": {
     "newMatch": "New match! 🎉",
@@ -113,24 +255,26 @@
     "you": "You",
     "send": "Send",
     "search": "Search",
+    "emptyChatsEncouragement": "Practice makes perfect! Hi! 👋",
+    "noSearchResults": "No results",
     "coming_soon": "Coming soon",
     "videoCall": "Video call",
     "sendPhoto": "Send photo",
     "voiceMsg": "Voice",
     "icebreakers": "Icebreakers",
     "aiSuggestions": "AI suggestions",
-    "footerTagline": "MÄÄK – Personality test for relationships · Find your match",
+    "footerTagline": "MÄÄK - Personality test for relationships · Find your match",
     "conversations": "Your conversations",
     "kemiCheck": "Chemistry Check",
     "mic": "Microphone",
     "muted": "Muted",
     "volume": "Volume",
     "endCall": "End call",
-    "kemiCheckSubtitle": "Quick video 5–10 min",
-    "kemiCheckTooltip": "Chemistry Check – short video to test your connection",
+    "kemiCheckSubtitle": "Quick video 5-10 min",
+    "kemiCheckTooltip": "Chemistry Check - short video to test your connection",
     "aiSuggestKemiCheck": "Seems like you have a lot in common! Book a Chemistry Check to get to know each other better.",
     "bookKemiCheck": "Start Chemistry Check",
-    "postVideoTitle": "After Chemistry Check – AI suggestions",
+    "postVideoTitle": "After Chemistry Check - AI suggestions",
     "postVideoGenerating": "Generating suggestions...",
     "postVideoDismiss": "Close",
     "postVideoError": "Could not load suggestions. Try again later.",
@@ -169,7 +313,27 @@
     "leaving": "Leaving...",
     "leftGroup": "You have left the group.",
     "errorLeave": "Could not leave the group. Try again.",
-    "moreOptions": "More options"
+    "moreOptions": "More options",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "createFirst": "Create your first collection",
+    "groupNamePreview": "A place to get to know each other together.",
+    "emptyHeading": "Your collections start with a connection",
+    "emptyBody": "A collection is not a group chat. It is people heading the same way.",
+    "emptyCtaSecondary": "You need at least two matches.",
+    "emptyRoomLine1": "No one has said anything yet.",
+    "emptyRoomLine2": "Start when it feels right.",
+    "emptyRoomCta": "Write the first message",
+    "firstSystemMessage": "Something shared begins here.",
+    "firstSystemMessageWithName": "You're gathering around: {{name}}",
+    "leaveTitle": "Leave the collection?",
+    "leaveDescription": "You leave the context, not the people.",
+    "stayInSamling": "Stay",
+    "leaveSamling": "Leave collection",
+    "addMembersTitle": "Who fits here?",
+    "lastShared": "Last shared: {{text}}",
+    "sharedContext": "A shared context",
+    "inlineEmpty": "A collection is people heading the same way."
   },
   "profile": {
     "title": "My Profile",
@@ -182,6 +346,8 @@
     "lastName": "Last name",
     "bio": "Bio",
     "bio_placeholder": "Tell us something about yourself...",
+    "no_photos_yet": "No photos yet",
+    "placeholder_name": "Your name",
     "photos": {
       "title": "Your photos",
       "upload": "Upload photo",
@@ -243,7 +409,24 @@
     "interests_placeholder": "e.g. art, travel, cooking, fitness...",
     "interests_empty": "Add interests",
     "prev_photo": "Previous photo",
-    "next_photo": "Next photo"
+    "next_photo": "Next photo",
+    "show_more": "Show more",
+    "add_height_cta": "+ Add height",
+    "add_work_cta": "+ Add work",
+    "view_profile": "View profile",
+    "strengths": "Strengths",
+    "about_me": "About me",
+    "fact_work": "Work",
+    "fact_education": "Education",
+    "fact_location": "Location",
+    "fact_age": "Age",
+    "fact_age_years": "{{age}} years",
+    "fact_height": "Height",
+    "fact_gender": "Gender",
+    "fact_instagram": "Instagram",
+    "fact_linkedin": "LinkedIn",
+    "height_value_cm": "{{value}} cm",
+    "in_relationships_label": "In relationships: "
   },
   "settings": {
     "title": "Settings",
@@ -279,17 +462,23 @@
     "distance": "Distance",
     "submit": "Save",
     "about_us": "About MÄÄK",
-    "learn_personality": "Learn about personality & archetypes"
+    "learn_personality": "Learn about personality & archetypes",
+    "web_full_page_hint": "The full page with all sections and features opens in the browser."
   },
   "notifications": {
     "title": "Notifications",
+    "just_now": "Just now",
     "today": "Today",
     "your_view_this": "viewed you",
-    "your_love_this": "is interested in you",
+    "your_love_this": "started a match with you",
+    "your_match_request": "started a match with you",
     "profile_matched_with": "Your profile matched with {{name}}!",
     "accept": "Accept",
     "reject": "Reject",
     "minutes_ago": "{{count}} minutes ago",
+    "hours_ago": "{{count}} h ago",
+    "days_ago": "{{count}} d ago",
+    "accept_error": "Could not accept. Please try again.",
     "no_notifications": "No notifications",
     "intro": "Activity and preferences.",
     "push_and_email": "Push & email",
@@ -304,13 +493,233 @@
   "personality": {
     "testTitle": "Personality Test",
     "testDescription": "Answer the questions to find your archetype",
+    "complete_all_questions": "Answer all questions before continuing.",
     "question": "Question {{current}} of {{total}}",
     "results": "Your Results",
     "archetype": "Your Archetype",
     "diplomat": "Diplomat",
     "strategist": "Strategist",
     "builder": "Builder",
-    "explorer": "Explorer"
+    "explorer": "Explorer",
+    "category_pill_diplomat": "The Diplomat",
+    "category_pill_strategist": "The Strategist",
+    "category_pill_builder": "The Builder",
+    "category_pill_explorer": "The Explorer",
+    "main_category_label": "Main category",
+    "main_category_sub": "Your primary connection style",
+    "four_archetypes_label": "Four archetypes",
+    "four_archetypes_sub": "Different sides of your personality - yours is highlighted",
+    "your_archetype_card": "Your archetype",
+    "your_type": "your type",
+    "test_result_line": "Your test type: {{title}} ({{code}}) - 1 of 4 in {{category}}.",
+    "overview": "Overview",
+    "strengths": "Strengths",
+    "guide_category_DIPLOMAT_title": "Diplomats",
+    "guide_category_DIPLOMAT_desc": "You are empathetic and warm and value deep relationships and harmony.",
+    "guide_category_STRATEGER_title": "Strategists",
+    "guide_category_STRATEGER_desc": "You are analytical and goal-oriented with a natural ability to see the whole picture.",
+    "guide_category_BYGGARE_title": "Builders",
+    "guide_category_BYGGARE_desc": "You are practical and reliable with a strong sense of responsibility and loyalty.",
+    "guide_category_UPPTÄCKARE_title": "Explorers",
+    "guide_category_UPPTÄCKARE_desc": "You are spontaneous and adventurous with a passion for new experiences.",
+    "dimensions": {
+      "ei": {
+        "left": "Introvert",
+        "right": "Extrovert",
+        "name": "Energy"
+      },
+      "sn": {
+        "left": "Sensing",
+        "right": "Intuition",
+        "name": "Perception"
+      },
+      "tf": {
+        "left": "Thinking",
+        "right": "Feeling",
+        "name": "Decisions"
+      },
+      "jp": {
+        "left": "Judging",
+        "right": "Perceiving",
+        "name": "Lifestyle"
+      },
+      "at": {
+        "left": "Turbulent",
+        "right": "Assertive",
+        "name": "Identity"
+      }
+    },
+    "archetypes": {
+      "INFJ": {
+        "title": "The Advocate",
+        "description": "Quiet and mysterious, yet inspiring and relentlessly idealistic.",
+        "loveStyle": "Seeks deep, meaningful connections",
+        "strengths": [
+          "Deep empathy",
+          "Creative vision",
+          "Passionate"
+        ]
+      },
+      "INFP": {
+        "title": "The Mediator",
+        "description": "Poetic, kind and altruistic, always eager to help a good cause.",
+        "loveStyle": "Dreams of perfect romance",
+        "strengths": [
+          "Creativity",
+          "Empathy",
+          "Authenticity"
+        ]
+      },
+      "ENFJ": {
+        "title": "The Protagonist",
+        "description": "Charismatic and inspiring leader, able to mesmerize listeners.",
+        "loveStyle": "Gives everything in relationships; deeply devoted",
+        "strengths": [
+          "Charisma",
+          "Natural leader",
+          "Generous"
+        ]
+      },
+      "ENFP": {
+        "title": "The Campaigner",
+        "description": "Enthusiastic, creative and free-spirited; always finds a reason to smile.",
+        "loveStyle": "Passionate and spontaneous in love",
+        "strengths": [
+          "Creativity",
+          "Enthusiasm",
+          "People skills"
+        ]
+      },
+      "INTJ": {
+        "title": "The Architect",
+        "description": "Imaginative and strategic thinker with a plan for everything.",
+        "loveStyle": "Seeks intellectual partners",
+        "strengths": [
+          "Strategic",
+          "Independent",
+          "Decisive"
+        ]
+      },
+      "INTP": {
+        "title": "The Logician",
+        "description": "Innovative inventor with an unquenchable thirst for knowledge.",
+        "loveStyle": "Values intellectual stimulation",
+        "strengths": [
+          "Logic",
+          "Objectivity",
+          "Innovation"
+        ]
+      },
+      "ENTJ": {
+        "title": "The Commander",
+        "description": "Bold, imaginative and strong-willed leader who always finds a way.",
+        "loveStyle": "Ambitious and committed partner",
+        "strengths": [
+          "Leadership",
+          "Strategic",
+          "Efficient"
+        ]
+      },
+      "ENTP": {
+        "title": "The Debater",
+        "description": "Smart and curious thinker who cannot resist an intellectual challenge.",
+        "loveStyle": "Loves intellectual challenge in relationships",
+        "strengths": [
+          "Quick-witted",
+          "Creative",
+          "Charismatic"
+        ]
+      },
+      "ISTJ": {
+        "title": "The Logistician",
+        "description": "Practical and fact-minded; reliability is beyond doubt.",
+        "loveStyle": "Loyal and steady in relationships",
+        "strengths": [
+          "Reliable",
+          "Organized",
+          "Loyal"
+        ]
+      },
+      "ISFJ": {
+        "title": "The Defender",
+        "description": "Dedicated and warm protector, always ready to defend loved ones.",
+        "loveStyle": "Deeply nurturing and loving",
+        "strengths": [
+          "Caring",
+          "Loyal",
+          "Reliable"
+        ]
+      },
+      "ESTJ": {
+        "title": "The Executive",
+        "description": "Excellent administrator; unsurpassed at managing things or people.",
+        "loveStyle": "Reliable and committed in long-term relationships",
+        "strengths": [
+          "Organization",
+          "Leadership",
+          "Direct"
+        ]
+      },
+      "ESFJ": {
+        "title": "The Consul",
+        "description": "Extraordinarily caring, social and popular; always eager to help.",
+        "loveStyle": "Wants to create harmony and warmth",
+        "strengths": [
+          "Social",
+          "Caring",
+          "Loyal"
+        ]
+      },
+      "ISTP": {
+        "title": "The Virtuoso",
+        "description": "Bold and practical experimenter; master of all kinds of tools.",
+        "loveStyle": "Laid-back but loyal partner",
+        "strengths": [
+          "Practical",
+          "Problem solver",
+          "Independent"
+        ]
+      },
+      "ISFP": {
+        "title": "The Adventurer",
+        "description": "Flexible and charming artist, always ready to explore something new.",
+        "loveStyle": "Romantic and passionate",
+        "strengths": [
+          "Creativity",
+          "Spontaneity",
+          "Sensitivity"
+        ]
+      },
+      "ESTP": {
+        "title": "The Entrepreneur",
+        "description": "Smart, energetic and perceptive; truly lives on the edge.",
+        "loveStyle": "Exciting and spontaneous in love",
+        "strengths": [
+          "Energetic",
+          "Perceptive",
+          "Direct"
+        ]
+      },
+      "ESFP": {
+        "title": "The Entertainer",
+        "description": "Spontaneous, energetic and enthusiastic - life of the party.",
+        "loveStyle": "Generous and fun partner",
+        "strengths": [
+          "Energy",
+          "Positivity",
+          "Social"
+        ]
+      }
+    }
+  },
+  "personality_guide": {
+    "title": "Personality & archetypes",
+    "learn_title": "Get to know your personality",
+    "intro": "After our 30-question test you get one main category and four archetypes that describe different sides of you. Tap an archetype to read more.",
+    "abbreviations_title": "Abbreviations",
+    "abbreviations_intro": "Each archetype has a code (e.g. INFP) that describes its core.",
+    "example_code": "Example: INFP = Introversion, Intuition, Feeling, Prospecting",
+    "in_relationships": "In relationships"
   },
   "premium": {
     "title": "Premium",
@@ -324,6 +733,8 @@
   },
   "achievements": {
     "title": "Achievements",
+    "points_abbr": "{{count}} pts",
+    "progress_unlocked": "{{earned}} / {{total}}",
     "empty": "No achievements yet. Complete actions in the app to unlock them!",
     "profileComplete": "Profile Complete",
     "firstMatch": "First Match",
@@ -373,15 +784,17 @@
     "status_pending": "Pending review",
     "status_reviewing": "Your report is being reviewed",
     "status_resolved": "Resolved",
-    "status_dismissed": "Dismissed"
+    "status_dismissed": "Dismissed",
+    "mobile_submit_web": "Submit a report via the web form. You must be logged in on the web."
   },
   "admin": {
-    "reports_title": "Moderation – Reports",
-    "appeals_title": "Moderation – Appeals",
+    "reports_title": "Moderation - Reports",
+    "appeals_title": "Moderation - Appeals",
     "access_denied": "You do not have permission to view this page.",
     "no_reports": "No reports yet.",
     "no_appeals": "No appeals yet.",
-    "status": "Status"
+    "status": "Status",
+    "mobile_intro": "Moderation view for reports. Requires moderator access."
   },
   "appeal": {
     "title": "Appeal sanction",
@@ -457,5 +870,240 @@
     },
     "error_auth": "You must be logged in",
     "error_fetch": "Could not fetch AI suggestions"
+  },
+  "personality_test_questions": {
+    "q1": "I recharge by spending time with other people",
+    "q2": "I'm at my best in large groups and social settings",
+    "q3": "I readily start conversations with new people",
+    "q4": "I prefer to talk through my thoughts with others",
+    "q5": "I get energized from taking part in group discussions",
+    "q6": "I actively seek out social events and parties",
+    "q7": "I focus on concrete facts rather than abstract ideas",
+    "q8": "I trust my experience more than my imagination",
+    "q9": "I prefer practical solutions over theoretical ones",
+    "q10": "I notice details more than the big picture",
+    "q11": "I'm comfortable with routines and tried-and-true methods",
+    "q12": "I'd rather live in the present than dream about the future",
+    "q13": "I make decisions based on logic rather than feelings",
+    "q14": "I value honesty even if it might hurt",
+    "q15": "I weigh pros and cons carefully",
+    "q16": "I stay objective in conflict situations",
+    "q17": "I prioritize efficiency over harmony",
+    "q18": "I question decisions based only on emotions",
+    "q19": "I prefer to have a clear plan for the future",
+    "q20": "I'm comfortable with structure and deadlines",
+    "q21": "I like to finish tasks before starting new ones",
+    "q22": "I prefer predictability over surprises",
+    "q23": "I organize my life carefully",
+    "q24": "I get stressed by last-minute changes",
+    "q25": "I feel confident in myself in most situations",
+    "q26": "I don't let others' opinions affect my self-image",
+    "q27": "I handle stress and setbacks without much worry",
+    "q28": "I'm happy with who I am",
+    "q29": "I rarely doubt my decisions",
+    "q30": "I don't need validation from others to feel good"
+  },
+  "terms": {
+    "mobile_summary": "Here is a short summary. Full terms of use and privacy policy with all sections are available via the button below (opens in the browser)."
+  },
+  "reporting": {
+    "mobile_body": "Reporting and guidelines are described in detail on the website. In the mobile app you will soon be able to manage reports directly here."
+  },
+  "mobile": {
+    "personality_test": {
+      "subtitle": "Discover your matching profile",
+      "see_result": "See my result"
+    },
+    "welcome": {
+      "title": "Welcome{{namePart}}!",
+      "title_name_part": ", {{name}}",
+      "subtitle": "Your profile is ready. Here's what awaits you.",
+      "cta": "✨ See my matches",
+      "feature_1_title": "Daily matches",
+      "feature_1_desc": "Every day you get new matches based on your personality",
+      "feature_2_title": "Start conversations",
+      "feature_2_desc": "Use AI-generated icebreakers to start chatting",
+      "feature_3_title": "Deeper connections",
+      "feature_3_desc": "We match on personality, not just looks"
+    },
+    "wizard": {
+      "step_basic": "Basics",
+      "step_personality": "Personality",
+      "step_background": "Background",
+      "step_photos": "Photos",
+      "step_privacy": "Privacy",
+      "step_id": "ID verification",
+      "step_done": "Done",
+      "photo_prompt_0": "What makes you genuinely happy?",
+      "photo_prompt_1": "Your most adventurous side",
+      "photo_prompt_2": "An ordinary day in your life",
+      "photo_prompt_3": "Something you're proud of",
+      "photo_prompt_4": "Your hidden talent",
+      "photo_prompt_5": "With your favorite people",
+      "profile_created": "Your profile has been created!",
+      "save_failed_title": "Could not save",
+      "step_indicator": "Step {{current}} / {{total}}: {{label}}",
+      "about_you_title": "Tell us about yourself",
+      "about_you_sub": "Basic information for your profile",
+      "first_name": "First name *",
+      "first_name_ph": "First name",
+      "last_name": "Last name",
+      "optional_ph": "Optional",
+      "pronouns": "Pronouns",
+      "height_cm": "Height (cm)",
+      "height_cm_ph": "175",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "username_ph": "@username",
+      "identify_as": "I identify as *",
+      "sexuality": "Sexuality *",
+      "looking_for": "I'm looking for *",
+      "your_personality": "Your personality",
+      "already_did_test": "You've already completed the test",
+      "test_done": "Test complete!",
+      "background_title": "Background",
+      "background_sub": "Optional - you can fill this in later",
+      "hometown": "Hometown",
+      "hometown_ph": "Stockholm",
+      "work": "Work",
+      "education": "Education",
+      "religion": "Religion",
+      "politics": "Politics",
+      "alcohol": "Alcohol",
+      "smoking": "Smoking / snus",
+      "show_yourself_title": "Show yourself",
+      "show_yourself_sub": "At least 1 photo is required; 4-6 recommended",
+      "privacy_title": "Privacy",
+      "privacy_sub": "Choose what appears on your profile",
+      "show_age": "Show my age",
+      "show_job": "Show my job",
+      "show_education": "Show my education",
+      "show_last_name": "Show last name to matches",
+      "complete_title": "Your profile is {{percent}}% complete!",
+      "complete_sub": "You're ready to start matching",
+      "back": "Back",
+      "skip": "Skip",
+      "cta_start": "Start matching",
+      "cta_next_test": "Next: personality test",
+      "continue": "Continue"
+    },
+    "age": {
+      "dob": "Date of birth",
+      "hint": "You must be at least 20 years old to use MÄÄK",
+      "day": "Day",
+      "month": "Month",
+      "year": "Year",
+      "too_young": "You must be at least 20 years old to create an account.",
+      "confirmed": "Age confirmed ({{age}} years)",
+      "m01": "January",
+      "m02": "February",
+      "m03": "March",
+      "m04": "April",
+      "m05": "May",
+      "m06": "June",
+      "m07": "July",
+      "m08": "August",
+      "m09": "September",
+      "m10": "October",
+      "m11": "November",
+      "m12": "December"
+    },
+    "id_verify": {
+      "title": "ID verification",
+      "body": "In the web app you can upload ID for extra safety. In the mobile app this is coming soon - you can skip and continue."
+    },
+    "photo": {
+      "permission_title": "Permission",
+      "permission_body": "Allow photo library access to upload images.",
+      "counter": "{{current}} of {{max}} photos"
+    },
+    "phone_errors": {
+      "network": "Network error. Check your internet connection and that Supabase is configured correctly.",
+      "config_env": "Configuration error: Supabase environment variables are missing. Check apps/mobile .env.",
+      "not_configured": "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to apps/mobile/.env.",
+      "captcha": "SMS sign-in requires CAPTCHA in your Supabase settings. Turn off CAPTCHA for Phone Auth or implement captchaToken in the client.",
+      "phone_disabled": "SMS sign-in is not enabled in Supabase. Go to Dashboard → Authentication → Providers → Phone.",
+      "not_configured_short": "Supabase is not configured. Add .env for sign-in.",
+      "code_expired": "The code has expired. Send a new code and try again.",
+      "send_otp_failed": "Could not send verification code",
+      "invalid_otp": "Invalid verification code"
+    },
+    "landing": {
+      "quick_nav_a11y": "Quick navigation"
+    },
+    "matching": {
+      "from": "From",
+      "to": "To"
+    },
+    "select": {
+      "pronoun": {
+        "hon/henne": "she/her",
+        "han/honom": "he/him",
+        "hen/hen": "hen/hen",
+        "de/dem": "they/them",
+        "annat": "Other"
+      },
+      "gender": {
+        "kvinna": "Woman",
+        "man": "Man",
+        "icke-binär": "Non-binary",
+        "transkvinna": "Trans woman",
+        "transman": "Trans man",
+        "annat": "Other"
+      },
+      "sexuality": {
+        "heterosexuell": "Heterosexual",
+        "homosexuell": "Homosexual",
+        "bisexuell": "Bisexual",
+        "pansexuell": "Pansexual",
+        "asexuell": "Asexual",
+        "annat": "Other"
+      },
+      "looking_for": {
+        "kvinnor": "Women",
+        "män": "Men",
+        "icke-binära": "Non-binary people",
+        "alla": "Everyone"
+      },
+      "religion": {
+        "agnostiker": "Agnostic",
+        "ateist": "Atheist",
+        "kristen": "Christian",
+        "muslim": "Muslim",
+        "jude": "Jewish",
+        "buddhist": "Buddhist",
+        "hindu": "Hindu",
+        "spirituell": "Spiritual",
+        "annat": "Other"
+      },
+      "politics": {
+        "vänster": "Left",
+        "liberal": "Liberal",
+        "moderat": "Moderate",
+        "konservativ": "Conservative",
+        "höger": "Right",
+        "opolitisk": "Apolitical"
+      },
+      "alcohol": {
+        "aldrig": "Never",
+        "sällan": "Rarely",
+        "socialt": "Socially",
+        "ofta": "Often"
+      },
+      "smoking": {
+        "aldrig": "Never",
+        "ibland": "Sometimes",
+        "regelbundet": "Regularly",
+        "dagligen": "Daily"
+      },
+      "placeholder": "Choose..."
+    },
+    "expo_modal_title": "Modal",
+    "expo_modal_hint": "Expo Router example (template).",
+    "template": {
+      "edit_open_code": "Open the code for this screen:",
+      "edit_save_reload": "Change any text, save the file, and the app will update automatically.",
+      "edit_docs_link": "Tap here if the app does not update after you make changes"
+    }
   }
 }

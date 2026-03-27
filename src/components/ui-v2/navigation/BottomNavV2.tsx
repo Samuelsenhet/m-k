@@ -43,7 +43,7 @@ export function BottomNavV2() {
       )}
       aria-label="Huvudnavigering"
     >
-      <div className="max-w-lg mx-auto relative">
+      <div className="w-full relative">
         <div
           className={cn(
             "absolute top-0 left-0 right-0 grid px-2 pointer-events-none",

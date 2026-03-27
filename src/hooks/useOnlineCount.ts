@@ -31,13 +31,24 @@ export function useOnlineCount(userId: string | undefined): number {
       .on('presence', { event: 'sync' }, updateCount)
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await channel.track({ user_id: userId ?? null, online_at: new Date().toISOString() });
+          try {
+            await channel.track({ user_id: userId ?? null, online_at: new Date().toISOString() });
+          } catch {
+            // Ignore transient network errors (e.g. "Failed to fetch") for presence.
+          }
           updateCount();
         }
       });
 
     return () => {
-      channel.untrack().then(() => supabase.removeChannel(channel));
+      channel
+        .untrack()
+        .catch(() => {
+          // Ignore transient network errors on teardown.
+        })
+        .finally(() => {
+          void supabase.removeChannel(channel);
+        });
     };
   }, [userId]);
 

@@ -266,7 +266,7 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
   }
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-6">
       {/* Photos Section */}
       <CardV2 padding="none">
         <CardV2Header className="p-5 pb-2">
@@ -730,24 +730,26 @@ export function ProfileEditor({ onComplete }: ProfileEditorProps) {
         </CardV2Content>
       </CardV2>
 
-      {/* Save Button */}
-      <ButtonPrimary 
-        onClick={handleSave} 
-        disabled={saving}
-        className="w-full"
-      >
-        {saving ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Sparar...
-          </>
-        ) : (
-          <>
-            <Save className="w-4 h-4 mr-2" />
-            Spara ändringar
-          </>
-        )}
-      </ButtonPrimary>
+      {/* Save Button - sticky so it remains reachable when mobile keyboard is open */}
+      <div className="sticky bottom-0 z-20 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-black/85 backdrop-blur supports-[backdrop-filter]:bg-black/70">
+        <ButtonPrimary
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Sparar...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Spara ändringar
+            </>
+          )}
+        </ButtonPrimary>
+      </div>
     </div>
   );
 }

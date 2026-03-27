@@ -1,13 +1,17 @@
-import { useState, useMemo } from 'react';
-import { QUESTIONS } from '@/data/questions';
-import { type PersonalityTestResult, type DimensionKey, calculateArchetype, getCategoryFromArchetype } from '@/types/personality';
-import { ProgressBar } from './ProgressBar';
-import { QuestionCard } from './QuestionCard';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-
+import { useState, useMemo, useRef } from "react";
+import { QUESTIONS } from "@/data/questions";
+import {
+  type PersonalityTestResult,
+  type DimensionKey,
+  calculateArchetype,
+  getCategoryFromArchetype,
+} from "@/types/personality";
+import { ProgressBar } from "./ProgressBar";
+import { QuestionCard } from "./QuestionCard";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { MomentOfDepthInterstitialWeb } from "@/components/personality/MomentOfDepthInterstitialWeb";
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -26,7 +30,7 @@ interface PersonalityTestProps {
 export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { toast } = useToast();
-  
+
   // Shuffle questions once per user session
   const shuffledQuestions = useMemo(() => shuffleArray(QUESTIONS), []);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -36,9 +40,9 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
   const isComplete = answeredCount === shuffledQuestions.length;
 
   const setAnswer = (value: number) => {
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: value
+      [currentQuestion.id]: value,
     }));
 
     // Auto-advance after a brief delay
@@ -59,8 +63,14 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
     };
 
     // Group answers by dimension using original question data
-    const dimensionCounts: Record<DimensionKey, number> = { ei: 0, sn: 0, tf: 0, jp: 0, at: 0 };
-    
+    const dimensionCounts: Record<DimensionKey, number> = {
+      ei: 0,
+      sn: 0,
+      tf: 0,
+      jp: 0,
+      at: 0,
+    };
+
     QUESTIONS.forEach((q) => {
       const answerValue = answers[q.id];
       if (answerValue) {
@@ -80,7 +90,7 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
     const category = getCategoryFromArchetype(archetype);
 
     // Convert answers record to array for storage
-    const answersArray = QUESTIONS.map(q => answers[q.id] || 0);
+    const answersArray = QUESTIONS.map((q) => answers[q.id] || 0);
 
     return {
       scores,
@@ -90,13 +100,12 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
     };
   };
 
-
   const handleSubmit = () => {
     if (!isComplete) {
       toast({
-        title: 'Slutför testet',
-        description: 'Vänligen besvara alla frågor innan du går vidare.',
-        variant: 'destructive',
+        title: "Slutför testet",
+        description: "Vänligen besvara alla frågor innan du går vidare.",
+        variant: "destructive",
       });
       return;
     }
@@ -107,6 +116,7 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
 
   return (
     <div className="min-h-screen gradient-hero">
+      <MomentOfDepthInterstitialWeb open={showMomentDepth} onContinue={dismissMomentDepth} />
       <div className="container max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -114,21 +124,32 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
             <Heart className="w-5 h-5 text-primary" fill="currentColor" />
             <span className="font-semibold text-foreground">MÄÄK</span>
           </div>
-          <h1 className="text-2xl font-serif text-foreground mb-2">Personlighetstest</h1>
-          <p className="text-muted-foreground mb-4">Upptäck din matchningsprofil</p>
-          
+          <h1 className="text-2xl font-serif text-foreground mb-2">
+            Personlighetstest
+          </h1>
+          <p className="text-muted-foreground mb-4">
+            Upptäck din matchningsprofil
+          </p>
+
           {/* Important notice */}
           <div className="bg-accent/50 border border-accent rounded-xl p-4 text-left max-w-md mx-auto">
-            <p className="text-sm font-semibold text-foreground mb-1">⚠️ Viktigt att veta</p>
+            <p className="text-sm font-semibold text-foreground mb-1">
+              ⚠️ Viktigt att veta
+            </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Du får bara en chans att göra detta test. Svara ärligt och noggrant på varje fråga – 
-              dina svar påverkar vilka matchningar du får. Ta dig tid och tänk igenom varje fråga ordentligt.
+              Du får bara en chans att göra detta test. Svara ärligt och
+              noggrant på varje fråga – dina svar påverkar vilka matchningar du
+              får. Ta dig tid och tänk igenom varje fråga ordentligt.
             </p>
           </div>
         </div>
 
         {/* Progress */}
-        <ProgressBar current={answeredCount} total={shuffledQuestions.length} className="mb-8" />
+        <ProgressBar
+          current={answeredCount}
+          total={shuffledQuestions.length}
+          className="mb-8"
+        />
 
         {/* Question */}
         <div className="relative min-h-[200px] mb-8">
@@ -157,7 +178,11 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
 
           {currentIndex < shuffledQuestions.length - 1 ? (
             <Button
-              onClick={() => setCurrentIndex((i) => Math.min(shuffledQuestions.length - 1, i + 1))}
+              onClick={() =>
+                setCurrentIndex((i) =>
+                  Math.min(shuffledQuestions.length - 1, i + 1),
+                )
+              }
               disabled={!answers[currentQuestion.id]}
               className="gap-2 gradient-primary text-primary-foreground border-0"
             >

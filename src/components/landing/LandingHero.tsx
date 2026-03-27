@@ -57,6 +57,16 @@ export function LandingHero() {
           </motion.p>
         )}
 
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.45 }}
+          className="text-sm leading-relaxed px-4 max-w-md mx-auto font-medium"
+          style={{ color: COLORS.neutral.slate }}
+        >
+          {t("maak_narrative_variants.landing_hero_line")}
+        </motion.p>
+
         {/* Floating card mockup – 3 stacked cards */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -68,12 +78,18 @@ export function LandingHero() {
           {/* Background card left: coral-100, -12deg */}
           <div
             className="absolute top-6 -left-6 w-44 h-56 rounded-3xl opacity-60"
-            style={{ background: COLORS.coral[100], transform: "rotate(-12deg)" }}
+            style={{
+              background: COLORS.coral[100],
+              transform: "rotate(-12deg)",
+            }}
           />
           {/* Background card right: primary-100, 8deg */}
           <div
             className="absolute top-8 -right-4 w-44 h-56 rounded-3xl opacity-60"
-            style={{ background: COLORS.primary[100], transform: "rotate(8deg)" }}
+            style={{
+              background: COLORS.primary[100],
+              transform: "rotate(8deg)",
+            }}
           />
 
           {/* Main profile card */}
@@ -85,9 +101,17 @@ export function LandingHero() {
               className="aspect-[3/4] rounded-2xl mb-3 flex items-center justify-center overflow-hidden"
               style={{ background: COLORS.sage[100] }}
             >
-              <Mascot {...mascot} size="medium" placement="center" className="scale-90" />
+              <Mascot
+                {...mascot}
+                size="medium"
+                placement="center"
+                className="scale-90"
+              />
             </div>
-            <h3 className="font-semibold text-sm" style={{ color: COLORS.primary[800] }}>
+            <h3
+              className="font-semibold text-sm"
+              style={{ color: COLORS.primary[800] }}
+            >
               Sofia, Debattören
             </h3>
             <p className="text-xs mb-2" style={{ color: COLORS.neutral.gray }}>
@@ -96,13 +120,19 @@ export function LandingHero() {
             <div className="flex flex-wrap gap-1">
               <span
                 className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: COLORS.sage[100], color: COLORS.sage[700] }}
+                style={{
+                  background: COLORS.sage[100],
+                  color: COLORS.sage[700],
+                }}
               >
                 Musik
               </span>
               <span
                 className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: COLORS.sage[100], color: COLORS.sage[700] }}
+                style={{
+                  background: COLORS.sage[100],
+                  color: COLORS.sage[700],
+                }}
               >
                 Fika
               </span>
@@ -122,13 +152,19 @@ export function LandingHero() {
             className="absolute top-16 right-0 w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
             style={{ background: COLORS.primary[100] }}
           >
-            <MessageCircle className="w-6 h-6" style={{ color: COLORS.primary[500] }} />
+            <MessageCircle
+              className="w-6 h-6"
+              style={{ color: COLORS.primary[500] }}
+            />
           </div>
 
           {/* Likhets-match badge */}
           <div
             className="absolute bottom-16 left-0 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
-            style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
+            style={{
+              background: COLORS.primary[500],
+              color: COLORS.neutral.white,
+            }}
           >
             Likhets-match
           </div>
@@ -136,9 +172,18 @@ export function LandingHero() {
 
         {/* Progress dots */}
         <div className="flex justify-center gap-2" aria-hidden>
-          <div className="w-2 h-2 rounded-full" style={{ background: COLORS.sage[300] }} />
-          <div className="w-6 h-2 rounded-full" style={{ background: COLORS.primary[500] }} />
-          <div className="w-2 h-2 rounded-full" style={{ background: COLORS.sage[300] }} />
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ background: COLORS.sage[300] }}
+          />
+          <div
+            className="w-6 h-2 rounded-full"
+            style={{ background: COLORS.primary[500] }}
+          />
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ background: COLORS.sage[300] }}
+          />
         </div>
 
         {/* Title with gradient text */}
@@ -177,9 +222,15 @@ export function LandingHero() {
                 className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
                 style={{ background: COLORS.primary[100] }}
               >
-                <f.icon className="w-6 h-6" style={{ color: COLORS.primary[600] }} />
+                <f.icon
+                  className="w-6 h-6"
+                  style={{ color: COLORS.primary[600] }}
+                />
               </div>
-              <p className="text-xs font-medium" style={{ color: COLORS.primary[800] }}>
+              <p
+                className="text-xs font-medium"
+                style={{ color: COLORS.primary[800] }}
+              >
                 {f.label}
               </p>
               <p className="text-xs" style={{ color: COLORS.neutral.gray }}>
@@ -197,9 +248,13 @@ export function LandingHero() {
         </div>
 
         {/* Terms */}
-        <p className="text-center text-xs px-6 pb-2" style={{ color: COLORS.neutral.gray }}>
+        <p
+          className="text-center text-xs px-6 pb-2"
+          style={{ color: COLORS.neutral.gray }}
+        >
           Genom att fortsätta godkänner du våra{" "}
-          <span style={{ color: COLORS.primary[600] }}>Användarvillkor</span> och{" "}
+          <span style={{ color: COLORS.primary[600] }}>Användarvillkor</span>{" "}
+          och{" "}
           <span style={{ color: COLORS.primary[600] }}>Integritetspolicy</span>
         </p>
       </div>

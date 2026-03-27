@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '../src'),
+      '@maak/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
     },
   },
 });

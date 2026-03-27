@@ -51,6 +51,8 @@ interface ProfileRelation {
 interface ExistingMatchRowDetailed {
   id: string
   matched_user_id: string
+  status: 'pending' | 'liked' | 'passed' | 'mutual' | 'disliked'
+  expires_at?: string | null
   match_type: MatchType
   match_score: number | null
   match_age: number | null
@@ -69,6 +71,8 @@ interface ExistingMatchRowDetailed {
 interface InsertedMatchRow {
   id: string
   matched_user_id: string
+  status?: 'pending' | 'liked' | 'passed' | 'mutual' | 'disliked'
+  expires_at?: string | null
   match_type: MatchType
   match_score: number | null
   match_age?: number | null
@@ -289,10 +293,31 @@ serve(async (req: Request) => {
       if (existingError) throw existingError
 
       const existingDetailedRows: ExistingMatchRowDetailed[] = (existingMatchData ?? []) as ExistingMatchRowDetailed[]
+      const nowMs = Date.now()
+      const pendingExpiredIds = existingDetailedRows
+        .filter((m) => m.status === 'pending' && !!m.expires_at && new Date(m.expires_at).getTime() <= nowMs)
+        .map((m) => m.id)
 
-      const formattedMatches = existingDetailedRows.map((m, index) => ({
+      let rowsAfterExpiry = existingDetailedRows
+      if (pendingExpiredIds.length > 0) {
+        const { data: pendingMessages } = await dbClient
+          .from('messages')
+          .select('match_id')
+          .in('match_id', pendingExpiredIds)
+        const withMessage = new Set(((pendingMessages ?? []) as { match_id: string }[]).map((r) => r.match_id))
+        const toExpire = pendingExpiredIds.filter((id) => !withMessage.has(id))
+        if (toExpire.length > 0) {
+          // No intro message within 24h: remove from active flow.
+          await dbClient.from('matches').update({ status: 'passed' }).in('id', toExpire)
+          rowsAfterExpiry = existingDetailedRows.filter((m) => !toExpire.includes(m.id))
+        }
+      }
+      rowsAfterExpiry = rowsAfterExpiry.filter((m) => m.status === 'pending' || m.status === 'mutual')
+
+      const formattedMatches = rowsAfterExpiry.map((m, index) => ({
         match_id: m.id,
         profile_id: m.matched_user_id,
+        status: m.status,
         display_name: 'Anonym',
         age: m.match_age || 25,
         archetype: m.match_archetype || 'INFJ',
@@ -304,7 +329,7 @@ serve(async (req: Request) => {
         personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
         match_reason: m.match_type === 'similar' ? '60% liknande värderingar' : '40% kompletterande energi',
         is_first_day_match: index === 0,
-        expires_at: null,
+        expires_at: m.expires_at ?? null,
         photo_urls: m.photo_urls || [],
         bio_preview: m.bio_preview || '',
         common_interests: m.common_interests || []
@@ -394,6 +419,7 @@ serve(async (req: Request) => {
         match_score: match.matchScore,
         match_date: today,
         status: 'pending',
+        expires_at: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString(),
         dimension_breakdown: match.dimensionBreakdown || [],
         archetype_score: match.archetypeScore || 80,
         anxiety_reduction_score: match.anxietyScore || 75,
@@ -452,6 +478,7 @@ serve(async (req: Request) => {
     const formattedMatches = insertedMatchRows.map((m, index) => ({
       match_id: m.id,
       profile_id: m.matched_user_id,
+      status: m.status ?? 'pending',
       display_name: newMatchesToDeliver[index]?.user?.displayName || 'Anonym',
       age: m.match_age || 25,
       archetype: m.match_archetype || 'INFJ',
@@ -463,7 +490,7 @@ serve(async (req: Request) => {
       personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
       match_reason: m.match_type === 'similar' ? '60% liknande värderingar' : '40% kompletterande energi',
       is_first_day_match: index === 0 && isFirstMatchEver,
-      expires_at: null,
+      expires_at: m.expires_at ?? null,
       special_effects: index === 0 && isFirstMatchEver ? ['confetti', 'celebration'] : null,
       photo_urls: m.photo_urls || [],
       bio_preview: m.bio_preview || '',

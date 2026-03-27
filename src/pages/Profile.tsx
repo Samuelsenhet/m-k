@@ -8,7 +8,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LogOut, Settings, X, Trophy, Sparkles, Trash2, ShieldCheck, ChevronDown, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
 import { ButtonGhost, ButtonPrimary, ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
 import { LoadingStateWithMascot } from '@/components/ui-v2';
-import { SCREEN_CONTAINER_CLASS } from '@/layout/screenLayout';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -20,6 +19,7 @@ import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { getProfilesAuthKey } from '@/lib/profiles';
+import { normalizeArchetypeCode } from '@/lib/normalizeArchetype';
 import { useOnlineCount } from '@/hooks/useOnlineCount';
 import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
 import { COLORS } from '@/design/tokens';
@@ -78,12 +78,18 @@ export default function Profile() {
 
   const fetchArchetype = useCallback(async () => {
     if (!user) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-2',hypothesisId:'H1',location:'src/pages/Profile.tsx:81',message:'fetchArchetype start',data:{onLine:typeof navigator!=='undefined'?navigator.onLine:null,userId:user?.id ?? null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     const { data, error } = await supabase
       .from('personality_results')
       .select('archetype, scores')
       .eq('user_id', user.id)
       .maybeSingle();
     if (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-1',hypothesisId:'H1',location:'src/pages/Profile.tsx:87',message:'fetchArchetype error',data:{message:error?.message ?? null,code:error?.code ?? null,onLine:typeof navigator!=='undefined'?navigator.onLine:null,userId:user?.id ?? null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (import.meta.env.DEV) console.error('Profile: personality_results fetch error', error);
       const isNetworkError = error?.message === 'Failed to fetch' || (typeof error?.message === 'string' && /fetch|network/i.test(error.message));
       const message = isNetworkError
@@ -94,15 +100,23 @@ export default function Profile() {
       });
       return;
     }
-    if (data?.archetype) setArchetype(data.archetype);
+    const normalized = normalizeArchetypeCode(data?.archetype);
+    // #region agent log
+    fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-2',hypothesisId:'H1',location:'src/pages/Profile.tsx:99',message:'fetchArchetype success',data:{normalized:normalized ?? null,onLine:typeof navigator!=='undefined'?navigator.onLine:null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    setArchetype(normalized);
   }, [user, t]);
 
   useEffect(() => {
-    if (user && !initialProfile) fetchArchetype();
-  }, [user, initialProfile, fetchArchetype]);
+    if (!user) return;
+    void fetchArchetype();
+  }, [user, profileRefreshKey, fetchArchetype]);
 
   const fetchProfileAndModerator = useCallback(async () => {
     if (!user) return;
+    // #region agent log
+    fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-2',hypothesisId:'H2',location:'src/pages/Profile.tsx:109',message:'fetchProfileAndModerator start',data:{onLine:typeof navigator!=='undefined'?navigator.onLine:null,userId:user?.id ?? null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     try {
       const profileKey = await getProfilesAuthKey(user.id);
       const [profileRes, modRes] = await Promise.all([
@@ -113,7 +127,14 @@ export default function Profile() {
       if (modRes.error) throw modRes.error;
       if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
       setIsModerator(!!modRes.data);
+      // #region agent log
+      fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-2',hypothesisId:'H2',location:'src/pages/Profile.tsx:118',message:'fetchProfileAndModerator success',data:{displayName:profileRes.data?.display_name ?? null,isModerator:!!modRes.data,onLine:typeof navigator!=='undefined'?navigator.onLine:null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     } catch (err) {
+      // #region agent log
+      const e = err as { message?: string; code?: string };
+      fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-1',hypothesisId:'H2',location:'src/pages/Profile.tsx:119',message:'fetchProfileAndModerator catch',data:{message:e?.message ?? String(err),code:e?.code ?? null,onLine:typeof navigator!=='undefined'?navigator.onLine:null,userId:user?.id ?? null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (import.meta.env.DEV) console.error('Profile: profile/moderator fetch error', err);
       const isNetworkError = err instanceof TypeError && err.message === 'Failed to fetch';
       const message = isNetworkError
@@ -482,7 +503,7 @@ export default function Profile() {
             <ProfileEditor onComplete={() => { setIsEditing(false); setProfileRefreshKey((k) => k + 1); }} />
           </div>
         ) : (
-          <div className={SCREEN_CONTAINER_CLASS}>
+          <div className="w-full max-w-none mx-auto px-0 pt-4 sm:pt-6 pb-24 safe-area-top">
             <div className="space-y-6">
               <ProfileView
                 key={profileRefreshKey}

@@ -173,18 +173,18 @@ export default function Notifications() {
                     className="flex items-center gap-3 py-3 border-b border-border last:border-0"
                   >
                     <div className="h-10 w-10 rounded-full bg-muted flex-shrink-0 overflow-hidden">
-                      {i.liker_avatar_url ? (
-                        <img src={i.liker_avatar_url} alt="" className="h-full w-full object-cover" />
+                      {i.sender_avatar_url ? (
+                        <img src={i.sender_avatar_url} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm font-medium">
-                          {(i.liker_display_name || '?').slice(0, 1)}
+                          {(i.sender_display_name || '?').slice(0, 1)}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {i.liker_display_name || 'Someone'}{' '}
-                        <span className="text-muted-foreground font-normal">{t('notifications.your_love_this')}</span>
+                        {i.sender_display_name || 'Someone'}{' '}
+                        <span className="text-muted-foreground font-normal">{t('notifications.your_match_request')}</span>
                       </p>
                       <p className="text-xs text-muted-foreground">{formatTimeAgo(i.created_at, t)}</p>
                     </div>

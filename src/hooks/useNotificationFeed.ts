@@ -17,8 +17,8 @@ export type InterestItem = {
   matched_user_id: string;
   status: string;
   created_at: string;
-  liker_display_name: string | null;
-  liker_avatar_url: string | null;
+  sender_display_name: string | null;
+  sender_avatar_url: string | null;
 };
 
 export function useNotificationFeed() {
@@ -89,8 +89,8 @@ export function useNotificationFeed() {
           matched_user_id: row.matched_user_id as string,
           status: row.status as string,
           created_at: row.created_at as string,
-          liker_display_name: prof?.display_name ?? null,
-          liker_avatar_url: prof?.avatar_url ?? null,
+          sender_display_name: prof?.display_name ?? null,
+          sender_avatar_url: prof?.avatar_url ?? null,
         };
       });
 

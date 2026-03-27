@@ -81,6 +81,8 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "../src"),
+      // Use workspace source so UI (e.g. PersonalityGuide) picks up emoji/copy changes without a stale `packages/core/dist`.
+      "@maak/core": path.resolve(__dirname, "../packages/core/src/index.ts"),
     },
   },
   optimizeDeps: {

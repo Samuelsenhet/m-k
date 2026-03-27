@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { AvatarWithRing } from "../avatar";
 import { ButtonCoral } from "../button";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface MatchCelebrationProps {
   /** Match id for Chatta link */
@@ -32,6 +33,7 @@ export function MatchCelebration({
   onChatta,
   chattaLabel = "Chatta",
 }: MatchCelebrationProps) {
+  const { t } = useTranslation();
   const handleChatta = () => {
     onChatta?.();
     onClose();
@@ -79,9 +81,12 @@ export function MatchCelebration({
           <div>
             <p className="text-lg font-semibold text-foreground">{displayName}</p>
             {personalityInsight && (
-              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                {personalityInsight}
-              </p>
+              <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-left">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  {t("chat.why_you_matched")}
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{personalityInsight}</p>
+              </div>
             )}
           </div>
 
@@ -94,7 +99,7 @@ export function MatchCelebration({
               onClick={onClose}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Stäng
+              {t("common.close")}
             </button>
           </div>
         </div>

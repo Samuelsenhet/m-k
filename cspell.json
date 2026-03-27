@@ -21,7 +21,11 @@
     }
   ],
   "ignorePaths": [
+    "Untitled/**",
+    "m-k/**",
+    "m-k-1/**",
     "node_modules/**",
+    "**/node_modules/**",
     "dist/**",
     "build/**",
     ".git/**",

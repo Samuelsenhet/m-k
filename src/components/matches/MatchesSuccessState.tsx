@@ -32,12 +32,12 @@ function toArchetypeKey(category: string | undefined): ArchetypeKey {
 
 /** Preview line: first common interest or personality insight (one line, truncated) */
 function getPreviewText(match: MatchForSuccess): string {
-  if (match.interests?.length > 0 && match.interests[0]) return match.interests[0];
   const insight = match.personalityInsight;
   if (typeof insight === "string" && insight.trim()) {
     const oneLine = insight.split(/[.\n]/)[0]?.trim() ?? "";
     return oneLine.slice(0, 60) + (oneLine.length > 60 ? "…" : "");
   }
+  if (match.interests?.length > 0 && match.interests[0]) return match.interests[0];
   return "";
 }
 
@@ -122,19 +122,19 @@ export function MatchesSuccessState({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-base text-foreground mb-1">
-                  Smart personlighetsanalys
+                  {t("matches.insight_title")}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Baserad på 30 frågor • 16 arketyper • 4 kategorier
+                  {t("matches.insight_subtitle")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
                     <Users className="w-3.5 h-3.5" />
-                    {similarMatches.length} Likhets-match
+                    {similarMatches.length} {t("matches.similar")}
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-coral/30 bg-coral/10 px-3 py-1.5 text-xs font-semibold text-coral">
                     <Sparkles className="w-3.5 h-3.5" />
-                    {complementaryMatches.length} Motsats-match
+                    {complementaryMatches.length} {t("matches.complementary")}
                   </span>
                 </div>
               </div>
@@ -148,15 +148,15 @@ export function MatchesSuccessState({
         <Tabs value={activeTab} onValueChange={onTabChange}>
           <TabsList className="grid w-full grid-cols-3 rounded-full bg-muted/50 p-1">
             <TabsTrigger value="all" className="rounded-full text-xs">
-              Alla ({pendingMatches.length})
+              {t("matches.tabAll")} ({pendingMatches.length})
             </TabsTrigger>
             <TabsTrigger value="similar" className="rounded-full text-xs gap-1">
               <Users className="w-3 h-3" />
-              Likhets-match ({similarMatches.length})
+              {t("matches.tabSimilar")} ({similarMatches.length})
             </TabsTrigger>
             <TabsTrigger value="complementary" className="rounded-full text-xs gap-1">
               <Sparkles className="w-3 h-3" />
-              Motsats-match ({complementaryMatches.length})
+              {t("matches.tabComplementary")} ({complementaryMatches.length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -174,7 +174,7 @@ export function MatchesSuccessState({
             <span className="flex w-8 h-8 items-center justify-center rounded-xl bg-coral/15 text-coral">
               <Heart className="w-4 h-4" fill="currentColor" />
             </span>
-            Ömsesidiga matchningar ({mutualMatches.length})
+            {t("matches.mutual_section", { count: mutualMatches.length })}
           </h2>
           <div className="space-y-3">
             {mutualMatches.map((match) => {
@@ -230,7 +230,7 @@ export function MatchesSuccessState({
 
       {/* Footer – rhythm text */}
       <p className="text-center text-sm text-muted-foreground py-4">
-        Nya matchningar kommer i morgon.
+        {t("matches.footer_tomorrow")}
       </p>
 
       {mascot.shouldShow && <Mascot {...mascot} className="opacity-90" />}

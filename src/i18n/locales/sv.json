@@ -16,21 +16,127 @@
     "save_changes": "Spara ändringar",
     "online_now_full": "Just nu är det {{count}} användare online",
     "online_now_short": "Just nu är {{count}} online",
-    "online_badge": "{{count}} online"
+    "online_badge": "{{count}} online",
+    "user": "Användare",
+    "close": "Stäng",
+    "not_found_title": "Sidan hittades inte",
+    "not_found_message": "Den här skärmen finns inte.",
+    "not_found_link": "Till startsidan"
   },
   "nav": {
     "matches": "Matchningar",
     "chat": "Chatt",
     "profile": "Profil"
   },
+  "countries": {
+    "SE": "Sverige",
+    "NO": "Norge",
+    "DK": "Danmark",
+    "FI": "Finland",
+    "IS": "Island",
+    "DE": "Tyskland",
+    "GB": "Storbritannien",
+    "US": "USA"
+  },
   "landing": {
-    "users_seeking_love": "Redan {{count}} svenskar söker kärlek här"
+    "users_seeking_love": "Redan {{count}} svenskar söker kärlek här",
+    "cta": "Kom igång gratis",
+    "login": "Logga in",
+    "brand": "MÄÄK",
+    "features_a11y": "Fördelar",
+    "feature_personality_title": "Personlighets-",
+    "feature_personality_sub": "matchning",
+    "feature_safe_title": "Säker &",
+    "feature_safe_sub": "verifierad",
+    "feature_meaningful_title": "Meningsfulla",
+    "feature_meaningful_sub": "kopplingar",
+    "example_name": "Sofia, Debattören",
+    "example_bio": "Smart och nyfiken tänkare…",
+    "example_tag_1": "Musik",
+    "example_tag_2": "Fika",
+    "examples": {
+      "sofia": {
+        "name": "Sofia",
+        "archetype": "Debattören",
+        "bio": "Smart och nyfiken tänkare...",
+        "tag_1": "Musik",
+        "tag_2": "Fika"
+      },
+      "merbel": {
+        "name": "Merbel",
+        "archetype": "Värdaren",
+        "bio": "Lekfull och omtänksam...",
+        "tag_1": "Resor",
+        "tag_2": "Mat"
+      },
+      "erik": {
+        "name": "Erik",
+        "archetype": "Strategen",
+        "bio": "Driven och nyfiken...",
+        "tag_1": "Träning",
+        "tag_2": "Böcker"
+      }
+    },
+    "terms_agree": "Genom att fortsätta godkänner du våra",
+    "terms_link": "Användarvillkor",
+    "privacy_link": "Integritetspolicy",
+    "and": "och"
   },
   "maak": {
     "intro": "Jag heter Määk.\nJag finns här med dig, medan vi hittar någon som verkligen passar.",
     "guide": "Jag guidar dig lugnt genom det här.",
     "waiting": "Jag är här medan vi väntar. Bra saker får ta tid.",
     "firstMatch": "Jag sa ju att det var värt att vänta. 💛"
+  },
+  "maak_moment_of_depth": {
+    "lines_01": "Som fysiker en gång föreställde sig",
+    "lines_02": "existerar Schrödingers katt i två tillstånd samtidigt.",
+    "lines_03": "Levande. Och inte.",
+    "lines_04": "Tills vi väljer att se.",
+    "lines_05": "Det är paradoxen.",
+    "lines_06": "Och det är precis där modernt dejting lever idag.",
+    "lines_07": "Så många möjligheter.",
+    "lines_08": "Så många \"tänk om\".",
+    "lines_09": "Så mycket osäkerhet.",
+    "lines_10": "Men inget verkligt. För inget blir verkligt …",
+    "lines_11": "Tills vi väljer att engagera oss.",
+    "lines_12": "Tills vi startar en konversation.",
+    "lines_13": "På MÄÄK jagar vi inte fler val.",
+    "lines_14": "Vi hjälper dig upptäcka det som är verkligt - en interaktion i taget.",
+    "lines_15": "Det handlar om ögonblicket du väljer att dyka upp.",
+    "lines_16": "Då börjar något verkligt.",
+    "continue_cta": "Fortsätt testet"
+  },
+  "maak_matching_story": {
+    "title": "Hur MÄÄK matchar dig",
+    "body_1": "Dina svar kartlägger hur du möter andra - inte ett oändligt flöde, utan en genomtänkt dagslista för dig.",
+    "body_2": "Vi använder personlighetsdimensioner och kompatibilitet för att avgöra vem som kan synas i din matchpool.",
+    "body_3": "Mindre brus, mer riktning. Slutför testet så kan vi matcha dig med omsorg."
+  },
+  "maak_narrative_variants": {
+    "matches_ready_title": "Dina matchningar är redo",
+    "matches_ready_body": "Du har väntat med mening. Nu kan du se vem som finns där - en interaktion i taget.",
+    "see_matches_cta": "Se dina matchningar",
+    "first_match_quote": "Jag sa ju att det var värt att vänta. 💛",
+    "chat_empty_title": "Inget blir verkligt …",
+    "chat_empty_body": "… förrän du startar konversationen. Skriv en rad som känns äkta för dig.",
+    "icebreaker_intro": "Verkliga kontakter börjar med ett meddelande. Välj ett förslag eller skriv ditt eget.",
+    "landing_hero_line": "Vi jagar inte fler val - vi hjälper dig upptäcka det som blir verkligt, en konversation i taget.",
+    "ai_suggestions_label": "AI-förslag till start"
+  },
+  "waiting_phase": {
+    "first_match_title": "Din första matchning kommer snart!",
+    "first_match_subtitle": "Vi förbereder dina personliga matchningar baserat på din personlighet.",
+    "countdown_hint": "till dina matchningar är redo",
+    "tip_1_title": "Matchning med mening",
+    "tip_1_desc": "Vi letar efter någon som passar dig - inte bara är lik dig",
+    "tip_2_title": "Ta den tid det tar",
+    "tip_2_desc": "Bra matchningar tar lite tid",
+    "tip_3_title": "Medan du väntar",
+    "tip_3_desc": "Under tiden kan du lära känna dig själv",
+    "next_reset_lead": "Matchningar blir tillgängliga",
+    "continue_explore": "Fortsätt utforska appen",
+    "footer_tip": "Medan du väntar kan du lägga till mer om dig i profilen - lugn och i din takt."
   },
   "auth": {
     "phoneTitle": "Ange ditt telefonnummer",
@@ -52,7 +158,22 @@
     "error_phone_required": "Telefonnummer krävs",
     "error_verification_failed": "Verifiering misslyckades",
     "error_send_failed": "Kunde inte skicka verifieringskod",
-    "login_failed": "Inloggning misslyckades"
+    "login_failed": "Inloggning misslyckades",
+    "sms_code": "SMS-kod",
+    "phone_invalid_min": "Ange ett giltigt telefonnummer",
+    "phone_invalid_max": "Ange ett giltigt telefonnummer",
+    "phone_invalid_se": "Ange ett giltigt svenskt mobilnummer",
+    "otp_length": "Koden måste vara 6 siffror",
+    "pick_day": "Välj dag",
+    "pick_month": "Välj månad",
+    "pick_year": "Välj år",
+    "invalid_number": "Ogiltigt nummer",
+    "invalid_code": "Ogiltig kod",
+    "no_session_returned": "Ingen session returnerades",
+    "supabase_banner": "Supabase är inte konfigurerad. Lägg till EXPO_PUBLIC_SUPABASE_URL och EXPO_PUBLIC_SUPABASE_ANON_KEY i apps/mobile/.env (se .env.example).",
+    "label_phone": "Telefonnummer",
+    "phone_placeholder": "7X XXX XX XX",
+    "otp_placeholder": "000000"
   },
   "matches": {
     "title": "Dagens matchningar",
@@ -71,15 +192,36 @@
     "loading_error": "Kunde inte hämta matchningar",
     "loading_error_check_login": "Kunde inte hämta matchningar. Kontrollera att du är inloggad.",
     "error_title": "Vi har problem att hämta matchningar just nu",
-    "error_reassure": "Det blev lite fel – jag försöker igen",
+    "error_reassure": "Det blev lite fel - jag försöker igen",
     "until_ready": "till dina matchningar är redo",
     "must_be_logged_in": "Du måste vara inloggad för att se matchningar",
     "auth_verify_failed": "Inloggningen kunde inte verifieras. Logga ut och in igen, eller försök igen om en stund.",
-    "server_error": "Tjänsten svarar inte just nu. Kontrollera att du är inloggad och försök igen – eller vänta en stund.",
+    "server_error": "Tjänsten svarar inte just nu. Kontrollera att du är inloggad och försök igen - eller vänta en stund.",
     "network_error": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
+    "load_more": "Hämta fler",
     "load_more_error": "Kunde inte hämta fler matchningar",
     "noMatchesDescription": "Kom tillbaka imorgon för nya matchningar!",
-    "retry": "Försök igen"
+    "mutual_section": "Ömsesidiga matchningar ({{count}})",
+    "active_chats_section": "Aktiva chattar ({{count}})",
+    "discover_section": "Upptäck",
+    "footer_tomorrow": "Nya matchningar kommer i morgon.",
+    "anonymous": "Anonym",
+    "view_match_header": "Matchning",
+    "open_chat": "Öppna chatt",
+    "chat_mutual": "Chatt",
+    "insight_title": "Smart personlighetsanalys",
+    "insight_subtitle": "30 frågor · 16 arketyper · 4 kategorier",
+    "retry": "Försök igen",
+    "edge_auth_title": "Matchningar kan inte nå servern (401)",
+    "edge_auth_body": "Du är inloggad, men Edge Functions godkänner inte anropet. Det beror oftast på fel Supabase-projekt i webbläsaren (.env / gammal session) eller att funktionerna inte är deployade mot rätt projekt.",
+    "edge_auth_steps": "Gör så här:",
+    "edge_auth_step1": "Logga ut nedan eller rensa Local Storage (nycklar som börjar med sb-) för localhost - prova sedan igen.",
+    "edge_auth_step2": "I projektmappen: supabase link --project-ref jappgthiyedycwhttpcu och npm run edge:fix-401 (deployar match-status och match-daily).",
+    "edge_auth_step3": "Kontrollera att .env har VITE_SUPABASE_URL och VITE_SUPABASE_PUBLISHABLE_KEY från samma projekt som i Supabase Dashboard.",
+    "edge_auth_doc": "Mer hjälp: docs/EDGE_401_QUICK_FIX.md och docs/LAUNCH_401_CHECKLIST.md i repot.",
+    "edge_auth_retry": "Försök igen",
+    "edge_auth_sign_out": "Logga ut och logga in igen",
+    "next_reset_prefix": "Nästa:"
   },
   "chat": {
     "newMatch": "Ny match! 🎉",
@@ -113,24 +255,26 @@
     "you": "Du",
     "send": "Skicka",
     "search": "Sök",
+    "emptyChatsEncouragement": "Övning ger färdighet! Hej! 👋",
+    "noSearchResults": "Inga träffar",
     "coming_soon": "Kommer snart",
     "videoCall": "Videochatt",
     "sendPhoto": "Skicka bild",
     "voiceMsg": "Röst",
     "icebreakers": "Isbrytare",
     "aiSuggestions": "AI-förslag",
-    "footerTagline": "MÄÄK – Personlighetstest för relationer · Hitta din match",
+    "footerTagline": "MÄÄK - Personlighetstest för relationer · Hitta din match",
     "conversations": "Dina konversationer",
     "kemiCheck": "Kemi-Check",
     "mic": "Mikrofon",
     "muted": "Dempad",
     "volume": "Volym",
     "endCall": "Avsluta samtal",
-    "kemiCheckSubtitle": "Snabbvideo 5–10 min",
-    "kemiCheckTooltip": "Kemi-Check – kort video för att testa kemi",
+    "kemiCheckSubtitle": "Snabbvideo 5-10 min",
+    "kemiCheckTooltip": "Kemi-Check - kort video för att testa kemi",
     "aiSuggestKemiCheck": "Verkar som ni har mycket gemensamt! Boka en Kemi-Check för att lära känna varandra bättre.",
     "bookKemiCheck": "Starta Kemi-Check",
-    "postVideoTitle": "Efter Kemi-Check – AI-förslag",
+    "postVideoTitle": "Efter Kemi-Check - AI-förslag",
     "postVideoGenerating": "Genererar förslag...",
     "postVideoDismiss": "Stäng",
     "postVideoError": "Kunde inte hämta förslag. Försök igen senare.",
@@ -187,7 +331,9 @@
     "notFoundOrNoAccess": "Samlingen hittades inte eller du har inte åtkomst.",
     "backToList": "Tillbaka till listan",
     "moreOptions": "Fler alternativ",
-    "inlineEmpty": "En samling är människor som vill åt samma håll."
+    "inlineEmpty": "En samling är människor som vill åt samma håll.",
+    "memberCount_one": "{{count}} medlem",
+    "memberCount_other": "{{count}} medlemmar"
   },
   "profile": {
     "title": "Min profil",
@@ -200,6 +346,8 @@
     "lastName": "Efternamn",
     "bio": "Biografi",
     "bio_placeholder": "Berätta något om dig själv...",
+    "no_photos_yet": "Inga foton ännu",
+    "placeholder_name": "Ditt namn",
     "photos": {
       "title": "Dina foton",
       "upload": "Ladda upp foto",
@@ -261,7 +409,24 @@
     "interests_placeholder": "t.ex. konst, resor, matlagning, träning...",
     "interests_empty": "Lägg till intressen",
     "prev_photo": "Föregående foto",
-    "next_photo": "Nästa foto"
+    "next_photo": "Nästa foto",
+    "show_more": "Visa mer",
+    "add_height_cta": "+ Lägg till längd",
+    "add_work_cta": "+ Lägg till jobb",
+    "view_profile": "Visa profil",
+    "strengths": "Styrkor",
+    "about_me": "Om mig",
+    "fact_work": "Jobb",
+    "fact_education": "Utbildning",
+    "fact_location": "Plats",
+    "fact_age": "Ålder",
+    "fact_age_years": "{{age}} år",
+    "fact_height": "Längd",
+    "fact_gender": "Kön",
+    "fact_instagram": "Instagram",
+    "fact_linkedin": "LinkedIn",
+    "height_value_cm": "{{value}} cm",
+    "in_relationships_label": "I relationer: "
   },
   "settings": {
     "title": "Inställningar",
@@ -297,17 +462,23 @@
     "distance": "Avstånd",
     "submit": "Spara",
     "about_us": "Om MÄÄK",
-    "learn_personality": "Läs om personlighet & arketyper"
+    "learn_personality": "Läs om personlighet & arketyper",
+    "web_full_page_hint": "Den fullständiga sidan med alla avsnitt och funktioner öppnas i webbläsaren."
   },
   "notifications": {
     "title": "Notifikationer",
+    "just_now": "Nu",
     "today": "Idag",
     "your_view_this": "tittade på dig",
-    "your_love_this": "är intresserad av dig",
+    "your_love_this": "har öppnat en match med dig",
+    "your_match_request": "har öppnat en match med dig",
     "profile_matched_with": "Din profil matchade med {{name}}!",
     "accept": "Acceptera",
     "reject": "Avvisa",
     "minutes_ago": "{{count}} min sedan",
+    "hours_ago": "{{count}} tim sedan",
+    "days_ago": "{{count}} dagar sedan",
+    "accept_error": "Kunde inte acceptera. Försök igen.",
     "no_notifications": "Inga notifikationer",
     "intro": "Aktivitet och inställningar.",
     "push_and_email": "Push och e-post",
@@ -322,13 +493,233 @@
   "personality": {
     "testTitle": "Personlighetstest",
     "testDescription": "Besvara frågorna för att hitta din arketyp",
+    "complete_all_questions": "Besvara alla frågor innan du går vidare.",
     "question": "Fråga {{current}} av {{total}}",
     "results": "Dina resultat",
     "archetype": "Din arketyp",
     "diplomat": "Diplomat",
     "strategist": "Strateg",
     "builder": "Byggare",
-    "explorer": "Upptäckare"
+    "explorer": "Upptäckare",
+    "category_pill_diplomat": "Diplomaten",
+    "category_pill_strategist": "Strategen",
+    "category_pill_builder": "Byggaren",
+    "category_pill_explorer": "Upptäckaren",
+    "main_category_label": "En huvudkategori",
+    "main_category_sub": "Din primära förbindelsestil",
+    "four_archetypes_label": "Fyra arketyper",
+    "four_archetypes_sub": "Olika sidor av din personlighet - din typ är markerad",
+    "your_archetype_card": "Din arketyp",
+    "your_type": "din typ",
+    "test_result_line": "Din typ från testet: {{title}} ({{code}}) - 1 av 4 i {{category}}.",
+    "overview": "Översikt",
+    "strengths": "Styrkor",
+    "guide_category_DIPLOMAT_title": "Diplomaten",
+    "guide_category_DIPLOMAT_desc": "Du är en empatisk och varm person som värdesätter djupa relationer och harmoni.",
+    "guide_category_STRATEGER_title": "Strategen",
+    "guide_category_STRATEGER_desc": "Du är analytisk och målinriktad med en naturlig förmåga att se helheten.",
+    "guide_category_BYGGARE_title": "Byggaren",
+    "guide_category_BYGGARE_desc": "Du är praktisk och pålitlig med en stark känsla för ansvar och lojalitet.",
+    "guide_category_UPPTÄCKARE_title": "Upptäckaren",
+    "guide_category_UPPTÄCKARE_desc": "Du är spontan och äventyrlig med en passion för nya upplevelser.",
+    "dimensions": {
+      "ei": {
+        "left": "Introvert",
+        "right": "Extrovert",
+        "name": "Energi"
+      },
+      "sn": {
+        "left": "Sinne",
+        "right": "Intuition",
+        "name": "Perception"
+      },
+      "tf": {
+        "left": "Tanke",
+        "right": "Känsla",
+        "name": "Beslut"
+      },
+      "jp": {
+        "left": "Bedömning",
+        "right": "Perception",
+        "name": "Livsstil"
+      },
+      "at": {
+        "left": "Turbulent",
+        "right": "Assertiv",
+        "name": "Identitet"
+      }
+    },
+    "archetypes": {
+      "INFJ": {
+        "title": "Advokaten",
+        "description": "Tyst och mystisk, men inspirerande och oupphörligt idealistisk.",
+        "loveStyle": "Söker djupa, meningsfulla förbindelser",
+        "strengths": [
+          "Djup empati",
+          "Kreativ vision",
+          "Passionerad"
+        ]
+      },
+      "INFP": {
+        "title": "Medlaren",
+        "description": "Poetisk, vänlig och altruistisk, alltid redo att hjälpa en god sak.",
+        "loveStyle": "Drömmer om den perfekta romantiken",
+        "strengths": [
+          "Kreativitet",
+          "Empati",
+          "Autenticitet"
+        ]
+      },
+      "ENFJ": {
+        "title": "Huvudpersonen",
+        "description": "Karismatisk och inspirerande ledare, kan fängsla sina lyssnare.",
+        "loveStyle": "Ger allt i relationer, extremt hängivna",
+        "strengths": [
+          "Karisma",
+          "Naturlig ledare",
+          "Generös"
+        ]
+      },
+      "ENFP": {
+        "title": "Kampanjaren",
+        "description": "Entusiastisk, kreativ och socialt fri ande som alltid hittar skäl att le.",
+        "loveStyle": "Passionerad och spontan i kärlek",
+        "strengths": [
+          "Kreativitet",
+          "Entusiasm",
+          "Social förmåga"
+        ]
+      },
+      "INTJ": {
+        "title": "Arkitekten",
+        "description": "Fantasifull och strategisk tänkare med en plan för allt.",
+        "loveStyle": "Söker intellektuella partners",
+        "strengths": [
+          "Strategisk",
+          "Oberoende",
+          "Beslutsam"
+        ]
+      },
+      "INTP": {
+        "title": "Logikern",
+        "description": "Uppfinnare med en otrolig törst efter kunskap.",
+        "loveStyle": "Värdesätter intellektuell stimulans",
+        "strengths": [
+          "Logik",
+          "Objektivitet",
+          "Innovation"
+        ]
+      },
+      "ENTJ": {
+        "title": "Befälhavaren",
+        "description": "Djärv, fantasifull och viljestark ledare som alltid hittar vägen.",
+        "loveStyle": "Ambitiös och engagerad partner",
+        "strengths": [
+          "Ledarskap",
+          "Strategisk",
+          "Effektiv"
+        ]
+      },
+      "ENTP": {
+        "title": "Debattören",
+        "description": "Smart och nyfiken tänkare som inte kan motstå en intellektuell utmaning.",
+        "loveStyle": "Älskar intellektuell utmaning i relationer",
+        "strengths": [
+          "Kvicktänkt",
+          "Kreativ",
+          "Karismatisk"
+        ]
+      },
+      "ISTJ": {
+        "title": "Logistikern",
+        "description": "Praktisk och faktaorienterad individ vars tillförlitlighet är obestridlig.",
+        "loveStyle": "Trogen och stabil i relationer",
+        "strengths": [
+          "Pålitlighet",
+          "Organiserad",
+          "Lojal"
+        ]
+      },
+      "ISFJ": {
+        "title": "Försvararen",
+        "description": "Mycket engagerad och varm beskyddare, alltid redo att försvara sina nära.",
+        "loveStyle": "Extremt omhändertagande och kärleksfull",
+        "strengths": [
+          "Omtänksam",
+          "Lojal",
+          "Pålitlig"
+        ]
+      },
+      "ESTJ": {
+        "title": "Chefen",
+        "description": "Utmärkt administratör, oöverträffad på att hantera saker eller människor.",
+        "loveStyle": "Pålitlig och engagerad i långa relationer",
+        "strengths": [
+          "Organisation",
+          "Ledarskap",
+          "Direkthet"
+        ]
+      },
+      "ESFJ": {
+        "title": "Konsuln",
+        "description": "Extraordinärt omtänksam, social och populär, alltid ivrig att hjälpa.",
+        "loveStyle": "Vill skapa harmoni och värme",
+        "strengths": [
+          "Social",
+          "Omtänksam",
+          "Lojal"
+        ]
+      },
+      "ISTP": {
+        "title": "Virtuosen",
+        "description": "Djärv och praktisk experimentator, mästare på alla verktyg.",
+        "loveStyle": "Avslappnad men lojal partner",
+        "strengths": [
+          "Praktisk",
+          "Problemlösare",
+          "Oberoende"
+        ]
+      },
+      "ISFP": {
+        "title": "Äventyraren",
+        "description": "Flexibel och charmig artist, alltid redo att utforska något nytt.",
+        "loveStyle": "Romantisk och passionerad",
+        "strengths": [
+          "Kreativitet",
+          "Spontanitet",
+          "Känslighet"
+        ]
+      },
+      "ESTP": {
+        "title": "Entreprenören",
+        "description": "Smart, energisk och perceptiv, lever verkligen på gränsen.",
+        "loveStyle": "Spännande och spontan i kärlek",
+        "strengths": [
+          "Energisk",
+          "Perceptiv",
+          "Direkt"
+        ]
+      },
+      "ESFP": {
+        "title": "Underhållaren",
+        "description": "Spontan, energisk och entusiastisk underhållare.",
+        "loveStyle": "Generös och rolig partner",
+        "strengths": [
+          "Energi",
+          "Positivitet",
+          "Social"
+        ]
+      }
+    }
+  },
+  "personality_guide": {
+    "title": "Personlighet & arketyper",
+    "learn_title": "Lär känna din personlighet",
+    "intro": "Efter vårt 30-frågor-test får du en huvudkategori och fyra arketyper som beskriver olika sidor av din personlighet. Tryck på varje arketyp för att läsa mer.",
+    "abbreviations_title": "Förkortningar",
+    "abbreviations_intro": "Varje arketyp har en förkortning (t.ex. INFP) som beskriver dess kärna.",
+    "example_code": "Exempel: INFP = Introversion, Intuition, Feeling, Prospecting",
+    "in_relationships": "I relationer"
   },
   "premium": {
     "title": "Premium",
@@ -342,6 +733,8 @@
   },
   "achievements": {
     "title": "Prestationer",
+    "points_abbr": "{{count}} poäng",
+    "progress_unlocked": "{{earned}} / {{total}}",
     "empty": "Inga prestationer ännu. Gör saker i appen för att låsa upp dem!",
     "profileComplete": "Profil komplett",
     "firstMatch": "Första matchningen",
@@ -391,13 +784,15 @@
     "status_pending": "Väntar på granskning",
     "status_reviewing": "Din rapport granskas",
     "status_resolved": "Avslutad",
-    "status_dismissed": "Avslagen"
+    "status_dismissed": "Avslagen",
+    "mobile_submit_web": "Skicka en rapport via webbformuläret. Du måste vara inloggad på webben."
   },
   "admin": {
-    "reports_title": "Moderering – Rapporter",
+    "reports_title": "Moderering - Rapporter",
     "access_denied": "Du har inte behörighet att visa denna sida.",
     "no_reports": "Inga rapporter ännu.",
-    "status": "Status"
+    "status": "Status",
+    "mobile_intro": "Modereringsvy för rapporter. Kräver moderatorbehörighet."
   },
   "appeal": {
     "title": "Överklaga påföljd",
@@ -473,5 +868,240 @@
     },
     "error_auth": "Du måste vara inloggad",
     "error_fetch": "Kunde inte hämta AI-förslag"
+  },
+  "personality_test_questions": {
+    "q1": "Jag laddar batterierna genom att umgås med andra människor",
+    "q2": "Jag trivs bäst i stora sällskap och sociala sammanhang",
+    "q3": "Jag tar gärna initiativ till konversationer med nya människor",
+    "q4": "Jag föredrar att prata igenom mina tankar med andra",
+    "q5": "Jag blir energisk av att delta i gruppdiskussioner",
+    "q6": "Jag söker aktivt upp sociala evenemang och fester",
+    "q7": "Jag fokuserar på konkreta fakta snarare än abstrakta idéer",
+    "q8": "Jag litar mer på min erfarenhet än på min fantasi",
+    "q9": "Jag föredrar praktiska lösningar framför teoretiska",
+    "q10": "Jag uppmärksammar detaljer mer än helheten",
+    "q11": "Jag trivs med rutiner och beprövade metoder",
+    "q12": "Jag föredrar att leva i nuet snarare än att drömma om framtiden",
+    "q13": "Jag fattar beslut baserat på logik snarare än känslor",
+    "q14": "Jag värdesätter ärlighet även om det kan såra",
+    "q15": "Jag analyserar för- och nackdelar noggrant",
+    "q16": "Jag håller mig objektiv i konfliktsituationer",
+    "q17": "Jag prioriterar effektivitet framför harmoni",
+    "q18": "Jag ifrågasätter beslut som bara baseras på känslor",
+    "q19": "Jag föredrar att ha en tydlig plan för framtiden",
+    "q20": "Jag trivs med struktur och deadlines",
+    "q21": "Jag avslutar gärna uppgifter innan jag börjar nya",
+    "q22": "Jag föredrar förutsägbarhet framför överraskningar",
+    "q23": "Jag organiserar mitt liv noggrant",
+    "q24": "Jag blir stressad av sista-minuten-förändringar",
+    "q25": "Jag känner mig säker på mig själv i de flesta situationer",
+    "q26": "Jag låter inte andras åsikter påverka min självbild",
+    "q27": "Jag hanterar stress och motgångar utan större oro",
+    "q28": "Jag är nöjd med den jag är",
+    "q29": "Jag tvivlar sällan på mina beslut",
+    "q30": "Jag söker inte bekräftelse från andra för att må bra"
+  },
+  "terms": {
+    "mobile_summary": "Här finns en kort sammanfattning. Fullständiga användarvillkor och integritetspolicy med alla avsnitt når du via knappen nedan (öppnas i webbläsare)."
+  },
+  "reporting": {
+    "mobile_body": "Rapportering och riktlinjer finns i detalj på webbplatsen. I mobilappen kan du snart hantera rapporter direkt här."
+  },
+  "mobile": {
+    "personality_test": {
+      "subtitle": "Upptäck din matchningsprofil",
+      "see_result": "Se mitt resultat"
+    },
+    "welcome": {
+      "title": "Välkommen{{namePart}}!",
+      "title_name_part": ", {{name}}",
+      "subtitle": "Din profil är nu klar. Här är vad som väntar dig.",
+      "cta": "✨ Se mina matchningar",
+      "feature_1_title": "Dagliga matchningar",
+      "feature_1_desc": "Varje dag får du nya matchningar baserade på din personlighet",
+      "feature_2_title": "Starta konversationer",
+      "feature_2_desc": "Använd AI-genererade isbrytare för att börja chatta",
+      "feature_3_title": "Djupare kontakter",
+      "feature_3_desc": "Vi matchar baserat på personlighet, inte bara utseende"
+    },
+    "wizard": {
+      "step_basic": "Grundläggande",
+      "step_personality": "Personlighet",
+      "step_background": "Bakgrund",
+      "step_photos": "Foton",
+      "step_privacy": "Integritet",
+      "step_id": "ID-verifiering",
+      "step_done": "Klart",
+      "photo_prompt_0": "Vad gör dig genuint lycklig?",
+      "photo_prompt_1": "Din mest äventyrliga sida",
+      "photo_prompt_2": "En vanlig dag i ditt liv",
+      "photo_prompt_3": "Något du är stolt över",
+      "photo_prompt_4": "Din dolda talang",
+      "photo_prompt_5": "Med dina favoritpersoner",
+      "profile_created": "Din profil är skapad!",
+      "save_failed_title": "Kunde inte spara",
+      "step_indicator": "Steg {{current}} / {{total}}: {{label}}",
+      "about_you_title": "Berätta om dig själv",
+      "about_you_sub": "Grundläggande information för din profil",
+      "first_name": "Förnamn *",
+      "first_name_ph": "Förnamn",
+      "last_name": "Efternamn",
+      "optional_ph": "Valfritt",
+      "pronouns": "Pronomen",
+      "height_cm": "Längd (cm)",
+      "height_cm_ph": "175",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "username_ph": "@användarnamn",
+      "identify_as": "Jag identifierar mig som *",
+      "sexuality": "Sexualitet *",
+      "looking_for": "Jag söker *",
+      "your_personality": "Din personlighet",
+      "already_did_test": "Du har redan gjort testet",
+      "test_done": "Testet är klart!",
+      "background_title": "Bakgrund",
+      "background_sub": "Valfritt - du kan fylla i senare",
+      "hometown": "Hemstad",
+      "hometown_ph": "Stockholm",
+      "work": "Arbete",
+      "education": "Utbildning",
+      "religion": "Religion",
+      "politics": "Politik",
+      "alcohol": "Alkohol",
+      "smoking": "Rökning/Snus",
+      "show_yourself_title": "Visa dig själv",
+      "show_yourself_sub": "Minst 1 foto krävs, 4-6 rekommenderas",
+      "privacy_title": "Integritet",
+      "privacy_sub": "Välj vad som syns på din profil",
+      "show_age": "Visa min ålder",
+      "show_job": "Visa mitt jobb",
+      "show_education": "Visa min utbildning",
+      "show_last_name": "Visa efternamn för matchningar",
+      "complete_title": "Din profil är {{percent}}% komplett!",
+      "complete_sub": "Du är redo att börja matcha",
+      "back": "Tillbaka",
+      "skip": "Hoppa över",
+      "cta_start": "Börja matcha",
+      "cta_next_test": "Nästa: Personlighetstest",
+      "continue": "Fortsätt"
+    },
+    "age": {
+      "dob": "Födelsedatum",
+      "hint": "Du måste vara minst 20 år för att använda MÄÄK",
+      "day": "Dag",
+      "month": "Månad",
+      "year": "År",
+      "too_young": "Du måste vara minst 20 år för att skapa ett konto.",
+      "confirmed": "Ålder bekräftad ({{age}} år)",
+      "m01": "Januari",
+      "m02": "Februari",
+      "m03": "Mars",
+      "m04": "April",
+      "m05": "Maj",
+      "m06": "Juni",
+      "m07": "Juli",
+      "m08": "Augusti",
+      "m09": "September",
+      "m10": "Oktober",
+      "m11": "November",
+      "m12": "December"
+    },
+    "id_verify": {
+      "title": "ID-verifiering",
+      "body": "I webbappen kan du ladda upp ID för extra trygghet. I mobilappen kommer detta snart - du kan hoppa över och fortsätta."
+    },
+    "photo": {
+      "permission_title": "Behörighet",
+      "permission_body": "Tillåt fotobibliotek för att ladda upp bilder.",
+      "counter": "{{current}} av {{max}} foton"
+    },
+    "phone_errors": {
+      "network": "Nätverksfel. Kontrollera din internetanslutning och att Supabase är korrekt konfigurerad.",
+      "config_env": "Konfigurationsfel: Supabase miljövariabler saknas. Kontrollera apps/mobile .env.",
+      "not_configured": "Supabase är inte konfigurerad. Lägg till EXPO_PUBLIC_SUPABASE_URL och EXPO_PUBLIC_SUPABASE_ANON_KEY i apps/mobile/.env.",
+      "captcha": "SMS-inloggning kräver CAPTCHA i din Supabase-inställning. Stäng av CAPTCHA för Phone Auth eller implementera captchaToken i klienten.",
+      "phone_disabled": "SMS-inloggning är inte aktiverad i Supabase. Gå till Dashboard → Authentication → Providers → Phone.",
+      "not_configured_short": "Supabase är inte konfigurerad. Lägg till .env för inloggning.",
+      "code_expired": "Koden har utgått. Skicka en ny kod och försök igen.",
+      "send_otp_failed": "Kunde inte skicka verifieringskod",
+      "invalid_otp": "Ogiltig verifieringskod"
+    },
+    "landing": {
+      "quick_nav_a11y": "Snabbnavigation"
+    },
+    "matching": {
+      "from": "Från",
+      "to": "Till"
+    },
+    "select": {
+      "pronoun": {
+        "hon/henne": "hon/henne",
+        "han/honom": "han/honom",
+        "hen/hen": "hen/hen",
+        "de/dem": "de/dem",
+        "annat": "annat"
+      },
+      "gender": {
+        "kvinna": "Kvinna",
+        "man": "Man",
+        "icke-binär": "Icke-binär",
+        "transkvinna": "Transkvinna",
+        "transman": "Transman",
+        "annat": "Annat"
+      },
+      "sexuality": {
+        "heterosexuell": "Heterosexuell",
+        "homosexuell": "Homosexuell",
+        "bisexuell": "Bisexuell",
+        "pansexuell": "Pansexuell",
+        "asexuell": "Asexuell",
+        "annat": "Annat"
+      },
+      "looking_for": {
+        "kvinnor": "Kvinnor",
+        "män": "Män",
+        "icke-binära": "Icke-binära",
+        "alla": "Alla"
+      },
+      "religion": {
+        "agnostiker": "Agnostiker",
+        "ateist": "Ateist",
+        "kristen": "Kristen",
+        "muslim": "Muslim",
+        "jude": "Jude",
+        "buddhist": "Buddhist",
+        "hindu": "Hindu",
+        "spirituell": "Spirituell",
+        "annat": "Annat"
+      },
+      "politics": {
+        "vänster": "Vänster",
+        "liberal": "Liberal",
+        "moderat": "Moderat",
+        "konservativ": "Konservativ",
+        "höger": "Höger",
+        "opolitisk": "Opolitisk"
+      },
+      "alcohol": {
+        "aldrig": "Aldrig",
+        "sällan": "Sällan",
+        "socialt": "Socialt",
+        "ofta": "Ofta"
+      },
+      "smoking": {
+        "aldrig": "Aldrig",
+        "ibland": "Ibland",
+        "regelbundet": "Regelbundet",
+        "dagligen": "Dagligen"
+      },
+      "placeholder": "Välj..."
+    },
+    "expo_modal_title": "Modal",
+    "expo_modal_hint": "Exempelskärm från Expo-mallen.",
+    "template": {
+      "edit_open_code": "Öppna koden för den här skärmen:",
+      "edit_save_reload": "Ändra texten, spara filen så uppdateras appen automatiskt.",
+      "edit_docs_link": "Tryck här om appen inte uppdateras efter dina ändringar"
+    }
   }
 }
