@@ -1,10 +1,10 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { MascotAssets } from "@/lib/mascotAssets";
-import { openExternalUrl } from "@/lib/openExternalUrl";
 import { maakTokens } from "@maak/core";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { Brain, Heart, Shield } from "lucide-react-native";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,11 +19,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const WEB_BASE = (process.env.EXPO_PUBLIC_APP_URL || "https://maakapp.se").replace(
-  /\/$/,
-  ""
-);
-
 /** Match web `LandingPage` gradient (`COLORS.sage[50]` → white). */
 const GRADIENT_TOP = "#FDFCFA";
 const GRADIENT_BOTTOM = "#FFFFFF";
@@ -34,6 +29,25 @@ const FEATURE_ICON_COLOR = "#3D5A3B";
 type SlideId = "sofia" | "merbel" | "erik";
 
 const SLIDE_ORDER: SlideId[] = ["sofia", "merbel", "erik"];
+
+/** Samma ikoner, storlek och stroke som web `LandingPage` (Lucide Brain / Shield / Heart). */
+const LANDING_FEATURES = [
+  {
+    Icon: Brain,
+    titleKey: "landing.feature_personality_title" as const,
+    subKey: "landing.feature_personality_sub" as const,
+  },
+  {
+    Icon: Shield,
+    titleKey: "landing.feature_safe_title" as const,
+    subKey: "landing.feature_safe_sub" as const,
+  },
+  {
+    Icon: Heart,
+    titleKey: "landing.feature_meaningful_title" as const,
+    subKey: "landing.feature_meaningful_sub" as const,
+  },
+];
 
 /**
  * Bundled profilkort — samma PNG som webb `src/assets/landing/landing-profile-*.png`
@@ -98,10 +112,6 @@ export default function LandingScreen() {
     }
   };
 
-  const openPrivacy = () => {
-    void openExternalUrl(`${WEB_BASE}/terms#integritet`, { title: t("settings.privacy_policy") });
-  };
-
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -160,27 +170,15 @@ export default function LandingScreen() {
           </View>
 
           <View style={styles.features} accessibilityLabel={t("landing.features_a11y")}>
-            <View style={styles.featureCell}>
-              <View style={[styles.featureIconWrap, { backgroundColor: FEATURE_ICON_BG }]}>
-                <MaterialCommunityIcons name="brain" size={24} color={FEATURE_ICON_COLOR} />
+            {LANDING_FEATURES.map(({ Icon, titleKey, subKey }) => (
+              <View key={titleKey} style={styles.featureCell}>
+                <View style={[styles.featureIconWrap, { backgroundColor: FEATURE_ICON_BG }]}>
+                  <Icon size={24} color={FEATURE_ICON_COLOR} strokeWidth={1.75} />
+                </View>
+                <Text style={styles.featureTitle}>{t(titleKey)}</Text>
+                <Text style={styles.featureSub}>{t(subKey)}</Text>
               </View>
-              <Text style={styles.featureTitle}>{t("landing.feature_personality_title")}</Text>
-              <Text style={styles.featureSub}>{t("landing.feature_personality_sub")}</Text>
-            </View>
-            <View style={styles.featureCell}>
-              <View style={[styles.featureIconWrap, { backgroundColor: FEATURE_ICON_BG }]}>
-                <Ionicons name="shield-checkmark-outline" size={24} color={FEATURE_ICON_COLOR} />
-              </View>
-              <Text style={styles.featureTitle}>{t("landing.feature_safe_title")}</Text>
-              <Text style={styles.featureSub}>{t("landing.feature_safe_sub")}</Text>
-            </View>
-            <View style={styles.featureCell}>
-              <View style={[styles.featureIconWrap, { backgroundColor: FEATURE_ICON_BG }]}>
-                <Ionicons name="heart-outline" size={24} color={FEATURE_ICON_COLOR} />
-              </View>
-              <Text style={styles.featureTitle}>{t("landing.feature_meaningful_title")}</Text>
-              <Text style={styles.featureSub}>{t("landing.feature_meaningful_sub")}</Text>
-            </View>
+            ))}
           </View>
 
           <View style={styles.cardScene}>
@@ -274,7 +272,7 @@ export default function LandingScreen() {
               {t("landing.terms_link")}
             </Text>{" "}
             {t("landing.and")}{" "}
-            <Text style={styles.legalLink} onPress={openPrivacy}>
+            <Text style={styles.legalLink} onPress={() => router.push("/privacy")}>
               {t("landing.privacy_link")}
             </Text>
             .
@@ -337,7 +335,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 24,
     marginBottom: 40,
-    paddingHorizontal: 4,
+    /** Match web `SCREEN_CONTENT_WIDTH` + `px-4` (16px) */
+    paddingHorizontal: 16,
+    maxWidth: 672,
+    alignSelf: "center",
+    width: "100%",
   },
   featureCell: {
     flex: 1,

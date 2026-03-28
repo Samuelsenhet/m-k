@@ -1,0 +1,11 @@
+# Development client för iOS Simulator (expo-development).
+# Manuellt: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/ios-development-build.yml
+# Kräver: Apple Developer-konto för signing även för simulator-byggen i vissa fall; se docs/EXPO_EAS_IOS.md.
+name: iOS development build (simulator)
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: expo-development

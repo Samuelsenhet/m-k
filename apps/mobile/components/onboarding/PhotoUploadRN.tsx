@@ -143,14 +143,21 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
             disabled={busySlot !== null}
           >
             {busySlot === i ? (
-              <ActivityIndicator color={maakTokens.primary} />
+              <View style={styles.thumbWrap}>
+                <ActivityIndicator color={maakTokens.primary} />
+              </View>
             ) : p.storage_path ? (
-              <Image
-                source={{ uri: publicUrl(supabase, p.storage_path) }}
-                style={styles.thumb}
-              />
+              <View style={styles.thumbWrap}>
+                <Image
+                  source={{ uri: publicUrl(supabase, p.storage_path) }}
+                  style={styles.thumb}
+                  resizeMode="contain"
+                />
+              </View>
             ) : (
-              <Text style={styles.plus}>+</Text>
+              <View style={styles.thumbWrap}>
+                <Text style={styles.plus}>+</Text>
+              </View>
             )}
             <Text style={styles.prompt} numberOfLines={2}>
               {promptAt(i)}
@@ -174,11 +181,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: maakTokens.border,
     overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "stretch",
     padding: 6,
   },
-  thumb: { width: "100%", height: "70%", borderRadius: maakTokens.radiusMd },
+  /** Fills cell minus prompt so `contain` can show the full photo (letterboxing if needed). */
+  thumbWrap: {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+    borderRadius: maakTokens.radiusMd,
+    overflow: "hidden",
+    backgroundColor: `${maakTokens.background}E6`,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  thumb: { width: "100%", height: "100%" },
   plus: { fontSize: 36, color: maakTokens.primary },
-  prompt: { fontSize: 10, color: maakTokens.mutedForeground, marginTop: 4, textAlign: "center" },
+  prompt: {
+    fontSize: 10,
+    color: maakTokens.mutedForeground,
+    marginTop: 4,
+    textAlign: "center",
+    flexShrink: 0,
+  },
 });

@@ -3,9 +3,7 @@ import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { appLocaleTag } from "@/lib/appLocale";
 import { LANG_STORAGE_KEY } from "@/lib/languageStorage";
-import { openExternalUrl } from "@/lib/openExternalUrl";
 import { markReopenSettingsAfterSubscreen } from "@/lib/reopenSettingsAfterSubscreen";
-import { webAppUrl } from "@/lib/webAppBase";
 import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -87,13 +85,6 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
     markReopenSettingsAfterSubscreen();
     onClose();
     router.push(path);
-  };
-
-  const openPrivacyPolicy = () => {
-    void openExternalUrl(webAppUrl("/terms#integritet"), {
-      beforeOpen: onClose,
-      title: t("settings.privacy_policy"),
-    });
   };
 
   const signOut = async () => {
@@ -221,7 +212,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                   onPress={() => go("/notifications")}
                 />
                 <View style={styles.rowSplit}>
-                  <Text style={styles.rowLabel}>{t("settings.privacy")}</Text>
+                  <Text style={styles.rowLabel}>{t("settings.privacy_controls")}</Text>
                   <Pressable
                     onPress={() => setPrivacyOpen(true)}
                     style={styles.manageBtn}
@@ -236,10 +227,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                   onPress={() => go("/achievements")}
                 />
                 <MenuRow label={t("settings.terms")} onPress={() => go("/terms")} />
-                <MenuRow
-                  label={t("settings.privacy_policy")}
-                  onPress={openPrivacyPolicy}
-                />
+                <MenuRow label={t("settings.privacy_policy")} onPress={() => go("/privacy")} />
                 <MenuRow label={t("settings.reporting")} onPress={() => go("/reporting")} />
                 <MenuRow label={t("settings.about_us")} onPress={() => go("/about")} />
               </View>
@@ -308,7 +296,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
           <View style={[styles.privacySheet, { paddingBottom: insets.bottom + 20 }]}>
             <View style={styles.headerRow}>
               <View style={{ width: 40 }} />
-              <Text style={styles.headerTitle}>{t("settings.privacy")}</Text>
+              <Text style={styles.headerTitle}>{t("settings.privacy_controls_title")}</Text>
               <Pressable
                 onPress={() => setPrivacyOpen(false)}
                 style={{ width: 40, alignItems: "flex-end" }}
@@ -326,6 +314,18 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
               <Text style={styles.rowLabel}>{t("settings.shared_data")}</Text>
               <Text style={styles.comingSoon}>{t("settings.coming_soon")}</Text>
             </View>
+            <Pressable
+              style={styles.privacyPolicyLink}
+              onPress={() => {
+                setPrivacyOpen(false);
+                go("/privacy");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.privacy_policy")}
+            >
+              <Text style={styles.privacyPolicyLinkTxt}>{t("settings.privacy_policy")}</Text>
+              <Ionicons name="chevron-forward" size={20} color={maakTokens.primary} />
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -550,4 +550,19 @@ const styles = StyleSheet.create({
     borderBottomColor: maakTokens.border,
   },
   comingSoon: { fontSize: 13, fontWeight: "600", color: maakTokens.mutedForeground },
+  privacyPolicyLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: maakTokens.border,
+  },
+  privacyPolicyLinkTxt: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: maakTokens.primary,
+  },
 });

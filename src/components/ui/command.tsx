@@ -24,12 +24,6 @@ Command.displayName = CommandPrimitive.displayName;
 type CommandDialogProps = DialogProps;
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
-  React.useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-1',hypothesisId:'H4',location:'src/components/ui/command.tsx:27',message:'CommandDialog mounted',data:{open:typeof props.open==='boolean'?props.open:null,hasDialogTitle:true},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-  }, [props.open]);
-
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">

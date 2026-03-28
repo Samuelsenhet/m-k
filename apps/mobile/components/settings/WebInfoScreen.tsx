@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: maakTokens.foreground,
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: undefined }),
+    fontFamily: Platform.select({ ios: "Georgia", default: "serif" }),
   },
   intro: {
     fontSize: 15,

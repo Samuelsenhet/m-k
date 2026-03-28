@@ -167,6 +167,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     loader: rootLoader,
+    hydrateFallbackElement: routeHydrateFallback,
     errorElement: (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="text-center text-destructive">

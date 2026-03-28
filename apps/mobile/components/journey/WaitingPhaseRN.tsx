@@ -16,7 +16,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MascotAssets } from "@/lib/mascotAssets";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 const GRADIENT_TOP = "#FDFCFA";
 const GRADIENT_BOTTOM = "#F7F7F5";
@@ -37,7 +36,6 @@ export function WaitingPhaseRN({
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
   const [tipIndex, setTipIndex] = useState(0);
 
   const tips = useMemo(
@@ -89,11 +87,16 @@ export function WaitingPhaseRN({
   return (
     <LinearGradient colors={[GRADIENT_TOP, GRADIENT_BOTTOM]} style={styles.gradient}>
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={[
           styles.scroll,
           {
+            flexGrow: 1,
+            /* Short content: center block vertically so empty space splits top/bottom (no huge band only under footer). */
+            justifyContent: "center",
             paddingTop: insets.top + 16,
-            paddingBottom: insets.bottom + tabBarHeight + 8,
+            /* Tab scene already sits above the tab bar — do not add tabBarHeight. */
+            paddingBottom: insets.bottom + 20,
           },
         ]}
         {...(onRefresh
@@ -168,6 +171,8 @@ export function WaitingPhaseRN({
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
+  /** Required so the scroll viewport fills the tab scene; otherwise parent shows empty gradient below. */
+  scrollView: { flex: 1 },
   scroll: {
     paddingHorizontal: maakTokens.screenPaddingHorizontal,
     maxWidth: 520,

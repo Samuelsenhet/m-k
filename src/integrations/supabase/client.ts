@@ -59,12 +59,6 @@ if (import.meta.env.DEV && (!isValidUrl || !isValidKey)) {
 
 const hasValidConfig = isValidUrl && isValidKey;
 
-if (typeof window !== 'undefined') {
-  // #region agent log
-  fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-1',hypothesisId:'H5',location:'src/integrations/supabase/client.ts:61',message:'Supabase client config snapshot',data:{hasValidConfig,host:SUPABASE_URL ? new URL(SUPABASE_URL).host : null,onLine:typeof navigator!=='undefined'?navigator.onLine:null},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-}
-
 /** True when .env has valid Supabase URL and key. Use to show setup page instead of app when false. */
 export const SUPABASE_CONFIGURED = hasValidConfig;
 export const hasValidSupabaseConfig = hasValidConfig;
@@ -85,14 +79,30 @@ const keyForClient = hasValidConfig ? SUPABASE_PUBLISHABLE_KEY : 'eyJhbGciOiJIUz
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(
-  urlForClient,
-  keyForClient,
-  {
+type MaakSupabase = ReturnType<typeof createClient<Database>>;
+
+const globalSupabase = globalThis as typeof globalThis & {
+  __MAAK_SUPABASE_CLIENT__?: MaakSupabase;
+};
+
+function createBrowserSupabase(): MaakSupabase {
+  return createClient<Database>(urlForClient, keyForClient, {
     auth: {
       storage: localStorage,
       persistSession: true,
       autoRefreshToken: true,
-    }
+    },
+  });
+}
+
+/** Reuse one client across Vite HMR in dev to avoid “Multiple GoTrueClient instances” warnings. */
+export const supabase: MaakSupabase = (() => {
+  if (import.meta.env.DEV && globalSupabase.__MAAK_SUPABASE_CLIENT__) {
+    return globalSupabase.__MAAK_SUPABASE_CLIENT__;
   }
-);
+  const client = createBrowserSupabase();
+  if (import.meta.env.DEV) {
+    globalSupabase.__MAAK_SUPABASE_CLIENT__ = client;
+  }
+  return client;
+})();

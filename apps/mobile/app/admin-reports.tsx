@@ -1,13 +1,13 @@
-import { WebInfoScreen } from "@/components/settings/WebInfoScreen";
+import { AdminReportsRN } from "@/components/support/AdminReportsRN";
+import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 export default function AdminReportsScreen() {
   const { t } = useTranslation();
   return (
-    <WebInfoScreen
-      title={t("admin.reports_title")}
-      webPath="/admin/reports"
-      intro={t("admin.mobile_intro")}
-    />
+    <>
+      <Stack.Screen options={{ title: t("admin.reports_title") }} />
+      <AdminReportsRN />
+    </>
   );
 }

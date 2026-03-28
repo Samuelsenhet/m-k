@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 18.0.6",
+    "version": ">=18.4.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -28,6 +28,22 @@
         "config": "capacitor-ios.yml",
         "applicationArchivePath": "ios/App/build/App.ipa"
       }
+    },
+    "expo-development": {
+      "node": "22.18.0",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "expo-preview": {
+      "node": "22.18.0",
+      "distribution": "internal"
+    },
+    "expo-production": {
+      "node": "22.18.0",
+      "autoIncrement": true
     }
   },
   "submit": {

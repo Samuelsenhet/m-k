@@ -56,16 +56,20 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="profile"
-        options={{
-          title: t("nav.profile"),
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "person" : "person-outline"}
-              size={focused ? 26 : 24}
-              color={color}
-            />
-          ),
-        }}
+        options={
+          {
+            title: t("nav.profile"),
+            /** RN bottom-tabs; Expo types omit this — fills scene behind profile with card color. */
+            sceneContainerStyle: { backgroundColor: "#1a1a1a" },
+            tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={focused ? 26 : 24}
+                color={color}
+              />
+            ),
+          } as Record<string, unknown>
+        }
       />
     </Tabs>
   );

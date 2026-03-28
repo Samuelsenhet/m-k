@@ -19,8 +19,6 @@ Expo läser publika variabler med prefix **`EXPO_PUBLIC_`** (byggs in i klienten
 
 **Ska inte finnas i klienten:** `SUPABASE_SERVICE_ROLE_KEY`, `LOOPIA_*`, lösenord – samma som webb.
 
-**Android senare:** samma `EXPO_PUBLIC_*`; ev. `google-services.json` separat.
-
 Se även [.env.example](../.env.example) för webbens namn.
 
 ## EAS / Expo-konto (bygg & dev)

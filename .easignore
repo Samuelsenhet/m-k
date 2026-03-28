@@ -1,9 +1,11 @@
 # EAS Build tarball exclusions (smaller upload).
 # When present, EAS uses this instead of .gitignore for the project tarball.
 # See: https://docs.expo.dev/build-reference/vcs/#uploading-the-project
+#
+# Do NOT list .git here — EAS Build needs the repo metadata on the worker
+# (commit hash, VCS). Ignoring .git causes "git repository not initialized".
 
 node_modules
-.git
 dist
 dist-ssr
 *.log

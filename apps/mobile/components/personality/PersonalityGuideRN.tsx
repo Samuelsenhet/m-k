@@ -19,7 +19,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  UIManager,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,10 +36,6 @@ const CATEGORY_BORDER: Record<PersonalityCategory, string> = {
   BYGGARE: "#4ADE80",
   UPPTÄCKARE: "#FBBF24",
 };
-
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export function PersonalityGuideRN() {
   const { t } = useTranslation();
@@ -310,7 +305,7 @@ const styles = StyleSheet.create({
     columnGap: 8,
   },
   mono: {
-    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: undefined }),
+    fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }),
     fontWeight: "700",
     width: 18,
     color: maakTokens.foreground,

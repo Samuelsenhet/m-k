@@ -171,9 +171,6 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
 
   const fetchData = useCallback(async () => {
     if (!user) return;
-    // #region agent log
-    fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-2',hypothesisId:'H3',location:'src/components/profile/ProfileView.tsx:174',message:'ProfileView fetchData start',data:{onLine:typeof navigator!=='undefined'?navigator.onLine:null,userId:user?.id ?? null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
 
     const profileKey = await getProfilesAuthKey(user.id);
     const [profileRes, photosRes] = await Promise.all([
@@ -199,14 +196,7 @@ export function ProfileView({ onEdit, archetype, onSettings }: ProfileViewProps)
       if (photosRes.data) {
         setPhotos(photosRes.data.filter(p => p.storage_path));
       }
-      // #region agent log
-      fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-2',hypothesisId:'H3',location:'src/components/profile/ProfileView.tsx:199',message:'ProfileView fetchData success',data:{hasProfile:!!profileRes.data,photoCount:photosRes.data?.length ?? 0,onLine:typeof navigator!=='undefined'?navigator.onLine:null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
     } catch (error) {
-      // #region agent log
-      const e = error as { message?: string; code?: string };
-      fetch('http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'829c5f'},body:JSON.stringify({sessionId:'829c5f',runId:'run-1',hypothesisId:'H3',location:'src/components/profile/ProfileView.tsx:200',message:'ProfileView fetchData catch',data:{message:e?.message ?? String(error),code:e?.code ?? null,onLine:typeof navigator!=='undefined'?navigator.onLine:null,userId:user?.id ?? null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       if (import.meta.env.DEV) console.error('Error fetching profile:', error);
       const isNetworkError = error instanceof TypeError && error.message === 'Failed to fetch';
       const message = isNetworkError

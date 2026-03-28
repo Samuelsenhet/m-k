@@ -123,10 +123,15 @@
     "serialize-javascript": ">=7.0.3",
     "@xmldom/xmldom": ">=0.8.0"
   },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
+  },
   "engines": {
     "node": ">=22.0.0"
   },
   "devDependencies": {
+    "expo": "~55.0.9",
+    "expo-router": "~55.0.8",
     "@cspell/dict-sv": "^2.3.2",
     "@eslint/js": "^9.32.0",
     "@swc/core": "^1.15.10",
@@ -147,7 +152,6 @@
     "lovable-tagger": "^1.1.13",
     "patch-package": "^8.0.1",
     "postcss": "^8.5.6",
-    "sharp": "^0.34.5",
     "supabase": "^2.76.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

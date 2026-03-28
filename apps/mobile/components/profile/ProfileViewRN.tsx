@@ -13,8 +13,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useCallback, useEffect, useState } from "react";
+import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
+import { useCallback, useContext, useEffect, useState, type Context } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -32,6 +32,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /** Max hero height (px); actual height scales with window so “Visa mer” fits on smaller phones. */
 const HERO_H_MAX = 512;
+/** Negative margin pulls card onto hero; larger = more photo visible above card. */
+const PROFILE_CARD_OVERLAP_DOWN = 152;
+/**
+ * Inset above the **visual card lip** (photo → rounded card). Same 24px as web `bottom-6`, but on
+ * mobile the card overlaps the hero heavily (`PROFILE_CARD_OVERLAP_DOWN`), so we must not anchor to
+ * the hero layout bottom — that would paint dots mid-card (see layout vs web `-mt-7`).
+ */
+const STORY_INDICATORS_ABOVE_CARD = 24;
+/** Height of the absolute strip that contains the segment row (active bar is 4px tall). */
+const STORY_SEGMENTS_STRIP_H = 12;
 /** Match web Profile page shell (`bg-black` + dark card). */
 const PAGE_BG = "#000000";
 /** Loaded in root `_layout.tsx` via `@expo-google-fonts/playfair-display`. */
@@ -126,9 +136,14 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const { t } = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
-  /** ~38% of screen keeps name + CTAs + “Visa mer” visible without scrolling on typical phones. */
-  const heroH = Math.min(HERO_H_MAX, Math.max(240, Math.round(windowHeight * 0.38)));
+  /** Custom `MaakTabBar` / Expo Tabs can leave context unset; hook throws — use context + fallback. */
+  const tabBarHeightCtx = BottomTabBarHeightContext as Context<number | undefined>;
+  const tabBarHeight =
+    useContext(tabBarHeightCtx) ?? (Platform.OS === "ios" ? 62 : 56);
+  /** Height available above tab bar (tab scene). Hero fills this so more photo shows above the overlay card. */
+  const availableH = windowHeight - insets.top - insets.bottom - tabBarHeight;
+  /** Minimum photo strip height; hero also uses flex:1 so it grows and eats “dead” space above the tab bar. */
+  const heroMinH = Math.max(260, Math.min(HERO_H_MAX, Math.round(availableH * 0.38)));
   const { supabase, session } = useSupabase();
   const user = session?.user;
 
@@ -138,6 +153,8 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
+  /** Hero frame in pageRoot coords — dots are a sibling overlay so they aren’t covered by the card. */
+  const [heroLayout, setHeroLayout] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -275,26 +292,30 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
     return `${displayName}, ${bits.join(" | ")}`;
   })();
 
+  /** Until `onLayout` runs, use `heroMinH` so dots still render (web parity; avoids empty overlay). */
+  const heroBottomY =
+    heroLayout.height > 0
+      ? heroLayout.y + heroLayout.height
+      : heroLayout.y + heroMinH;
+
   return (
     <>
-      <ScrollView
-        style={styles.pageScroll}
-        contentContainerStyle={{
-          paddingHorizontal: 0,
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom + tabBarHeight + 28,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.cardShell}>
-          <View style={[styles.hero, { height: heroH }]}>
+      <View style={[styles.pageRoot, { paddingTop: insets.top }]}>
+        <View
+          collapsable={false}
+          style={[styles.hero, { flex: 1, minHeight: heroMinH }]}
+          onLayout={(e) => {
+            const { y, height } = e.nativeEvent.layout;
+            setHeroLayout({ y, height });
+          }}
+        >
             {photos.length > 0 ? (
               <>
                 <Image
                   source={{ uri: getPublicUrl(photos[currentPhotoIndex]!.storage_path) }}
-                  style={[styles.heroImage, { height: heroH }]}
+                  style={styles.heroImageFill}
                   contentFit="cover"
-                  contentPosition="top"
+                  contentPosition={{ top: "22%", left: "50%" }}
                   transition={200}
                 />
                 {photos.length > 1 ? (
@@ -360,24 +381,16 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
                 <Ionicons name="create-outline" size={22} color="#fff" />
               </Pressable>
             </View>
+        </View>
 
-            {photos.length > 1 ? (
-              <View style={styles.storySegments} pointerEvents="none">
-                {photos.map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.storySeg,
-                      i === currentPhotoIndex ? styles.storySegOn : styles.storySegOff,
-                    ]}
-                  />
-                ))}
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.profileCard}>
+        <View
+          style={[
+            styles.profileCardFlow,
+            { marginTop: -PROFILE_CARD_OVERLAP_DOWN },
+          ]}
+        >
             <View style={styles.glassInner}>
+              <View style={styles.glassInnerTop}>
               <View style={styles.glassNameRow}>
                 <Text style={styles.glassName} numberOfLines={3}>
                   {nameAgeHeightLine}
@@ -455,13 +468,45 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
                 </LinearGradient>
               </Pressable>
               <Pressable style={styles.glassMore} onPress={() => setShowMore(true)}>
-                <Ionicons name="chevron-up" size={22} color="rgba(255,255,255,0.85)" />
+                <Ionicons name="chevron-down" size={22} color="rgba(255,255,255,0.85)" />
                 <Text style={styles.glassMoreTxt}>{t("profile.show_more")}</Text>
               </Pressable>
+              </View>
+            </View>
+        </View>
+
+        {photos.length > 1 ? (
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[
+              styles.storySegmentsOverlay,
+              {
+                /* Just above rounded card: seam ≈ hero bottom − overlap; then −24px like web bottom-6. */
+                top: Math.max(
+                  0,
+                  Math.round(
+                    heroBottomY -
+                      PROFILE_CARD_OVERLAP_DOWN -
+                      STORY_INDICATORS_ABOVE_CARD -
+                      STORY_SEGMENTS_STRIP_H,
+                  ),
+                ),
+              },
+            ]}
+          >
+            <View style={styles.storySegmentsRow}>
+              {photos.map((_, i) => (
+                <View
+                  key={i}
+                  style={i === currentPhotoIndex ? styles.storySegActive : styles.storySegInactive}
+                />
+              ))}
             </View>
           </View>
-        </View>
-      </ScrollView>
+        ) : null}
+      </View>
 
       <Modal
         visible={showMore}
@@ -712,21 +757,22 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
 }
 
 const styles = StyleSheet.create({
-  pageScroll: { flex: 1, backgroundColor: PAGE_BG },
+  pageRoot: {
+    flex: 1,
+    backgroundColor: CHARCOAL_CARD,
+    position: "relative",
+    overflow: "visible",
+  },
   loadingBox: { flex: 1, alignItems: "center", backgroundColor: PAGE_BG },
   loadingTxt: { marginTop: 12, color: maakTokens.mutedForeground },
   retryBtn: { marginTop: 16, padding: 12 },
   retryTxt: { color: maakTokens.primary, fontWeight: "600" },
-  cardShell: {
-    backgroundColor: PAGE_BG,
-    overflow: "visible",
-  },
   hero: {
     overflow: "hidden",
     position: "relative",
   },
-  heroImage: {
-    width: "100%",
+  heroImageFill: {
+    ...StyleSheet.absoluteFillObject,
   },
   heroGradient: {
     ...StyleSheet.absoluteFillObject,
@@ -757,26 +803,41 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     zIndex: 20,
   },
-  storySegments: {
+  /** Above profile card (sibling); web-equivalent `bottom-6` on hero via measured `top`. */
+  storySegmentsOverlay: {
     position: "absolute",
-    bottom: 18,
-    left: 20,
-    right: 20,
+    left: 0,
+    right: 0,
+    height: STORY_SEGMENTS_STRIP_H,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+    ...Platform.select({
+      /** Must exceed `profileCardFlow` elevation so dots paint above the dark card on Android. */
+      android: { elevation: 24 },
+      ios: {},
+    }),
+  },
+  storySegmentsRow: {
     flexDirection: "row",
-    gap: 6,
-    alignItems: "flex-end",
-    zIndex: 19,
+    gap: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  storySeg: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    height: 3,
-    borderRadius: 2,
+  /** Active: `h-1 w-7 bg-white` */
+  storySegActive: {
+    width: 28,
+    height: 4,
+    borderRadius: 9999,
+    backgroundColor: "#fff",
   },
-  storySegOn: { flexGrow: 1.35, minWidth: 28, backgroundColor: "#fff", height: 4 },
-  storySegOff: { backgroundColor: "rgba(255,255,255,0.35)" },
+  /** Inactive: `h-1.5 w-1.5 bg-white/45 rounded-full` */
+  storySegInactive: {
+    width: 6,
+    height: 6,
+    borderRadius: 9999,
+    backgroundColor: "rgba(255,255,255,0.45)",
+  },
   /** Translucent gray glass — matches reference hero controls (not solid white). */
   heroIconBtn: {
     width: 48,
@@ -788,15 +849,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  profileCard: {
+  /** Hug-content height; flexShrink 0 so expanding hero does not squash the card. */
+  profileCardFlow: {
+    flexShrink: 0,
     backgroundColor: CHARCOAL_CARD,
     borderTopLeftRadius: maakTokens.radius2xl,
     borderTopRightRadius: maakTokens.radius2xl,
     overflow: "hidden",
-    marginTop: -28,
-    zIndex: 5,
+    zIndex: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.28,
+        shadowRadius: 14,
+      },
+      android: { elevation: 12 },
+    }),
   },
-  glassInner: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 20 },
+  glassInner: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 12,
+  },
+  glassInnerTop: { flexShrink: 0 },
   glassNameRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -812,16 +888,16 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   glassIg: { fontSize: 14, fontWeight: "600", color: SAGE_LINK },
-  glassWork: { fontSize: 15, fontWeight: "600", color: "rgba(255,255,255,0.92)", flex: 1 },
+  glassWork: { fontSize: 13, color: "rgba(255,255,255,0.85)", flex: 1 },
   glassLocRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   glassLoc: { fontSize: 13, color: "rgba(255,255,255,0.85)" },
   glassMore: {
-    marginTop: 8,
+    marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   glassMoreTxt: { fontSize: 14, fontWeight: "600", color: "rgba(255,255,255,0.85)" },
   emptyPhotoInner: { alignItems: "center", justifyContent: "center" },
@@ -862,7 +938,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 16,
   },
   primaryBtnModalH: {

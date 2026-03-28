@@ -5,7 +5,6 @@ import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
 import { archetypeDisplayTitle } from "@/lib/archetypeTitle";
 import { consumeReopenSettingsAfterSubscreen } from "@/lib/reopenSettingsAfterSubscreen";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -27,7 +26,6 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
   const { supabase, session, isReady } = useSupabase();
   const user = session?.user;
 
@@ -133,7 +131,7 @@ export default function ProfileScreen() {
 
   if (mode === "view") {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: "#1a1a1a" }}>
         <ProfileViewRN
           key={viewKey}
           onEdit={() => setMode("edit")}
@@ -150,7 +148,8 @@ export default function ProfileScreen() {
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{
         paddingTop: insets.top + 16,
-        paddingBottom: insets.bottom + tabBarHeight + 32,
+        /* Tab scene sits above the bar — no tabBarHeight. Extra tail so photo grid clears the tab bar when scrolled. */
+        paddingBottom: insets.bottom + 56,
         paddingHorizontal: maakTokens.screenPaddingHorizontal,
       }}
     >
