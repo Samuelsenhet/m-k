@@ -1,11 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifySupabaseJWT } from "../_shared/env.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -25,8 +27,32 @@ serve(async (req: Request) => {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return new Response(
       JSON.stringify({ error: "Server not configured" }),
-      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+  }
+
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const jwtUserId = await verifySupabaseJWT(authHeader);
+  if (!jwtUserId) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  const { data: modRow } = await admin
+    .from("moderator_roles")
+    .select("user_id")
+    .eq("user_id", jwtUserId)
+    .maybeSingle();
+
+  if (!modRow) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -34,11 +60,9 @@ serve(async (req: Request) => {
     if (!campaignId) {
       return new Response(
         JSON.stringify({ error: "Missing campaign_id" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: campaign, error: campaignError } = await admin
       .from("bulk_emails")
@@ -49,14 +73,14 @@ serve(async (req: Request) => {
     if (campaignError || !campaign) {
       return new Response(
         JSON.stringify({ error: "Campaign not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (campaign.status !== "draft" && campaign.status !== "scheduled") {
       return new Response(
         JSON.stringify({ error: "Campaign already sent or cancelled" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -70,10 +94,7 @@ serve(async (req: Request) => {
       if (tmpl?.name) templateName = tmpl.name;
     }
 
-    await admin
-      .from("bulk_emails")
-      .update({ status: "sending" })
-      .eq("id", campaignId);
+    await admin.from("bulk_emails").update({ status: "sending" }).eq("id", campaignId);
 
     const filters = (campaign.filters as Record<string, unknown>) || {};
     let profilesQuery = admin.from("profiles").select("id, display_name");
@@ -89,7 +110,8 @@ serve(async (req: Request) => {
 
     const results: { email: string; success: boolean; error?: string }[] = [];
     for (const userId of userIds) {
-      const { data: { user } } = await admin.auth.getUserById(userId);
+      const { data: authRow } = await admin.auth.admin.getUserById(userId);
+      const user = authRow.user;
       const email = user?.email?.trim();
       if (!email || email.endsWith("@phone.maak.app")) {
         results.push({ email: email || "(no email)", success: false, error: "no_valid_email" });
@@ -143,7 +165,7 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({ success: true, sent, failed, total: results.length }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
     console.error("send-bulk-email error:", err);
@@ -152,7 +174,7 @@ serve(async (req: Request) => {
         success: false,
         error: err instanceof Error ? err.message : "Internal server error",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

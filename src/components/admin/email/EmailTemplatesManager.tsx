@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { ButtonPrimary, ButtonSecondary, ButtonIcon, CardV2, CardV2Content, InputV2 } from '@/components/ui-v2';
 import { Textarea } from '@/components/ui/textarea';
@@ -224,7 +225,7 @@ export default function EmailTemplatesManager() {
             <p className="text-sm text-muted-foreground mb-2">{preview.subject_sv}</p>
             <div
               className="rounded-md border bg-muted/30 p-4 prose prose-sm max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: preview.body_sv || '' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.body_sv || '') }}
             />
           </CardV2Content>
         </CardV2>

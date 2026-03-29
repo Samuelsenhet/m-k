@@ -53,14 +53,29 @@ export function usePhoneAuth() {
 
       if (otpError) {
         const msg = otpError.message || i18n.t("mobile.phone_errors.send_otp_failed");
-        if (msg.toLowerCase().includes("captcha")) {
+        const lower = msg.toLowerCase();
+        if (lower.includes("captcha")) {
           throw new Error(i18n.t("mobile.phone_errors.captcha"));
         }
+        // Only match explicit GoTrue "phone off" messages — do not use broad "provider"
+        // (Twilio/SMS config errors often contain "provider" and were mislabeled as Phone off).
         if (
-          msg.toLowerCase().includes("phone provider is disabled") ||
-          msg.toLowerCase().includes("provider")
+          lower.includes("phone provider is disabled") ||
+          lower.includes("phone auth is disabled")
         ) {
           throw new Error(i18n.t("mobile.phone_errors.phone_disabled"));
+        }
+        if (
+          lower.includes("signups not allowed") ||
+          lower.includes("signup not allowed") ||
+          lower.includes("sign up is disabled") ||
+          lower.includes("new users are forbidden")
+        ) {
+          throw new Error(i18n.t("mobile.phone_errors.phone_signups_disabled"));
+        }
+        // Twilio 20003 = bad/mismatched Account SID + Auth Token in Supabase Phone settings
+        if (/\b20003\b/.test(msg) || lower.includes("errors/20003")) {
+          throw new Error(i18n.t("mobile.phone_errors.twilio_auth_failed"));
         }
         throw new Error(msg);
       }

@@ -1,14 +1,15 @@
-// Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { verifySupabaseJWT } from "../_shared/env.ts";
+
 interface reqPayload {
   name: string;
 }
 
-console.info('server started');
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
@@ -17,13 +18,20 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const userId = await verifySupabaseJWT(req.headers.get("Authorization") || "");
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const { name }: reqPayload = await req.json();
   const data = {
     message: `Hello ${name}!`,
   };
 
-  return new Response(
-    JSON.stringify(data),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Connection': 'keep-alive' }}
-  );
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, "Content-Type": "application/json", Connection: "keep-alive" },
+  });
 });

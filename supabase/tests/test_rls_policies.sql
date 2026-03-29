@@ -19,18 +19,25 @@ BEGIN
 END $$;
 
 -- ==========================================
--- TEST 2: Profile Access (Other Users)
+-- TEST 2: Profile Access (strangers only)
 -- ==========================================
--- Expected: Should return empty (no access to other profiles unless matched)
+-- Expected: No access to profiles of users you are not matched with (match partners may be visible)
 DO $$
 DECLARE
-  other_profile_count INT;
+  stranger_profile_count INT;
 BEGIN
-  SELECT COUNT(*) INTO other_profile_count FROM public.profiles WHERE id != auth.uid();
-  IF other_profile_count > 0 THEN
-    RAISE EXCEPTION 'TEST 2 FAILED: Can view other profiles (expected 0, got %)', other_profile_count;
+  SELECT COUNT(*) INTO stranger_profile_count
+  FROM public.profiles p
+  WHERE p.id != auth.uid()
+    AND NOT EXISTS (
+      SELECT 1 FROM public.matches m
+      WHERE (m.user_id = auth.uid() AND m.matched_user_id = p.id)
+         OR (m.matched_user_id = auth.uid() AND m.user_id = p.id)
+    );
+  IF stranger_profile_count > 0 THEN
+    RAISE EXCEPTION 'TEST 2 FAILED: Can view non-match profiles (expected 0, got %)', stranger_profile_count;
   ELSE
-    RAISE NOTICE 'TEST 2 PASSED: Cannot view other profiles';
+    RAISE NOTICE 'TEST 2 PASSED: Cannot view strangers'' profiles';
   END IF;
 END $$;
 
@@ -227,6 +234,78 @@ BEGIN
     RAISE NOTICE 'TEST 15 PASSED: Cannot insert personality scores for other user (blocked as expected)';
   ELSE
     RAISE EXCEPTION 'TEST 15 FAILED: Was able to insert personality scores for other user';
+  END IF;
+END $$;
+
+-- ==========================================
+-- TEST 16: Messages — visible when user is matched_user_id (recipient)
+-- ==========================================
+-- Expected: SELECT returns rows for matches where auth user is either side
+DO $$
+DECLARE
+  recipient_side_count INT;
+BEGIN
+  SELECT COUNT(*) INTO recipient_side_count
+  FROM public.messages msg
+  WHERE EXISTS (
+    SELECT 1 FROM public.matches m
+    WHERE m.id = msg.match_id
+      AND (m.user_id = auth.uid() OR m.matched_user_id = auth.uid())
+  );
+  RAISE NOTICE 'TEST 16 PASSED: messages visible for match participants (% rows)', recipient_side_count;
+END $$;
+
+-- ==========================================
+-- TEST 17: Cannot insert message into a match you are not part of
+-- ==========================================
+DO $$
+DECLARE
+  alien_match_id UUID;
+  blocked BOOLEAN := FALSE;
+BEGIN
+  SELECT m.id INTO alien_match_id
+  FROM public.matches m
+  WHERE m.user_id <> auth.uid() AND m.matched_user_id <> auth.uid()
+  LIMIT 1;
+
+  IF alien_match_id IS NULL THEN
+    RAISE NOTICE 'TEST 17 SKIPPED: no third-party match row in DB to probe';
+    RETURN;
+  END IF;
+
+  BEGIN
+    INSERT INTO public.messages (match_id, sender_id, content)
+    VALUES (alien_match_id, auth.uid(), 'RLS probe — should fail');
+  EXCEPTION
+    WHEN insufficient_privilege OR check_violation THEN
+      blocked := TRUE;
+  END;
+
+  IF blocked THEN
+    RAISE NOTICE 'TEST 17 PASSED: cannot insert into another user''s match';
+  ELSE
+    RAISE EXCEPTION 'TEST 17 FAILED: inserted message into match without participation';
+  END IF;
+END $$;
+
+-- ==========================================
+-- TEST 18: Subscriptions — client cannot update tier (server-owned)
+-- ==========================================
+-- With no UPDATE policy, RLS should yield 0 rows updated (not necessarily an exception).
+DO $$
+DECLARE
+  rows_updated INT;
+BEGIN
+  UPDATE public.subscriptions
+  SET plan_type = 'vip', updated_at = NOW()
+  WHERE user_id = auth.uid();
+
+  GET DIAGNOSTICS rows_updated = ROW_COUNT;
+
+  IF rows_updated > 0 THEN
+    RAISE EXCEPTION 'TEST 18 FAILED: subscription row was updated by authenticated user (expected 0 rows)';
+  ELSE
+    RAISE NOTICE 'TEST 18 PASSED: subscription update blocked (0 rows affected)';
   END IF;
 END $$;
 

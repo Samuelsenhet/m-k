@@ -13,6 +13,8 @@ type SuggestionType = 'matching' | 'profile' | 'icebreakers' | 'all';
 
 interface AIAssistantPanelProps {
   matchedUserId?: string;
+  /** When set with matchedUserId, server binds icebreakers/after_video to this match (IDOR-safe). */
+  matchId?: string;
   onClose?: () => void;
   className?: string;
 }
@@ -85,9 +87,9 @@ export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssist
       }
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: {
-          userId: user.id,
           type,
           matchedUserId,
+          matchId,
         },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });

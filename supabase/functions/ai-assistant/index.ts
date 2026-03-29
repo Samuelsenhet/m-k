@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifySupabaseJWT } from "../_shared/env.ts";
+import { enforceAiRateLimits } from "../_shared/rate_limit_db.ts";
+import { resolveMatchedPeerId } from "../_shared/match_peer.ts";
 
-// Get allowed origin from environment or default to wildcard for development
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
 
 const corsHeaders = {
@@ -13,6 +15,7 @@ const corsHeaders = {
 interface RequestBody {
   type: "matching" | "profile" | "icebreakers" | "all" | "after_video";
   matchedUserId?: string;
+  matchId?: string;
 }
 
 serve(async (req) => {
@@ -22,45 +25,51 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error("Supabase configuration is missing");
     }
 
-    // Create client with user's auth token to verify identity
-    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: { Authorization: req.headers.get("Authorization") || "" },
-      },
-    });
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
-    if (authError || !user) {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const userId = await verifySupabaseJWT(authHeader);
+    if (!userId) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const userId = user.id; // Use authenticated user's ID, not from request body
-    const { type, matchedUserId } = await req.json() as RequestBody;
-    
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const body = await req.json().catch(() => ({})) as RequestBody;
+    const { type, matchedUserId, matchId } = body;
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("Supabase service role configuration is missing");
-    }
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch user profile
+    const rateBlock = await enforceAiRateLimits(supabase, req, userId, "ai_assistant");
+    if (rateBlock) {
+      const h = new Headers(rateBlock.headers);
+      h.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+      h.set("Access-Control-Allow-Headers", corsHeaders["Access-Control-Allow-Headers"]);
+      h.set("Access-Control-Allow-Methods", corsHeaders["Access-Control-Allow-Methods"]);
+      return new Response(rateBlock.body, { status: rateBlock.status, headers: h });
+    }
+
+    let peerId: string | null = null;
+    if (type === "icebreakers" || type === "after_video") {
+      peerId = await resolveMatchedPeerId(supabase, userId, matchedUserId, matchId);
+      if (!peerId) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     const { data: userProfile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
@@ -72,7 +81,6 @@ serve(async (req) => {
       throw new Error("Could not fetch user profile");
     }
 
-    // Fetch user's personality result
     const { data: personalityResult } = await supabase
       .from("personality_results")
       .select("*")
@@ -81,7 +89,6 @@ serve(async (req) => {
       .limit(1)
       .single();
 
-    // Fetch user's matches
     const { data: matches } = await supabase
       .from("matches")
       .select("*")
@@ -89,26 +96,24 @@ serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(10);
 
-    // Fetch matched user profile if specified
     let matchedProfile = null;
     let matchedPersonality = null;
-    if (matchedUserId) {
+    if (peerId) {
       const { data: mp } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", matchedUserId)
+        .eq("id", peerId)
         .single();
       matchedProfile = mp;
 
       const { data: mpr } = await supabase
         .from("personality_results")
         .select("*")
-        .eq("user_id", matchedUserId)
+        .eq("user_id", peerId)
         .single();
       matchedPersonality = mpr;
     }
 
-    // Build context for AI
     const context = {
       userProfile: {
         name: userProfile.display_name,
@@ -125,26 +130,31 @@ serve(async (req) => {
         smoking: userProfile.smoking,
         profileCompletion: userProfile.profile_completion,
       },
-      personality: personalityResult ? {
-        archetype: personalityResult.archetype,
-        category: personalityResult.category,
-        scores: personalityResult.scores,
-      } : null,
+      personality: personalityResult
+        ? {
+          archetype: personalityResult.archetype,
+          category: personalityResult.category,
+          scores: personalityResult.scores,
+        }
+        : null,
       matchCount: matches?.length || 0,
-      matchedUser: matchedProfile ? {
-        name: matchedProfile.display_name,
-        bio: matchedProfile.bio,
-        hometown: matchedProfile.hometown,
-        work: matchedProfile.work,
-        education: matchedProfile.education,
-        personality: matchedPersonality ? {
-          archetype: matchedPersonality.archetype,
-          category: matchedPersonality.category,
-        } : null,
-      } : null,
+      matchedUser: matchedProfile
+        ? {
+          name: matchedProfile.display_name,
+          bio: matchedProfile.bio,
+          hometown: matchedProfile.hometown,
+          work: matchedProfile.work,
+          education: matchedProfile.education,
+          personality: matchedPersonality
+            ? {
+              archetype: matchedPersonality.archetype,
+              category: matchedPersonality.category,
+            }
+            : null,
+        }
+        : null,
     };
 
-    // Build system prompt based on type
     const systemPrompt = `Du är MÄÄK AI-assistent, en hjälpsam och varm dejtingcoach som hjälper användare att hitta kärleken. 
 Du har tillgång till användarens profildata och personlighetsanalys. Ge konkreta, personliga och uppmuntrande råd på svenska.
 Var kortfattad men hjälpsam. Använd emoji sparsamt.`;
@@ -247,13 +257,13 @@ Håll det kortfattat och uppmuntrande.`;
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "För många förfrågningar, vänta en stund och försök igen." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       if (response.status === 402) {
         return new Response(
           JSON.stringify({ error: "AI-tjänsten är inte tillgänglig just nu." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const errorText = await response.text();
@@ -271,21 +281,20 @@ Håll det kortfattat och uppmuntrande.`;
     console.log(`AI Assistant response generated successfully for type: ${type}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         suggestion: content,
-        type 
+        type,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error) {
     console.error("AI Assistant error:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Ett fel uppstod" 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Ett fel uppstod",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

@@ -1,15 +1,11 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeadersFor } from "../_shared/cors.ts"
 import { getSupabaseEnv, verifySupabaseJWT } from "../_shared/env.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get("CORS_ORIGIN") || '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-}
-
 serve(async (req: Request) => {
+  const corsHeaders = corsHeadersFor(req, 'GET, POST, OPTIONS')
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -31,10 +27,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // Verify JWT locally using SUPABASE_JWT_SECRET (always auto-injected correctly).
-    // This avoids the SUPABASE_URL-dependent getUser() call that caused 401s when
-    // SUPABASE_URL was manually set to a stale/wrong value in Edge Function secrets.
-    const jwtUserId = await verifySupabaseJWT(authHeader);
+    const jwtUserId = await verifySupabaseJWT(authHeader, supabaseUrl, supabaseAnonKey);
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     let requestUserId: string;

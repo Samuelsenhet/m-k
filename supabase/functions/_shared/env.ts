@@ -1,17 +1,23 @@
 /**
  * Supabase Edge Function shared env helpers.
  *
- * verifySupabaseJWT: verifies the user's JWT locally using SUPABASE_JWT_SECRET
- * (always auto-injected correctly by Supabase). This avoids depending on
- * SUPABASE_URL being correctly set for auth validation, which was the root
- * cause of 401 errors when SUPABASE_URL was manually set to a wrong/stale value.
+ * verifySupabaseJWT: resolves the user id via GoTrue using SUPABASE_URL +
+ * SUPABASE_ANON_KEY (both auto-injected on deploy). This supports HS256 legacy
+ * JWTs and asymmetric (e.g. ES256) signing keys. Manual HS256-only verification
+ * with SUPABASE_JWT_SECRET fails for ES256 tokens and caused 401 after JWT
+ * migration.
  */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveCorsAllowOrigin } from "./cors.ts";
+
+function corsHeaders(req: Request): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": resolveCorsAllowOrigin(req),
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  };
+}
 
 const MISSING_SECRETS_MESSAGE =
   "SUPABASE_URL or SUPABASE_ANON_KEY is not set. Set Edge Function Secrets in Dashboard (Edge Functions → Secrets) or run: supabase secrets set SUPABASE_URL=<url> SUPABASE_ANON_KEY=<key> then redeploy.";
@@ -27,7 +33,7 @@ export function getSupabaseEnv(
       JSON.stringify({ error: MISSING_SECRETS_MESSAGE }),
       {
         status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders(_req), "Content-Type": "application/json" },
       }
     );
   }
@@ -36,62 +42,41 @@ export function getSupabaseEnv(
 }
 
 /**
- * Verify a Supabase user JWT using SUPABASE_JWT_SECRET (HS256).
- * Returns the user's UUID (sub claim) on success, null on failure.
+ * Verify the caller's Bearer token with GoTrue and return the user's id.
+ * Uses anon key + forwarded Authorization (not service role).
  *
- * This is preferred over createClient.auth.getUser() because it does not
- * depend on SUPABASE_URL being correctly configured — the JWT secret is
- * always auto-injected by the Supabase runtime.
+ * Optional `supabaseUrl` / `supabaseAnonKey` avoid re-reading env when the
+ * caller already validated them via getSupabaseEnv.
  */
-export async function verifySupabaseJWT(authHeader: string): Promise<string | null> {
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
-  if (!token) return null;
+export async function verifySupabaseJWT(
+  authHeader: string,
+  supabaseUrl?: string,
+  supabaseAnonKey?: string
+): Promise<string | null> {
+  const raw = authHeader.trim();
+  if (!raw) return null;
 
-  const secret = Deno.env.get("SUPABASE_JWT_SECRET");
-  if (!secret) {
-    console.warn("[auth] SUPABASE_JWT_SECRET not set – cannot verify JWT locally");
+  const url = (supabaseUrl ?? Deno.env.get("SUPABASE_URL") ?? "").trim();
+  const anon = (supabaseAnonKey ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "").trim();
+  if (!url || !anon) {
+    console.warn("[auth] SUPABASE_URL or SUPABASE_ANON_KEY missing – cannot verify session");
     return null;
   }
 
+  const authorization = raw.startsWith("Bearer ") ? raw : `Bearer ${raw}`;
+
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const [header, payload, sig] = parts;
-
-    // base64url → Uint8Array
-    const b64decode = (s: string) =>
-      Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
-
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-
-    const valid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      b64decode(sig),
-      new TextEncoder().encode(`${header}.${payload}`)
-    );
-
-    if (!valid) {
-      console.warn("[auth] JWT signature invalid");
+    const supabase = createClient(url, anon, {
+      global: { headers: { Authorization: authorization } },
+    });
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      if (error) console.warn("[auth] getUser failed:", error.message);
       return null;
     }
-
-    const data = JSON.parse(new TextDecoder().decode(b64decode(payload)));
-
-    if (data.exp && data.exp < Math.floor(Date.now() / 1000)) {
-      console.warn("[auth] JWT expired");
-      return null;
-    }
-
-    return (data.sub as string) ?? null;
+    return user.id;
   } catch (e) {
-    console.warn("[auth] JWT verification error:", e);
+    console.warn("[auth] getUser error:", e);
     return null;
   }
 }

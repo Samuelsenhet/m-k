@@ -8,12 +8,40 @@ export interface UserSubscription {
   validUntil: Date | null;
 }
 
+type SubscriptionRow = {
+  plan_type: string;
+  status: string;
+  expires_at: string | null;
+};
+
+function mapSubscription(row: SubscriptionRow | null): UserSubscription {
+  if (!row || row.status !== 'active') {
+    return {
+      isPlus: false,
+      subscriptionTier: 'free',
+      validUntil: null,
+    };
+  }
+  const notExpired = !row.expires_at || new Date(row.expires_at) > new Date();
+  const plan = row.plan_type;
+  const isPaid = notExpired && (plan === 'premium' || plan === 'vip');
+  let subscriptionTier: 'free' | 'plus' | 'premium' = 'free';
+  if (isPaid) {
+    subscriptionTier = plan === 'vip' ? 'premium' : 'plus';
+  }
+  return {
+    isPlus: isPaid,
+    subscriptionTier,
+    validUntil: row.expires_at ? new Date(row.expires_at) : null,
+  };
+}
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<UserSubscription>({
     isPlus: false,
     subscriptionTier: 'free',
-    validUntil: null
+    validUntil: null,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -26,40 +54,14 @@ export const useSubscription = () => {
 
     try {
       const { data, error: fetchError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
+        .from('subscriptions')
+        .select('plan_type, status, expires_at')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (fetchError) throw fetchError;
 
-      if (data) {
-        // Check if subscription is still valid
-        const isStillValid = !data.valid_until || new Date(data.valid_until) > new Date();
-
-        setSubscription({
-          isPlus: data.is_plus && isStillValid,
-          subscriptionTier: (data.subscription_tier as 'free' | 'plus' | 'premium') || 'free',
-          validUntil: data.valid_until ? new Date(data.valid_until) : null
-        });
-      } else {
-        // Create default subscription if not exists
-        const { error: insertError } = await supabase
-          .from('user_subscriptions')
-          .insert({
-            user_id: user.id,
-            is_plus: false,
-            subscription_tier: 'free'
-          });
-
-        if (insertError) throw insertError;
-
-        setSubscription({
-          isPlus: false,
-          subscriptionTier: 'free',
-          validUntil: null
-        });
-      }
+      setSubscription(mapSubscription(data as SubscriptionRow | null));
     } catch (err) {
       if (import.meta.env.DEV) console.error('Error fetching subscription:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch subscription'));
@@ -72,10 +74,9 @@ export const useSubscription = () => {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  // Daily match limit based on subscription tier
   const getDailyMatchLimit = (): number | null => {
-    if (subscription.isPlus) return null; // Unlimited for Plus
-    return 5; // Free tier cap
+    if (subscription.isPlus) return null;
+    return 5;
   };
 
   return {
@@ -83,6 +84,6 @@ export const useSubscription = () => {
     loading,
     error,
     dailyMatchLimit: getDailyMatchLimit(),
-    refreshSubscription: fetchSubscription
+    refreshSubscription: fetchSubscription,
   };
 };

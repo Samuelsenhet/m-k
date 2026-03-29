@@ -1048,6 +1048,8 @@
       "not_configured": "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to apps/mobile/.env.",
       "captcha": "SMS sign-in requires CAPTCHA in your Supabase settings. Turn off CAPTCHA for Phone Auth or implement captchaToken in the client.",
       "phone_disabled": "SMS sign-in is not enabled in Supabase. Go to Dashboard → Authentication → Providers → Phone.",
+      "phone_signups_disabled": "Phone is enabled but new sign-ups via SMS are disabled. In Dashboard → Authentication → Providers → Phone, allow new users, or sign in with an existing account.",
+      "twilio_auth_failed": "Twilio rejected authentication (error 20003). In Supabase: Authentication → Providers → Phone — verify Account SID and Auth Token match Twilio Console (no extra spaces). Regenerate the Auth Token if it was rotated.",
       "not_configured_short": "Supabase is not configured. Add .env for sign-in.",
       "code_expired": "The code has expired. Send a new code and try again.",
       "send_otp_failed": "Could not send verification code",

@@ -1046,6 +1046,8 @@
       "not_configured": "Supabase är inte konfigurerad. Lägg till EXPO_PUBLIC_SUPABASE_URL och EXPO_PUBLIC_SUPABASE_ANON_KEY i apps/mobile/.env.",
       "captcha": "SMS-inloggning kräver CAPTCHA i din Supabase-inställning. Stäng av CAPTCHA för Phone Auth eller implementera captchaToken i klienten.",
       "phone_disabled": "SMS-inloggning är inte aktiverad i Supabase. Gå till Dashboard → Authentication → Providers → Phone.",
+      "phone_signups_disabled": "Telefon är på men nya konton via SMS är avstängda. I Dashboard → Authentication → Providers → Phone: tillåt registrering, eller logga in med ett befintligt konto.",
+      "twilio_auth_failed": "Twilio avvisar inloggning (fel 20003). I Supabase: Authentication → Providers → Phone — kontrollera Account SID och Auth Token mot Twilio Console (inga extra mellanslag). Byt Auth Token om den roterats bort.",
       "not_configured_short": "Supabase är inte konfigurerad. Lägg till .env för inloggning.",
       "code_expired": "Koden har utgått. Skicka en ny kod och försök igen.",
       "send_otp_failed": "Kunde inte skicka verifieringskod",

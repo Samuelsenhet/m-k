@@ -118,7 +118,29 @@ dig maakapp.se
 
 ---
 
-## 8. DNS via Loopia API och säker lagring
+## 8. Lokal utveckling med HTTPS-domän (tunnel / reverse proxy)
+
+`npm run dev` lyssnar alltid på **localhost:8080** (eller ditt LAN-IP). För att **webbläsaren** ska visa **`https://maakapp.se`** (eller en underdomän) behöver du något som terminerar TLS och proxyar till Vite:
+
+1. **Rekommenderat:** använd en **underdomän** som bara du använder för dev, t.ex. **`dev.maakapp.se`**, så att produktionens **`maakapp.se`** fortsätter peka på Vercel utan konflikt.
+2. Sätt upp t.ex. **Cloudflare Tunnel** (eller annan tunnel) eller **Caddy/nginx** lokalt som proxar `https://…` → `http://127.0.0.1:8080`.
+3. I projektets **`.env`** (lokalt, gitignored):
+
+   ```bash
+   VITE_DEV_ORIGIN=https://dev.maakapp.se
+   ```
+
+   Byt till den publika URL du faktiskt öppnar i webbläsaren (med `https://`).
+
+4. **Supabase:** lägg till samma URL under **Authentication → URL Configuration → Redirect URLs**, t.ex. `https://dev.maakapp.se/**`.
+
+Vite läser `VITE_DEV_ORIGIN` i `config/vite.config.ts` och sätter då `server.origin` och HMR (`wss` / rätt host) så att moduler och hot reload fungerar via proxyn.
+
+**OBS:** Att peka **`maakapp.se`** (apex) i Loopia mot din laptop bryter produktion. Vill du ändå köra lokalt med exakt `https://maakapp.se` är vanliga vägar **`/etc/hosts`** (`maakapp.se` → `127.0.0.1`) + lokal HTTPS (t.ex. mkcert) + reverse proxy – fortfarande med `VITE_DEV_ORIGIN=https://maakapp.se`.
+
+---
+
+## 9. DNS via Loopia API och säker lagring
 
 Du kan ändra DNS via Loopia API istället för manuellt i Loopia Kundzon.
 
@@ -146,7 +168,7 @@ Scriptet läser `LOOPIA_API_USER` och `LOOPIA_API_PASSWORD` från miljön (eller
 
 ---
 
-## 9. Referens – Vercel vs Netlify
+## 10. Referens – Vercel vs Netlify
 
 | Tjänst   | A-record (@)   | CNAME (www)              |
 |----------|-----------------|---------------------------|

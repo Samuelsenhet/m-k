@@ -348,6 +348,11 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# Gateway JWT verification: user access_token and service_role JWT are both valid JWTs for this project.
+# Handler still uses verifySupabaseJWT + explicit service_role branch in code.
+[functions.match-status]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

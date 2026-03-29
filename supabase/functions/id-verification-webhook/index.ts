@@ -67,7 +67,14 @@ serve(async (req: Request) => {
   }
 
   const webhookSecret = Deno.env.get("ID_VERIFICATION_WEBHOOK_SECRET");
-  if (webhookSecret) {
+  if (!webhookSecret) {
+    console.error("ID_VERIFICATION_WEBHOOK_SECRET is not configured");
+    return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 503,
+    });
+  }
+  {
     const secret = req.headers.get("x-webhook-secret") ?? req.headers.get("x-onfido-signature") ?? req.headers.get("x-jumio-signature");
     if (secret !== webhookSecret) {
       return new Response(JSON.stringify({ error: "Invalid webhook secret" }), {

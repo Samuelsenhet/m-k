@@ -238,7 +238,7 @@ export function ChatWindow({
         return;
       }
       return supabase.functions.invoke('ai-assistant', {
-        body: { type: 'after_video', matchedUserId },
+        body: { type: 'after_video', matchedUserId, matchId },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
     }).then((result) => {
@@ -257,7 +257,7 @@ export function ChatWindow({
     }).catch(() => {
       toast.error(t('chat.postVideoError'));
     }).finally(() => setLoadingPostVideo(false));
-  }, [showPostVideoCard, matchedUserId, t]);
+  }, [showPostVideoCard, matchedUserId, matchId, t]);
 
   
 

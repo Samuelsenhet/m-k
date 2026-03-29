@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils";
 export interface ButtonGhostProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   size?: "default" | "sm" | "lg";
+  fullWidth?: boolean;
 }
 
 const ButtonGhost = React.forwardRef<HTMLButtonElement, ButtonGhostProps>(
-  ({ className, asChild = false, size = "default", ...props }, ref) => {
+  ({ className, asChild = false, size = "default", fullWidth, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
@@ -19,6 +20,7 @@ const ButtonGhost = React.forwardRef<HTMLButtonElement, ButtonGhostProps>(
           size === "default" && "h-10 px-4 py-2",
           size === "sm" && "h-9 px-3 rounded-xl",
           size === "lg" && "h-11 px-8 rounded-xl",
+          fullWidth && "w-full",
           className,
         )}
         {...props}

@@ -1,8 +1,52 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+
+const projectRoot = path.resolve(__dirname, "..");
+
+/**
+ * When you terminate TLS in front of Vite (Cloudflare Tunnel, Caddy, nginx → localhost:8080),
+ * set VITE_DEV_ORIGIN=https://maakapp.se (or https://dev.maakapp.se) in .env so asset URLs
+ * and HMR use the public host. See docs/DOMAIN_SETUP.md §8.
+ */
+function devServerWithPublicUrl(mode: string) {
+  const env = loadEnv(mode, projectRoot, "");
+  const raw = env.VITE_DEV_ORIGIN?.trim().replace(/\/$/, "");
+  if (mode !== "development" || !raw) {
+    return {
+      host: "::" as const,
+      port: 8080,
+      hmr: { overlay: false },
+    };
+  }
+  try {
+    const u = new URL(raw);
+    const https = u.protocol === "https:";
+    const clientPort = u.port ? Number.parseInt(u.port, 10) : https ? 443 : 80;
+    return {
+      host: "::" as const,
+      port: 8080,
+      strictPort: true,
+      origin: raw,
+      allowedHosts: [u.hostname, "localhost", "127.0.0.1"],
+      hmr: {
+        overlay: false,
+        protocol: https ? ("wss" as const) : ("ws" as const),
+        host: u.hostname,
+        clientPort,
+      },
+    };
+  } catch {
+    console.warn("[vite] VITE_DEV_ORIGIN is invalid, ignoring:", raw);
+    return {
+      host: "::" as const,
+      port: 8080,
+      hmr: { overlay: false },
+    };
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -10,13 +54,7 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     environment: "jsdom",
   },
-  server: {
-    host: "::",
-    port: 8080,
-    hmr: {
-      overlay: false,
-    },
-  },
+  server: devServerWithPublicUrl(mode),
   plugins: [
     react(),
     mode === "development" && componentTagger(),
@@ -89,6 +127,7 @@ export default defineConfig(({ mode }) => ({
     include: ["react", "react-dom", "react/jsx-runtime"],
   },
   build: {
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {

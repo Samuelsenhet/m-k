@@ -121,15 +121,35 @@ export const usePhoneAuth = () => {
 
       if (otpError) {
         const msg = otpError.message || "Kunde inte skicka verifieringskod";
+        const lower = msg.toLowerCase();
         // Common Supabase Phone Auth setup issues
-        if (msg.toLowerCase().includes("captcha")) {
+        if (lower.includes("captcha")) {
           throw new Error(
             "SMS-inloggning kräver CAPTCHA i din Supabase-inställning. Stäng av CAPTCHA för Phone Auth eller implementera captchaToken i klienten."
           );
         }
-        if (msg.toLowerCase().includes("phone provider is disabled") || msg.toLowerCase().includes("provider")) {
+        // Avoid matching any string with "provider" — SMS/Twilio errors misled users.
+        if (
+          lower.includes("phone provider is disabled") ||
+          lower.includes("phone auth is disabled")
+        ) {
           throw new Error(
             "SMS-inloggning är inte aktiverad i Supabase. Gå till Supabase Dashboard → Authentication → Providers → Phone och aktivera."
+          );
+        }
+        if (
+          lower.includes("signups not allowed") ||
+          lower.includes("signup not allowed") ||
+          lower.includes("sign up is disabled") ||
+          lower.includes("new users are forbidden")
+        ) {
+          throw new Error(
+            "Telefon-SMS är på men nya konton via telefon är avstängda. I Dashboard → Authentication → Providers → Phone: kontrollera att nya användare tillåts, eller använd en befintlig användare."
+          );
+        }
+        if (/\b20003\b/.test(msg) || lower.includes("errors/20003")) {
+          throw new Error(
+            "Twilio avvisar inloggning (fel 20003). I Supabase: Authentication → Providers → Phone — kontrollera Account SID och Auth Token mot Twilio Console (inga extra mellanslag). Byt Auth Token om den roterats."
           );
         }
         throw new Error(msg);

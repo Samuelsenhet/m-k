@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifySupabaseJWT } from "../_shared/env.ts";
+import { enforceAiRateLimits } from "../_shared/rate_limit_db.ts";
+import { resolveMatchedPeerId } from "../_shared/match_peer.ts";
 
 // Get allowed origin from environment or default to wildcard for development
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
@@ -51,22 +54,14 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Supabase configuration is missing');
     }
 
-    // Create client with user's auth token to verify identity
-    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: { Authorization: req.headers.get('Authorization') || '' },
-      },
-    });
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
-    if (authError || !user) {
+    const userId = await verifySupabaseJWT(req.headers.get('Authorization') || '');
+    if (!userId) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -82,66 +77,83 @@ serve(async (req) => {
       matchedUserId,
       category = 'general',
       situation = 'default',
-      // Optional: pre-provided interests (from match data)
       userInterests = [],
       matchedUserInterests = [],
-    } = await req.json();
+    } = await req.json().catch(() => ({}));
 
-    console.log('Generating icebreakers for match:', matchId, 'by user:', user.id);
+    if (!matchId || typeof matchId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'matchId is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Generating icebreakers for match:', matchId, 'by user:', userId);
     console.log('Category:', category, 'Situation:', situation);
 
-    // Validate category
     const validCategory: IcebreakerCategory =
       ['funny', 'deep', 'activity', 'compliment', 'general'].includes(category)
         ? category
         : 'general';
 
-    // Create service client to fetch profiles
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const validSituation: IcebreakerSituation =
+      ['default', 'after_video', 'before_date'].includes(situation) ? situation : 'default';
 
-    // Fetch both profiles for richer context
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const peerId = await resolveMatchedPeerId(supabase, userId, matchedUserId, matchId);
+    if (!peerId) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const rateBlock = await enforceAiRateLimits(supabase, req, userId, 'generate_icebreakers');
+    if (rateBlock) {
+      const h = new Headers(rateBlock.headers);
+      h.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+      h.set('Access-Control-Allow-Headers', corsHeaders['Access-Control-Allow-Headers']);
+      h.set('Access-Control-Allow-Methods', corsHeaders['Access-Control-Allow-Methods']);
+      return new Response(rateBlock.body, { status: rateBlock.status, headers: h });
+    }
+
     let userProfile: ProfileData | null = null;
     let matchedProfile: ProfileData | null = null;
     let userPersonality: PersonalityData | null = null;
     let matchedPersonality: PersonalityData | null = null;
 
-    // Fetch user's profile and personality
     const [userProfileRes, userPersonalityRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('display_name, bio, looking_for, work, education, hometown')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single(),
       supabase
         .from('personality_results')
         .select('archetype, category')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single(),
     ]);
 
     if (userProfileRes.data) userProfile = userProfileRes.data;
     if (userPersonalityRes.data) userPersonality = userPersonalityRes.data;
 
-    // Fetch matched user's profile and personality if we have their ID
-    if (matchedUserId) {
-      const [matchedProfileRes, matchedPersonalityRes] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('display_name, bio, looking_for, work, education, hometown')
-          .eq('id', matchedUserId)
-          .single(),
-        supabase
-          .from('personality_results')
-          .select('archetype, category')
-          .eq('user_id', matchedUserId)
-          .single(),
-      ]);
+    const [matchedProfileRes, matchedPersonalityRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('display_name, bio, looking_for, work, education, hometown')
+        .eq('id', peerId)
+        .single(),
+      supabase
+        .from('personality_results')
+        .select('archetype, category')
+        .eq('user_id', peerId)
+        .single(),
+    ]);
 
-      if (matchedProfileRes.data) matchedProfile = matchedProfileRes.data;
-      if (matchedPersonalityRes.data) matchedPersonality = matchedPersonalityRes.data;
-    }
+    if (matchedProfileRes.data) matchedProfile = matchedProfileRes.data;
+    if (matchedPersonalityRes.data) matchedPersonality = matchedPersonalityRes.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {

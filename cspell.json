@@ -24,6 +24,7 @@
     "Untitled/**",
     "m-k/**",
     "m-k-1/**",
+    "m-k-backup/**",
     "node_modules/**",
     "**/node_modules/**",
     "dist/**",

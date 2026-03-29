@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifySupabaseJWT } from "../_shared/env.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -15,6 +16,9 @@ const corsHeaders = {
 };
 
 type InlineTemplateName = "report_received" | "report_resolved" | "appeal_received" | "appeal_decision";
+
+const INLINE_USER_TEMPLATES = new Set<string>(["report_received", "appeal_received"]);
+const INLINE_MOD_TEMPLATES = new Set<string>(["report_resolved", "appeal_decision"]);
 
 interface SendEmailPayload {
   to?: string;
@@ -123,23 +127,120 @@ serve(async (req: Request) => {
       );
     }
 
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.trim()) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const jwtUserId = await verifySupabaseJWT(authHeader);
+    const isInternalService =
+      !!SUPABASE_SERVICE_ROLE_KEY && authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+    const serviceRoleEmailEnabled = Deno.env.get("SEND_EMAIL_SERVICE_ROLE_ENABLED") !== "false";
+
+    if (isInternalService && !serviceRoleEmailEnabled) {
+      return new Response(
+        JSON.stringify({ error: "Service role email sending is disabled" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!jwtUserId && !isInternalService) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const admin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
       ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
       : null;
 
+    if (!admin) {
+      return new Response(JSON.stringify({ error: "Email service not configured" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!isInternalService && jwtUserId) {
+      const { data: modRow } = await admin.from("moderator_roles").select("user_id").eq("user_id", jwtUserId).maybeSingle();
+      const isModerator = !!modRow;
+
+      const { data: authUserData } = await admin.auth.admin.getUserById(jwtUserId);
+      const callerEmail = (authUserData.user?.email ?? "").trim().toLowerCase();
+
+      const { data: dbTemplateProbe } = await admin
+        .from("email_templates")
+        .select("id")
+        .eq("name", template)
+        .maybeSingle();
+
+      if (dbTemplateProbe) {
+        if (!isModerator) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else if (INLINE_MOD_TEMPLATES.has(template)) {
+        if (!isModerator) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else if (INLINE_USER_TEMPLATES.has(template)) {
+        if (!isModerator) {
+          const toNorm = (toParam?.trim() ?? "").toLowerCase();
+          if (!callerEmail || toNorm !== callerEmail) {
+            return new Response(
+              JSON.stringify({ error: "You may only send this template to your own email address." }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            );
+          }
+        }
+      } else {
+        const inlineName = template as InlineTemplateName;
+        if (!INLINE_TEMPLATES[inlineName]) {
+          return new Response(JSON.stringify({ error: "Invalid template" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } else if (isInternalService) {
+      const { data: dbTemplateProbe } = await admin
+        .from("email_templates")
+        .select("id")
+        .eq("name", template)
+        .maybeSingle();
+      if (!dbTemplateProbe) {
+        const inlineName = template as InlineTemplateName;
+        if (!INLINE_TEMPLATES[inlineName]) {
+          return new Response(JSON.stringify({ error: "Invalid template" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
     let to = toParam?.trim();
-    if (!to && admin) {
+    if (!to) {
       if (template === "report_resolved" && data.report_id) {
         const { data: report } = await admin.from("reports").select("reporter_id").eq("id", data.report_id).single();
         if (report?.reporter_id) {
-          const { data: { user: reporter } } = await admin.auth.getUserById(report.reporter_id);
-          to = reporter?.email?.trim() ?? "";
+          const { data: ru } = await admin.auth.admin.getUserById(report.reporter_id);
+          to = ru.user?.email?.trim() ?? "";
         }
       } else if (template === "appeal_decision" && data.appeal_id) {
         const { data: appeal } = await admin.from("appeals").select("user_id").eq("id", data.appeal_id).single();
         if (appeal?.user_id) {
-          const { data: { user: appellant } } = await admin.auth.getUserById(appeal.user_id);
-          to = appellant?.email?.trim() ?? "";
+          const { data: au } = await admin.auth.admin.getUserById(appeal.user_id);
+          to = au.user?.email?.trim() ?? "";
         }
       }
     }

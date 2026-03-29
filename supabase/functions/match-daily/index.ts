@@ -1,16 +1,8 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeadersFor } from "../_shared/cors.ts"
 import { getSupabaseEnv, verifySupabaseJWT } from "../_shared/env.ts"
-
-// Get allowed origin from environment or default to wildcard for development
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
 
 type MatchType = 'similar' | 'complementary'
 
@@ -96,6 +88,7 @@ interface MatchRecordId {
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = corsHeadersFor(req, 'POST, OPTIONS')
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -110,10 +103,9 @@ serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const bodyUserId = body.user_id as string | undefined;
 
-    // Verify JWT locally using SUPABASE_JWT_SECRET (always auto-injected correctly).
-    // This avoids the SUPABASE_URL-dependent getUser() call that caused 401s when
-    // SUPABASE_URL was manually set to a stale/wrong value in Edge Function secrets.
-    const jwtUserId = await verifySupabaseJWT(authHeader);
+    // GoTrue getUser (supports ES256 + legacy HS256). Pass env from getSupabaseEnv
+    // so URL/key match the rest of this handler.
+    const jwtUserId = await verifySupabaseJWT(authHeader, supabaseUrl, supabaseAnonKey);
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     let requestUserId: string;
@@ -129,7 +121,11 @@ serve(async (req: Request) => {
       }
       // Use service role for DB queries (auth already verified via JWT above)
       dbClient = createClient(supabaseUrl, serviceRoleKey ?? supabaseAnonKey);
-    } else if (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) {
+    } else if (
+      Deno.env.get('ALLOW_MATCH_DAILY_SERVICE_ROLE') === 'true' &&
+      serviceRoleKey &&
+      authHeader === `Bearer ${serviceRoleKey}`
+    ) {
       let serviceUserId = bodyUserId;
       if (!serviceUserId && typeof body === 'object' && body !== null) {
         const uuidKey = Object.keys(body).find((k) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k));
@@ -157,7 +153,7 @@ serve(async (req: Request) => {
     // 1. Check if user has completed onboarding (required for matching)
     const { data: profile, error: profileError } = await dbClient
       .from('profiles')
-      .select('onboarding_completed, onboarding_completed_at, subscription_tier')
+      .select('onboarding_completed, onboarding_completed_at')
       .eq('id', requestUserId)
       .single()
 
@@ -173,8 +169,18 @@ serve(async (req: Request) => {
       )
     }
 
-    const subscriptionTier = (profile as { subscription_tier?: string }).subscription_tier
-    const isPlus = subscriptionTier === 'plus' || subscriptionTier === 'premium'
+    const { data: subRow } = await dbClient
+      .from('subscriptions')
+      .select('plan_type, status, expires_at')
+      .eq('user_id', requestUserId)
+      .maybeSingle()
+
+    let isPlus = false
+    if (subRow && subRow.status === 'active') {
+      const notExpired = !subRow.expires_at || new Date(subRow.expires_at) > new Date()
+      const plan = subRow.plan_type as string
+      isPlus = notExpired && (plan === 'premium' || plan === 'vip')
+    }
     const userLimit = isPlus ? null : 5
 
     if (!profile.onboarding_completed) {
