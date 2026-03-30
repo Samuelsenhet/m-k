@@ -44,4 +44,6 @@ Projektet är kopplat till **EAS** via `apps/mobile/app.json`:
 
 **Byter du Expo-användare eller org:** `eas logout`, logga in, uppdatera `expo.owner` och kör `eas init` i `apps/mobile` om projektet ska länkas om (eller överför projektet på expo.dev).
 
-**Bygg (`eas build`):** kör från `apps/mobile` eller använd npm-skript som sätter workspace (t.ex. `npm run ios:eas-build` från rot) så `app.json` / `eas.json` hittas.
+**Bygg (`eas build`):** kör från `apps/mobile` med profil **`expo-production`** (App Store) eller **`expo-preview`** (intern), eller från rot: `npm run mobile:eas:build:production:ios:submit` / `npm run ios:eas-build`.
+
+**Viktigt:** `eas build --platform ios` **från monoreporoten** utan `--profile` använder rot-`eas.json`-profilen **`production`**, som är **Capacitor** (kräver `ios/App` + Podfile). Det ger felet *No Podfile found*. Expo MÄÄK ska alltid använda **`expo-production`** via skripten ovan eller `cd apps/mobile && eas build --platform ios --profile expo-production`.

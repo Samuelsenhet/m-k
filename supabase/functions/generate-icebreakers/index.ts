@@ -111,11 +111,12 @@ serve(async (req) => {
 
     const rateBlock = await enforceAiRateLimits(supabase, req, userId, 'generate_icebreakers');
     if (rateBlock) {
-      const h = new Headers(rateBlock.headers);
+      const blocked = rateBlock.clone();
+      const h = new Headers(blocked.headers);
       h.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
       h.set('Access-Control-Allow-Headers', corsHeaders['Access-Control-Allow-Headers']);
       h.set('Access-Control-Allow-Methods', corsHeaders['Access-Control-Allow-Methods']);
-      return new Response(rateBlock.body, { status: rateBlock.status, headers: h });
+      return new Response(blocked.body, { status: blocked.status, headers: h });
     }
 
     let userProfile: ProfileData | null = null;

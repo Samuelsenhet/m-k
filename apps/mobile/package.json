@@ -6,14 +6,23 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "eas:login": "eas login",
-    "eas:logout": "eas logout",
-    "eas:whoami": "eas whoami",
-    "eas:project:info": "eas project:info",
-    "eas:session": "eas whoami && eas project:info",
-    "eas:build:dev:ios": "eas build --profile expo-development --platform ios",
-    "eas:build:preview": "eas build --profile expo-preview --platform ios",
-    "eas:build:preview:ios": "eas build --profile expo-preview --platform ios"
+    "expo:doctor": "npx expo-doctor",
+    "eas:login": "npx eas-cli@^18.4.0 login",
+    "eas:logout": "npx eas-cli@^18.4.0 logout",
+    "eas:whoami": "npx eas-cli@^18.4.0 whoami",
+    "eas:project:info": "npx eas-cli@^18.4.0 project:info",
+    "eas:session": "npx eas-cli@^18.4.0 whoami && npx eas-cli@^18.4.0 project:info",
+    "eas:credentials:ios": "npx eas-cli@^18.4.0 credentials --platform ios",
+    "eas:update:configure": "npx eas-cli@^18.4.0 update:configure",
+    "eas:build:dev:ios": "npx eas-cli@^18.4.0 build --profile expo-development --platform ios",
+    "eas:build:preview": "npx eas-cli@^18.4.0 build --profile expo-preview --platform ios",
+    "eas:build:preview:ios": "npx eas-cli@^18.4.0 build --profile expo-preview --platform ios",
+    "eas:build:production:ios": "npx eas-cli@^18.4.0 build --profile expo-production --platform ios",
+    "eas:build:production:ios:submit": "npx eas-cli@^18.4.0 build --profile expo-production --platform ios --auto-submit",
+    "eas:workflow:testflight": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/ios-testflight.yml --wait",
+    "eas:workflow:app-store": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/ios-app-store-submit.yml --wait",
+    "mobile:eas:workflow:testflight": "npm run eas:workflow:testflight",
+    "mobile:eas:workflow:app-store": "npm run eas:workflow:app-store"
   },
   "dependencies": {
     "@expo-google-fonts/playfair-display": "^0.3.0",
@@ -35,7 +44,7 @@
     "expo-linking": "~55.0.9",
     "expo-localization": "~55.0.9",
     "expo-router": "~55.0.8",
-    "expo-secure-store": "^55.0.10-canary-20260328-2049187",
+    "expo-secure-store": "~55.0.9",
     "expo-splash-screen": "~55.0.13",
     "expo-status-bar": "~55.0.4",
     "expo-symbols": "~55.0.5",
@@ -45,7 +54,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-i18next": "^16.6.0",
-    "react-native": "0.83.2",
+    "react-native": "0.83.4",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
@@ -57,9 +66,20 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.2",
-    "eas-cli": "^18.4.0",
     "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
+  },
+  "expo": {
+    "autolinking": {
+      "exclude": ["@capacitor/ios"]
+    },
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "@maak/core"
+        ]
+      }
+    }
   },
   "private": true
 }

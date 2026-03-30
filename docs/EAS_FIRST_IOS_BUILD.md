@@ -1,13 +1,13 @@
 # Create your first iOS build (EAS)
 
-This guide walks you through creating your first iOS build with EAS Build for this project. The app is already configured for EAS (Capacitor + custom build config).
+This guide walks you through creating your first iOS build with EAS Build for this project. The **MÄÄK** app uses **Expo** by default; **Capacitor** (Vite → iOS) is optional and uses separate `capacitor-*` build profiles.
 
 ## Prerequisites
 
 - **Expo account** – EAS Build works with a free Expo account. Sign up at [expo.dev/signup](https://expo.dev/signup).
 - **Apple Developer Program** – Required if you want to build for the App Store or TestFlight (release builds). Membership is $99 USD/year at [developer.apple.com/programs](https://developer.apple.com/programs). For internal distribution only (preview/development profiles), you may not need it; EAS will prompt when credentials are needed.
 
-This project is already configured: **eas.json** and **.eas/build/capacitor-ios.yml** are in place. You do not need to run `eas build:configure` unless you want to change the setup.
+This project is already configured: root **eas.json**, **app.config.js** (monorepo → `apps/mobile`), and **apps/mobile/app.json**. Capacitor cloud builds use **.eas/build/capacitor-ios.yml** with `--profile capacitor-*`. You do not need to run `eas build:configure` unless you want to change the setup.
 
 ## Install EAS CLI
 
@@ -35,17 +35,21 @@ eas whoami
 
 ## Run an iOS build
 
-From the project root:
+From the project root (Expo preview):
 
 ```sh
 npm run ios:eas-build
 ```
 
-or:
+Production + submit:
 
 ```sh
-eas build --platform ios
+npm run mobile:eas:build:production:ios:submit
 ```
+
+Or from `apps/mobile`: `eas build --platform ios --profile expo-production`.
+
+Capacitor only: `eas build --platform ios --profile capacitor-production` (requires the Capacitor iOS pipeline).
 
 You can attach a message to the build (visible on the build dashboard):
 

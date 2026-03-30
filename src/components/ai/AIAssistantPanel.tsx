@@ -24,7 +24,12 @@ const AI_THINKING_TOKEN: MascotToken = 'mascot_ai_thinking';
 const AI_ANSWERING_TOKEN: MascotToken = 'mascot_ai_open_hand';
 const AI_CELEBRATING_TOKEN: MascotToken = 'mascot_ai_tiny_sparkle';
 
-export function AIAssistantPanel({ matchedUserId, onClose, className }: AIAssistantPanelProps) {
+export function AIAssistantPanel({
+  matchedUserId,
+  matchId,
+  onClose,
+  className,
+}: AIAssistantPanelProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);

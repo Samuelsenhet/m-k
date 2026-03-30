@@ -61,7 +61,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const user = userData.users.find((u) => u.email === email.toLowerCase().trim());
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = userData.users.find(
+      (u) => (u.email ?? "").toLowerCase().trim() === normalizedEmail,
+    );
 
     if (!user) {
       return new Response(

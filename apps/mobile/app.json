@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "maak",
-    "platforms": ["ios", "web"],
+    "platforms": [
+      "ios",
+      "web"
+    ],
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -15,12 +18,18 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.samuelsenhet.maak"
+      "bundleIdentifier": "com.samuelsenhet.maak",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    "autolinking": {
+      "exclude": ["@capacitor/ios"]
     },
     "plugins": [
       "expo-router",

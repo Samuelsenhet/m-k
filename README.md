@@ -104,7 +104,7 @@ src/
 
 ## Deployment (iOS)
 
-Appen levereras som **iOS-app** via **EAS**. Bygg webb och synka till iOS med `npm run ios:build`. Bygg i molnet med `npm run ios:eas-build` (eller `eas build --platform ios`). Registrera enheter för internal distribution med `eas device:create` (kräver `npm i -g eas-cli`). Xcode lokalt är valfritt: `npm run ios:open`. För valfri webbdeploy (Vercel): konfigurera `VITE_SUPABASE_*` och `npm run vercel:env` vid behov.
+Appen levereras som **Expo iOS-app** via **EAS** (`apps/mobile`). Produktion + ev. App Store-submit: `npm run mobile:eas:build:production:ios:submit` från rot (eller `cd apps/mobile` och `eas build --platform ios --profile expo-production --auto-submit`). Intern/preview: `npm run ios:eas-build`. **Kör inte** `eas build --platform ios` från reporoten utan profil — då väljs Capacitor-profilen `production` och bygget faller (*No Podfile*). Capacitor-webb→iOS (om du använder det): `npm run ios:build`. Registrera enheter med `eas device:create` (kräver `eas-cli`). Xcode lokalt är valfritt: `npm run ios:open`. För webbdeploy (Vercel): `VITE_SUPABASE_*` och `npm run vercel:env`.
 
 ## Editing the code
 

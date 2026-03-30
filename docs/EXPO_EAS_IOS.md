@@ -6,12 +6,12 @@
 
 | Bygge                              | Katalog / config                                                                                   | Teknik                                     |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| **Capacitor (nuvarande webb-iOS)** | Repo root [eas.json](../eas.json), [.eas/build/capacitor-ios.yml](../.eas/build/capacitor-ios.yml) | Vite `dist` → `npx cap sync ios` → Xcode   |
-| **Expo native (denna port)**       | [apps/mobile/eas.json](../apps/mobile/eas.json), [apps/mobile/app.json](../apps/mobile/app.json)   | Expo prebuild / Metro → EAS Build          |
+| **Capacitor (webb → native iOS)** | Repo root [eas.json](../eas.json) profiler **`capacitor-development`**, **`capacitor-preview`**, **`capacitor-production`** + [.eas/build/capacitor-ios.yml](../.eas/build/capacitor-ios.yml) | Vite `dist` → `npx cap sync ios` → Fastlane |
+| **Expo native (MÄÄK-appen)**       | [apps/mobile/app.json](../apps/mobile/app.json), rot [app.config.js](../app.config.js) (re-export + sökvägar), [apps/mobile/eas.json](../apps/mobile/eas.json) | Expo prebuild / Metro → EAS Build          |
 
-Expo-profiler heter **`expo-development`**, **`expo-preview`**, **`expo-production`** (inte `development` / `production` i root — de är Capacitor). Samma profiler finns i [eas.json](../eas.json) i repots rot så att EAS som kör från **monoreporoten** (t.ex. workflows) använder samma inställningar som i `apps/mobile`. Rot-`package.json` har **`sharp`** som `optionalDependency` så att `npm ci` i molnet inte faller om native `sharp` inte kan byggas (maskot-skript lokalt använder `sharp` när det finns).
+I rot- [eas.json](../eas.json) är **`development`**, **`preview`** och **`production`** Expo-byggen (de **ärver** `expo-*`). Capacitor använder uttryckligen **`capacitor-*`**-profiler så att `eas build --platform ios` utan specialprofil inte kör `pod install` i `ios/App` (vilket gav *No Podfile*). Rot-`package.json` har **`sharp`** som `optionalDependency` så att `npm ci` i molnet inte faller om native `sharp` inte kan byggas.
 
-Byt **inte** ut root `eas.json` mot Expo utan att medvetet stänga av Capacitor-flödet. Kör Expo-build **från** `apps/mobile`:
+Rekommenderat: kör Expo-build från **`apps/mobile`** (eller npm-skript som använder workspace). EAS från monoreporoten läser [app.config.js](../app.config.js) så att samma `expo`-plugins som i `apps/mobile` används:
 
 ```bash
 cd apps/mobile
@@ -49,7 +49,7 @@ Lägg `EXPO_PUBLIC_SUPABASE_URL` och `EXPO_PUBLIC_SUPABASE_ANON_KEY` som secrets
 
 ## Projekt-ID
 
-[apps/mobile/app.json](../apps/mobile/app.json) använder samma `extra.eas.projectId` som root [app.json](../app.json) om ni vill dela Expo-konto/projekt; vid konflikt med Capacitor, skapa **nytt** Expo-projekt för `maak-mobile` och uppdatera `projectId`.
+[apps/mobile/app.json](../apps/mobile/app.json) och rot [app.config.js](../app.config.js) delar samma `extra.eas.projectId` (Expo-projektet). Vid konflikt med Capacitor, skapa **nytt** Expo-projekt för `maak-mobile` och uppdatera `projectId` på båda ställena.
 
 ## Lokal utveckling utan EAS
 

@@ -23,10 +23,6 @@ const Index = () => {
       if (authLoading) return;
       
       if (!user) {
-        const ingestUrl = import.meta.env.VITE_INGEST_URL;
-        if (ingestUrl) {
-          fetch(ingestUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'Index.tsx:checkExistingResult', message: 'Index state resolved', data: { appState: 'landing', hasUser: false }, timestamp: Date.now(), hypothesisId: 'index-flow', runId: 'app-flow' }) }).catch(() => {});
-        }
         setAppState('landing');
         return;
       }

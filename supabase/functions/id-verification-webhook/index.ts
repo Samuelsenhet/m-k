@@ -74,14 +74,16 @@ serve(async (req: Request) => {
       status: 503,
     });
   }
-  {
-    const secret = req.headers.get("x-webhook-secret") ?? req.headers.get("x-onfido-signature") ?? req.headers.get("x-jumio-signature");
-    if (secret !== webhookSecret) {
-      return new Response(JSON.stringify({ error: "Invalid webhook secret" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
+
+  const incomingSecret =
+    req.headers.get("x-webhook-secret") ??
+    req.headers.get("x-onfido-signature") ??
+    req.headers.get("x-jumio-signature");
+  if (incomingSecret !== webhookSecret) {
+    return new Response(JSON.stringify({ error: "Invalid webhook secret" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 401,
+    });
   }
 
   let userId: string | null = null;

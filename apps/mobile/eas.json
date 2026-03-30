@@ -4,6 +4,9 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "production": {
+      "extends": "expo-production"
+    },
     "expo-development": {
       "node": "22.18.0",
       "developmentClient": true,
@@ -22,6 +25,13 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "e070d995-b2f5-4b8e-8673-127727857f1d",
+        "ascApiKeyId": "3873W42T27",
+        "ascApiKeyIssuerId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "ascApiKeyPath": "./AuthKey_ABCD123456.p8"
+      }
+    }
   }
 }

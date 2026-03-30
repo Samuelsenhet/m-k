@@ -2,7 +2,7 @@
 
 This page describes how the iOS app is built on EAS Build in this project. Use it when you need to run or debug EAS iOS builds.
 
-This project uses a **custom** EAS build config (Capacitor + Vite, no Expo prebuild). The steps below reflect that setup. For the standard Expo iOS flow, see [EAS Build – iOS build process](https://docs.expo.dev/build-reference/ios-builds/) in the Expo docs.
+**Default iOS builds** (`development` / `preview` / `production` in root [eas.json](../eas.json)) use **standard Expo prebuild** (samma som `expo-*`-profiler). **Capacitor** (Vite → `cap sync` → Fastlane) använder profilerna **`capacitor-development`**, **`capacitor-preview`**, **`capacitor-production`** och [.eas/build/capacitor-ios.yml](../.eas/build/capacitor-ios.yml). För Expo-byggprocessen, se [EAS Build – iOS build process](https://docs.expo.dev/build-reference/ios-builds/).
 
 ---
 
@@ -14,15 +14,15 @@ These run on your machine before the build is sent to EAS:
 
 2. **Credentials** – EAS prepares the credentials needed for the build (distribution certificate, provisioning profile). Depending on the build profile’s `credentialsSource` (or default), they come from your local **credentials.json** or from EAS servers. This project does not override `credentialsSource` in **eas.json**.
 
-3. **Project type** – We use a pre-existing **ios/** directory (Capacitor). There is no Expo prebuild step. The Xcode project is **ios/App/App.xcodeproj**, scheme **App**.
+3. **Project type** – **Expo:** EAS kör `expo prebuild` (ingen incheckad `ios/` krävs). **Capacitor:** använd profil `capacitor-production` m.fl.; då finns pipelinen i **capacitor-ios.yml** och Xcode-projektet är **ios/App/App.xcodeproj**, scheme **App** (genereras av `npm run ios:build`).
 
 4. **Tarball and upload** – EAS creates a tarball of the repo (according to your VCS workflow), uploads it to a private S3 bucket, and sends the build request to EAS Build.
 
 ---
 
-## Remote steps (this project)
+## Remote steps (Capacitor only)
 
-On the EAS build worker, the pipeline is defined in [.eas/build/capacitor-ios.yml](.eas/build/capacitor-ios.yml). In order:
+När du bygger med **`capacitor-*`**-profiler körs [.eas/build/capacitor-ios.yml](.eas/build/capacitor-ios.yml). I ordning:
 
 1. **Checkout** – Clone the repository.
 2. **NPM token** – Create **.npmrc** if `NPM_TOKEN` is set (for private packages).
@@ -43,42 +43,35 @@ On the EAS build worker, the pipeline is defined in [.eas/build/capacitor-ios.ym
 
 ## How to run a build
 
-From the project root:
+**Expo (MÄÄK):** från rot:
 
 ```bash
-npm run ios:eas-build
+npm run mobile:eas:build:production:ios:submit
 ```
 
-or:
+eller `cd apps/mobile` och `eas build --platform ios --profile expo-production`.
 
-```bash
-eas build --platform ios
-```
+**Expo preview:** `npm run ios:eas-build` (workspace).
 
-When prompted, choose a profile:
+**Capacitor (Vite → iOS):** `eas build --platform ios --profile capacitor-production` (kräver att `ios/App` finns efter `npm run ios:build` lokalt / att pipelinen skapar den).
 
-| Profile       | Use case                          | Notes                                      |
-|---------------|------------------------------------|--------------------------------------------|
-| development   | Internal dev client                | `distribution: internal`, dev client       |
-| preview       | Internal testing                  | `distribution: internal`                   |
-| production    | App Store / TestFlight            | `autoIncrement: true`, production signing  |
-
-All profiles use the same iOS config: **capacitor-ios.yml** (see [eas.json](../eas.json)).
+| Profile                 | Stack        | Notes                                      |
+|-------------------------|-------------|--------------------------------------------|
+| development / preview / production | Expo        | Standard EAS iOS (prebuild)                |
+| capacitor-development / capacitor-preview / capacitor-production | Capacitor   | **capacitor-ios.yml**, Podfile i **ios/App** |
 
 ---
 
 ## Config reference
 
-- **[eas.json](../eas.json)** – `build.<profile>.ios.config` is set to `"capacitor-ios.yml"` for development, preview, and production.
-- **[.eas/build/capacitor-ios.yml](../.eas/build/capacitor-ios.yml)** – Full custom pipeline (checkout, install, remove Expo/RN, ios:build, pod install, credentials, Gymfile template, Fastlane, artifact upload).
+- **[eas.json](../eas.json)** – Expo: `build.development` / `preview` / `production` ärver `expo-*`. Capacitor: `build.capacitor-*` sätter `ios.config` till **capacitor-ios.yml**.
+- **[.eas/build/capacitor-ios.yml](../.eas/build/capacitor-ios.yml)** – Capacitor-pipeline (checkout, install, remove Expo/RN, ios:build, pod install, Fastlane, artefakter).
 
 The artifact path (e.g. default **ios/build/App.ipa**) can be overridden in **eas.json** with `build.<profile>.ios.applicationArchivePath` if needed; this project does not set it.
 
 ---
 
-## Differences from standard EAS iOS
+## Capacitor vs standard Expo iOS
 
-- **Capacitor app** – No `expo prebuild`; we use an existing **ios/App** with Capacitor.
-- **Custom build config** – The remote steps are defined in **.eas/build/capacitor-ios.yml**, not the default Expo iOS workflow.
-- **Gymfile** – Generated from a template in the yml (project **ios/App/App.xcodeproj**, scheme **App**), not a checked-in **ios/Gymfile**.
-- **Pod install** – Runs in **ios/App** with an optional Podfile `use_modular_headers!` fix for Capacitor.
+- **Expo (default)** – `expo prebuild`, vanlig EAS iOS; rot [app.config.js](../app.config.js) speglar `apps/mobile`-konfiguration för monorepo-byggen från rot.
+- **Capacitor** – Ingen `expo prebuild` i den pipelinen; **ios/App** + **capacitor-ios.yml**; Gymfile genereras från mall i yml; **pod install** i **ios/App**.

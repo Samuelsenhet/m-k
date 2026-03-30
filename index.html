@@ -18,7 +18,7 @@
     <meta name="msapplication-TileColor" content="#f97316" />
 
     <!-- CSP: mitigate XSS; Supabase stores auth in localStorage so script-src must be tight -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maakapp.se wss://maakapp.se https://*.maakapp.se wss://*.maakapp.se; frame-src 'none'; object-src 'none'; base-uri 'self';" />
     
     <!-- Icons -->
     <link rel="icon" type="image/png" href="/favicon.ico" />

@@ -1,0 +1,28 @@
+# Production iOS build → EAS Submit (App Store Connect binary; then finish metadata/review in ASC).
+# Rekommenderat (repo-rot):
+#   npm run mobile:eas:workflow:app-store
+# Manuellt från apps/mobile — hela subkommandot ska vara workflow:run (en rad), annars workflow:r / löst "un":
+#   eas workflow:run .eas/workflows/ios-app-store-submit.yml --wait
+#
+# Both this workflow and ios-testflight.yml need the same baseline:
+# 1. Apple Developer account + app record in App Store Connect (bundle id matches app.json → expo.ios.bundleIdentifier).
+# 2. eas.json → submit.production.ios.ascAppId = numeric Apple ID from ASC → App → App Information (not bundle id; not placeholder text).
+# 3. Non-interactive / CI: configure App Store Connect API key for EAS Submit
+#    (eas credentials --platform ios → App Store Connect API Key, or ascApiKey* in eas.json).
+# 4. EAS Workflows / GitHub Actions: EXPO_TOKEN in the environment (https://expo.dev/accounts/[account]/settings/access-tokens).
+# Docs: https://docs.expo.dev/submit/ios/
+name: iOS production build and App Store submit
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: expo-production
+
+  submit_ios:
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Both functions correctly use the request `Authorization` header and return 401 when unauthenticated. Schema alignment with the database was fixed so they use the same table/column names as migrations.
+Both functions use the request `Authorization` header and return 401 when unauthenticated. **Gateway `verify_jwt` is off** for these two (`supabase/config.toml`); validation runs inside via `verifySupabaseJWT` → `auth.getUser(accessToken)` against the linked project’s GoTrue (avoids platform gateway 401 with asymmetric JWTs while still enforcing auth in code).
 
 ---
 
@@ -10,9 +10,9 @@ Both functions correctly use the request `Authorization` header and return 401 w
 
 ### Auth ✅
 
-- Creates Supabase client with `headers: { Authorization: req.headers.get('Authorization')! }`.
-- Calls `supabaseClient.auth.getUser()` and returns 401 when `authError || !user`.
-- Verifies `requestUserId === user.id` and returns 401 if not.
+- `verifySupabaseJWT` in `_shared/env.ts`: `createClient(url, anon)` + `auth.getUser(access_token)`.
+- Ensures `body.user_id` (if present) matches the JWT user; 401 otherwise.
+- Service-role path only when `ALLOW_MATCH_DAILY_SERVICE_ROLE=true` and header matches the service role key.
 
 ### Schema fixes applied
 
@@ -39,8 +39,8 @@ Both functions correctly use the request `Authorization` header and return 401 w
 
 ### Auth ✅
 
-- Same pattern: client with `Authorization` header, `getUser()`, 401 when not authenticated.
-- Verifies `requestUserId === user.id`.
+- Same as match-daily: `verifySupabaseJWT` → `getUser(access_token)`; optional service-role branch for dashboard-style calls.
+- Ensures resolved `user_id` matches the JWT user; 401 otherwise.
 
 ### Schema fixes applied
 

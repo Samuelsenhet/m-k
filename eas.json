@@ -5,6 +5,15 @@
   },
   "build": {
     "development": {
+      "extends": "expo-development"
+    },
+    "preview": {
+      "extends": "expo-preview"
+    },
+    "production": {
+      "extends": "expo-production"
+    },
+    "capacitor-development": {
       "developmentClient": true,
       "distribution": "internal",
       "node": "22.12.0",
@@ -13,7 +22,7 @@
         "applicationArchivePath": "ios/App/build/App.ipa"
       }
     },
-    "preview": {
+    "capacitor-preview": {
       "distribution": "internal",
       "node": "22.12.0",
       "ios": {
@@ -21,7 +30,7 @@
         "applicationArchivePath": "ios/App/build/App.ipa"
       }
     },
-    "production": {
+    "capacitor-production": {
       "autoIncrement": true,
       "node": "22.12.0",
       "ios": {

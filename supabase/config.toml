@@ -348,10 +348,14 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
-# Gateway JWT verification: user access_token and service_role JWT are both valid JWTs for this project.
-# Handler still uses verifySupabaseJWT + explicit service_role branch in code.
+# Gateway JWT verification off: validate inside the handler with GoTrue (getUser).
+# Some projects (asymmetric JWT / ES256) get 401 at the gateway while tokens are valid for Auth;
+# verify_jwt = false avoids that; security relies on verifySupabaseJWT in each function.
+[functions.match-daily]
+verify_jwt = false
+
 [functions.match-status]
-verify_jwt = true
+verify_jwt = false
 
 [edge_runtime]
 enabled = true

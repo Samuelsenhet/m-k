@@ -1,0 +1,53 @@
+# Triggers EAS Workflows defined under apps/mobile/.eas/workflows/ (build + TestFlight or App Store submit).
+# Prerequisites: repository secret EXPO_TOKEN, eas.json submit.production.ios.ascAppId set, ASC API key in EAS (eas credentials).
+# https://expo.dev/accounts/<account>/settings/access-tokens
+name: EAS iOS (TestFlight / App Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      eas_workflow:
+        description: "EAS Workflow file (without .yml) in apps/mobile/.eas/workflows/"
+        required: true
+        type: choice
+        options:
+          - ios-testflight
+          - ios-app-store-submit
+
+concurrency:
+  group: eas-ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  eas_workflow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install monorepo dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Run EAS Workflow
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Set the repository secret EXPO_TOKEN (Expo access token)."
+            exit 1
+          fi
+          eas workflow:run ".eas/workflows/${{ github.event.inputs.eas_workflow }}.yml" --non-interactive --wait

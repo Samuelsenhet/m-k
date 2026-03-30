@@ -42,8 +42,9 @@ export function getSupabaseEnv(
 }
 
 /**
- * Verify the caller's Bearer token with GoTrue and return the user's id.
- * Uses anon key + forwarded Authorization (not service role).
+ * Verify the caller's access token with GoTrue and return the user's id.
+ * Uses `auth.getUser(jwt)` (server-side pattern): no persisted session on this
+ * client, and the explicit JWT avoids relying on global header merge behavior.
  *
  * Optional `supabaseUrl` / `supabaseAnonKey` avoid re-reading env when the
  * caller already validated them via getSupabaseEnv.
@@ -56,6 +57,9 @@ export async function verifySupabaseJWT(
   const raw = authHeader.trim();
   if (!raw) return null;
 
+  const accessToken = raw.startsWith("Bearer ") ? raw.slice(7).trim() : raw;
+  if (!accessToken) return null;
+
   const url = (supabaseUrl ?? Deno.env.get("SUPABASE_URL") ?? "").trim();
   const anon = (supabaseAnonKey ?? Deno.env.get("SUPABASE_ANON_KEY") ?? "").trim();
   if (!url || !anon) {
@@ -63,15 +67,11 @@ export async function verifySupabaseJWT(
     return null;
   }
 
-  const authorization = raw.startsWith("Bearer ") ? raw : `Bearer ${raw}`;
-
   try {
-    const supabase = createClient(url, anon, {
-      global: { headers: { Authorization: authorization } },
-    });
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const supabase = createClient(url, anon);
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
     if (error || !user) {
-      if (error) console.warn("[auth] getUser failed:", error.message);
+      if (error) console.warn("[auth] getUser(jwt) failed:", error.message);
       return null;
     }
     return user.id;

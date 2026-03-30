@@ -1,0 +1,25 @@
+# Production iOS build → TestFlight (testers; grupper och compliance i App Store Connect).
+# Rekommenderat (repo-rot, inga radbrytningar i kommandot):
+#   npm run mobile:eas:workflow:testflight
+# Manuellt från apps/mobile — skriv hela subkommandot workflow:run på en rad (inte workflow:r; annars "command workflow:r not found" och zsh "un: not found"):
+#   eas workflow:run .eas/workflows/ios-testflight.yml --wait
+#
+# Delar checklist med ios-app-store-submit.yml: numerisk ascAppId i eas.json submit.production.ios, App Store Connect API Key i EAS (eas credentials), EXPO_TOKEN för GitHub. Fel "failed to resolve submission config" = saknad API-nyckel eller ogiltigt/icke-numeriskt ascAppId.
+# Valfritt under job params: internal_groups / external_groups (lista gruppnamn från ASC), se Expo "testflight" job.
+# För skarp App Store-release (review) efter TestFlight: kör ios-app-store-submit.yml eller skicka samma build manuellt i ASC.
+# Docs: https://docs.expo.dev/submit/ios/
+name: iOS production build and TestFlight
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: expo-production
+
+  testflight:
+    needs: [build_ios]
+    type: testflight
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
