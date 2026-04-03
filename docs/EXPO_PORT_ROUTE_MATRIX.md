@@ -3,7 +3,9 @@
 **Kanonisk agentplan:** `~/.cursor/plans/expo_rn_port_kickoff_f588fd01.plan.md`  
 **Webb-router:** [src/routes.tsx](../src/routes.tsx)  
 **Layout-lexikon webb → RN:** [EXPO_WEB_TO_RN_LAYOUT.md](./EXPO_WEB_TO_RN_LAYOUT.md)  
-**Miljövariabler:** [EXPO_ENV.md](./EXPO_ENV.md)
+**Miljövariabler:** [EXPO_ENV.md](./EXPO_ENV.md)  
+**Reserverade URL-paths (Expo Router):** [EXPO_ROUTER_RESERVED_PATHS.md](./EXPO_ROUTER_RESERVED_PATHS.md)  
+**RN → Expo Router (referens):** [EXPO_ROUTER_MIGRATE_FROM_REACT_NAVIGATION.md](./EXPO_ROUTER_MIGRATE_FROM_REACT_NAVIGATION.md)
 
 ## Övergripande (Fas 0)
 

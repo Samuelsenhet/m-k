@@ -15,13 +15,22 @@
         "simulator": true
       }
     },
+    "expo-development-device": {
+      "node": "22.18.0",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "expo-preview": {
       "node": "22.18.0",
       "distribution": "internal"
     },
     "expo-production": {
       "node": "22.18.0",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jappgthiyedycwhttpcu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcHBndGhpeWVkeWN3aHR0cGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDM0NzQsImV4cCI6MjA4NDgxOTQ3NH0.ztXAOOFh0AUuTBNDsvvVxcxncsKP4sju4AgfghvDNVc"
+      }
     }
   },
   "submit": {
@@ -32,6 +41,9 @@
         "ascApiKeyIssuerId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         "ascApiKeyPath": "./AuthKey_ABCD123456.p8"
       }
+    },
+    "expo-production": {
+      "extends": "production"
     }
   }
 }

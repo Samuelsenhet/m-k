@@ -7,6 +7,9 @@
     "development": {
       "extends": "expo-development"
     },
+    "development-device": {
+      "extends": "expo-development-device"
+    },
     "preview": {
       "extends": "expo-preview"
     },
@@ -45,6 +48,11 @@
       "ios": {
         "simulator": true
       }
+    },
+    "expo-development-device": {
+      "node": "22.18.0",
+      "developmentClient": true,
+      "distribution": "internal"
     },
     "expo-preview": {
       "node": "22.18.0",

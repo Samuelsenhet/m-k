@@ -1,0 +1,25 @@
+{
+  "target": "1242x2688",
+  "locale": "Swedish",
+  "source": "MÄÄK - App Store Assets Template",
+  "items": [
+    {
+      "source": "Swedish / iPhone 6.5 / iPhone 6.5 - 1.png",
+      "output": "docs/app-store-screenshots/iphone-65/01-figma-hero-1242x2688.png",
+      "width": 1242,
+      "height": 2688
+    },
+    {
+      "source": "Swedish / iPhone 6.5 / iPhone 6.5 - 2.png",
+      "output": "docs/app-store-screenshots/iphone-65/02-figma-feature-1242x2688.png",
+      "width": 1242,
+      "height": 2688
+    },
+    {
+      "source": "Swedish / iPhone 6.5 / iPhone 6.5 - 3.png",
+      "output": "docs/app-store-screenshots/iphone-65/03-figma-feature-1242x2688.png",
+      "width": 1242,
+      "height": 2688
+    }
+  ]
+}

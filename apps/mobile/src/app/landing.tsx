@@ -54,9 +54,9 @@ const LANDING_FEATURES = [
  * (synkas hit från repots kanoniska filer).
  */
 const PROFILE_IMAGES: Record<SlideId, ImageSourcePropType> = {
-  sofia: require("../assets/images/landing/landing-profile-sofia.png"),
-  merbel: require("../assets/images/landing/landing-profile-merbel.png"),
-  erik: require("../assets/images/landing/landing-profile-erik.png"),
+  sofia: require("../../assets/images/landing/landing-profile-sofia.png"),
+  merbel: require("../../assets/images/landing/landing-profile-merbel.png"),
+  erik: require("../../assets/images/landing/landing-profile-erik.png"),
 };
 
 /** w-60 card, p-4 — same inner width as web `aspect-[3/4]` photo area */

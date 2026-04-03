@@ -8,6 +8,32 @@ const projectRoot = path.resolve(__dirname, "..");
 
 const DEFAULT_DEV_PORT = 8080;
 
+function emitDebugLog(
+  runId: string,
+  hypothesisId: string,
+  message: string,
+  data: Record<string, unknown>,
+): void {
+  // #region agent log
+  fetch("http://127.0.0.1:7879/ingest/af153d1e-1223-499f-a1c7-264a1d53c784", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Debug-Session-Id": "db7c67",
+    },
+    body: JSON.stringify({
+      sessionId: "db7c67",
+      runId,
+      hypothesisId,
+      location: "config/vite.config.ts",
+      message,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+}
+
 function parseDevServerPort(env: Record<string, string>): number {
   const raw = env.VITE_DEV_SERVER_PORT?.trim();
   if (!raw) return DEFAULT_DEV_PORT;
@@ -60,6 +86,11 @@ function devCspForHmrPlugin(mode: string): Plugin {
       order: "pre",
       handler(html: string) {
         const port = readBoundPort(devServer, fallbackPort);
+        emitDebugLog("before-fix", "H1", "dev csp transform invoked", {
+          port,
+          hasWorkerSrcDirective: html.includes("worker-src"),
+          hasBlobInScriptSrc: html.includes("script-src") && html.includes("blob:"),
+        });
         return html.replace(
           /<meta http-equiv="Content-Security-Policy" content="[^"]*" \/>/,
           devCspMetaForPort(port),

@@ -11,9 +11,10 @@ import { SupabaseProvider } from '@/contexts/SupabaseProvider';
 import { i18n } from '@/lib/i18n';
 import { readStoredLanguage } from '@/lib/languageStorage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useGlobalSearchParams, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import 'react-native-reanimated';
 
@@ -22,6 +23,7 @@ import 'react-native-reanimated';
 const I18nRoot = I18nextProvider as any;
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { trackScreenView } from '@/lib/analytics';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -33,9 +35,12 @@ export const unstable_settings = {
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore: splash may already be hidden in some startup paths.
+});
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
   const [playfairLoaded, playfairError] = usePlayfairFonts({
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
@@ -59,10 +64,15 @@ export default function RootLayout() {
     })();
   }, []);
 
-  // Expo Router uses Error Boundaries to catch errors thrown by the Layout component.
+  // Do not hard-crash production if custom font loading fails.
+  // We can safely continue with system font fallback.
   useEffect(() => {
-    if (playfairError) throw playfairError;
-    if (monoError) throw monoError;
+    if (playfairError || monoError) {
+      console.error(
+        '[startup] font load failed, continuing with fallback fonts',
+        playfairError ?? monoError,
+      );
+    }
   }, [playfairError, monoError]);
 
   useEffect(() => {
@@ -72,7 +82,21 @@ export default function RootLayout() {
   }, [loaded, i18nReady]);
 
   if (!loaded || !i18nReady) {
-    return null;
+    // iOS: spinner must contrast with background (default gray on white is nearly invisible in light mode).
+    const bootBg = colorScheme === "dark" ? "#000000" : "#FFFFFF";
+    const bootTint = colorScheme === "dark" ? "#EBEBF5" : "#3C3C43";
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: bootBg,
+        }}
+      >
+        <ActivityIndicator size="large" color={bootTint} />
+      </View>
+    );
   }
 
   return <RootLayoutNav />;
@@ -80,6 +104,15 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+
+  useEffect(() => {
+    trackScreenView({
+      pathname,
+      params: { ...params },
+    });
+  }, [pathname, params]);
 
   return (
     <I18nRoot i18n={i18n}>

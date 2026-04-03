@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import {
   createMaakSupabaseClient,
@@ -23,6 +24,76 @@ function readBuildEnv(): Record<string, string | undefined> {
   return process.env as Record<string, string | undefined>;
 }
 
+function readExpoExtraEnv(): Record<string, string | undefined> {
+  const constantsWithManifest = Constants as typeof Constants & {
+    manifest?: { extra?: Record<string, unknown> };
+    manifest2?: { extra?: Record<string, unknown> };
+  };
+  const extra = (
+    Constants.expoConfig?.extra ??
+    constantsWithManifest.manifest2?.extra ??
+    constantsWithManifest.manifest?.extra ??
+    {}
+  ) as Record<string, unknown>;
+  return {
+    EXPO_PUBLIC_SUPABASE_URL:
+      typeof extra.EXPO_PUBLIC_SUPABASE_URL === "string"
+        ? extra.EXPO_PUBLIC_SUPABASE_URL
+        : undefined,
+    EXPO_PUBLIC_SUPABASE_ANON_KEY:
+      typeof extra.EXPO_PUBLIC_SUPABASE_ANON_KEY === "string"
+        ? extra.EXPO_PUBLIC_SUPABASE_ANON_KEY
+        : undefined,
+    EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      typeof extra.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY === "string"
+        ? extra.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        : undefined,
+    EXPO_PUBLIC_SUPABASE_PROJECT_ID:
+      typeof extra.EXPO_PUBLIC_SUPABASE_PROJECT_ID === "string"
+        ? extra.EXPO_PUBLIC_SUPABASE_PROJECT_ID
+        : undefined,
+    EXPO_PUBLIC_SUPABASE_RUNTIME_URL:
+      typeof extra.runtimeSupabaseUrl === "string"
+        ? extra.runtimeSupabaseUrl
+        : undefined,
+    EXPO_PUBLIC_SUPABASE_RUNTIME_ANON_KEY:
+      typeof extra.runtimeSupabaseAnonKey === "string"
+        ? extra.runtimeSupabaseAnonKey
+        : undefined,
+  };
+}
+
+function readSupabaseEnvForRuntime(): Record<string, string | undefined> {
+  const buildEnv = readBuildEnv();
+  const extraEnv = readExpoExtraEnv();
+
+  // Expo only guarantees EXPO_PUBLIC_* in JS runtime. Read them explicitly so Metro can inline.
+  const explicitPublicUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const explicitPublicAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  const explicitPublicProjectId = process.env.EXPO_PUBLIC_SUPABASE_PROJECT_ID;
+  const explicitPublicPublishable = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  return {
+    ...buildEnv,
+    EXPO_PUBLIC_SUPABASE_URL:
+      explicitPublicUrl ??
+      buildEnv.EXPO_PUBLIC_SUPABASE_URL ??
+      extraEnv.EXPO_PUBLIC_SUPABASE_URL ??
+      extraEnv.EXPO_PUBLIC_SUPABASE_RUNTIME_URL,
+    EXPO_PUBLIC_SUPABASE_ANON_KEY:
+      explicitPublicAnon ??
+      buildEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+      extraEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+      explicitPublicPublishable ??
+      extraEnv.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+      extraEnv.EXPO_PUBLIC_SUPABASE_RUNTIME_ANON_KEY,
+    EXPO_PUBLIC_SUPABASE_PROJECT_ID:
+      explicitPublicProjectId ??
+      buildEnv.EXPO_PUBLIC_SUPABASE_PROJECT_ID ??
+      extraEnv.EXPO_PUBLIC_SUPABASE_PROJECT_ID,
+  };
+}
+
 type SupabaseContextValue = {
   supabase: SupabaseClient;
   session: Session | null;
@@ -33,7 +104,7 @@ type SupabaseContextValue = {
 const SupabaseContext = createContext<SupabaseContextValue | null>(null);
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const env = useMemo(() => parseMaakSupabaseEnv(readBuildEnv()), []);
+  const env = useMemo(() => parseMaakSupabaseEnv(readSupabaseEnvForRuntime()), []);
 
   const supabase = useMemo(() => {
     const url = env.isValid ? env.url : "https://placeholder.supabase.co";

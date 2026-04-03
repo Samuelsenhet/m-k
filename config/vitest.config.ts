@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./config/vitest.setup.ts'],
+    // Jest + expo-router/testing-library lives under apps/mobile; keep Vitest on the Vite app only.
+    exclude: ['**/node_modules/**', '**/dist/**', 'apps/mobile/**'],
   },
   resolve: {
     alias: {

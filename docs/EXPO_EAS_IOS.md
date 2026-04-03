@@ -2,6 +2,8 @@
 
 **Kanonisk plan:** `~/.cursor/plans/expo_rn_port_kickoff_f588fd01.plan.md`
 
+**Steg-för-steg (dev client, Android/iOS):** [CREATE_DEVELOPMENT_BUILD_EAS.md](./CREATE_DEVELOPMENT_BUILD_EAS.md)
+
 ## Två separata vägar i samma repo
 
 | Bygge                              | Katalog / config                                                                                   | Teknik                                     |

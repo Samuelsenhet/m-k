@@ -2,9 +2,9 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { getLocales } from "expo-localization";
 
-import en from "../../../src/i18n/locales/en.json";
-import legalMobile from "../../../src/i18n/locales/legal.mobile.json";
-import sv from "../../../src/i18n/locales/sv.json";
+import en from "../../../../src/i18n/locales/en.json";
+import legalMobile from "../../../../src/i18n/locales/legal.mobile.json";
+import sv from "../../../../src/i18n/locales/sv.json";
 
 /** Prefer expo-localization; fall back if native binding is missing (e.g. version skew / bad interop). */
 function resolveDeviceLng(): "en" | "sv" {

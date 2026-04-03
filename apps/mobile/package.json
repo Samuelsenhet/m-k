@@ -3,7 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "mobile": "expo start",
     "start": "expo start",
+    "start:clear": "expo start --clear",
+    "start:tunnel": "expo start --tunnel",
+    "start:localhost": "expo start --localhost",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "expo:doctor": "npx expo-doctor",
@@ -14,15 +18,27 @@
     "eas:session": "npx eas-cli@^18.4.0 whoami && npx eas-cli@^18.4.0 project:info",
     "eas:credentials:ios": "npx eas-cli@^18.4.0 credentials --platform ios",
     "eas:update:configure": "npx eas-cli@^18.4.0 update:configure",
-    "eas:build:dev:ios": "npx eas-cli@^18.4.0 build --profile expo-development --platform ios",
+    "eas:update:ios": "npx eas-cli@^18.4.0 update --platform ios",
+    "eas:update:production:ios": "npx eas-cli@^18.4.0 update --branch production --platform ios --environment production",
+    "eas:build:dev:ios": "npx eas-cli@^18.4.0 build --profile expo-development --platform ios --non-interactive",
+    "eas:build:dev:ios:interactive": "npx eas-cli@^18.4.0 build --profile expo-development --platform ios",
+    "eas:build:run:ios:latest": "npx eas-cli@^18.4.0 build:run --platform ios --latest",
+    "eas:build:run:ios": "npx eas-cli@^18.4.0 build:run --platform ios",
+    "eas:build:dev:ios:device": "npx eas-cli@^18.4.0 build --profile expo-development-device --platform ios --non-interactive",
+    "eas:build:dev:ios:device:interactive": "npx eas-cli@^18.4.0 build --profile expo-development-device --platform ios",
+    "eas:build:dev:android": "npx eas-cli@^18.4.0 build --profile expo-development --platform android --non-interactive",
     "eas:build:preview": "npx eas-cli@^18.4.0 build --profile expo-preview --platform ios",
     "eas:build:preview:ios": "npx eas-cli@^18.4.0 build --profile expo-preview --platform ios",
     "eas:build:production:ios": "npx eas-cli@^18.4.0 build --profile expo-production --platform ios",
     "eas:build:production:ios:submit": "npx eas-cli@^18.4.0 build --profile expo-production --platform ios --auto-submit",
+    "eas:workflow:production": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/create-production-builds.yml --wait",
     "eas:workflow:testflight": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/ios-testflight.yml --wait",
     "eas:workflow:app-store": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/ios-app-store-submit.yml --wait",
     "mobile:eas:workflow:testflight": "npm run eas:workflow:testflight",
-    "mobile:eas:workflow:app-store": "npm run eas:workflow:app-store"
+    "mobile:eas:workflow:app-store": "npm run eas:workflow:app-store",
+    "test": "jest",
+    "test:mobile": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@expo-google-fonts/playfair-display": "^0.3.0",
@@ -36,6 +52,7 @@
     "expo": "~55.0.9",
     "expo-blur": "~55.0.10",
     "expo-constants": "~55.0.9",
+    "expo-dev-client": "~55.0.19",
     "expo-document-picker": "~55.0.9",
     "expo-font": "~55.0.4",
     "expo-image": "~55.0.6",
@@ -48,6 +65,7 @@
     "expo-splash-screen": "~55.0.13",
     "expo-status-bar": "~55.0.4",
     "expo-symbols": "~55.0.5",
+    "expo-updates": "~55.0.16",
     "expo-web-browser": "~55.0.10",
     "i18next": "^25.10.2",
     "lucide-react-native": "^1.7.0",
@@ -64,14 +82,22 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@react-native/assets-registry": "^0.83.4",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.2",
+    "expect": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-expo": "~55.0.11",
     "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
   "expo": {
     "autolinking": {
-      "exclude": ["@capacitor/ios"]
+      "exclude": [
+        "@capacitor/ios"
+      ]
     },
     "doctor": {
       "reactNativeDirectoryCheck": {

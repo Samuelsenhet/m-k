@@ -4,7 +4,7 @@ export type MonoTextProps = RNTextProps;
 
 /**
  * Simple monospaced text used by Expo template screens (EditScreenInfo).
- * Font is loaded in `apps/mobile/app/_layout.tsx` via `@expo-google-fonts/space-mono`.
+ * Font is loaded in `apps/mobile/src/app/_layout.tsx` via `@expo-google-fonts/space-mono`.
  */
 export function MonoText({ style, ...rest }: MonoTextProps) {
   return (

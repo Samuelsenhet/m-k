@@ -21,6 +21,9 @@
       "bundleIdentifier": "com.samuelsenhet.maak",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "web": {
@@ -29,9 +32,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "autolinking": {
-      "exclude": ["@capacitor/ios"]
+      "exclude": [
+        "@capacitor/ios"
+      ]
     },
     "plugins": [
+      "expo-updates",
       "expo-router",
       "expo-localization",
       [
@@ -40,7 +46,8 @@
           "photosPermission": "MÄÄK behöver tillgång till dina foton för att ladda upp profilbilder."
         }
       ],
-      "expo-image"
+      "expo-image",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
@@ -50,6 +57,14 @@
         "projectId": "4d900a70-4327-4740-83cc-4ac6745ef8eb"
       }
     },
-    "owner": "samuelsenhet"
+    "owner": "samuelsenhet",
+    "updates": {
+      "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb"
+    },
+    "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    }
   }
 }

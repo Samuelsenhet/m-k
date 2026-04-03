@@ -8,9 +8,12 @@ module.exports = function (api) {
       [
         "babel-plugin-module-resolver",
         {
+          // Keep project root as resolution root. `@/assets` must be listed before `@` so imports
+          // like `@/assets/icon.png` resolve to ./assets (not ./src/assets). Matches tsconfig paths.
           root: [path.resolve(__dirname)],
           alias: {
-            "@": path.resolve(__dirname),
+            "@/assets": path.resolve(__dirname, "assets"),
+            "@": path.resolve(__dirname, "src"),
           },
           extensions: [
             ".ios.js",
