@@ -21,7 +21,7 @@ export default function TermsPage() {
       </div>
 
       <div className="mx-auto w-full max-w-lg space-y-6 px-4 py-6">
-        <p className="text-sm text-maak-muted-fg">Senast uppdaterad: 2026</p>
+        <p className="text-sm text-maak-muted-fg">Senast uppdaterad: 2026-04-01</p>
 
         <div className="rounded-3xl border border-maak-border bg-maak-card p-5 transition-all duration-200 shadow-[0_10px_28px_-24px_rgba(37,61,44,0.5)]">
           <div className="space-y-8 text-sm leading-relaxed text-maak-foreground">

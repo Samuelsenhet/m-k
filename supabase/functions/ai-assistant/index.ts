@@ -40,8 +40,35 @@ serve(async (req) => {
       );
     }
 
-    const body = await req.json().catch(() => ({})) as RequestBody;
-    const { type, matchedUserId, matchId } = body;
+    let body: RequestBody;
+    try {
+      body = (await req.json()) as RequestBody;
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const allowedTypes = new Set<RequestBody["type"]>([
+      "matching",
+      "profile",
+      "icebreakers",
+      "all",
+      "after_video",
+    ]);
+    const type = body?.type;
+    if (typeof type !== "string" || !allowedTypes.has(type as RequestBody["type"])) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid or missing type",
+          allowed: ["matching", "profile", "icebreakers", "all", "after_video"],
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const { matchedUserId, matchId } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -61,7 +88,7 @@ serve(async (req) => {
     }
 
     let peerId: string | null = null;
-    if (type === "icebreakers" || type === "after_video") {
+    if (body.type === "icebreakers" || body.type === "after_video") {
       peerId = await resolveMatchedPeerId(supabase, userId, matchedUserId, matchId);
       if (!peerId) {
         return new Response(

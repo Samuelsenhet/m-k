@@ -252,7 +252,11 @@ BEGIN
     WHERE m.id = msg.match_id
       AND (m.user_id = auth.uid() OR m.matched_user_id = auth.uid())
   );
-  RAISE NOTICE 'TEST 16 PASSED: messages visible for match participants (% rows)', recipient_side_count;
+  IF recipient_side_count = 0 THEN
+    RAISE EXCEPTION 'TEST 16 FAILED: no messages visible for match participants (expected > 0 rows for this user)';
+  ELSE
+    RAISE NOTICE 'TEST 16 PASSED: messages visible for match participants (% rows)', recipient_side_count;
+  END IF;
 END $$;
 
 -- ==========================================
@@ -295,7 +299,16 @@ END $$;
 DO $$
 DECLARE
   rows_updated INT;
+  existing_rows INT;
 BEGIN
+  SELECT COUNT(*) INTO existing_rows
+  FROM public.subscriptions
+  WHERE user_id = auth.uid();
+
+  IF existing_rows = 0 THEN
+    RAISE EXCEPTION 'TEST 18 INCONCLUSIVE: no subscription row for auth.uid(); seed a row before running this test';
+  END IF;
+
   UPDATE public.subscriptions
   SET plan_type = 'vip', updated_at = NOW()
   WHERE user_id = auth.uid();

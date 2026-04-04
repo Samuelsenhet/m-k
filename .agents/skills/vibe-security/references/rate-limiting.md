@@ -36,6 +36,8 @@ If rate limit counters live in a Supabase public table, users can reset their ow
 
 ```typescript
 // Example: rate limiting with Upstash Redis
+import { randomUUID } from 'node:crypto';
+import { isIP } from 'node:net';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
@@ -44,12 +46,37 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(10, '1 m'), // 10 requests per minute
 });
 
+function clientIp(request: Request): string {
+  // Only trust X-Forwarded-For when your edge/proxy sets a trustworthy chain (e.g. your own CDN).
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const first = xff.split(',')[0]?.trim();
+    if (first && isIP(first)) return first;
+  }
+  // Avoid a shared bucket for all unknown clients (do not default every caller to loopback).
+  return `unknown-${randomUUID()}`;
+}
+
+async function getUserIdFromAuth(request: Request): Promise<string | null> {
+  // Replace with your session/JWT helper.
+  return null;
+}
+
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
-  const { success } = await ratelimit.limit(ip);
-  if (!success) {
+  const ip = clientIp(request);
+  const ipLimit = await ratelimit.limit(`ip:${ip}`);
+  if (!ipLimit.success) {
     return new Response('Too many requests', { status: 429 });
   }
+
+  const userId = await getUserIdFromAuth(request);
+  if (userId) {
+    const userLimit = await ratelimit.limit(`user:${userId}`);
+    if (!userLimit.success) {
+      return new Response('Too many requests', { status: 429 });
+    }
+  }
+
   // ... handle request
 }
 ```

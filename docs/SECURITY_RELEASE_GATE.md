@@ -15,7 +15,7 @@ Använd denna checklista **inför viktiga släpp** (t.ex. App Store, stor kampan
 ## 2. Supabase Dashboard (snabbkoll)
 
 - [ ] **Edge Functions → Secrets:** nödvändiga nycklar satta (`LOVABLE_API_KEY`, `RESEND_*`, `SUPABASE_SERVICE_ROLE_KEY`, ev. `AI_*`).
-- [ ] Känsliga funktioner har **JWT verification** påslagen där `config.toml` kräver det (t.ex. `match-status`); övriga enligt er [EDGE_FUNCTION_AUDIT](../supabase/functions/EDGE_FUNCTION_AUDIT.md) / Dashboard.
+- [ ] Känsliga funktioner följer [`supabase/config.toml`](../supabase/config.toml): för `match-daily` / `match-status` är **`verify_jwt = false`** med **JWT i handler** (`verifySupabaseJWT`); övriga enligt [EDGE_FUNCTION_AUDIT](../supabase/functions/EDGE_FUNCTION_AUDIT.md) / Dashboard.
 
 ## 3. Advisors (MCP eller Dashboard)
 

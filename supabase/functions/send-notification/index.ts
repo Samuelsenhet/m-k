@@ -43,7 +43,15 @@ serve(async (req: Request) => {
       },
     );
 
-    const payload: NotificationPayload = await req.json();
+    let payload: NotificationPayload;
+    try {
+      payload = await req.json() as NotificationPayload;
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!payload.user_id || !payload.title || !payload.message) {
       return new Response(
@@ -74,11 +82,35 @@ serve(async (req: Request) => {
 
     const channel = supabaseClient.channel(`user:${payload.user_id}:notifications`);
 
-    await channel.send({
-      type: "broadcast",
-      event: "notification_received",
-      payload: data,
-    });
+    try {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const t = setTimeout(() => reject(new Error("Realtime subscribe timeout")), 15_000);
+          channel.subscribe((status, err) => {
+            if (status === "SUBSCRIBED") {
+              clearTimeout(t);
+              resolve();
+            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+              clearTimeout(t);
+              reject(err ?? new Error(`Realtime subscribe failed: ${status}`));
+            }
+          });
+        });
+
+        const sendRes = await channel.send({
+          type: "broadcast",
+          event: "notification_received",
+          payload: data,
+        });
+        if (sendRes !== "ok" && sendRes !== "queued") {
+          console.warn("send-notification: channel.send status", sendRes);
+        }
+      } catch (rtErr) {
+        console.warn("send-notification: realtime subscribe/send failed (best-effort)", rtErr);
+      }
+    } finally {
+      await supabaseClient.removeChannel(channel);
+    }
 
     return new Response(JSON.stringify({ success: true, notification: data }), {
       status: 200,

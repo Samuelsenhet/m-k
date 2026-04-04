@@ -13,7 +13,7 @@ import { readStoredLanguage } from '@/lib/languageStorage';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useGlobalSearchParams, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import 'react-native-reanimated';
@@ -70,7 +70,7 @@ export default function RootLayout() {
     if (playfairError || monoError) {
       console.error(
         '[startup] font load failed, continuing with fallback fonts',
-        playfairError ?? monoError,
+        { playfairError, monoError },
       );
     }
   }, [playfairError, monoError]);
@@ -102,17 +102,30 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+function stableSearchParamsKey(params: Record<string, string | string[] | undefined>): string {
+  const keys = Object.keys(params).sort();
+  const parts: string[] = [];
+  for (const k of keys) {
+    const v = params[k];
+    if (v === undefined) continue;
+    parts.push(`${k}=${Array.isArray(v) ? v.join('\x1e') : v}`);
+  }
+  return parts.join('&');
+}
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
   const params = useGlobalSearchParams();
+  const paramsKey = useMemo(() => stableSearchParamsKey(params), [params]);
+  const paramsSnapshot = useMemo(() => ({ ...params }), [paramsKey]);
 
   useEffect(() => {
     trackScreenView({
       pathname,
-      params: { ...params },
+      params: paramsSnapshot,
     });
-  }, [pathname, params]);
+  }, [pathname, paramsKey, paramsSnapshot]);
 
   return (
     <I18nRoot i18n={i18n}>

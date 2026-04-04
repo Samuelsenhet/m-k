@@ -43,8 +43,23 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 // Next.js App Router: use request.text(), NOT request.json()
 export async function POST(request: Request) {
   const body = await request.text();
-  const sig = request.headers.get('stripe-signature')!;
-  const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+  const sig = request.headers.get('stripe-signature');
+  if (!sig || !sig.trim()) {
+    return new Response(JSON.stringify({ error: 'Missing stripe-signature header' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  let event: import('stripe').Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+  } catch (err) {
+    console.error('Stripe webhook signature verification failed', err);
+    return new Response(JSON.stringify({ error: 'Webhook verification failed' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
   // ... handle event
 }
 ```

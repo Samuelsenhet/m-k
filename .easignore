@@ -6,6 +6,7 @@
 # (commit hash, VCS). Ignoring .git causes "git repository not initialized".
 
 node_modules
+**/node_modules
 dist
 dist-ssr
 *.log
@@ -22,3 +23,22 @@ docs/
 *.key
 secrets.json
 credentials.json
+
+# Monorepo: full duplicate tree blows the archive to ~300MB+ and can destabilize builds.
+m-k-backup/
+
+# Native / web artifacts not needed for Expo prebuild
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+android/build/
+*.ipa
+*.dSYM.zip
+
+# Next / Vite outputs under apps (dependencies come from npm ci, not these folders)
+apps/landing/.next/
+apps/landing/out/
+apps/landing/dist/
+coverage/
+.playwright/

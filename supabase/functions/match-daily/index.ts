@@ -169,17 +169,29 @@ serve(async (req: Request) => {
       )
     }
 
-    const { data: subRow } = await dbClient
+    const { data: subRow, error: subError } = await dbClient
       .from('subscriptions')
       .select('plan_type, status, expires_at')
       .eq('user_id', requestUserId)
       .maybeSingle()
 
+    if (subError) {
+      console.error('match-daily: subscriptions query failed', {
+        message: subError.message,
+        requestUserId,
+        code: subError.code,
+      })
+      return new Response(
+        JSON.stringify({ error: 'Could not load subscription', code: subError.code }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
     let isPlus = false
     if (subRow && subRow.status === 'active') {
       const notExpired = !subRow.expires_at || new Date(subRow.expires_at) > new Date()
       const plan = subRow.plan_type as string
-      isPlus = notExpired && (plan === 'premium' || plan === 'vip')
+      isPlus = notExpired && (plan === 'plus' || plan === 'premium' || plan === 'vip')
     }
     const userLimit = isPlus ? null : 5
 

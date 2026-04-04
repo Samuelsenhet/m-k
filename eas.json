@@ -56,14 +56,23 @@
     },
     "expo-preview": {
       "node": "22.18.0",
+      "channel": "preview",
       "distribution": "internal"
     },
     "expo-production": {
       "node": "22.18.0",
-      "autoIncrement": true
+      "channel": "production",
+      "autoIncrement": true,
+      "environment": "production",
+      "distribution": "store"
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "bundleIdentifier": "com.samuelsenhet.maak",
+        "ascAppId": "6761346022"
+      }
+    }
   }
 }

@@ -19,7 +19,7 @@
     "eas:credentials:ios": "npx eas-cli@^18.4.0 credentials --platform ios",
     "eas:update:configure": "npx eas-cli@^18.4.0 update:configure",
     "eas:update:ios": "npx eas-cli@^18.4.0 update --platform ios",
-    "eas:update:production:ios": "npx eas-cli@^18.4.0 update --branch production --platform ios --environment production",
+    "eas:update:production:ios": "npx eas-cli@^18.4.0 update --channel production --platform ios --environment production",
     "eas:build:dev:ios": "npx eas-cli@^18.4.0 build --profile expo-development --platform ios --non-interactive",
     "eas:build:dev:ios:interactive": "npx eas-cli@^18.4.0 build --profile expo-development --platform ios",
     "eas:build:run:ios:latest": "npx eas-cli@^18.4.0 build:run --platform ios --latest",
@@ -38,7 +38,9 @@
     "mobile:eas:workflow:app-store": "npm run eas:workflow:app-store",
     "test": "jest",
     "test:mobile": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:web-vitest": "vitest run --config ../../config/vitest.config.ts",
+    "test:web-vitest:watch": "vitest --config ../../config/vitest.config.ts"
   },
   "dependencies": {
     "@expo-google-fonts/playfair-display": "^0.3.0",

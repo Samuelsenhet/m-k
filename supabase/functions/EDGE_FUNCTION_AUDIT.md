@@ -75,6 +75,16 @@ No further auth changes needed for these two functions.
 
 ---
 
+## Production choices for `match-daily` service-role path
+
+The optional **service-role** branch (dashboard / cron-style calls) must **not** be enabled accidentally in production. Pick one approach and document it in CI:
+
+1. **Env gate:** `ALLOW_MATCH_DAILY_SERVICE_ROLE=true` only in staging; omit or `false` in production project secrets.
+2. **Split deploys:** deploy Edge functions to staging with the flag on; production project never receives that secret / uses a build profile that omits the branch.
+3. **Omit from prod:** if production only needs user JWT + cron user path, remove or don’t deploy the service-role entrypoint in the production function bundle / workflow.
+
+---
+
 ## send-email
 
 ### Auth

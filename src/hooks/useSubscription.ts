@@ -24,10 +24,12 @@ function mapSubscription(row: SubscriptionRow | null): UserSubscription {
   }
   const notExpired = !row.expires_at || new Date(row.expires_at) > new Date();
   const plan = row.plan_type;
-  const isPaid = notExpired && (plan === 'premium' || plan === 'vip');
+  const isPaid =
+    notExpired && (plan === 'plus' || plan === 'premium' || plan === 'vip');
   let subscriptionTier: 'free' | 'plus' | 'premium' = 'free';
   if (isPaid) {
-    subscriptionTier = plan === 'vip' ? 'premium' : 'plus';
+    if (plan === 'plus') subscriptionTier = 'plus';
+    else if (plan === 'premium' || plan === 'vip') subscriptionTier = 'premium';
   }
   return {
     isPlus: isPaid,
@@ -62,6 +64,7 @@ export const useSubscription = () => {
       if (fetchError) throw fetchError;
 
       setSubscription(mapSubscription(data as SubscriptionRow | null));
+      setError(null);
     } catch (err) {
       if (import.meta.env.DEV) console.error('Error fetching subscription:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch subscription'));

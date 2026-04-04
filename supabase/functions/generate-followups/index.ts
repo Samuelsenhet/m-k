@@ -191,14 +191,14 @@ serve(async (req) => {
     // Build conversation history for prompt
     const conversationHistory = chronologicalMessages
       .map((msg) => {
-        const senderName = msg.sender_id === userId ? userName : matchedName;
+        const senderName = msg.sender_id === uid ? userName : matchedName;
         return `${senderName}: ${msg.content}`;
       })
       .join('\n');
 
     // Determine conversation context
     const lastMessage = chronologicalMessages[chronologicalMessages.length - 1];
-    const lastSenderIsUser = lastMessage?.sender_id === userId;
+    const lastSenderIsUser = lastMessage?.sender_id === uid;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {

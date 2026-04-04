@@ -41,6 +41,7 @@ export function resolveCorsAllowOrigin(req: Request): string {
 export function corsHeadersFor(req: Request, allowMethods: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": resolveCorsAllowOrigin(req),
+    Vary: "Origin",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": allowMethods,
   };

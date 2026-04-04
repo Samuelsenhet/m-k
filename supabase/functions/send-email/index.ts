@@ -166,11 +166,29 @@ serve(async (req: Request) => {
     }
 
     if (!isInternalService && jwtUserId) {
-      const { data: modRow } = await admin.from("moderator_roles").select("user_id").eq("user_id", jwtUserId).maybeSingle();
+      const { data: modRow, error: modErr } = await admin
+        .from("moderator_roles")
+        .select("user_id")
+        .eq("user_id", jwtUserId)
+        .maybeSingle();
+      if (modErr) {
+        console.error("send-email: moderator_roles", modErr);
+        return new Response(JSON.stringify({ error: "Internal server error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const isModerator = !!modRow;
 
-      const { data: authUserData } = await admin.auth.admin.getUserById(jwtUserId);
-      const callerEmail = (authUserData.user?.email ?? "").trim().toLowerCase();
+      const { data: authUserData, error: authUserErr } = await admin.auth.admin.getUserById(jwtUserId);
+      if (authUserErr || !authUserData?.user) {
+        console.error("send-email: getUserById", jwtUserId, authUserErr);
+        return new Response(JSON.stringify({ error: "User not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const callerEmail = (authUserData.user.email ?? "").trim().toLowerCase();
 
       const { data: dbTemplateProbe } = await admin
         .from("email_templates")

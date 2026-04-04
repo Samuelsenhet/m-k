@@ -170,7 +170,7 @@
     "invalid_number": "Invalid number",
     "invalid_code": "Invalid code",
     "no_session_returned": "No session was returned",
-    "supabase_banner": "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to apps/mobile/.env (see .env.example).",
+    "supabase_banner": "Supabase is missing from this build. Local: add URL + anon key in apps/mobile/.env or repo-root .env (EXPO_PUBLIC_* or the same values as VITE_SUPABASE_*), restart Expo. TestFlight/App Store: set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY as EAS Environment variables (production) and rebuild — see docs/EXPO_ENV.md.",
     "label_phone": "Phone number",
     "phone_placeholder": "7X XXX XX XX",
     "otp_placeholder": "000000"

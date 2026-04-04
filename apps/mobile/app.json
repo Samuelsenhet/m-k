@@ -3,6 +3,7 @@
     "name": "MÄÄK",
     "slug": "maak",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "maak",
@@ -21,9 +22,6 @@
       "bundleIdentifier": "com.samuelsenhet.maak",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "runtimeVersion": {
-        "policy": "appVersion"
       }
     },
     "web": {
@@ -59,7 +57,10 @@
     },
     "owner": "samuelsenhet",
     "updates": {
-      "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb"
+      "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     },
     "android": {
       "permissions": [

@@ -74,15 +74,42 @@ export function stockholmDayStartIso(dayKey: string): string {
 
   let lo = Date.UTC(y, mo - 1, d, 0, 0, 0, 0) - 30 * 24 * 3600000;
   let hi = Date.UTC(y, mo - 1, d, 0, 0, 0, 0) + 30 * 24 * 3600000;
-  if (stockholmDayIndexUtcMs(hi) < targetIdx || stockholmDayIndexUtcMs(lo) > targetIdx) {
+  const idxLo = stockholmDayIndexUtcMs(lo);
+  const idxHi = stockholmDayIndexUtcMs(hi);
+  if (idxLo === -1 || idxHi === -1) {
     return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0)).toISOString();
   }
-  while (stockholmDayIndexUtcMs(lo) >= targetIdx) lo -= 24 * 3600000;
-  while (stockholmDayIndexUtcMs(hi) < targetIdx) hi += 24 * 3600000;
+  if (idxHi < targetIdx || idxLo > targetIdx) {
+    return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0)).toISOString();
+  }
+  let expandSteps = 0;
+  const maxExpand = 366;
+  while (stockholmDayIndexUtcMs(lo) >= targetIdx && expandSteps < maxExpand) {
+    lo -= 24 * 3600000;
+    expandSteps++;
+  }
+  if (expandSteps >= maxExpand || stockholmDayIndexUtcMs(lo) === -1) {
+    return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0)).toISOString();
+  }
+  expandSteps = 0;
+  while (stockholmDayIndexUtcMs(hi) < targetIdx && expandSteps < maxExpand) {
+    hi += 24 * 3600000;
+    expandSteps++;
+  }
+  if (expandSteps >= maxExpand || stockholmDayIndexUtcMs(hi) === -1) {
+    return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0)).toISOString();
+  }
 
-  while (lo + 1 < hi) {
+  let binarySteps = 0;
+  const maxBinary = 128;
+  while (lo + 1 < hi && binarySteps < maxBinary) {
+    binarySteps++;
     const mid = Math.floor((lo + hi) / 2);
-    if (stockholmDayIndexUtcMs(mid) >= targetIdx) hi = mid;
+    const midIdx = stockholmDayIndexUtcMs(mid);
+    if (midIdx === -1) {
+      return new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0)).toISOString();
+    }
+    if (midIdx >= targetIdx) hi = mid;
     else lo = mid;
   }
   return new Date(hi).toISOString();
@@ -96,7 +123,7 @@ function subscriptionIsPaid(row: {
   if (!row || row.status !== "active") return false;
   const notExpired = !row.expires_at || new Date(row.expires_at) > new Date();
   const plan = row.plan_type ?? "";
-  return notExpired && (plan === "premium" || plan === "vip");
+  return notExpired && (plan === "plus" || plan === "premium" || plan === "vip");
 }
 
 async function consume(

@@ -42,11 +42,19 @@ serve(async (req: Request) => {
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  const { data: modRow } = await admin
+  const { data: modRow, error: modErr } = await admin
     .from("moderator_roles")
     .select("user_id")
     .eq("user_id", jwtUserId)
     .maybeSingle();
+
+  if (modErr) {
+    console.error("send-bulk-email: moderator_roles", modErr);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   if (!modRow) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -110,8 +118,13 @@ serve(async (req: Request) => {
 
     const results: { email: string; success: boolean; error?: string }[] = [];
     for (const userId of userIds) {
-      const { data: authRow } = await admin.auth.admin.getUserById(userId);
-      const user = authRow.user;
+      const { data: authRow, error: authErr } = await admin.auth.admin.getUserById(userId);
+      if (authErr) {
+        console.error("send-bulk-email: getUserById", userId, authErr);
+        results.push({ email: "(lookup failed)", success: false, error: authErr.message });
+        continue;
+      }
+      const user = authRow?.user;
       const email = user?.email?.trim();
       if (!email || email.endsWith("@phone.maak.app")) {
         results.push({ email: email || "(no email)", success: false, error: "no_valid_email" });

@@ -5,4 +5,5 @@ interface:
   default_prompt: "Use $vibe-security to audit my project for security issues."
 
 policy:
-  allow_implicit_invocation: true
+  # Explicit invocation only ($vibe-security / agent picker) — avoids surprise full-repo audits.
+  allow_implicit_invocation: false

@@ -16,30 +16,32 @@ const defaultUser = {
 } as unknown as import('@supabase/supabase-js').User;
 
 describe('ProfileSettings', () => {
-  it('renders and calls onSignOut when logout is clicked', async () => {
-    const onSignOut = vi.fn();
-    render(
-      <MemoryRouter>
-        <ProfileSettings
-          open={true}
-          onOpenChange={vi.fn()}
-          user={defaultUser}
-          displayName={null}
-          isModerator={false}
-          onOpenAchievements={vi.fn()}
-          onOpenNotifications={vi.fn()}
-          onOpenPrivacy={vi.fn()}
-          onSignOut={onSignOut}
-          onDeleteAccount={vi.fn()}
-          isDeleting={false}
-        />
-      </MemoryRouter>
-    );
+  it(
+    'renders and calls onSignOut when logout is clicked',
+    async () => {
+      const onSignOut = vi.fn();
+      render(
+        <MemoryRouter>
+          <ProfileSettings
+            open={true}
+            onOpenChange={vi.fn()}
+            user={defaultUser}
+            displayName={null}
+            isModerator={false}
+            onOpenAchievements={vi.fn()}
+            onOpenNotifications={vi.fn()}
+            onOpenPrivacy={vi.fn()}
+            onSignOut={onSignOut}
+            onDeleteAccount={vi.fn()}
+            isDeleting={false}
+          />
+        </MemoryRouter>,
+      );
 
-    const logoutButton = screen.getByRole('button', { name: /settings\.logout/i });
-    expect(logoutButton).toBeTruthy();
-
-    fireEvent.click(logoutButton);
-    expect(onSignOut).toHaveBeenCalledTimes(1);
-  });
+      const logoutButton = await screen.findByRole('button', { name: /settings\.logout/i });
+      fireEvent.click(logoutButton);
+      expect(onSignOut).toHaveBeenCalledTimes(1);
+    },
+    15_000,
+  );
 });

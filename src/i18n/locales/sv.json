@@ -170,7 +170,7 @@
     "invalid_number": "Ogiltigt nummer",
     "invalid_code": "Ogiltig kod",
     "no_session_returned": "Ingen session returnerades",
-    "supabase_banner": "Supabase är inte konfigurerad. Lägg till EXPO_PUBLIC_SUPABASE_URL och EXPO_PUBLIC_SUPABASE_ANON_KEY i apps/mobile/.env (se .env.example).",
+    "supabase_banner": "Supabase saknas i appen. Lokalt: lägg URL + anon-nyckel i apps/mobile/.env eller i repo-rot .env (EXPO_PUBLIC_* eller samma värden som VITE_SUPABASE_*), starta om Expo. TestFlight/store: sätt EXPO_PUBLIC_SUPABASE_URL och EXPO_PUBLIC_SUPABASE_ANON_KEY som EAS Environment variables (production) och bygg om — se docs/EXPO_ENV.md.",
     "label_phone": "Telefonnummer",
     "phone_placeholder": "7X XXX XX XX",
     "otp_placeholder": "000000"

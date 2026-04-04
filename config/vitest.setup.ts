@@ -55,3 +55,11 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => false,
   }),
 });
+
+// Radix ScrollArea / layout effects rely on ResizeObserver; a no-op avoids stalls in jsdom.
+class ResizeObserverMock {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+globalThis.ResizeObserver = ResizeObserverMock;

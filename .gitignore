@@ -64,3 +64,10 @@ __pycache__/
 
 expo-env.d.ts
 # @end expo-cli
+
+# xcode-build-server files
+buildServer.json
+.compile
+
+# Local build artifacts
+.build/

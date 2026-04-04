@@ -26,9 +26,26 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { name }: reqPayload = await req.json();
+  let body: reqPayload;
+  try {
+    body = (await req.json()) as reqPayload;
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const name = body?.name;
+  if (typeof name !== "string" || name.trim().length === 0) {
+    return new Response(JSON.stringify({ error: "Missing or invalid name (non-empty string required)" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const data = {
-    message: `Hello ${name}!`,
+    message: `Hello ${name.trim()}!`,
   };
 
   return new Response(JSON.stringify(data), {

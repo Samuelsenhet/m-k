@@ -51,20 +51,65 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
 
-    const { data: userData, error: getUserError } = await supabaseAdmin.auth.admin.listUsers();
+    const normalizedEmail = email.toLowerCase().trim();
+    const demoUserId = Deno.env.get("DEMO_USER_ID")?.trim();
 
-    if (getUserError) {
-      console.error("Error listing users:", getUserError);
-      return new Response(
-        JSON.stringify({ error: "Could not find user" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
-      );
+    let user:
+      | { id: string }
+      | undefined;
+
+    if (demoUserId) {
+      const { data: byId, error: byIdErr } = await supabaseAdmin.auth.admin.getUserById(demoUserId);
+      if (byIdErr) {
+        console.error("reset-demo-password: getUserById(DEMO_USER_ID)", byIdErr);
+        return new Response(
+          JSON.stringify({ error: "Could not load demo user" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
+        );
+      }
+      const u = byId?.user;
+      if (u && (u.email ?? "").toLowerCase().trim() === normalizedEmail) {
+        user = { id: u.id };
+      }
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = userData.users.find(
-      (u) => (u.email ?? "").toLowerCase().trim() === normalizedEmail,
-    );
+    if (!user) {
+      const perPage = 200;
+      let page = 1;
+      let found:
+        | { id: string }
+        | undefined;
+      while (true) {
+        const { data: pageData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage,
+        });
+        if (listErr) {
+          console.error("Error listing users:", listErr);
+          return new Response(
+            JSON.stringify({ error: "Could not find user" }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
+          );
+        }
+        const u = pageData.users.find(
+          (x) => (x.email ?? "").toLowerCase().trim() === normalizedEmail,
+        );
+        if (u) {
+          found = { id: u.id };
+          break;
+        }
+        if (pageData.users.length < perPage) break;
+        page += 1;
+        if (page > 50) {
+          console.error("reset-demo-password: listUsers pagination limit exceeded");
+          return new Response(
+            JSON.stringify({ error: "User lookup limit exceeded" }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
+          );
+        }
+      }
+      user = found;
+    }
 
     if (!user) {
       return new Response(

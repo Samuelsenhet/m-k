@@ -6,7 +6,7 @@ All API keys and secrets in the JavaScript bundle are extractable — even with 
 
 - `react-native-config` values are baked into the bundle at build time. They are not secret.
 - `EXPO_PUBLIC_` values are baked into the bundle at build time. They are not secret.
-- Environment variables set via `eas.json` or `app.config.js` that end up in the JS bundle are not secret.
+- Environment variables set via `eas.json` or `app.config.cjs` that end up in the JS bundle are not secret.
 
 The only safe approach: **use a backend proxy** for all third-party API calls that require secret keys. The mobile app calls your server; your server calls the third-party API with the key.
 

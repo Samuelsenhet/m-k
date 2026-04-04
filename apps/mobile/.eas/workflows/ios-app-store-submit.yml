@@ -16,6 +16,7 @@ name: iOS production build and App Store submit
 jobs:
   build_ios:
     type: build
+    environment: production
     params:
       platform: ios
       profile: expo-production
@@ -23,6 +24,9 @@ jobs:
   submit_ios:
     needs: [build_ios]
     type: submit
+    environment: production
+    env:
+      EXPO_DEBUG: "1"
     params:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: production

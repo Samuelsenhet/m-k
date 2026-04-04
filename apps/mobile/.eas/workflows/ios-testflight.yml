@@ -1,4 +1,6 @@
 # Production iOS build → TestFlight (testers; grupper och compliance i App Store Connect).
+# Om workflow failar på build_ios: öppna körningen på expo.dev → jobbet "build_ios" → full log (sök "error" / "failed").
+# För stora uploads (~300MB+): kontrollera att rot-.easignore exkluderar t.ex. m-k-backup/ (annars får EAS hela dubletten).
 # Rekommenderat (repo-rot, inga radbrytningar i kommandot):
 #   npm run mobile:eas:workflow:testflight
 # Manuellt från apps/mobile — skriv hela subkommandot workflow:run på en rad (inte workflow:r; annars "command workflow:r not found" och zsh "un: not found"):
@@ -13,6 +15,7 @@ name: iOS production build and TestFlight
 jobs:
   build_ios:
     type: build
+    environment: production
     params:
       platform: ios
       profile: expo-production
@@ -20,6 +23,9 @@ jobs:
   testflight:
     needs: [build_ios]
     type: testflight
+    environment: production
+    env:
+      EXPO_DEBUG: "1"
     params:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: production

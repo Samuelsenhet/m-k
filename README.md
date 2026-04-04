@@ -2,16 +2,16 @@
 
 **Määk är en iOS-app.** En svensk personlighetsbaserad dejtingplattform med telefoninloggning, dagliga matcher (liknande & komplementära), realtidschatt, videoanrop (Kemi-Check) och designsystem kring paletten **Eucalyptus Grove** (skogsgrön, salvia, off-white). PRP-anpassad med användarresa och GDPR-onboarding.
 
-Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor** (en kodbas, en leveransplattform: iOS).
+Webbappen byggs med **Vite/React** (`src/`). **Expo / EAS** levererar iOS-appen i `apps/mobile`. **Capacitor** (`ios/`, `npm run ios:build`) finns kvar som alternativ för webb → Xcode om du använder den kedjan.
 
 ## Tech stack
 
-- **Frontend**: React 18, TypeScript, Vite
+- **Frontend**: React 18/19, TypeScript, Vite (webb)
 - **UI**: shadcn/ui, Tailwind CSS, Framer Motion, Playfair Display + DM Sans
 - **Backend**: Supabase (PostgreSQL, Realtime, Edge Functions)
 - **Auth**: Phone (SMS OTP via Twilio)
 - **i18n**: react-i18next (Swedish + English)
-- **Plattform**: Capacitor (iOS); webbbuild används i utveckling och som källa till iOS-appen
+- **Plattform**: **Expo (iOS) / EAS** (`apps/mobile`); valfritt **Capacitor (iOS)** för webb-build → Xcode
 
 ## Setup
 
@@ -35,11 +35,12 @@ Appen byggs som en Vite/React-webbapp och paketeras för **iOS** med **Capacitor
 | `npm run build`   | Production build (webb → används av iOS) |
 | `npm run preview` | Preview production build       |
 | `npm run lint`    | ESLint + spellcheck            |
-| **iOS (EAS)**     |                                |
-| `npm run ios:build` | Bygg webb + synka till `ios/` (cap sync) |
-| `npm run ios:sync`  | Synka `dist/` till iOS-projekt |
-| `npm run ios:open` | Öppna iOS-projektet i Xcode (valfritt) |
-| `npm run ios:eas-build` | Bygg iOS i molnet (EAS Build) |
+| **iOS (EAS / Expo)** |                                |
+| `npm run mobile:eas:build:production:ios:submit` | EAS production iOS-build + App Store-submit (`apps/mobile`) |
+| `npm run ios:eas-build` | Preview/internal EAS-build (workspace maak-mobile) |
+| `npm run ios:build` | Bygg webb + Capacitor `sync` till `ios/` (om du använder Capacitor) |
+| `npm run ios:sync`  | Synka `dist/` till Capacitor iOS |
+| `npm run ios:open` | Öppna Capacitor iOS i Xcode |
 | `eas device:create` | Registrera enhet för internal distribution (kör efter `npm i -g eas-cli`) |
 
 **Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
@@ -61,7 +62,8 @@ Post-launch tasks live in **PRD.md** under "Phase 2 – Post-launch" (US-030 and
 ## Project structure
 
 ```
-src/
+apps/mobile/        # Expo / EAS iOS-app (expo-router, `src/app`, delad @maak/core)
+src/                # Vite/React webbapp
 ├── components/     # UI and feature components (chat, profile, matches, settings, etc.)
 ├── contexts/       # Auth, Consent, Achievements
 ├── hooks/          # useMatches, useAuth, usePushNotifications, etc.
@@ -105,6 +107,8 @@ src/
 ## Deployment (iOS)
 
 Appen levereras som **Expo iOS-app** via **EAS** (`apps/mobile`). Produktion + ev. App Store-submit: `npm run mobile:eas:build:production:ios:submit` från rot (eller `cd apps/mobile` och `eas build --platform ios --profile expo-production --auto-submit`). Intern/preview: `npm run ios:eas-build`. **Kör inte** `eas build --platform ios` från reporoten utan profil — då väljs Capacitor-profilen `production` och bygget faller (*No Podfile*). Capacitor-webb→iOS (om du använder det): `npm run ios:build`. Registrera enheter med `eas device:create` (kräver `eas-cli`). Xcode lokalt är valfritt: `npm run ios:open`. För webbdeploy (Vercel): `VITE_SUPABASE_*` och `npm run vercel:env`.
+
+**App Store-submit:** `apps/mobile/eas.json` innehåller inga hårdkodade ASC-nycklar. Sätt **numeriskt** Apple App ID, API Key Issuer (UUID från App Store Connect) och `.p8` via [`eas credentials`](https://docs.expo.dev/submit/ios/) eller lokala hemligheter — committa aldrig riktiga nycklar.
 
 ## Editing the code
 

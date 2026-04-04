@@ -73,5 +73,5 @@ The artifact path (e.g. default **ios/build/App.ipa**) can be overridden in **ea
 
 ## Capacitor vs standard Expo iOS
 
-- **Expo (default)** – `expo prebuild`, vanlig EAS iOS; rot [app.config.js](../app.config.js) speglar `apps/mobile`-konfiguration för monorepo-byggen från rot.
+- **Expo (default)** – `expo prebuild`, vanlig EAS iOS; rot [app.config.cjs](../app.config.cjs) speglar `apps/mobile`-konfiguration för monorepo-byggen från rot.
 - **Capacitor** – Ingen `expo prebuild` i den pipelinen; **ios/App** + **capacitor-ios.yml**; Gymfile genereras från mall i yml; **pod install** i **ios/App**.

@@ -3,8 +3,10 @@
  * Uses cover + centre crop. Edit `selected` to change sources.
  *
  * Usage:
- *   node scripts/resize-app-store-screenshots.mjs [inputDir] [outputDir]
- *   ASSET_DIR=/path node scripts/resize-app-store-screenshots.mjs
+ *   node scripts/resize-app-store-screenshots.mjs <inputDir> [outputDir]
+ *   ASSET_DIR=/path node scripts/resize-app-store-screenshots.mjs [outputDir]
+ *
+ * You must set ASSET_DIR or pass inputDir as the first CLI argument (no default path).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -14,19 +16,27 @@ import sharp from "sharp";
 const W = 1284;
 const H = 2778;
 
-const defaultAssetDir =
-  process.env.ASSET_DIR ||
-  path.join(
-    process.env.HOME,
-    ".cursor/projects/Users-samuelsenhet-Downloads-GitHub-APP-m-k/assets",
-  );
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
 const defaultOut = path.join(repoRoot, "docs/app-store-screenshots/iphone-65");
 
-const inputDir = process.argv[2] || defaultAssetDir;
-const outputDir = process.argv[3] || defaultOut;
+const args = process.argv.slice(2);
+const envIn = process.env.ASSET_DIR?.trim();
+
+let inputDir;
+let outputDir = defaultOut;
+
+if (envIn && args.length === 0) {
+  inputDir = path.resolve(envIn);
+} else if (envIn && args.length >= 1) {
+  inputDir = path.resolve(envIn);
+  outputDir = path.resolve(args[0]);
+} else if (args[0]) {
+  inputDir = path.resolve(args[0]);
+  if (args[1]) outputDir = path.resolve(args[1]);
+} else {
+  inputDir = null;
+}
 
 const selected = [
   { file: "landing-profile-merbel-a559bfb0-f0ba-41f1-814a-173cfd72794a.png", slug: "01-landing-matchkort" },
@@ -37,16 +47,29 @@ const selected = [
 ];
 
 async function main() {
-  if (!fs.existsSync(inputDir)) {
-    console.error("Input directory missing:", inputDir);
+  if (!inputDir) {
+    console.error(
+      "Missing input directory. Set ASSET_DIR to your PNG folder or pass it as the first argument:\n" +
+        "  ASSET_DIR=/path/to/pngs node scripts/resize-app-store-screenshots.mjs\n" +
+        "  node scripts/resize-app-store-screenshots.mjs /path/to/pngs [outputDir]",
+    );
     process.exit(1);
   }
+
+  const assetDir = inputDir;
+
+  if (!fs.existsSync(assetDir)) {
+    console.error("Input directory does not exist:", assetDir);
+    console.error("Set ASSET_DIR or pass a valid directory as the first CLI argument.");
+    process.exit(1);
+  }
+
   fs.mkdirSync(outputDir, { recursive: true });
 
   const manifest = [];
 
   for (const { file, slug } of selected) {
-    const src = path.join(inputDir, file);
+    const src = path.join(assetDir, file);
     if (!fs.existsSync(src)) {
       console.warn("Skip (not found):", file);
       continue;
@@ -69,7 +92,7 @@ async function main() {
   }
 
   if (manifest.length === 0) {
-    console.error("No images processed. Copy PNGs into:", inputDir);
+    console.error("No images processed. Copy PNGs into:", assetDir);
     console.error("Or pass input dir: node scripts/resize-app-store-screenshots.mjs /path/to/pngs");
     process.exit(1);
   }

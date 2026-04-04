@@ -1,6 +1,7 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("CORS_ORIGIN") || "*",
@@ -54,6 +55,53 @@ function getStatusFromJumio(p: JumioPayload): VerificationStatus | null {
   return null;
 }
 
+function utf8Buf(s: string): Uint8Array {
+  return new TextEncoder().encode(s);
+}
+
+/** Constant-time UTF-8 string compare: pad to equal length so length does not short-circuit. */
+function timingSafeEqualUtf8(a: string, b: string): boolean {
+  const A = utf8Buf(a);
+  const B = utf8Buf(b);
+  const maxLen = Math.max(A.length, B.length);
+  const padA = Buffer.alloc(maxLen, 0);
+  const padB = Buffer.alloc(maxLen, 0);
+  padA.set(A, 0);
+  padB.set(B, 0);
+  return timingSafeEqual(padA, padB);
+}
+
+function stripSigPrefix(v: string): string {
+  const t = v.trim();
+  const eq = t.indexOf("=");
+  if (eq >= 0) return t.slice(eq + 1).trim();
+  return t;
+}
+
+function hexToBuf(hex: string): Buffer | null {
+  const clean = stripSigPrefix(hex).replace(/^0x/i, "").replace(/\s/g, "").toLowerCase();
+  if (!/^[0-9a-f]*$/.test(clean) || clean.length % 2 !== 0) return null;
+  try {
+    return Buffer.from(clean, "hex");
+  } catch {
+    return null;
+  }
+}
+
+function hmacSha256Hex(secret: string, rawBody: string): string {
+  return createHmac("sha256", Buffer.from(secret, "utf8"))
+    .update(rawBody, "utf8")
+    .digest("hex");
+}
+
+/** Compare provider signature header to expected HMAC-SHA256 hex digest. */
+function timingSafeEqualHmacHex(headerVal: string, expectedHex: string): boolean {
+  const exp = hexToBuf(expectedHex);
+  const got = hexToBuf(stripSigPrefix(headerVal));
+  if (!exp || !got || exp.length !== got.length) return false;
+  return timingSafeEqual(got, exp);
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -66,7 +114,7 @@ serve(async (req: Request) => {
     });
   }
 
-  const webhookSecret = Deno.env.get("ID_VERIFICATION_WEBHOOK_SECRET");
+  const webhookSecret = (Deno.env.get("ID_VERIFICATION_WEBHOOK_SECRET") ?? "").trim();
   if (!webhookSecret) {
     console.error("ID_VERIFICATION_WEBHOOK_SECRET is not configured");
     return new Response(JSON.stringify({ error: "Webhook not configured" }), {
@@ -75,12 +123,25 @@ serve(async (req: Request) => {
     });
   }
 
-  const incomingSecret =
-    req.headers.get("x-webhook-secret") ??
-    req.headers.get("x-onfido-signature") ??
-    req.headers.get("x-jumio-signature");
-  if (incomingSecret !== webhookSecret) {
-    return new Response(JSON.stringify({ error: "Invalid webhook secret" }), {
+  const rawBody = await req.text();
+
+  const hWebhook = req.headers.get("x-webhook-secret");
+  const hOnfido = req.headers.get("x-onfido-signature");
+  const hJumio = req.headers.get("x-jumio-signature");
+
+  let authOk = false;
+  if (hWebhook != null && hWebhook.length > 0) {
+    authOk = timingSafeEqualUtf8(hWebhook.trim(), webhookSecret);
+  } else if (hOnfido != null && hOnfido.length > 0) {
+    const expected = hmacSha256Hex(webhookSecret, rawBody);
+    authOk = timingSafeEqualHmacHex(hOnfido, expected);
+  } else if (hJumio != null && hJumio.length > 0) {
+    const expected = hmacSha256Hex(webhookSecret, rawBody);
+    authOk = timingSafeEqualHmacHex(hJumio, expected);
+  }
+
+  if (!authOk) {
+    return new Response(JSON.stringify({ error: "Invalid webhook signature" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 401,
     });
@@ -90,40 +151,51 @@ serve(async (req: Request) => {
   let status: VerificationStatus | null = null;
   let provider = "generic";
 
+  // Parsed body; fields are augmented below (applicant_id, etc.)
+  let doc: Record<string, unknown>;
   try {
-    const raw = await req.json();
+    doc = JSON.parse(rawBody || "{}") as Record<string, unknown>;
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+    });
+  }
+
+  try {
 
     // Generic format: { user_id?, applicant_id?, status: 'approved'|'rejected' }
-    if (typeof raw?.status === "string" && ["approved", "rejected"].includes(raw.status)) {
-      status = raw.status as VerificationStatus;
-      if (raw.user_id) userId = raw.user_id;
-      if (raw.applicant_id && !userId) {
-        provider = raw.provider ?? "generic";
+    const st0 = doc.status;
+    if (typeof st0 === "string" && ["approved", "rejected"].includes(st0)) {
+      status = st0 as VerificationStatus;
+      if (typeof doc.user_id === "string") userId = doc.user_id;
+      if (doc.applicant_id && !userId) {
+        provider = typeof doc.provider === "string" ? doc.provider : "generic";
         // Look up user_id from id_verification_applicants below
       }
     }
 
     // Onfido format
-    const onfido = raw as OnfidoPayload;
+    const onfido = doc as unknown as OnfidoPayload;
     if (onfido?.payload?.object?.applicant_id != null || onfido?.payload?.resource_type === "check") {
       const st = getStatusFromOnfido(onfido.payload);
       if (st) {
         status = st;
         provider = "onfido";
         const applicantId = onfido.payload?.object?.applicant_id ?? onfido.payload?.object?.id;
-        if (applicantId) raw.applicant_id = applicantId;
+        if (applicantId) doc.applicant_id = applicantId;
       }
     }
 
     // Jumio format (simplified)
-    const jumio = raw as JumioPayload;
+    const jumio = doc as unknown as JumioPayload;
     if (jumio?.verificationStatus != null || jumio?.userId != null) {
       const st = getStatusFromJumio(jumio);
       if (st) {
         status = st;
         provider = "jumio";
         if (jumio.userId) userId = jumio.userId;
-        if (jumio.scanReference && !userId) raw.applicant_id = jumio.scanReference;
+        if (jumio.scanReference && !userId) doc.applicant_id = jumio.scanReference;
       }
     }
 
@@ -134,7 +206,8 @@ serve(async (req: Request) => {
       });
     }
 
-    const applicantId = raw?.applicant_id ?? raw?.payload?.object?.applicant_id;
+    const payloadObj = doc.payload as { object?: { applicant_id?: string } } | undefined;
+    const applicantId = doc.applicant_id ?? payloadObj?.object?.applicant_id;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -193,7 +266,7 @@ serve(async (req: Request) => {
     console.error("id-verification-webhook error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
     );
   }
 });

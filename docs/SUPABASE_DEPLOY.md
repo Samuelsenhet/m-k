@@ -74,11 +74,13 @@ _Senast uppdaterad via Supabase MCP (`list_migrations`, `list_edge_functions`, `
 
 ### Edge functions (fjärr)
 
+**`reset-demo-password`:** valfritt sätt **`DEMO_USER_ID`** (Supabase secrets) till demo-användarens **auth.users.id** för direkt `getUserById`; annars pagineras `listUsers` tills e-post hittas.
+
 15 aktiva funktioner; slug ska matcha kataloger i `supabase/functions/`:
 
 `ai-assistant`, `generate-followups`, `generate-icebreakers`, `generate-match-pools`, `id-verification-webhook`, `match-daily`, `match-status`, `reset-demo-password`, `send-bulk-email`, `send-email`, `send-notification`, `super-responder`, `track-email`, `twilio-send-otp`, `twilio-verify-otp`.
 
-**JWT:** `match-status` har `verify_jwt = true` i [`supabase/config.toml`](../supabase/config.toml) så anrop utan giltig JWT stoppas i gateway. Funktionen validerar dessutom JWT i kod (`verifySupabaseJWT`) och tillåter `Bearer <service_role>` för intern test/dashboard. Efter ändring av `config.toml`: kör **`supabase functions deploy`** (eller production-workflow) så fjärr uppdateras.
+**JWT:** `match-daily` och `match-status` har `verify_jwt = false` i [`supabase/config.toml`](../supabase/config.toml) (undviker gateway-401 med vissa JWT-format); **auth sker i funktionen** via `verifySupabaseJWT` (och `Bearer <service_role>` där det är tillåtet för intern test/dashboard). Efter ändring av `config.toml`: kör **`supabase functions deploy`** (eller production-workflow) så fjärr uppdateras.
 
 ### Security advisors (`get_advisors`, security)
 
