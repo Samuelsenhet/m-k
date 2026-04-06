@@ -5,7 +5,7 @@ import { enforceAiRateLimits } from "../_shared/rate_limit_db.ts";
 import { resolveMatchedPeerId } from "../_shared/match_peer.ts";
 
 // Get allowed origin from environment or default to wildcard for development
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,

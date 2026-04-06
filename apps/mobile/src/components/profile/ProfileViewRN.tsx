@@ -1,3 +1,4 @@
+import { SubscriptionBanner } from "@/components/profile/SubscriptionBanner";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { i18n } from "@/lib/i18n";
 import { getInstagramUsername, getLinkedInUsername } from "@/lib/socialUsernames";
@@ -12,6 +13,22 @@ import {
 } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+
+// Try to load expo-video — fails gracefully if native module is absent.
+let useVideoPlayer: any = null;
+let VideoView: any = null;
+let hasExpoVideo = false;
+try {
+  const mod = require("expo-video");
+  // Verify the module actually works by checking for the hook
+  if (typeof mod.useVideoPlayer === "function") {
+    useVideoPlayer = mod.useVideoPlayer;
+    VideoView = mod.VideoView;
+    hasExpoVideo = true;
+  }
+} catch {
+  // expo-video not available
+}
 import { LinearGradient } from "expo-linear-gradient";
 import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
 import { useCallback, useContext, useEffect, useState, type Context } from "react";
@@ -92,6 +109,7 @@ interface PhotoSlot {
   id?: string;
   storage_path: string;
   display_order: number;
+  media_type?: string;
 }
 
 function formatHeightSafe(value: unknown): string {
@@ -132,6 +150,64 @@ export type ProfileViewRNProps = {
   onSettings: () => void;
 };
 
+/** Fallback when native video is unavailable. */
+function HeroVideoFallback() {
+  return (
+    <View style={[StyleSheet.absoluteFill, styles.videoFallback]}>
+      <Ionicons name="videocam" size={48} color="rgba(255,255,255,0.7)" />
+    </View>
+  );
+}
+
+/** Auto-playing muted looping video. Only rendered when expo-video is available. */
+function HeroVideoPlayer({ uri }: { uri: string }) {
+  const [error, setError] = useState(false);
+  const player = useVideoPlayer(uri, (p: any) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+
+  useEffect(() => {
+    if (!player) return;
+    const sub = player.addListener("statusChange", (status: any) => {
+      if (status.error) {
+        if (__DEV__) console.warn("[HeroVideoPlayer] playback error:", status.error);
+        setError(true);
+      }
+    });
+    return () => sub?.remove?.();
+  }, [player]);
+
+  if (error) return <HeroVideoFallback />;
+
+  return (
+    <VideoView
+      player={player}
+      style={StyleSheet.absoluteFill}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+}
+
+/** Resolves video URL (signed for range-request support) then renders player. */
+function HeroVideo({ storagePath, getSignedUrl }: { storagePath: string; getSignedUrl: (path: string) => Promise<string> }) {
+  const [resolvedUri, setResolvedUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSignedUrl(storagePath).then((url) => {
+      if (!cancelled) setResolvedUri(url);
+    });
+    return () => { cancelled = true; };
+  }, [storagePath, getSignedUrl]);
+
+  if (!hasExpoVideo) return <HeroVideoFallback />;
+  if (!resolvedUri) return <HeroVideoFallback />;
+  return <HeroVideoPlayer uri={resolvedUri} />;
+}
+
 export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const { t } = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
@@ -171,7 +247,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
           .maybeSingle(),
         supabase
           .from("profile_photos")
-          .select("*")
+          .select("id, storage_path, display_order, media_type")
           .eq("user_id", user.id)
           .order("display_order"),
         supabase.from("personality_results").select("archetype").eq("user_id", user.id).maybeSingle(),
@@ -197,6 +273,23 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
 
   const getPublicUrl = (path: string) =>
     supabase.storage.from("profile-photos").getPublicUrl(path).data.publicUrl;
+
+  /** Videos MUST use signed URLs — public CDN strips Range headers needed for iOS streaming. */
+  const getVideoUrl = async (path: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("profile-photos")
+        .createSignedUrl(path, 3600); // 1 hour
+      if (error) {
+        if (__DEV__) console.warn("[ProfileViewRN] signed URL failed:", error.message);
+        return getPublicUrl(path); // last resort
+      }
+      return data.signedUrl;
+    } catch (e) {
+      if (__DEV__) console.error("[ProfileViewRN] getVideoUrl:", e);
+      return getPublicUrl(path);
+    }
+  };
 
   const nextPhoto = () => {
     if (photos.length > 1) {
@@ -311,13 +404,17 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
         >
             {photos.length > 0 ? (
               <>
-                <Image
-                  source={{ uri: getPublicUrl(photos[currentPhotoIndex]!.storage_path) }}
-                  style={styles.heroImageFill}
-                  contentFit="cover"
-                  contentPosition={{ top: "22%", left: "50%" }}
-                  transition={200}
-                />
+                {photos[currentPhotoIndex]?.media_type === "video" ? (
+                  <HeroVideo storagePath={photos[currentPhotoIndex]!.storage_path} getSignedUrl={getVideoUrl} />
+                ) : (
+                  <Image
+                    source={{ uri: getPublicUrl(photos[currentPhotoIndex]!.storage_path) }}
+                    style={styles.heroImageFill}
+                    contentFit="cover"
+                    contentPosition={{ top: "22%", left: "50%" }}
+                    transition={200}
+                  />
+                )}
                 {photos.length > 1 ? (
                   <>
                     <Pressable
@@ -467,6 +564,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
                   <Text style={styles.primaryBtnTxt}>{t("profile.edit_profile")}</Text>
                 </LinearGradient>
               </Pressable>
+              <SubscriptionBanner />
               <Pressable style={styles.glassMore} onPress={() => setShowMore(true)}>
                 <Ionicons name="chevron-down" size={22} color="rgba(255,255,255,0.85)" />
                 <Text style={styles.glassMoreTxt}>{t("profile.show_more")}</Text>
@@ -773,6 +871,16 @@ const styles = StyleSheet.create({
   },
   heroImageFill: {
     ...StyleSheet.absoluteFillObject,
+  },
+  videoFallback: {
+    backgroundColor: "#2a2a2a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  videoFallbackText: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 14,
+    marginTop: 6,
   },
   heroGradient: {
     ...StyleSheet.absoluteFillObject,

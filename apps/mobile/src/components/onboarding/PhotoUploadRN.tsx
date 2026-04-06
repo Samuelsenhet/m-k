@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Alert,
@@ -19,9 +20,15 @@ export interface PhotoSlotRN {
   storage_path: string;
   display_order: number;
   prompt?: string;
+  media_type?: "image" | "video";
 }
 
 const MAX_PHOTOS = 6;
+const MAX_VIDEO_DURATION = 30; // seconds
+const MAX_VIDEO_SIZE_MB = 50;
+
+const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+const VIDEO_EXTENSIONS = ["mp4", "mov", "m4v"];
 
 type Props = {
   userId: string;
@@ -49,32 +56,77 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images", "videos"],
       quality: 0.85,
+      videoMaxDuration: MAX_VIDEO_DURATION,
     });
     if (result.canceled || !result.assets[0]) return;
 
+    const asset = result.assets[0];
+    const isVideo = asset.type === "video";
+
+    // Validate video duration
+    if (isVideo && asset.duration && asset.duration / 1000 > MAX_VIDEO_DURATION) {
+      Alert.alert(
+        t("mobile.photo.video_too_long_title"),
+        t("mobile.photo.video_too_long_body", { max: MAX_VIDEO_DURATION }),
+      );
+      return;
+    }
+
     setBusySlot(slotIndex);
-    const uri = result.assets[0].uri;
-    const ext = uri.split(".").pop()?.split("?")[0] || "jpg";
-    const safeExt = ["jpg", "jpeg", "png", "webp"].includes((ext || "").toLowerCase())
-      ? ext.toLowerCase()
-      : "jpg";
+    const uri = asset.uri;
+    const ext = uri.split(".").pop()?.split("?")[0] || (isVideo ? "mp4" : "jpg");
+    const extLower = (ext || "").toLowerCase();
+
+    let safeExt: string;
+    let contentType: string;
+    let mediaType: "image" | "video";
+
+    if (VIDEO_EXTENSIONS.includes(extLower)) {
+      safeExt = extLower;
+      contentType = safeExt === "mov" ? "video/quicktime" : "video/mp4";
+      mediaType = "video";
+    } else {
+      safeExt = IMAGE_EXTENSIONS.includes(extLower) ? extLower : "jpg";
+      contentType =
+        safeExt === "png" ? "image/png" : safeExt === "webp" ? "image/webp" : "image/jpeg";
+      mediaType = "image";
+    }
+
     const filePath = `${userId}/${Date.now()}-${slotIndex}.${safeExt}`;
 
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const contentType =
-        safeExt === "png"
-          ? "image/png"
-          : safeExt === "webp"
-            ? "image/webp"
-            : "image/jpeg";
+      // Build FormData with the local file URI — works reliably for both
+      // images and videos on iOS (fetch(uri).blob() returns 0 bytes for videos).
+      const formData = new FormData();
+      formData.append("file", {
+        uri,
+        name: filePath.split("/").pop() ?? `upload.${safeExt}`,
+        type: contentType,
+      } as unknown as Blob);
 
-      const { error: upErr } = await supabase.storage
-        .from("profile-photos")
-        .upload(filePath, blob, { cacheControl: "3600", upsert: true, contentType });
+      // Upload via raw fetch to Supabase Storage REST API (supports FormData)
+      const bucketUrl = supabase.storage.from("profile-photos").getPublicUrl("").data.publicUrl.replace("/object/public/profile-photos/", "");
+      const uploadUrl = `${bucketUrl}/object/profile-photos/${filePath}`;
+      const session = (await supabase.auth.getSession()).data.session;
+
+      const uploadRes = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+          "x-upsert": "true",
+          "cache-control": "3600",
+        },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const errBody = await uploadRes.text();
+        throw new Error(errBody || `Upload failed: ${uploadRes.status}`);
+      }
+
+      const upErr: { message: string } | null = null;
 
       if (upErr) throw upErr;
 
@@ -85,7 +137,7 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
         }
         const { error: uErr } = await supabase
           .from("profile_photos")
-          .update({ storage_path: filePath })
+          .update({ storage_path: filePath, media_type: mediaType })
           .eq("id", slot.id);
         if (uErr) throw uErr;
         const next = [...photos];
@@ -94,6 +146,7 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
           storage_path: filePath,
           display_order: slotIndex,
           prompt: promptAt(slotIndex),
+          media_type: mediaType,
         };
         onPhotosChange(next);
       } else {
@@ -104,6 +157,7 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
             storage_path: filePath,
             display_order: slotIndex,
             prompt: promptAt(slotIndex),
+            media_type: mediaType,
           })
           .select()
           .single();
@@ -114,6 +168,7 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
           storage_path: filePath,
           display_order: slotIndex,
           prompt: promptAt(slotIndex),
+          media_type: mediaType,
         };
         onPhotosChange(next);
       }
@@ -122,6 +177,23 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
         t("profile.photos.upload"),
         e instanceof Error ? e.message : t("profile.photos.upload_failed"),
       );
+    } finally {
+      setBusySlot(null);
+    }
+  };
+
+  const removePhoto = async (slotIndex: number) => {
+    const slot = photos[slotIndex];
+    if (!slot?.storage_path || !slot.id) return;
+    setBusySlot(slotIndex);
+    try {
+      await supabase.storage.from("profile-photos").remove([slot.storage_path]);
+      await supabase.from("profile_photos").delete().eq("id", slot.id);
+      const next = [...photos];
+      next[slotIndex] = { storage_path: "", display_order: slotIndex, prompt: "" };
+      onPhotosChange(next);
+    } catch (e) {
+      if (__DEV__) console.error("[PhotoUploadRN] remove:", e);
     } finally {
       setBusySlot(null);
     }
@@ -148,11 +220,31 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
               </View>
             ) : p.storage_path ? (
               <View style={styles.thumbWrap}>
-                <Image
-                  source={{ uri: publicUrl(supabase, p.storage_path) }}
-                  style={styles.thumb}
-                  resizeMode="contain"
-                />
+                {p.media_type === "video" ? (
+                  <>
+                    <View style={styles.videoPlaceholder}>
+                      <Ionicons name="videocam" size={28} color={maakTokens.primary} />
+                      <Text style={styles.videoLabel}>{t("mobile.photo.video_label")}</Text>
+                    </View>
+                    <View style={styles.videoBadge}>
+                      <Ionicons name="play" size={14} color="#fff" />
+                    </View>
+                  </>
+                ) : (
+                  <Image
+                    source={{ uri: publicUrl(supabase, p.storage_path) }}
+                    style={styles.thumb}
+                    resizeMode="contain"
+                  />
+                )}
+                <Pressable
+                  style={styles.removeBtn}
+                  onPress={() => removePhoto(i)}
+                  hitSlop={6}
+                  accessibilityLabel={t("common.delete")}
+                >
+                  <Ionicons name="close-circle" size={22} color={maakTokens.destructive} />
+                </Pressable>
               </View>
             ) : (
               <View style={styles.thumbWrap}>
@@ -197,6 +289,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   thumb: { width: "100%", height: "100%" },
+  videoPlaceholder: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: `${maakTokens.primary}14`,
+    borderRadius: maakTokens.radiusMd,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  videoLabel: { fontSize: 11, color: maakTokens.mutedForeground, fontWeight: "600" },
+  removeBtn: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderRadius: 11,
+  },
+  videoBadge: {
+    position: "absolute",
+    bottom: 6,
+    left: 6,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 10,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   plus: { fontSize: 36, color: maakTokens.primary },
   prompt: {
     fontSize: 10,

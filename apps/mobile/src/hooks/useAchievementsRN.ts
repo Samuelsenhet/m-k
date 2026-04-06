@@ -17,12 +17,23 @@ export type AchievementRN = {
   earned_at?: string;
 };
 
+type CycleRow = {
+  cycle_number: number;
+  started_at: string;
+  completed_at: string | null;
+};
+
+/** Two months in milliseconds. */
+const CYCLE_INTERVAL_MS = 2 * 30 * 24 * 60 * 60 * 1000;
+
 export function useAchievementsRN() {
   const { supabase, session } = useSupabase();
   const user = session?.user;
   const { i18n } = useTranslation();
   const [achievements, setAchievements] = useState<AchievementRN[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentCycle, setCurrentCycle] = useState(0);
+  const [newCycleAvailable, setNewCycleAvailable] = useState(false);
 
   const fetchAchievements = useCallback(async () => {
     if (!user) {
@@ -33,10 +44,34 @@ export function useAchievementsRN() {
 
     setLoading(true);
     try {
+      // Fetch current cycle
+      const { data: cycleRows } = await supabase
+        .from("achievement_cycles")
+        .select("cycle_number, started_at, completed_at")
+        .eq("user_id", user.id)
+        .order("cycle_number", { ascending: false })
+        .limit(1);
+
+      const latestCycle: CycleRow | null =
+        cycleRows && cycleRows.length > 0 ? (cycleRows[0] as CycleRow) : null;
+      const cycleNum = latestCycle?.cycle_number ?? 0;
+      setCurrentCycle(cycleNum);
+
+      // Check if new cycle is available (all completed + 2 months passed)
+      if (latestCycle?.completed_at) {
+        const completedAt = new Date(latestCycle.completed_at).getTime();
+        const elapsed = Date.now() - completedAt;
+        setNewCycleAvailable(elapsed >= CYCLE_INTERVAL_MS);
+      } else {
+        setNewCycleAvailable(false);
+      }
+
+      // Fetch earned achievements for current cycle
       const { data: earnedRows, error: earnedError } = await supabase
         .from("user_achievements")
-        .select("earned_at, achievement_id")
-        .eq("user_id", user.id);
+        .select("earned_at, achievement_id, cycle_number")
+        .eq("user_id", user.id)
+        .eq("cycle_number", cycleNum);
 
       if (earnedError) throw earnedError;
 
@@ -97,6 +132,8 @@ export function useAchievementsRN() {
     earnedAchievements,
     loading,
     totalPoints,
+    currentCycle,
+    newCycleAvailable,
     refresh: fetchAchievements,
   };
 }

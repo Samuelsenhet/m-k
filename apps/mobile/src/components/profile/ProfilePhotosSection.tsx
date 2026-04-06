@@ -13,6 +13,7 @@ type PhotoRow = {
   storage_path: string;
   display_order: number;
   prompt?: string | null;
+  media_type?: string | null;
 };
 
 function buildSlots(rows: PhotoRow[], t: TFunction): PhotoSlotRN[] {
@@ -25,6 +26,7 @@ function buildSlots(rows: PhotoRow[], t: TFunction): PhotoSlotRN[] {
         storage_path: row.storage_path,
         display_order: i,
         prompt: row.prompt ?? t(`mobile.wizard.photo_prompt_${i}`),
+        media_type: (row.media_type as "image" | "video") ?? "image",
       };
     }
     return { storage_path: "", display_order: i, prompt: "" };
@@ -53,7 +55,7 @@ export function ProfilePhotosSection({ userId, onPhotosUpdated }: Props) {
     try {
       const { data, error } = await supabase
         .from("profile_photos")
-        .select("id, storage_path, display_order, prompt")
+        .select("id, storage_path, display_order, prompt, media_type")
         .eq("user_id", userId)
         .order("display_order", { ascending: true });
       if (error) {

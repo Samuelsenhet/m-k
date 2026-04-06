@@ -1,4 +1,6 @@
 import { useAchievementsRN } from "@/hooks/useAchievementsRN";
+import { PaywallGate } from "@/components/paywall/PaywallGate";
+import { useSubscription } from "@/hooks/useSubscription";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -17,11 +19,39 @@ export default function AchievementsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { hasPaid } = useSubscription();
   const { achievements, earnedAchievements, loading, totalPoints } = useAchievementsRN();
 
   const total = achievements.length;
   const earned = earnedAchievements.length;
   const pct = total > 0 ? Math.round((earned / total) * 100) : 0;
+
+  if (!hasPaid) {
+    return (
+      <View style={[styles.root, { paddingTop: insets.top }]}>
+        <View style={styles.topBar}>
+          <Text style={styles.topTitle}>{t("achievements.title")}</Text>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.close")}
+          >
+            <Ionicons name="close" size={28} color={maakTokens.primaryForeground} />
+          </Pressable>
+        </View>
+        <PaywallGate
+          titleKey="mobile.paywall.gate_achievements_title"
+          bodyKey="mobile.paywall.gate_achievements_body"
+          bullets={[
+            t("mobile.paywall.gate_achievements_bullet_tasks"),
+            t("mobile.paywall.gate_achievements_bullet_points"),
+            t("mobile.paywall.gate_achievements_bullet_refresh"),
+          ]}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>

@@ -191,7 +191,7 @@ serve(async (req: Request) => {
     if (subRow && subRow.status === 'active') {
       const notExpired = !subRow.expires_at || new Date(subRow.expires_at) > new Date()
       const plan = subRow.plan_type as string
-      isPlus = notExpired && (plan === 'plus' || plan === 'premium' || plan === 'vip')
+      isPlus = notExpired && (plan === 'basic' || plan === 'plus' || plan === 'premium' || plan === 'vip')
     }
     const userLimit = isPlus ? null : 5
 

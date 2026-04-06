@@ -4,6 +4,7 @@ import { CreateGroupModal } from "@/components/chat/CreateGroupModal";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useGroups } from "@/hooks/useGroups";
 import { useMutualChatMatches } from "@/hooks/useMutualChatMatches";
+import { useSubscription } from "@/hooks/useSubscription";
 import { appLocaleTag } from "@/lib/appLocale";
 import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -49,6 +50,7 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
+  const { canCreateGroups } = useSubscription();
   const { matches, loading, error, refresh } = useMutualChatMatches();
   const {
     groups,
@@ -287,7 +289,16 @@ export default function ChatScreen() {
             <Text style={styles.samlingHint} numberOfLines={2}>
               {t("groupChat.emptyHeading")}
             </Text>
-            <Pressable style={styles.addBtn} onPress={() => setCreateOpen(true)}>
+            <Pressable
+              style={styles.addBtn}
+              onPress={() => {
+                if (canCreateGroups) {
+                  setCreateOpen(true);
+                } else {
+                  router.push({ pathname: "/paywall" });
+                }
+              }}
+            >
               <Text style={styles.addBtnText}>+</Text>
             </Pressable>
           </View>

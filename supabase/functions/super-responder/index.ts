@@ -5,7 +5,7 @@ interface reqPayload {
   name: string;
 }
 
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {

@@ -123,7 +123,7 @@ function subscriptionIsPaid(row: {
   if (!row || row.status !== "active") return false;
   const notExpired = !row.expires_at || new Date(row.expires_at) > new Date();
   const plan = row.plan_type ?? "";
-  return notExpired && (plan === "plus" || plan === "premium" || plan === "vip");
+  return notExpired && (plan === "basic" || plan === "plus" || plan === "premium" || plan === "vip");
 }
 
 async function consume(
@@ -143,8 +143,7 @@ async function consume(
     // Fail closed: do not bypass limits when Postgres/RPC is down or misconfigured.
     return { allowed: false, count: 0 };
   }
-  const row = data as { allowed?: boolean; count?: number; skipped?: boolean } | null;
-  if (row?.skipped) return { allowed: true, count: 0 };
+  const row = data as { allowed?: boolean; count?: number } | null;
   // Fail closed: only explicit allowed: true passes; null/malformed RPC payload denies.
   return { allowed: row?.allowed === true, count: Number(row?.count ?? 0) };
 }
@@ -161,12 +160,26 @@ export async function enforceAiRateLimits(
 ): Promise<Response | null> {
   const ip = getClientIp(req);
 
-  const globalMax = parsePositiveInt(Deno.env.get("AI_GLOBAL_DAILY_MAX_CALLS"), 0);
+  // Global daily cap — prevents runaway costs. Default 5000 calls/day across all users.
+  const globalMax = parsePositiveInt(Deno.env.get("AI_GLOBAL_DAILY_MAX_CALLS"), 5000);
   if (globalMax > 0) {
     const day = utcDayStart();
     const gKey = "global:ai:calls:utc_day";
     const g = await consume(supabase, gKey, day, globalMax);
+
+    // Budget alert: send email at 80% threshold (once per day)
+    const alertThreshold = Math.floor(globalMax * 0.8);
+    if (g.count === alertThreshold) {
+      void sendBudgetAlert(supabase, g.count, globalMax).catch((e) =>
+        console.error("[rate_limit_db] budget alert failed:", e),
+      );
+    }
+
     if (!g.allowed) {
+      // Also alert at 100% (cap reached)
+      void sendBudgetAlert(supabase, g.count, globalMax, true).catch((e) =>
+        console.error("[rate_limit_db] cap alert failed:", e),
+      );
       return new Response(
         JSON.stringify({
           error: "AI-tjänsten är tillfälligt begränsad. Försök igen senare.",
@@ -211,8 +224,8 @@ export async function enforceAiRateLimits(
     }
   }
 
-  const userPerMinute = parsePositiveInt(Deno.env.get("AI_RATE_USER_PER_MINUTE"), 24);
-  const userPerDay = parsePositiveInt(Deno.env.get("AI_RATE_USER_PER_DAY"), 150);
+  const userPerMinute = parsePositiveInt(Deno.env.get("AI_RATE_USER_PER_MINUTE"), 12);
+  const userPerDay = parsePositiveInt(Deno.env.get("AI_RATE_USER_PER_DAY"), 50);
   const ipPerMinute = parsePositiveInt(Deno.env.get("AI_RATE_IP_PER_MINUTE"), 40);
   const ipPerHour = parsePositiveInt(Deno.env.get("AI_RATE_IP_PER_HOUR"), 200);
 
@@ -265,4 +278,44 @@ export async function enforceAiRateLimits(
 /** Service-role client for rate limit RPC (callers pass URL + service key). */
 export function createServiceClient(url: string, serviceKey: string): SupabaseClient {
   return createClient(url, serviceKey);
+}
+
+/**
+ * Send a budget alert email when AI usage approaches or exceeds the daily cap.
+ * Uses the existing send-email edge function via Supabase invoke.
+ * Recipients: BUDGET_ALERT_EMAIL env var (defaults to team email).
+ */
+async function sendBudgetAlert(
+  supabase: SupabaseClient,
+  currentCount: number,
+  maxCount: number,
+  capReached = false,
+): Promise<void> {
+  const alertEmail = Deno.env.get("BUDGET_ALERT_EMAIL") || Deno.env.get("MAIL_FROM") || "";
+  if (!alertEmail) return;
+
+  const pct = Math.round((currentCount / maxCount) * 100);
+  const subject = capReached
+    ? `🚨 MÄÄK AI Budget CAP REACHED (${currentCount}/${maxCount})`
+    : `⚠️ MÄÄK AI Budget Alert: ${pct}% used (${currentCount}/${maxCount})`;
+  const body = capReached
+    ? `<h2>AI Budget Cap Reached</h2><p>The global daily AI call limit has been hit.</p><p><strong>${currentCount} / ${maxCount}</strong> calls used today (UTC).</p><p>All AI features are temporarily disabled until midnight UTC. Consider increasing <code>AI_GLOBAL_DAILY_MAX_CALLS</code> if this is expected growth.</p>`
+    : `<h2>AI Budget Warning</h2><p>AI usage has reached <strong>${pct}%</strong> of the daily cap.</p><p><strong>${currentCount} / ${maxCount}</strong> calls used today (UTC).</p><p>If this continues, the cap will be hit and AI features will be disabled.</p>`;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!supabaseUrl || !serviceKey) return;
+
+  await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: alertEmail,
+      subject,
+      html: body,
+    }),
+  });
 }

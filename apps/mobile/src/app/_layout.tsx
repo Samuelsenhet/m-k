@@ -7,6 +7,7 @@ import {
   SpaceMono_400Regular,
   useFonts as useSpaceMonoFonts,
 } from '@expo-google-fonts/space-mono';
+import { PurchasesProvider } from '@/contexts/PurchasesProvider';
 import { SupabaseProvider } from '@/contexts/SupabaseProvider';
 import { i18n } from '@/lib/i18n';
 import { readStoredLanguage } from '@/lib/languageStorage';
@@ -130,30 +131,35 @@ function RootLayoutNav() {
   return (
     <I18nRoot i18n={i18n}>
       <SupabaseProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="landing" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="phone-auth" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="view-match" options={{ headerShown: false }} />
-            <Stack.Screen name="group-chat/[groupId]" options={{ headerShown: false }} />
-            <Stack.Screen name="terms" options={{ headerShown: false }} />
-            <Stack.Screen name="privacy" options={{ headerShown: false }} />
-            <Stack.Screen name="about" options={{ headerShown: false }} />
-            <Stack.Screen name="reporting" options={{ headerShown: false }} />
-            <Stack.Screen name="personality-guide" options={{ headerShown: false }} />
-            <Stack.Screen name="notifications" options={{ headerShown: false }} />
-            <Stack.Screen name="report-history" options={{ headerShown: false }} />
-            <Stack.Screen name="report" options={{ headerShown: false }} />
-            <Stack.Screen name="appeal" options={{ headerShown: false }} />
-            <Stack.Screen name="admin-reports" options={{ headerShown: false }} />
-            <Stack.Screen name="achievements" options={{ headerShown: false }} />
-            <Stack.Screen name="user/[userId]" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </Stack>
-        </ThemeProvider>
+        <PurchasesProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="landing" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="phone-auth" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="view-match" options={{ headerShown: false }} />
+              <Stack.Screen name="group-chat/[groupId]" options={{ headerShown: false }} />
+              <Stack.Screen name="terms" options={{ headerShown: false }} />
+              <Stack.Screen name="privacy" options={{ headerShown: false }} />
+              <Stack.Screen name="about" options={{ headerShown: false }} />
+              <Stack.Screen name="reporting" options={{ headerShown: false }} />
+              <Stack.Screen name="personality-guide" options={{ headerShown: false }} />
+              <Stack.Screen name="notifications" options={{ headerShown: false }} />
+              <Stack.Screen name="report-history" options={{ headerShown: false }} />
+              <Stack.Screen name="report" options={{ headerShown: false }} />
+              <Stack.Screen name="appeal" options={{ headerShown: false }} />
+              <Stack.Screen name="admin-reports" options={{ headerShown: false }} />
+              <Stack.Screen name="achievements" options={{ headerShown: false }} />
+              <Stack.Screen name="user/[userId]" options={{ headerShown: false }} />
+              <Stack.Screen name="paywall" options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="kemi-check/[matchId]" options={{ headerShown: false }} />
+              <Stack.Screen name="verification" options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack>
+          </ThemeProvider>
+        </PurchasesProvider>
       </SupabaseProvider>
     </I18nRoot>
   );

@@ -8,7 +8,7 @@ import {
 } from "../_shared/rate_limit_db.ts";
 
 // Get allowed origin from environment or default to wildcard for development
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,

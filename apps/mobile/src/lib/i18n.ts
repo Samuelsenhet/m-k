@@ -36,7 +36,7 @@ void i18n.use(initReactI18next).init({
     sv: { translation: svTranslation },
     en: { translation: enTranslation },
   },
-  lng: deviceLng,
+  lng: "sv",
   fallbackLng: "sv",
   interpolation: { escapeValue: false },
   compatibilityJSON: "v4",

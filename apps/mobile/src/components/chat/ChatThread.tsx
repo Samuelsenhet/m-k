@@ -1,5 +1,7 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens } from "@maak/core";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -42,6 +44,7 @@ export function ChatThread({
   onOpenProfile,
 }: Props) {
   const { t } = useTranslation();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { supabase, session } = useSupabase();
   const userId = session?.user?.id;
@@ -54,6 +57,8 @@ export function ChatThread({
   const [aiIcebreakers, setAiIcebreakers] = useState<string[]>([]);
   const [loadingIce, setLoadingIce] = useState(false);
   const [iceError, setIceError] = useState<string | null>(null);
+  const [iceLimitHit, setIceLimitHit] = useState(false);
+  const [kemiDismissed, setKemiDismissed] = useState(false);
 
   const fetchMessages = useCallback(async () => {
     const { data, error } = await supabase
@@ -204,9 +209,14 @@ export function ChatThread({
         headers: { Authorization: `Bearer ${s.access_token}` },
       });
       if (error) throw error;
-      const errMsg = (data as { error?: string })?.error;
-      if (errMsg) {
-        setIceError(errMsg);
+      const body = data as { error?: string; code?: string };
+      if (body?.code === "free_tier_ai_cap") {
+        setIceLimitHit(true);
+        setIceError(t("chat.icebreaker_limit_reached"));
+        return;
+      }
+      if (body?.error) {
+        setIceError(body.error);
         return;
       }
       const list = (data as { icebreakers?: string[] })?.icebreakers;
@@ -326,6 +336,14 @@ export function ChatThread({
                 )}
               </Pressable>
               {iceError ? <Text style={styles.iceError}>{iceError}</Text> : null}
+              {iceLimitHit ? (
+                <Pressable
+                  style={styles.iceUpgradeBtn}
+                  onPress={() => router.push({ pathname: "/paywall" })}
+                >
+                  <Text style={styles.iceUpgradeTxt}>{t("chat.icebreaker_upgrade")}</Text>
+                </Pressable>
+              ) : null}
               {aiIcebreakers.map((line) => (
                 <Pressable
                   key={line}
@@ -340,6 +358,25 @@ export function ChatThread({
               ))}
             </View>
           ) : null}
+        </View>
+      ) : null}
+
+      {/* Kemi-Check trigger: after 10+ messages */}
+      {!kemiDismissed && messages.length >= 10 ? (
+        <View style={styles.kemiCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.kemiTitle}>{t("mobile.kemicheck.suggestion_title")}</Text>
+            <Text style={styles.kemiSub}>{t("mobile.kemicheck.suggestion_body")}</Text>
+          </View>
+          <Pressable
+            style={styles.kemiBtn}
+            onPress={() => router.push({ pathname: "/kemi-check/[matchId]", params: { matchId } })}
+          >
+            <Ionicons name="videocam" size={18} color={maakTokens.primaryForeground} />
+          </Pressable>
+          <Pressable onPress={() => setKemiDismissed(true)} hitSlop={8}>
+            <Ionicons name="close" size={18} color={maakTokens.mutedForeground} />
+          </Pressable>
         </View>
       ) : null}
 
@@ -431,6 +468,35 @@ const styles = StyleSheet.create({
   },
   icebreakerGenTxt: { fontSize: 14, fontWeight: "600", color: maakTokens.primary },
   iceError: { fontSize: 13, color: maakTokens.destructive },
+  iceUpgradeBtn: {
+    backgroundColor: maakTokens.primary,
+    borderRadius: maakTokens.radiusMd,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignSelf: "flex-start",
+    marginTop: 6,
+  },
+  iceUpgradeTxt: { color: maakTokens.primaryForeground, fontSize: 13, fontWeight: "600" },
+  kemiCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${maakTokens.primary}14`,
+    borderRadius: maakTokens.radiusLg,
+    padding: 12,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    gap: 10,
+  },
+  kemiTitle: { fontSize: 14, fontWeight: "700", color: maakTokens.foreground },
+  kemiSub: { fontSize: 12, color: maakTokens.mutedForeground, marginTop: 1 },
+  kemiBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: maakTokens.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   iceChip: {
     padding: 12,
     borderRadius: maakTokens.radiusLg,

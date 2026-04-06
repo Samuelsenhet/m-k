@@ -1,6 +1,7 @@
 import { MatchingSettingsRN } from "@/components/settings/MatchingSettingsRN";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
+import { useSubscription } from "@/hooks/useSubscription";
 import { appLocaleTag } from "@/lib/appLocale";
 import { LANG_STORAGE_KEY } from "@/lib/languageStorage";
 import { markReopenSettingsAfterSubscreen } from "@/lib/reopenSettingsAfterSubscreen";
@@ -36,6 +37,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
   const user = session?.user;
 
   const onlineCount = useOnlineCount(user?.id, hasValidSupabaseConfig);
+  const { isPremium } = useSubscription();
 
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isModerator, setIsModerator] = useState(false);
@@ -182,6 +184,20 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
 
                 <View style={styles.divider} />
 
+                <MenuRow
+                  icon="shield-checkmark-outline"
+                  label={t("mobile.verification.settings_row")}
+                  onPress={() => go({ pathname: "/verification" })}
+                />
+                <MenuRow
+                  icon={isPremium ? "sparkles" : "star-outline"}
+                  label={
+                    isPremium
+                      ? t("mobile.paywall.settings_manage_row")
+                      : t("mobile.paywall.settings_upgrade_row")
+                  }
+                  onPress={() => go({ pathname: "/paywall" })}
+                />
                 <MenuRow
                   icon="book-outline"
                   label={t("settings.learn_personality")}

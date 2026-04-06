@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("CORS_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": Deno.env.get("CORS_ORIGIN") || "https://maakapp.se",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret, x-onfido-signature, x-jumio-signature",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };

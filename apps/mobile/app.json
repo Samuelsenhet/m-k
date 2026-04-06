@@ -21,7 +21,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.samuelsenhet.maak",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "MÄÄK behöver tillgång till din kamera för Kemi-Check videosamtal.",
+        "NSMicrophoneUsageDescription": "MÄÄK behöver tillgång till din mikrofon för Kemi-Check videosamtal."
       }
     },
     "web": {

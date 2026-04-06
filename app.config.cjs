@@ -62,6 +62,9 @@ const runtimeSupabaseAnonKey = (
   process.env.VITE_SUPABASE_ANON_KEY ||
   ""
 ).trim();
+const runtimeRevenueCatIosKey = (
+  process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || ""
+).trim();
 
 /**
  * app.json paths are relative to apps/mobile. Use absolute paths under mobileRoot so prebuild finds files
@@ -112,6 +115,9 @@ module.exports = {
       ...(runtimeSupabaseUrl ? { EXPO_PUBLIC_SUPABASE_URL: runtimeSupabaseUrl } : {}),
       ...(runtimeSupabaseAnonKey
         ? { EXPO_PUBLIC_SUPABASE_ANON_KEY: runtimeSupabaseAnonKey }
+        : {}),
+      ...(runtimeRevenueCatIosKey
+        ? { EXPO_PUBLIC_REVENUECAT_IOS_KEY: runtimeRevenueCatIosKey }
         : {}),
     },
   },

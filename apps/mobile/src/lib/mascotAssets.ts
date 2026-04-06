@@ -15,4 +15,6 @@ export const MascotAssets = {
   plantingSeed: require("../../assets/images/mascot/mascot_planting_seed.png"),
   /** `first_match` */
   lightingLantern: require("../../assets/images/mascot/mascot_lighting_lantern.png"),
+  /** Paywall / upgrade moments */
+  encouraging: require("../../assets/images/mascot/encouraging.png"),
 } as const;

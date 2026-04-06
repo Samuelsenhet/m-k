@@ -6,6 +6,7 @@ import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { MascotAssets } from "@/lib/mascotAssets";
 import { useMatchStatus } from "@/hooks/useMatchStatus";
 import { useMatches } from "@/hooks/useMatches";
+import { useSundayRematch } from "@/hooks/useSundayRematch";
 import { isSupabaseInvokeUnauthorized } from "@maak/core";
 import { maakTokens } from "@maak/core";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -64,6 +65,8 @@ export default function MatchesScreen() {
     errorDetail: statusErrorDetail,
     refetch: refetchMatchStatus,
   } = useMatchStatus(authLoading);
+
+  const { sundayMatches, isSunday } = useSundayRematch();
 
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -430,6 +433,49 @@ export default function MatchesScreen() {
         </>
       ) : null}
 
+      {isSunday && sundayMatches.length > 0 ? (
+        <>
+          <View style={styles.sundayBanner}>
+            <Image
+              source={MascotAssets.encouraging}
+              style={styles.sundayMascot}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sundayTitle}>{t("matches.sunday_title")}</Text>
+              <Text style={styles.sundaySub}>{t("matches.sunday_sub")}</Text>
+            </View>
+          </View>
+          {sundayMatches.map((m) => (
+            <MatchListCard
+              key={`sun-${m.id}`}
+              match={{
+                id: m.id,
+                matchedUser: {
+                  userId: m.matchedUserId,
+                  displayName: m.displayName,
+                  avatarUrl: m.avatarUrl ?? undefined,
+                  category: "",
+                  archetype: m.archetype ?? undefined,
+                  photos: m.photos,
+                },
+                matchType: "similar",
+                matchScore: m.compatibilityScore ?? 0,
+                status: "pending_intro",
+                interests: [],
+                compatibilityFactors: [],
+                expiresAt: "",
+                personalityInsight: null,
+              }}
+              getPublicUrl={getPublicUrl}
+              onChat={() => openChat(m.id)}
+              onViewProfile={() => openProfile(m.id)}
+            />
+          ))}
+        </>
+      ) : null}
+
       {filteredPending.length > 0 ? (
         <>
           <Text style={styles.sectionTitle}>{t("matches.discover_section")}</Text>
@@ -544,6 +590,18 @@ const styles = StyleSheet.create({
   loadMore: { marginTop: 16, padding: 14, alignItems: "center" },
   loadMoreText: { color: maakTokens.primary, fontWeight: "600" },
   footerNote: { textAlign: "center", fontSize: 13, color: maakTokens.mutedForeground, marginTop: 20 },
+  sundayBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: `${maakTokens.primary}14`,
+    borderRadius: maakTokens.radiusXl,
+    padding: 14,
+    marginBottom: 12,
+    gap: 12,
+  },
+  sundayMascot: { width: 48, height: 48 },
+  sundayTitle: { fontSize: 16, fontWeight: "700", color: maakTokens.foreground },
+  sundaySub: { fontSize: 13, color: maakTokens.mutedForeground, marginTop: 2 },
   waitingBox: { paddingHorizontal: maakTokens.screenPaddingHorizontal, paddingBottom: 40 },
   waitingTitle: { fontSize: 22, fontWeight: "700", color: maakTokens.foreground, textAlign: "center" },
   waitingBody: { fontSize: 15, color: maakTokens.mutedForeground, textAlign: "center", marginTop: 10, lineHeight: 22 },
