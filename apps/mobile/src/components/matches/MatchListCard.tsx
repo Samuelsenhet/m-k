@@ -1,8 +1,10 @@
 import type { Match } from "@/hooks/useMatches";
 import { archetypeDisplayTitle } from "@/lib/archetypeTitle";
 import { maakTokens } from "@maak/core";
+import { Image } from "expo-image";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 function previewText(match: Match): string {
   const insight = match.personalityInsight;
@@ -32,7 +34,7 @@ type Props = {
   mutual?: boolean;
 };
 
-export function MatchListCard({
+export const MatchListCard = React.memo(function MatchListCard({
   match,
   getPublicUrl,
   onChat,
@@ -51,7 +53,7 @@ export function MatchListCard({
     <View style={[styles.card, mutual && styles.cardMutual]}>
       <View style={styles.row}>
         {uri ? (
-          <Image source={{ uri }} style={styles.avatar} />
+          <Image source={{ uri }} style={styles.avatar} cachePolicy="disk" transition={150} />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -76,7 +78,7 @@ export function MatchListCard({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

@@ -1,5 +1,6 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import { MascotAssets } from "@/lib/mascotAssets";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,12 +20,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/** Match web `LandingPage` gradient (`COLORS.sage[50]` → white). */
-const GRADIENT_TOP = "#FDFCFA";
-const GRADIENT_BOTTOM = "#FFFFFF";
-/** Match web `COLORS.primary[100]` / `primary[600]` för ikonrutor */
-const FEATURE_ICON_BG = "#D9EDE4";
-const FEATURE_ICON_COLOR = "#3D5A3B";
+/** Feature icon colors derived per-theme in the component. */
+const FEATURE_ICON_BG_LIGHT = "#D9EDE4";
+const FEATURE_ICON_BG_DARK = "#2A3E2C";
+const FEATURE_ICON_COLOR_LIGHT = "#3D5A3B";
+const FEATURE_ICON_COLOR_DARK = "#8BC49A";
 
 type SlideId = "sofia" | "merbel" | "erik";
 
@@ -72,6 +72,15 @@ export default function LandingScreen() {
   const { session, hasValidSupabaseConfig } = useSupabase();
   const user = session?.user;
   const onlineCount = useOnlineCount(user?.id, hasValidSupabaseConfig);
+  const tokens = useThemeTokens();
+  const isDark = tokens.background !== maakTokens.background;
+
+  const gradientColors = useMemo(
+    () => (isDark ? [tokens.background, tokens.card] : ["#FDFCFA", "#FFFFFF"]) as [string, string],
+    [isDark, tokens],
+  );
+  const featureIconBg = isDark ? FEATURE_ICON_BG_DARK : FEATURE_ICON_BG_LIGHT;
+  const featureIconColor = isDark ? FEATURE_ICON_COLOR_DARK : FEATURE_ICON_COLOR_LIGHT;
 
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -115,7 +124,7 @@ export default function LandingScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={[GRADIENT_TOP, GRADIENT_BOTTOM]} style={styles.gradient}>
+      <LinearGradient colors={gradientColors} style={styles.gradient}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[
@@ -172,8 +181,8 @@ export default function LandingScreen() {
           <View style={styles.features} accessibilityLabel={t("landing.features_a11y")}>
             {LANDING_FEATURES.map(({ Icon, titleKey, subKey }) => (
               <View key={titleKey} style={styles.featureCell}>
-                <View style={[styles.featureIconWrap, { backgroundColor: FEATURE_ICON_BG }]}>
-                  <Icon size={24} color={FEATURE_ICON_COLOR} strokeWidth={1.75} />
+                <View style={[styles.featureIconWrap, { backgroundColor: featureIconBg }]}>
+                  <Icon size={24} color={featureIconColor} strokeWidth={1.75} />
                 </View>
                 <Text style={styles.featureTitle}>{t(titleKey)}</Text>
                 <Text style={styles.featureSub}>{t(subKey)}</Text>
@@ -224,11 +233,11 @@ export default function LandingScreen() {
                 {slideMeta.bio}
               </Text>
               <View style={styles.tags}>
-                <View style={[styles.tag, { backgroundColor: "#F8F6F1" }]}>
-                  <Text style={[styles.tagText, { color: "#787254" }]}>{slideMeta.tag1}</Text>
+                <View style={[styles.tag, { backgroundColor: tokens.muted }]}>
+                  <Text style={[styles.tagText, { color: tokens.mutedForeground }]}>{slideMeta.tag1}</Text>
                 </View>
-                <View style={[styles.tag, { backgroundColor: "#F8F6F1" }]}>
-                  <Text style={[styles.tagText, { color: "#787254" }]}>{slideMeta.tag2}</Text>
+                <View style={[styles.tag, { backgroundColor: tokens.muted }]}>
+                  <Text style={[styles.tagText, { color: tokens.mutedForeground }]}>{slideMeta.tag2}</Text>
                 </View>
               </View>
             </View>
@@ -316,7 +325,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     textAlign: "center",
-    color: "#6B6860",
+    color: maakTokens.mutedForeground,
     paddingHorizontal: 8,
   },
   heroNarrative: {
@@ -324,7 +333,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
-    color: "#5C5952",
+    color: maakTokens.mutedForeground,
     paddingHorizontal: 16,
     fontWeight: "600",
     maxWidth: 340,
@@ -359,14 +368,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     lineHeight: 16,
-    color: "#253D2C",
+    color: maakTokens.foreground,
     textAlign: "center",
   },
   featureSub: {
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
-    color: "#9A9790",
+    color: maakTokens.mutedForeground,
     textAlign: "center",
   },
   cardScene: {
@@ -386,7 +395,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
     opacity: 0.5,
-    backgroundColor: "#F8F6F1",
+    backgroundColor: maakTokens.cream,
   },
   deckImage: {
     width: 192,
@@ -471,7 +480,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
     borderRadius: 24,
     padding: MAIN_CARD_PAD,
-    backgroundColor: "#fff",
+    backgroundColor: maakTokens.card,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -484,7 +493,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 12,
     overflow: "hidden",
-    backgroundColor: "#EBEAE8",
+    backgroundColor: maakTokens.muted,
     alignSelf: "center",
   },
   mainPhotoImage: {
@@ -494,13 +503,13 @@ const styles = StyleSheet.create({
   cardName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#253D2C",
+    color: maakTokens.foreground,
     marginBottom: 6,
   },
   cardBio: {
     fontSize: 12,
     lineHeight: 18,
-    color: "#9A9790",
+    color: maakTokens.mutedForeground,
     marginBottom: 10,
   },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
@@ -514,7 +523,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     fontVariant: ["tabular-nums"],
-    color: "#6B6860",
+    color: maakTokens.mutedForeground,
     marginBottom: 20,
   },
   ctaBlock: {
@@ -553,13 +562,13 @@ const styles = StyleSheet.create({
   legal: {
     fontSize: 12,
     lineHeight: 18,
-    color: "#9A9790",
+    color: maakTokens.mutedForeground,
     textAlign: "center",
     paddingBottom: 8,
   },
   legalLink: {
     textDecorationLine: "underline",
-    color: "#4B6E48",
+    color: maakTokens.primary,
     fontWeight: "600",
   },
 });

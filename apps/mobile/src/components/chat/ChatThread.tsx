@@ -1,3 +1,4 @@
+import { IcebreakerPanel } from "@/components/chat/IcebreakerPanel";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,11 +54,6 @@ export function ChatThread({
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState("");
   const listRef = useRef<FlatList<MessageRow>>(null);
-  const [icebreakerOpen, setIcebreakerOpen] = useState(false);
-  const [aiIcebreakers, setAiIcebreakers] = useState<string[]>([]);
-  const [loadingIce, setLoadingIce] = useState(false);
-  const [iceError, setIceError] = useState<string | null>(null);
-  const [iceLimitHit, setIceLimitHit] = useState(false);
   const [kemiDismissed, setKemiDismissed] = useState(false);
 
   const fetchMessages = useCallback(async () => {
@@ -188,51 +184,6 @@ export function ChatThread({
     if (!ok) setDraft(prev);
   };
 
-  const generateIcebreakers = useCallback(async () => {
-    setIceError(null);
-    setAiIcebreakers([]);
-    setLoadingIce(true);
-    try {
-      const {
-        data: { session: s },
-      } = await supabase.auth.getSession();
-      if (!s?.access_token) {
-        setIceError(t("matches.must_be_logged_in"));
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke("generate-icebreakers", {
-        body: {
-          matchId,
-          matchedUserId,
-          category: "general",
-        },
-        headers: { Authorization: `Bearer ${s.access_token}` },
-      });
-      if (error) throw error;
-      const body = data as { error?: string; code?: string };
-      if (body?.code === "free_tier_ai_cap") {
-        setIceLimitHit(true);
-        setIceError(t("chat.icebreaker_limit_reached"));
-        return;
-      }
-      if (body?.error) {
-        setIceError(body.error);
-        return;
-      }
-      const list = (data as { icebreakers?: string[] })?.icebreakers;
-      if (Array.isArray(list) && list.length > 0) {
-        setAiIcebreakers(list.slice(0, 3));
-      } else {
-        setIceError(t("chat.followup_error"));
-      }
-    } catch (e) {
-      if (__DEV__) console.error("[ChatThread] icebreakers", e);
-      setIceError(t("chat.followup_error"));
-    } finally {
-      setLoadingIce(false);
-    }
-  }, [matchId, matchedUserId, supabase, t]);
-
   const avatarUri =
     matchedUserAvatarUrl && /^https?:\/\//i.test(matchedUserAvatarUrl)
       ? matchedUserAvatarUrl
@@ -310,55 +261,11 @@ export function ChatThread({
       )}
 
       {!loading && messages.length === 0 ? (
-        <View style={styles.icebreakerBar}>
-          <Text style={styles.iceIntro}>{t("maak_narrative_variants.icebreaker_intro")}</Text>
-          <Pressable
-            onPress={() => setIcebreakerOpen((o) => !o)}
-            style={styles.icebreakerToggle}
-            accessibilityRole="button"
-          >
-            <Text style={styles.icebreakerToggleText}>
-              {t("maak_narrative_variants.ai_suggestions_label")}
-              {icebreakerOpen ? " ▲" : " ▼"}
-            </Text>
-          </Pressable>
-          {icebreakerOpen ? (
-            <View style={styles.icebreakerBody}>
-              <Pressable
-                style={styles.icebreakerGenBtn}
-                onPress={() => void generateIcebreakers()}
-                disabled={loadingIce}
-              >
-                {loadingIce ? (
-                  <ActivityIndicator color={maakTokens.primary} size="small" />
-                ) : (
-                  <Text style={styles.icebreakerGenTxt}>{t("chat.generate_new")}</Text>
-                )}
-              </Pressable>
-              {iceError ? <Text style={styles.iceError}>{iceError}</Text> : null}
-              {iceLimitHit ? (
-                <Pressable
-                  style={styles.iceUpgradeBtn}
-                  onPress={() => router.push({ pathname: "/paywall" })}
-                >
-                  <Text style={styles.iceUpgradeTxt}>{t("chat.icebreaker_upgrade")}</Text>
-                </Pressable>
-              ) : null}
-              {aiIcebreakers.map((line) => (
-                <Pressable
-                  key={line}
-                  style={styles.iceChip}
-                  onPress={() => {
-                    setDraft(line);
-                    setIcebreakerOpen(false);
-                  }}
-                >
-                  <Text style={styles.iceChipText}>{line}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-        </View>
+        <IcebreakerPanel
+          matchId={matchId}
+          matchedUserId={matchedUserId}
+          onSelectSuggestion={setDraft}
+        />
       ) : null}
 
       {/* Kemi-Check trigger: after 10+ messages */}
@@ -436,47 +343,6 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   listFlex: { flex: 1 },
   listPad: { paddingHorizontal: 12, paddingVertical: 12 },
-  icebreakerBar: {
-    borderTopWidth: 1,
-    borderTopColor: maakTokens.border,
-    backgroundColor: maakTokens.card,
-    paddingHorizontal: 12,
-    paddingTop: 8,
-  },
-  iceIntro: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: maakTokens.mutedForeground,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  icebreakerToggle: { paddingVertical: 6 },
-  icebreakerToggleText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: maakTokens.primary,
-  },
-  icebreakerBody: { paddingBottom: 8, gap: 8 },
-  icebreakerGenBtn: {
-    alignSelf: "flex-start",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: maakTokens.radiusMd,
-    backgroundColor: `${maakTokens.primary}18`,
-    borderWidth: 1,
-    borderColor: `${maakTokens.primary}44`,
-  },
-  icebreakerGenTxt: { fontSize: 14, fontWeight: "600", color: maakTokens.primary },
-  iceError: { fontSize: 13, color: maakTokens.destructive },
-  iceUpgradeBtn: {
-    backgroundColor: maakTokens.primary,
-    borderRadius: maakTokens.radiusMd,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    alignSelf: "flex-start",
-    marginTop: 6,
-  },
-  iceUpgradeTxt: { color: maakTokens.primaryForeground, fontSize: 13, fontWeight: "600" },
   kemiCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -497,14 +363,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iceChip: {
-    padding: 12,
-    borderRadius: maakTokens.radiusLg,
-    backgroundColor: maakTokens.muted,
-    borderWidth: 1,
-    borderColor: maakTokens.border,
-  },
-  iceChipText: { fontSize: 15, lineHeight: 21, color: maakTokens.foreground },
   bubbleRow: { marginBottom: 8, maxWidth: "100%" },
   bubbleRowMine: { alignSelf: "flex-end" },
   bubbleRowTheirs: { alignSelf: "flex-start" },

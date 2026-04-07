@@ -1,27 +1,26 @@
 import { MaakTabBar } from "@/components/navigation/MaakTabBar";
+import { useThemeTokens } from "@/hooks/useThemeTokens";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { maakTokens } from "@maak/core";
 import { Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 /**
- * White tab bar, green indicator above active tab, outline/filled icons — reference parity.
+ * Theme-aware tab bar with green indicator above active tab, outline/filled icons.
  */
 export default function TabLayout() {
   const { t } = useTranslation();
+  const tokens = useThemeTokens();
 
   return (
     <Tabs
-      // expo-router Tabs exposes additional bottom-tabs options at runtime,
-      // but the type surface can lag behind. Cast to keep strict TS happy.
       screenOptions={
         ({
         headerShown: false,
-        tabBarActiveTintColor: maakTokens.primary,
-        tabBarInactiveTintColor: maakTokens.mutedForeground,
+        tabBarActiveTintColor: tokens.primary,
+        tabBarInactiveTintColor: tokens.mutedForeground,
         tabBar: (props) => <MaakTabBar {...props} />,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: tokens.card,
           borderTopWidth: 0,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
@@ -59,8 +58,7 @@ export default function TabLayout() {
         options={
           {
             title: t("nav.profile"),
-            /** RN bottom-tabs; Expo types omit this — fills scene behind profile with card color. */
-            sceneContainerStyle: { backgroundColor: "#1a1a1a" },
+            sceneContainerStyle: { backgroundColor: tokens.background },
             tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
               <Ionicons
                 name={focused ? "person" : "person-outline"}

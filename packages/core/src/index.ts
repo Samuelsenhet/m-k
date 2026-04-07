@@ -1,4 +1,4 @@
-export { maakTokens, type MaakTokens } from "./tokens.js";
+export { maakTokens, maakTokensDark, getThemeTokens, type MaakTokens } from "./tokens.js";
 export {
   createMaakSupabaseClient,
   type MaakAuthStorage,

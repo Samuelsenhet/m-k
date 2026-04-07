@@ -13,9 +13,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
-  Image,
+  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -191,13 +192,135 @@ export default function MatchesScreen() {
     return pendingMatches;
   }, [activeTab, similarMatches, complementaryMatches, pendingMatches]);
 
-  const openChat = (matchId: string) => {
-    router.push(`/(tabs)/chat?match=${encodeURIComponent(matchId)}`);
-  };
+  const openChat = useCallback(
+    (matchId: string) => router.push(`/(tabs)/chat?match=${encodeURIComponent(matchId)}`),
+    [router],
+  );
 
-  const openProfile = (matchId: string) => {
-    router.push(`/view-match?match=${encodeURIComponent(matchId)}`);
-  };
+  const openProfile = useCallback(
+    (matchId: string) => router.push(`/view-match?match=${encodeURIComponent(matchId)}`),
+    [router],
+  );
+
+  type ListItem =
+    | { type: "empty"; key: string }
+    | { type: "section"; title: string; key: string }
+    | { type: "match"; match: (typeof matches)[number]; mutual: boolean; key: string }
+    | { type: "sunday-banner"; key: string }
+    | { type: "sunday-match"; sundayMatch: (typeof sundayMatches)[number]; key: string };
+
+  const listData = useMemo((): ListItem[] => {
+    const items: ListItem[] = [];
+    const hasAny = pendingMatches.length > 0 || mutualMatches.length > 0;
+
+    if (!hasAny) {
+      items.push({ type: "empty", key: "empty" });
+      return items;
+    }
+
+    if (mutualMatches.length > 0) {
+      items.push({
+        type: "section",
+        title: t("matches.mutual_section", { count: mutualMatches.length }),
+        key: "section-mutual",
+      });
+      for (const m of mutualMatches) {
+        items.push({ type: "match", match: m, mutual: true, key: `mutual-${m.id}` });
+      }
+    }
+
+    if (isSunday && sundayMatches.length > 0) {
+      items.push({ type: "sunday-banner", key: "sunday-banner" });
+      for (const m of sundayMatches) {
+        items.push({ type: "sunday-match", sundayMatch: m, key: `sun-${m.id}` });
+      }
+    }
+
+    if (filteredPending.length > 0) {
+      items.push({ type: "section", title: t("matches.discover_section"), key: "section-discover" });
+      for (const m of filteredPending) {
+        items.push({ type: "match", match: m, mutual: false, key: `pending-${m.id}` });
+      }
+    }
+
+    return items;
+  }, [pendingMatches, mutualMatches, isSunday, sundayMatches, filteredPending, t]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: ListItem }) => {
+      switch (item.type) {
+        case "empty":
+          return (
+            <View style={styles.emptyCard}>
+              <Image
+                source={MascotAssets.plantingSeed}
+                style={styles.emptyMascot}
+                contentFit="contain"
+                accessibilityIgnoresInvertColors
+              />
+              <Text style={styles.emptyTitle}>{t("matches.noMatches")}</Text>
+              <Text style={styles.emptyBody}>{t("matches.noMatchesDescription")}</Text>
+            </View>
+          );
+        case "section":
+          return <Text style={styles.sectionTitle}>{item.title}</Text>;
+        case "match":
+          return (
+            <MatchListCard
+              match={item.match}
+              getPublicUrl={getPublicUrl}
+              mutual={item.mutual}
+              onChat={() => openChat(item.match.id)}
+              onViewProfile={() => openProfile(item.match.id)}
+            />
+          );
+        case "sunday-banner":
+          return (
+            <View style={styles.sundayBanner}>
+              <Image
+                source={MascotAssets.encouraging}
+                style={styles.sundayMascot}
+                contentFit="contain"
+                accessibilityIgnoresInvertColors
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sundayTitle}>{t("matches.sunday_title")}</Text>
+                <Text style={styles.sundaySub}>{t("matches.sunday_sub")}</Text>
+              </View>
+            </View>
+          );
+        case "sunday-match":
+          return (
+            <MatchListCard
+              match={{
+                id: item.sundayMatch.id,
+                matchedUser: {
+                  userId: item.sundayMatch.matchedUserId,
+                  displayName: item.sundayMatch.displayName,
+                  avatarUrl: item.sundayMatch.avatarUrl ?? undefined,
+                  category: "",
+                  archetype: item.sundayMatch.archetype ?? undefined,
+                  photos: item.sundayMatch.photos,
+                },
+                matchType: "similar",
+                matchScore: item.sundayMatch.compatibilityScore ?? 0,
+                status: "pending_intro",
+                interests: [],
+                compatibilityFactors: [],
+                expiresAt: "",
+                personalityInsight: null,
+              }}
+              getPublicUrl={getPublicUrl}
+              onChat={() => openChat(item.sundayMatch.id)}
+              onViewProfile={() => openProfile(item.sundayMatch.id)}
+            />
+          );
+      }
+    },
+    [getPublicUrl, openChat, openProfile, t],
+  );
+
+  const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
   const signOutAndRedirect = async () => {
     await supabase.auth.signOut();
@@ -337,176 +460,111 @@ export default function MatchesScreen() {
     );
   }
 
-  const hasAny = pendingMatches.length > 0 || mutualMatches.length > 0;
+  const listHeader = useMemo(
+    () => (
+      <>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>{t("matches.title")}</Text>
+            <Text style={styles.subtitle}>{t("matches.subtitle")}</Text>
+          </View>
+          <Pressable style={styles.iconBtn} onPress={() => void onRefresh()} hitSlop={12}>
+            <Text style={styles.iconBtnText}>↻</Text>
+          </Pressable>
+        </View>
+
+        {hasValidSupabaseConfig && onlineCount > 0 ? (
+          <Text style={styles.online}>
+            {t("landing.users_seeking_love", { count: onlineCount })}
+          </Text>
+        ) : null}
+
+        <View style={styles.insight}>
+          <Text style={styles.insightTitle}>{t("matches.insight_title")}</Text>
+          <Text style={styles.insightSub}>{t("matches.insight_subtitle")}</Text>
+          <View style={styles.pillRow}>
+            <View style={styles.pillGreen}>
+              <Text style={styles.pillGreenText}>
+                {similarMatches.length} {t("matches.similar")}
+              </Text>
+            </View>
+            <View style={styles.pillCoral}>
+              <Text style={styles.pillCoralText}>
+                {complementaryMatches.length} {t("matches.complementary")}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.tabs}>
+          {(
+            [
+              ["all", t("matches.tabAll"), pendingMatches.length] as const,
+              ["similar", t("matches.tabSimilar"), similarMatches.length] as const,
+              ["complementary", t("matches.tabComplementary"), complementaryMatches.length] as const,
+            ] as const
+          ).map(([key, label, count]) => (
+            <Pressable
+              key={key}
+              style={[styles.tab, activeTab === key && styles.tabActive]}
+              onPress={() => setActiveTab(key)}
+            >
+              <Text style={[styles.tabText, activeTab === key && styles.tabTextActive]}>
+                {label} ({count})
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </>
+    ),
+    [
+      t, onRefresh, hasValidSupabaseConfig, onlineCount,
+      similarMatches.length, complementaryMatches.length,
+      pendingMatches.length, activeTab,
+    ],
+  );
+
+  const listFooter = useMemo(
+    () => (
+      <>
+        {hasMore ? (
+          <Pressable
+            style={styles.loadMore}
+            onPress={() => void fetchMoreMatches()}
+            disabled={matchesLoading}
+          >
+            {matchesLoading ? (
+              <ActivityIndicator color={maakTokens.primary} />
+            ) : (
+              <Text style={styles.loadMoreText}>{t("matches.load_more")}</Text>
+            )}
+          </Pressable>
+        ) : null}
+        <Text style={styles.footerNote}>{t("matches.footer_tomorrow")}</Text>
+      </>
+    ),
+    [hasMore, fetchMoreMatches, matchesLoading, t],
+  );
 
   return withCelebrationModal(
-    <ScrollView
+    <FlatList
+      data={listData}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
       style={styles.root}
       contentContainerStyle={{
         paddingTop: insets.top + 8,
         paddingHorizontal: maakTokens.screenPaddingHorizontal,
         paddingBottom: insets.bottom + 24,
+        gap: 10,
       }}
+      ListHeaderComponent={listHeader}
+      ListFooterComponent={listFooter}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <View style={styles.headerRow}>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>{t("matches.title")}</Text>
-          <Text style={styles.subtitle}>{t("matches.subtitle")}</Text>
-        </View>
-        <Pressable style={styles.iconBtn} onPress={() => void onRefresh()} hitSlop={12}>
-          <Text style={styles.iconBtnText}>↻</Text>
-        </Pressable>
-      </View>
-
-      {hasValidSupabaseConfig && onlineCount > 0 ? (
-        <Text style={styles.online}>
-          {t("landing.users_seeking_love", { count: onlineCount })}
-        </Text>
-      ) : null}
-
-      <View style={styles.insight}>
-        <Text style={styles.insightTitle}>{t("matches.insight_title")}</Text>
-        <Text style={styles.insightSub}>{t("matches.insight_subtitle")}</Text>
-        <View style={styles.pillRow}>
-          <View style={styles.pillGreen}>
-            <Text style={styles.pillGreenText}>
-              {similarMatches.length} {t("matches.similar")}
-            </Text>
-          </View>
-          <View style={styles.pillCoral}>
-            <Text style={styles.pillCoralText}>
-              {complementaryMatches.length} {t("matches.complementary")}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.tabs}>
-        {(
-          [
-            ["all", t("matches.tabAll"), pendingMatches.length] as const,
-            ["similar", t("matches.tabSimilar"), similarMatches.length] as const,
-            ["complementary", t("matches.tabComplementary"), complementaryMatches.length] as const,
-          ] as const
-        ).map(([key, label, count]) => (
-          <Pressable
-            key={key}
-            style={[styles.tab, activeTab === key && styles.tabActive]}
-            onPress={() => setActiveTab(key)}
-          >
-            <Text style={[styles.tabText, activeTab === key && styles.tabTextActive]}>
-              {label} ({count})
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {!hasAny ? (
-        <View style={styles.emptyCard}>
-          <Image
-            source={MascotAssets.plantingSeed}
-            style={styles.emptyMascot}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-          <Text style={styles.emptyTitle}>{t("matches.noMatches")}</Text>
-          <Text style={styles.emptyBody}>{t("matches.noMatchesDescription")}</Text>
-        </View>
-      ) : null}
-
-      {mutualMatches.length > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>
-            {t("matches.mutual_section", { count: mutualMatches.length })}
-          </Text>
-          {mutualMatches.map((m) => (
-            <MatchListCard
-              key={m.id}
-              match={m}
-              getPublicUrl={getPublicUrl}
-              mutual
-              onChat={() => openChat(m.id)}
-              onViewProfile={() => openProfile(m.id)}
-            />
-          ))}
-        </>
-      ) : null}
-
-      {isSunday && sundayMatches.length > 0 ? (
-        <>
-          <View style={styles.sundayBanner}>
-            <Image
-              source={MascotAssets.encouraging}
-              style={styles.sundayMascot}
-              resizeMode="contain"
-              accessibilityIgnoresInvertColors
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sundayTitle}>{t("matches.sunday_title")}</Text>
-              <Text style={styles.sundaySub}>{t("matches.sunday_sub")}</Text>
-            </View>
-          </View>
-          {sundayMatches.map((m) => (
-            <MatchListCard
-              key={`sun-${m.id}`}
-              match={{
-                id: m.id,
-                matchedUser: {
-                  userId: m.matchedUserId,
-                  displayName: m.displayName,
-                  avatarUrl: m.avatarUrl ?? undefined,
-                  category: "",
-                  archetype: m.archetype ?? undefined,
-                  photos: m.photos,
-                },
-                matchType: "similar",
-                matchScore: m.compatibilityScore ?? 0,
-                status: "pending_intro",
-                interests: [],
-                compatibilityFactors: [],
-                expiresAt: "",
-                personalityInsight: null,
-              }}
-              getPublicUrl={getPublicUrl}
-              onChat={() => openChat(m.id)}
-              onViewProfile={() => openProfile(m.id)}
-            />
-          ))}
-        </>
-      ) : null}
-
-      {filteredPending.length > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>{t("matches.discover_section")}</Text>
-          {filteredPending.map((m) => (
-            <MatchListCard
-              key={m.id}
-              match={m}
-              getPublicUrl={getPublicUrl}
-              onChat={() => openChat(m.id)}
-              onViewProfile={() => openProfile(m.id)}
-            />
-          ))}
-        </>
-      ) : null}
-
-      {hasMore ? (
-        <Pressable
-          style={styles.loadMore}
-          onPress={() => void fetchMoreMatches()}
-          disabled={matchesLoading}
-        >
-          {matchesLoading ? (
-            <ActivityIndicator color={maakTokens.primary} />
-          ) : (
-            <Text style={styles.loadMoreText}>{t("matches.load_more")}</Text>
-          )}
-        </Pressable>
-      ) : null}
-
-      <Text style={styles.footerNote}>{t("matches.footer_tomorrow")}</Text>
-    </ScrollView>,
+      initialNumToRender={10}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+    />,
   );
 }
 

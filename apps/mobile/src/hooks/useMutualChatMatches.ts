@@ -39,14 +39,19 @@ export function useMutualChatMatches() {
     setLoading(true);
     setError(null);
     try {
-      const { data: matchesData, error: matchesError } = await supabase
-        .from("matches")
-        .select("*")
-        .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
-        .eq("status", "mutual")
-        .order("created_at", { ascending: false });
+      // Round 1: fetch matches + resolve profile key in parallel
+      const [matchesResult, profileKey] = await Promise.all([
+        supabase
+          .from("matches")
+          .select("id, user_id, matched_user_id, status, created_at")
+          .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
+          .eq("status", "mutual")
+          .order("created_at", { ascending: false }),
+        resolveProfilesAuthKey(supabase, user.id),
+      ]);
 
-      if (matchesError) throw matchesError;
+      if (matchesResult.error) throw matchesResult.error;
+      const matchesData = matchesResult.data;
 
       if (!matchesData?.length) {
         setMatches([]);
@@ -58,24 +63,25 @@ export function useMutualChatMatches() {
       );
       const matchIds = matchesData.map((m) => m.id);
 
-      const profileKey = await resolveProfilesAuthKey(supabase, user.id);
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select(`${profileKey}, display_name, avatar_url, id_verification_status`)
-        .in(profileKey, matchedUserIds);
-
-      const { data: lastMessagesData } = await supabase
-        .from("messages")
-        .select("match_id, content, created_at")
-        .in("match_id", matchIds)
-        .order("created_at", { ascending: false });
-
-      const { data: unreadData } = await supabase
-        .from("messages")
-        .select("match_id")
-        .in("match_id", matchIds)
-        .neq("sender_id", user.id)
-        .eq("is_read", false);
+      // Round 2: profiles, last messages, unread counts in parallel
+      const [{ data: profilesData }, { data: lastMessagesData }, { data: unreadData }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select(`${profileKey}, display_name, avatar_url, id_verification_status`)
+            .in(profileKey, matchedUserIds),
+          supabase
+            .from("messages")
+            .select("match_id, content, created_at")
+            .in("match_id", matchIds)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("messages")
+            .select("match_id")
+            .in("match_id", matchIds)
+            .neq("sender_id", user.id)
+            .eq("is_read", false),
+        ]);
 
       const profileMap = new Map<string, ProfileLookupRow>();
       (profilesData as ProfileLookupRow[] | null | undefined)?.forEach((p) => {

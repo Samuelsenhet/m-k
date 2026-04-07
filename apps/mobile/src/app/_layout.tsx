@@ -26,10 +26,8 @@ const I18nRoot = I18nextProvider as any;
 import { useColorScheme } from '@/components/useColorScheme';
 import { trackScreenView } from '@/lib/analytics';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Custom error boundary — Expo Router picks up the named export.
+export { ErrorBoundaryFallback as ErrorBoundary } from '@/components/ErrorBoundaryFallback';
 
 export const unstable_settings = {
   initialRouteName: 'index',

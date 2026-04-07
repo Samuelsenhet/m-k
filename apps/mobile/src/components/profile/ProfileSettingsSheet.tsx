@@ -1,3 +1,4 @@
+import { PrivacyControlsSheet } from "@/components/profile/PrivacyControlsSheet";
 import { MatchingSettingsRN } from "@/components/settings/MatchingSettingsRN";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
@@ -301,50 +302,11 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
         </View>
       </Modal>
 
-      <Modal
+      <PrivacyControlsSheet
         visible={privacyOpen}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setPrivacyOpen(false)}
-      >
-        <View style={styles.privacyOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPrivacyOpen(false)} />
-          <View style={[styles.privacySheet, { paddingBottom: insets.bottom + 20 }]}>
-            <View style={styles.headerRow}>
-              <View style={{ width: 40 }} />
-              <Text style={styles.headerTitle}>{t("settings.privacy_controls_title")}</Text>
-              <Pressable
-                onPress={() => setPrivacyOpen(false)}
-                style={{ width: 40, alignItems: "flex-end" }}
-                hitSlop={10}
-              >
-                <Ionicons name="close" size={26} color={maakTokens.foreground} />
-              </Pressable>
-            </View>
-            <Text style={styles.privacyBody}>{t("settings.privacy_description")}</Text>
-            <View style={styles.privacyRow}>
-              <Text style={styles.rowLabel}>{t("settings.profile_visibility")}</Text>
-              <Text style={styles.comingSoon}>{t("settings.coming_soon")}</Text>
-            </View>
-            <View style={styles.privacyRow}>
-              <Text style={styles.rowLabel}>{t("settings.shared_data")}</Text>
-              <Text style={styles.comingSoon}>{t("settings.coming_soon")}</Text>
-            </View>
-            <Pressable
-              style={styles.privacyPolicyLink}
-              onPress={() => {
-                setPrivacyOpen(false);
-                go("/privacy");
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t("settings.privacy_policy")}
-            >
-              <Text style={styles.privacyPolicyLinkTxt}>{t("settings.privacy_policy")}</Text>
-              <Ionicons name="chevron-forward" size={20} color={maakTokens.primary} />
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setPrivacyOpen(false)}
+        onOpenPrivacyPolicy={() => go("/privacy")}
+      />
     </>
   );
 }
@@ -537,48 +499,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: maakTokens.destructive,
-  },
-  privacyOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-  },
-  privacySheet: {
-    backgroundColor: maakTokens.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  privacyBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: maakTokens.mutedForeground,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  privacyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: maakTokens.border,
-  },
-  comingSoon: { fontSize: 13, fontWeight: "600", color: maakTokens.mutedForeground },
-  privacyPolicyLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: maakTokens.border,
-  },
-  privacyPolicyLinkTxt: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: maakTokens.primary,
   },
 });
