@@ -94,7 +94,10 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
         if (userId) {
           await Purchases.logIn(userId);
         } else {
-          await Purchases.logOut();
+          const isAnonymous = await Purchases.isAnonymous();
+          if (!isAnonymous) {
+            await Purchases.logOut();
+          }
         }
       } catch (err) {
         if (__DEV__ && !cancelled) console.error("[PurchasesProvider] logIn/logOut:", err);

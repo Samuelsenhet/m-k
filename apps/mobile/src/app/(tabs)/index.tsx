@@ -6,9 +6,11 @@ import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { MascotAssets } from "@/lib/mascotAssets";
 import { useMatchStatus } from "@/hooks/useMatchStatus";
 import { useMatches } from "@/hooks/useMatches";
+import { useMatchActions } from "@/hooks/useMatchActions";
 import { useSundayRematch } from "@/hooks/useSundayRematch";
 import { isSupabaseInvokeUnauthorized } from "@maak/core";
 import { maakTokens } from "@maak/core";
+import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -57,7 +59,10 @@ export default function MatchesScreen() {
     refreshMatches,
     fetchMoreMatches,
     hasMore,
+    setMatches,
   } = useMatches(authLoading);
+
+  const { passMatch } = useMatchActions(matches, setMatches);
 
   const {
     status: matchStatus,
@@ -80,7 +85,10 @@ export default function MatchesScreen() {
     const prev = prevJourneyPhaseRef.current;
     if (prev === "WAITING" && p === "READY") {
       void AsyncStorage.getItem(MATCHES_READY_CELEBRATION_KEY).then((stored) => {
-        if (stored !== "1") setCelebrationOpen(true);
+        if (stored !== "1") {
+          setCelebrationOpen(true);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        }
       });
     }
     if (p) prevJourneyPhaseRef.current = p;
@@ -272,6 +280,7 @@ export default function MatchesScreen() {
               mutual={item.mutual}
               onChat={() => openChat(item.match.id)}
               onViewProfile={() => openProfile(item.match.id)}
+              onPass={item.mutual ? undefined : () => void passMatch(item.match.id)}
             />
           );
         case "sunday-banner":
@@ -313,11 +322,12 @@ export default function MatchesScreen() {
               getPublicUrl={getPublicUrl}
               onChat={() => openChat(item.sundayMatch.id)}
               onViewProfile={() => openProfile(item.sundayMatch.id)}
+              onPass={() => void passMatch(item.sundayMatch.id)}
             />
           );
       }
     },
-    [getPublicUrl, openChat, openProfile, t],
+    [getPublicUrl, openChat, openProfile, passMatch, t],
   );
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
@@ -556,7 +566,7 @@ export default function MatchesScreen() {
         paddingTop: insets.top + 8,
         paddingHorizontal: maakTokens.screenPaddingHorizontal,
         paddingBottom: insets.bottom + 24,
-        gap: 10,
+        gap: 16,
       }}
       ListHeaderComponent={listHeader}
       ListFooterComponent={listFooter}

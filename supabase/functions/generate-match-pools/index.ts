@@ -58,8 +58,38 @@ interface MatchResult {
   anxietyScore?: number;
 }
 
-const SCORE_SIGNALS = { PERSONALITY_SIMILARITY: 0.4, ARCHETYPE_ALIGNMENT: 0.3, INTEREST_OVERLAP: 0.3 };
-const MATCH_RATIO = { SIMILAR: 0.6, COMPLEMENTARY: 0.4 };
+const DEFAULT_WEIGHTS = { PERSONALITY_SIMILARITY: 0.4, ARCHETYPE_ALIGNMENT: 0.3, INTEREST_OVERLAP: 0.3 };
+const DEFAULT_SIMILAR_RATIO = 0.6;
+
+/** Per-user learned weight adjustments from match_engagement_scores. */
+interface LearnedPreferences {
+  personalityWeight: number;
+  archetypeWeight: number;
+  interestWeight: number;
+  similarRatio: number;
+}
+
+const DEFAULT_PREFS: LearnedPreferences = {
+  personalityWeight: 1.0,
+  archetypeWeight: 1.0,
+  interestWeight: 1.0,
+  similarRatio: DEFAULT_SIMILAR_RATIO,
+};
+
+function getWeightedSignals(prefs: LearnedPreferences) {
+  const raw = {
+    personality: DEFAULT_WEIGHTS.PERSONALITY_SIMILARITY * prefs.personalityWeight,
+    archetype: DEFAULT_WEIGHTS.ARCHETYPE_ALIGNMENT * prefs.archetypeWeight,
+    interest: DEFAULT_WEIGHTS.INTEREST_OVERLAP * prefs.interestWeight,
+  };
+  // Normalize so weights sum to 1.0
+  const sum = raw.personality + raw.archetype + raw.interest;
+  return {
+    PERSONALITY_SIMILARITY: raw.personality / sum,
+    ARCHETYPE_ALIGNMENT: raw.archetype / sum,
+    INTEREST_OVERLAP: raw.interest / sum,
+  };
+}
 const DIMENSIONS: DimensionKey[] = ["ei", "sn", "tf", "jp", "at"];
 
 function passesDealbreakers(user: UserProfile, candidate: MatchCandidate): boolean {
@@ -132,15 +162,17 @@ function calculateInterestOverlap(i1?: string[], i2?: string[]): number {
 
 function calculateCompositeScore(
   user: UserProfile,
-  candidate: MatchCandidate
+  candidate: MatchCandidate,
+  prefs: LearnedPreferences = DEFAULT_PREFS,
 ): { total: number; breakdown: Record<string, number> } {
+  const signals = getWeightedSignals(prefs);
   const personality = calculateSimilarityScore(user.scores, candidate.scores);
   const archetype = calculateArchetypeAlignment(user.archetype, candidate.archetype);
   const interests = calculateInterestOverlap(user.interests, candidate.interests);
   const total =
-    personality * SCORE_SIGNALS.PERSONALITY_SIMILARITY +
-    archetype * SCORE_SIGNALS.ARCHETYPE_ALIGNMENT +
-    interests * SCORE_SIGNALS.INTEREST_OVERLAP;
+    personality * signals.PERSONALITY_SIMILARITY +
+    archetype * signals.ARCHETYPE_ALIGNMENT +
+    interests * signals.INTEREST_OVERLAP;
   return { total: Math.round(total), breakdown: { personality, archetype, interests } };
 }
 
@@ -173,7 +205,8 @@ function generateUserMatchPool(
   currentUser: UserProfile,
   candidates: MatchCandidate[],
   batchSize: number,
-  previousMatchedIds: string[] = []
+  previousMatchedIds: string[] = [],
+  prefs: LearnedPreferences = DEFAULT_PREFS,
 ): MatchResult[] {
   const otherUsers = candidates.filter((c) => c.userId !== currentUser.userId);
   const eligible = otherUsers.filter((c) => passesDealbreakers(currentUser, c));
@@ -183,7 +216,7 @@ function generateUserMatchPool(
   if (pool.length === 0) return [];
 
   const scored = pool.map((candidate) => {
-    const { total, breakdown } = calculateCompositeScore(currentUser, candidate);
+    const { total, breakdown } = calculateCompositeScore(currentUser, candidate, prefs);
     return {
       candidate,
       compositeScore: total,
@@ -196,7 +229,7 @@ function generateUserMatchPool(
   });
 
   const actualBatchSize = Math.min(batchSize, pool.length);
-  const similarCount = Math.ceil(actualBatchSize * MATCH_RATIO.SIMILAR);
+  const similarCount = Math.ceil(actualBatchSize * prefs.similarRatio);
   const complementaryCount = actualBatchSize - similarCount;
 
   const similarMatches = [...scored]
@@ -412,7 +445,27 @@ serve(async (req: Request) => {
       photosByUserId.get(uid)!.push(url);
     }
 
-    // 4. Build UserProfile for each recipient and generate pool
+    // 4. Load learned preferences for all users (ML behavioral scoring).
+    const allUserIds = candidatesList.map((c) => profileIdToAuthId.get(c.userId) ?? c.userId);
+    const { data: prefsData } = await supabase
+      .from("user_match_preferences")
+      .select("user_id, personality_weight, archetype_weight, interest_weight, similar_ratio, ab_bucket, collaborative_boosts")
+      .in("user_id", allUserIds);
+    const prefsMap = new Map<string, LearnedPreferences>();
+    for (const p of prefsData ?? []) {
+      // A/B test: bucket 0-49 = control (default weights), 50-99 = treatment (learned weights)
+      const abBucket = p.ab_bucket ?? 0;
+      const useLearned = abBucket >= 50;
+
+      prefsMap.set(p.user_id, {
+        personalityWeight: useLearned ? (p.personality_weight ?? 1.0) : 1.0,
+        archetypeWeight: useLearned ? (p.archetype_weight ?? 1.0) : 1.0,
+        interestWeight: useLearned ? (p.interest_weight ?? 1.0) : 1.0,
+        similarRatio: useLearned ? (p.similar_ratio ?? DEFAULT_SIMILAR_RATIO) : DEFAULT_SIMILAR_RATIO,
+      });
+    }
+
+    // 5. Build UserProfile for each recipient and generate pool
     const poolInserts: { user_id: string; pool_date: string; candidates_data: MatchPoolCandidate[] }[] = [];
     type ProfileRow = { id: string; min_age?: number; max_age?: number; interested_in?: string; looking_for?: string };
     const getProfile = (userId: string) => (profiles || []).find((p: { id: string }) => p.id === userId) as ProfileRow | undefined;
@@ -428,7 +481,8 @@ serve(async (req: Request) => {
 
       const recipientAuthId = profileIdToAuthId.get(currentUser.userId) ?? currentUser.userId;
       const previousMatchedIds = previousByUser.get(recipientAuthId) || [];
-      const results = generateUserMatchPool(currentUser, candidatesList, BATCH_SIZE, previousMatchedIds);
+      const userPrefs = prefsMap.get(recipientAuthId) ?? DEFAULT_PREFS;
+      const results = generateUserMatchPool(currentUser, candidatesList, BATCH_SIZE, previousMatchedIds, userPrefs);
       if (results.length === 0) continue;
 
       const poolCandidates: MatchPoolCandidate[] = results.map((m) => ({

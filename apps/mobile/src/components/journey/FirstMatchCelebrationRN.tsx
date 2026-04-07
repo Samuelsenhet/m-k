@@ -1,10 +1,14 @@
+import { ConfettiCannon } from "@/components/animations/ConfettiCannon";
 import { MascotAssets } from "@/lib/mascotAssets";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withDelay } from "react-native-reanimated";
 
 const GRADIENT_TOP = "#FDFCFA";
 const GRADIENT_BOTTOM = "#FFFFFF";
@@ -16,11 +20,32 @@ type FirstMatchCelebrationRNProps = {
 export function FirstMatchCelebrationRN({ onContinue }: FirstMatchCelebrationRNProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const [confettiActive, setConfettiActive] = useState(true);
+
+  // Animated entrance
+  const cardScale = useSharedValue(0.8);
+  const cardOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // Haptic celebration burst
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setTimeout(() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}), 300);
+    setTimeout(() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}), 500);
+
+    // Card entrance animation
+    cardScale.value = withDelay(200, withSpring(1, { damping: 12, stiffness: 120 }));
+    cardOpacity.value = withDelay(200, withSpring(1));
+  }, []);
+
+  const cardAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cardScale.value }],
+    opacity: cardOpacity.value,
+  }));
 
   return (
     <LinearGradient colors={[GRADIENT_TOP, GRADIENT_BOTTOM]} style={styles.gradient}>
       <View style={[styles.wrap, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 28 }]}>
-        <View style={styles.card}>
+        <Animated.View style={[styles.card, cardAnimStyle]}>
           <Image source={MascotAssets.lightingLantern} style={styles.mascot} resizeMode="contain" />
 
           <Text style={styles.title}>{t("waiting_phase.first_match_title")}</Text>
@@ -30,12 +55,20 @@ export function FirstMatchCelebrationRN({ onContinue }: FirstMatchCelebrationRNP
             <Text style={styles.quoteText}>{t("maak_narrative_variants.first_match_quote")}</Text>
           </View>
 
-          <Pressable style={styles.cta} onPress={onContinue}>
+          <Pressable
+            style={styles.cta}
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              onContinue();
+            }}
+          >
             <Text style={styles.ctaText}>{t("maak_narrative_variants.see_matches_cta")}</Text>
             <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
           </Pressable>
-        </View>
+        </Animated.View>
       </View>
+
+      <ConfettiCannon active={confettiActive} onComplete={() => setConfettiActive(false)} />
     </LinearGradient>
   );
 }

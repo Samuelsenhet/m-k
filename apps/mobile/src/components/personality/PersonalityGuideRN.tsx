@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     backgroundColor: maakTokens.card,
   },
   catHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  catEmoji: { fontSize: 22 },
+  catEmoji: { fontSize: 22,  },
   catTitle: { fontSize: 18, fontWeight: "700", color: maakTokens.foreground },
   catDesc: {
     fontSize: 14,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: maakTokens.muted,
   },
-  archEmoji: { fontSize: 22 },
+  archEmoji: { fontSize: 22,  },
   archTitle: { fontSize: 16, fontWeight: "700", color: maakTokens.foreground },
   archCode: { fontSize: 12, color: maakTokens.mutedForeground, marginTop: 2 },
   archBody: {

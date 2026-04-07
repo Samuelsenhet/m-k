@@ -99,14 +99,17 @@ export default function ViewMatchScreen() {
         userId={matchedUserId}
         matchScore={score}
         personalityInsight={insight}
-        showLikePass={false}
         onBack={() => router.back()}
         onChat={
           showChat
+            ? () => router.replace(`/(tabs)/chat?match=${encodeURIComponent(matchId)}`)
+            : undefined
+        }
+        onPass={
+          status === "pending_intro"
             ? () => {
-                router.replace(
-                  `/(tabs)/chat?match=${encodeURIComponent(matchId)}`,
-                );
+                void supabase.from("matches").update({ status: "passed" }).eq("id", matchId);
+                router.back();
               }
             : undefined
         }

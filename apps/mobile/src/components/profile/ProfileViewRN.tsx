@@ -31,7 +31,7 @@ try {
 }
 import { LinearGradient } from "expo-linear-gradient";
 import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
-import { useCallback, useContext, useEffect, useState, type Context } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type Context } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -140,7 +140,16 @@ export type ProfileViewRNProps = {
   onSettings: () => void;
 };
 
-/** Fallback when native video is unavailable. */
+/** Loading state while video URL resolves or video buffers. */
+function HeroVideoLoading() {
+  return (
+    <View style={[StyleSheet.absoluteFill, styles.videoFallback]}>
+      <ActivityIndicator size="large" color="rgba(255,255,255,0.7)" />
+    </View>
+  );
+}
+
+/** Fallback when native video is unavailable or errored. */
 function HeroVideoFallback() {
   return (
     <View style={[StyleSheet.absoluteFill, styles.videoFallback]}>
@@ -181,21 +190,11 @@ function HeroVideoPlayer({ uri }: { uri: string }) {
   );
 }
 
-/** Resolves video URL (signed for range-request support) then renders player. */
-function HeroVideo({ storagePath, getSignedUrl }: { storagePath: string; getSignedUrl: (path: string) => Promise<string> }) {
-  const [resolvedUri, setResolvedUri] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getSignedUrl(storagePath).then((url) => {
-      if (!cancelled) setResolvedUri(url);
-    });
-    return () => { cancelled = true; };
-  }, [storagePath, getSignedUrl]);
-
+/** Renders video player with a pre-resolved URL. Shows spinner if URL not yet cached. */
+function HeroVideo({ uri }: { uri: string | null }) {
   if (!hasExpoVideo) return <HeroVideoFallback />;
-  if (!resolvedUri) return <HeroVideoFallback />;
-  return <HeroVideoPlayer uri={resolvedUri} />;
+  if (!uri) return <HeroVideoLoading />;
+  return <HeroVideoPlayer uri={uri} />;
 }
 
 export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
@@ -219,6 +218,8 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
+  /** Pre-resolved signed URLs for video slots — keyed by storage_path. */
+  const videoUrlCache = useRef<Map<string, string>>(new Map());
   /** Hero frame in pageRoot coords — dots are a sibling overlay so they aren’t covered by the card. */
   const [heroLayout, setHeroLayout] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
 
@@ -243,8 +244,30 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
         supabase.from("personality_results").select("archetype").eq("user_id", user.id).maybeSingle(),
       ]);
       if (profileRes.data) setProfile(profileRes.data as ProfileData);
-      if (photosRes.data) setPhotos(photosRes.data.filter((p) => p.storage_path));
+      const validPhotos = photosRes.data?.filter((p) => p.storage_path) ?? [];
+      if (validPhotos.length > 0) setPhotos(validPhotos);
       setArchetype(archRes.data?.archetype ?? null);
+
+      // Preload signed URLs for all video slots so carousel transitions are instant.
+      const videoSlots = validPhotos.filter((p) => p.media_type === "video");
+      if (videoSlots.length > 0) {
+        const results = await Promise.allSettled(
+          videoSlots.map(async (slot) => {
+            const { data, error } = await supabase.storage
+              .from("profile-photos")
+              .createSignedUrl(slot.storage_path, 3600);
+            return {
+              path: slot.storage_path,
+              url: error ? getPublicUrl(slot.storage_path) : data.signedUrl,
+            };
+          }),
+        );
+        for (const r of results) {
+          if (r.status === "fulfilled") {
+            videoUrlCache.current.set(r.value.path, r.value.url);
+          }
+        }
+      }
     } catch (e) {
       if (__DEV__) console.error("[ProfileViewRN]", e);
     } finally {
@@ -263,23 +286,6 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
 
   const getPublicUrl = (path: string) =>
     supabase.storage.from("profile-photos").getPublicUrl(path).data.publicUrl;
-
-  /** Videos MUST use signed URLs — public CDN strips Range headers needed for iOS streaming. */
-  const getVideoUrl = async (path: string): Promise<string> => {
-    try {
-      const { data, error } = await supabase.storage
-        .from("profile-photos")
-        .createSignedUrl(path, 3600); // 1 hour
-      if (error) {
-        if (__DEV__) console.warn("[ProfileViewRN] signed URL failed:", error.message);
-        return getPublicUrl(path); // last resort
-      }
-      return data.signedUrl;
-    } catch (e) {
-      if (__DEV__) console.error("[ProfileViewRN] getVideoUrl:", e);
-      return getPublicUrl(path);
-    }
-  };
 
   const nextPhoto = () => {
     if (photos.length > 1) {
@@ -362,7 +368,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
             {photos.length > 0 ? (
               <>
                 {photos[currentPhotoIndex]?.media_type === "video" ? (
-                  <HeroVideo storagePath={photos[currentPhotoIndex]!.storage_path} getSignedUrl={getVideoUrl} />
+                  <HeroVideo uri={videoUrlCache.current.get(photos[currentPhotoIndex]!.storage_path) ?? null} />
                 ) : (
                   <Image
                     source={{ uri: getPublicUrl(photos[currentPhotoIndex]!.storage_path) }}
