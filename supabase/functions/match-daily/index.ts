@@ -272,9 +272,26 @@ serve(async (req: Request) => {
     }
 
     const rawCandidates = matchPool.candidates_data ?? (matchPool as { candidates?: unknown }).candidates
-    const candidates: MatchPoolCandidate[] = Array.isArray(rawCandidates)
+    const allCandidates: MatchPoolCandidate[] = Array.isArray(rawCandidates)
       ? (rawCandidates as MatchPoolCandidate[])
       : []
+
+    // Filter out blocked users (bidirectional) — handles blocks made after pool generation
+    const { data: blockedRows } = await dbClient
+      .from('blocked_users')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${requestUserId},blocked_id.eq.${requestUserId}`)
+
+    const blockedUserIds = new Set<string>()
+    for (const row of blockedRows || []) {
+      const r = row as { blocker_id: string; blocked_id: string }
+      if (r.blocker_id === requestUserId) blockedUserIds.add(r.blocked_id)
+      else blockedUserIds.add(r.blocker_id)
+    }
+
+    const candidates = allCandidates.filter(
+      (c) => !blockedUserIds.has(c.user.userId)
+    )
 
     const deliveryCount = isPlus ? candidates.length : Math.min(5, candidates.length)
     

@@ -77,11 +77,29 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
         return;
       }
 
+      // Filter out blocked users (bidirectional)
+      const { data: blockedRows } = await supabase
+        .from('blocked_users')
+        .select('blocker_id, blocked_id')
+        .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+
+      const blockedIds = new Set<string>();
+      for (const row of blockedRows || []) {
+        const r = row as { blocker_id: string; blocked_id: string };
+        if (r.blocker_id === user.id) blockedIds.add(r.blocked_id);
+        else blockedIds.add(r.blocker_id);
+      }
+
+      const unblockedMatches = matchesData.filter((match) => {
+        const partnerId = match.user_id === user.id ? match.matched_user_id : match.user_id;
+        return !blockedIds.has(partnerId);
+      });
+
       // Get all matched user IDs
-      const matchedUserIds = matchesData.map(match => 
+      const matchedUserIds = unblockedMatches.map(match =>
         match.user_id === user.id ? match.matched_user_id : match.user_id
       );
-      const matchIds = matchesData.map(m => m.id);
+      const matchIds = unblockedMatches.map(m => m.id);
 
       // Batch fetch all profiles at once
       const profileKey = await getProfilesAuthKey(user.id);
@@ -129,7 +147,7 @@ export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: 
       });
 
       // Combine data
-      const matchesWithProfiles = matchesData.map(match => {
+      const matchesWithProfiles = unblockedMatches.map(match => {
         const matchedUserId = match.user_id === user.id 
           ? match.matched_user_id 
           : match.user_id;

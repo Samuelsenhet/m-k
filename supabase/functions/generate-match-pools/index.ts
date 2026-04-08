@@ -474,7 +474,20 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Recent match ids per user (7-day window to avoid repeat fatigue)
+    // 2. Fetch blocked_users pairs (bidirectional — neither party should see the other)
+    const { data: blockedRows } = await supabase
+      .from("blocked_users")
+      .select("blocker_id, blocked_id");
+
+    const blockedPairs = new Set<string>();
+    for (const row of blockedRows || []) {
+      const a = (row as { blocker_id: string }).blocker_id;
+      const b = (row as { blocked_id: string }).blocked_id;
+      blockedPairs.add(`${a}:${b}`);
+      blockedPairs.add(`${b}:${a}`);
+    }
+
+    // 3. Recent match ids per user (7-day window to avoid repeat fatigue)
     const sevenDaysAgo = new Date(Date.now() - 7 * 864e5).toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" });
     const { data: recentMatches } = await supabase
       .from("matches")
@@ -544,7 +557,12 @@ serve(async (req: Request) => {
       const recipientAuthId = profileIdToAuthId.get(currentUser.userId) ?? currentUser.userId;
       const previousMatchedIds = previousByUser.get(recipientAuthId) || [];
       const userPrefs = prefsMap.get(recipientAuthId) ?? DEFAULT_PREFS;
-      const results = generateUserMatchPool(currentUser, candidatesList, BATCH_SIZE, previousMatchedIds, userPrefs);
+
+      // Filter out blocked users (bidirectional) before matching
+      const unblockedCandidates = candidatesList.filter(
+        (cand) => !blockedPairs.has(`${currentUser.userId}:${cand.userId}`)
+      );
+      const results = generateUserMatchPool(currentUser, unblockedCandidates, BATCH_SIZE, previousMatchedIds, userPrefs);
       if (results.length === 0) continue;
 
       const poolCandidates: MatchPoolCandidate[] = results.map((m) => ({

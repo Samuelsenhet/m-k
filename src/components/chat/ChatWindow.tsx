@@ -109,6 +109,19 @@ export function ChatWindow({
   const [kemiCheckSuggestionDismissed, setKemiCheckSuggestionDismissed] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+
+  // Check if the matched user is blocked by the current user
+  useEffect(() => {
+    if (!user?.id || !matchedUserId) return;
+    supabase
+      .from('blocked_users')
+      .select('id')
+      .eq('blocker_id', user.id)
+      .eq('blocked_id', matchedUserId)
+      .maybeSingle()
+      .then(({ data }) => setIsBlocked(!!data));
+  }, [user?.id, matchedUserId]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -471,9 +484,23 @@ export function ChatWindow({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[200px] rounded-b-xl bg-primary-foreground/95 border-border">
-              <DropdownMenuItem onClick={() => setShowBlockConfirm(true)} className="cursor-pointer text-foreground focus:bg-muted">
+              <DropdownMenuItem onClick={async () => {
+                if (isBlocked) {
+                  const { error } = await supabase
+                    .from('blocked_users')
+                    .delete()
+                    .eq('blocker_id', user?.id)
+                    .eq('blocked_id', matchedUserId);
+                  if (!error) {
+                    setIsBlocked(false);
+                    toast.success(t('chat.unblocked', 'Användaren har avblockerats'));
+                  }
+                } else {
+                  setShowBlockConfirm(true);
+                }
+              }} className="cursor-pointer text-foreground focus:bg-muted">
                 <Ban className="w-4 h-4 mr-2" />
-                {t('chat.block_user')}
+                {isBlocked ? t('chat.unblock_user', 'Avblockera') : t('chat.block_user')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="cursor-pointer text-foreground focus:bg-muted">
@@ -519,6 +546,7 @@ export function ChatWindow({
                   toast.error(t('common.error'));
                   return;
                 }
+                setIsBlocked(true);
                 toast.success(t('chat.block_user'));
                 navigate('/');
               }}

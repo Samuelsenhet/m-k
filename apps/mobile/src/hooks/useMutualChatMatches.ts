@@ -58,10 +58,33 @@ export function useMutualChatMatches() {
         return;
       }
 
-      const matchedUserIds = matchesData.map((m) =>
+      // Filter out blocked users (bidirectional)
+      const { data: blockedRows } = await supabase
+        .from("blocked_users")
+        .select("blocker_id, blocked_id")
+        .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+
+      const blockedIds = new Set<string>();
+      for (const row of blockedRows || []) {
+        const r = row as { blocker_id: string; blocked_id: string };
+        if (r.blocker_id === user.id) blockedIds.add(r.blocked_id);
+        else blockedIds.add(r.blocker_id);
+      }
+
+      const unblockedData = matchesData.filter((m) => {
+        const partnerId = m.user_id === user.id ? m.matched_user_id : m.user_id;
+        return !blockedIds.has(partnerId);
+      });
+
+      if (!unblockedData.length) {
+        setMatches([]);
+        return;
+      }
+
+      const matchedUserIds = unblockedData.map((m) =>
         m.user_id === user.id ? m.matched_user_id : m.user_id,
       );
-      const matchIds = matchesData.map((m) => m.id);
+      const matchIds = unblockedData.map((m) => m.id);
 
       // Round 2: profiles, last messages, unread counts in parallel
       const [{ data: profilesData }, { data: lastMessagesData }, { data: unreadData }] =
@@ -101,7 +124,7 @@ export function useMutualChatMatches() {
         unreadCountMap.set(msg.match_id, (unreadCountMap.get(msg.match_id) || 0) + 1);
       });
 
-      const combined: MutualChatRow[] = matchesData.map((row) => {
+      const combined: MutualChatRow[] = unblockedData.map((row) => {
         const matchedUserId = row.user_id === user.id ? row.matched_user_id : row.user_id;
         const profile = profileMap.get(matchedUserId);
         return {
