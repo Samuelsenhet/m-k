@@ -63,12 +63,31 @@ serve(async (req: Request) => {
     });
   }
 
-  // TODO: In production, create an Onfido/Jumio applicant here.
-  // The id-verification-webhook will handle the callback and set
-  // id_verification_status to 'approved' or 'rejected'.
+  // --- PRODUCTION ID VERIFICATION (not yet integrated) ---
+  //
+  // To enable real identity verification, integrate one of:
+  //   - Onfido (https://documentation.onfido.com/)
+  //   - Jumio (https://docs.jumio.com/)
+  //   - Persona (https://docs.withpersona.com/)
+  //
+  // Steps:
+  //   1. Set ONFIDO_API_TOKEN (or equivalent) as a Supabase secret
+  //   2. Create an applicant via POST /v3.6/applicants
+  //   3. Create a check with document + selfie reports
+  //   4. Return the SDK token to the client for native capture
+  //   5. Handle webhook callback in id-verification-webhook function
+  //      to set id_verification_status = 'approved' | 'rejected'
+  //
+  // Until integrated, selfie is stored and status stays 'pending'
+  // for manual review by moderators via admin panel.
+  // ---
 
   return new Response(
-    JSON.stringify({ status: "pending", message: "Verification initiated" }),
+    JSON.stringify({
+      status: "pending",
+      message: "Verification initiated — pending manual review",
+      requires_integration: true,
+    }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
   );
 });
