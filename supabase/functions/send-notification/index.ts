@@ -80,6 +80,7 @@ serve(async (req: Request) => {
       throw dbError;
     }
 
+    // --- Realtime broadcast (in-app, best-effort) ---
     const channel = supabaseClient.channel(`user:${payload.user_id}:notifications`);
 
     try {
@@ -110,6 +111,47 @@ serve(async (req: Request) => {
       }
     } finally {
       await supabaseClient.removeChannel(channel);
+    }
+
+    // --- Expo Push (mobile, best-effort) ---
+    // Uses service role to read expo_push_tokens for the target user
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (serviceRoleKey) {
+      try {
+        const adminClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          serviceRoleKey,
+        );
+        const { data: tokens } = await adminClient
+          .from("expo_push_tokens")
+          .select("token")
+          .eq("user_id", payload.user_id);
+
+        const pushTokens = (tokens ?? [])
+          .map((t: { token: string }) => t.token)
+          .filter((t: string) => t.startsWith("ExponentPushToken["));
+
+        if (pushTokens.length > 0) {
+          const messages = pushTokens.map((token: string) => ({
+            to: token,
+            sound: "default",
+            title: payload.title,
+            body: payload.message,
+            data: { notification_id: data.id, type: payload.type || "info" },
+          }));
+
+          await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(messages),
+          });
+        }
+      } catch (pushErr) {
+        console.warn("send-notification: expo push failed (best-effort)", pushErr);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, notification: data }), {

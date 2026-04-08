@@ -29,6 +29,7 @@ const I18nRoot = I18nextProvider as any;
 import { useColorScheme } from '@/components/useColorScheme';
 import { trackScreenView } from '@/lib/analytics';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useExpoPushToken } from '@/hooks/useExpoPushToken';
 
 // Custom error boundary — Expo Router picks up the named export.
 export { ErrorBoundaryFallback as ErrorBoundary } from '@/components/ErrorBoundaryFallback';
@@ -118,6 +119,7 @@ function stableSearchParamsKey(params: Record<string, string | string[] | undefi
 
 function RealtimeNotificationsBridge() {
   useRealtimeNotifications();
+  useExpoPushToken();
   return null;
 }
 

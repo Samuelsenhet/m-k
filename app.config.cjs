@@ -88,6 +88,13 @@ const expo = {
     ],
     "expo-image",
     "expo-secure-store",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/icon.png",
+        color: "#2D5A3D",
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
