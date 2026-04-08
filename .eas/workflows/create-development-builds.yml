@@ -1,0 +1,19 @@
+# Development client builds för iOS (enhet + simulator, parallellt).
+# Baserat på officiellt Expo-exempel "Create development builds" — anpassat till iOS only.
+# Manuellt: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/create-development-builds.yml
+name: Create development builds (iOS)
+
+jobs:
+  ios_device_build:
+    name: Build iOS device
+    type: build
+    params:
+      platform: ios
+      profile: expo-development-device
+
+  ios_simulator_build:
+    name: Build iOS simulator
+    type: build
+    params:
+      platform: ios
+      profile: expo-development

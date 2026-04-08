@@ -27,12 +27,10 @@ credentials.json
 # Monorepo: full duplicate tree blows the archive to ~300MB+ and can destabilize builds.
 m-k-backup/
 
-# Native / web artifacts not needed for Expo prebuild
-ios/Pods/
-ios/build/
-android/.gradle/
-android/app/build/
-android/build/
+# Capacitor legacy ios/ at repo root — Expo CNG generates apps/mobile/ios/ via prebuild.
+# Including it causes EAS Build to pick up the stale root Podfile instead of the CNG one.
+ios/
+android/
 *.ipa
 *.dSYM.zip
 

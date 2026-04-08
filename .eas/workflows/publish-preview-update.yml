@@ -1,0 +1,16 @@
+# Publicerar en preview OTA-uppdatering (EAS Update) för varje push till valfri branch.
+# Baserat på officiellt Expo-exempel "Publish preview update" — anpassat till iOS only.
+# Triggas automatiskt vid push; manuellt: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/publish-preview-update.yml
+name: Publish preview update (iOS)
+
+on:
+  push:
+    branches: ['*']
+
+jobs:
+  publish_preview_update:
+    name: Publish preview update
+    type: update
+    params:
+      branch: ${{ github.ref_name || 'test' }}
+      platform: ios

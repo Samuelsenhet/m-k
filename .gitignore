@@ -38,13 +38,9 @@ dist-ssr
 secrets.json
 credentials.json
 
-# Capacitor
+# Capacitor — legacy; regenerate with `npx cap add ios && npx cap sync ios`
 android/
-# Capacitor iOS (ios/ can be generated with npx cap add ios)
-ios/Pods/
-ios/App/Pods/
-ios/App/build/
-ios/**/xcuserdata/
+ios/
 
 # MCP/Tool configs (may contain secrets)
 .roo/

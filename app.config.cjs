@@ -46,8 +46,58 @@ function applyLocalEnvFiles() {
 applyLocalEnvFiles();
 
 const mobileRoot = path.join(__dirname, "apps", "mobile");
-// eslint-disable-next-line import/no-dynamic-require, @typescript-eslint/no-require-imports
-const { expo } = require(path.join(mobileRoot, "app.json"));
+
+/** Inline from apps/mobile/app.json — single source of truth lives here now. */
+const expo = {
+  name: "MÄÄK",
+  slug: "maak",
+  version: "1.0.0",
+  orientation: "portrait",
+  icon: "./assets/images/icon.png",
+  scheme: "maak",
+  platforms: ["ios", "web"],
+  userInterfaceStyle: "automatic",
+  splash: {
+    image: "./assets/images/splash-icon.png",
+    resizeMode: "contain",
+    backgroundColor: "#F2F0EF",
+  },
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: "com.samuelsenhet.maak",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      NSCameraUsageDescription: "MÄÄK behöver tillgång till din kamera för Kemi-Check videosamtal.",
+      NSMicrophoneUsageDescription: "MÄÄK behöver tillgång till din mikrofon för Kemi-Check videosamtal.",
+    },
+  },
+  web: {
+    bundler: "metro",
+    output: "static",
+    favicon: "./assets/images/favicon.png",
+  },
+  plugins: [
+    "expo-updates",
+    "expo-router",
+    "expo-localization",
+    [
+      "expo-image-picker",
+      {
+        photosPermission: "MÄÄK behöver tillgång till dina foton för att ladda upp profilbilder.",
+      },
+    ],
+    "expo-image",
+    "expo-secure-store",
+  ],
+  experiments: {
+    typedRoutes: true,
+  },
+  owner: "samuelsenhet",
+  android: {
+    permissions: ["android.permission.RECORD_AUDIO"],
+  },
+};
+
 const runtimeSupabaseUrl = (
   process.env.EXPO_PUBLIC_SUPABASE_URL ||
   process.env.SUPABASE_URL ||
@@ -93,8 +143,6 @@ module.exports = {
     },
     // Bare workflow: policy-based runtimeVersion is not supported — use a string (keep in sync with expo.version / native build).
     runtimeVersion: typeof expo.version === "string" ? expo.version : "1.0.0",
-    // Root package.json is Vite (`main: index.js`); EAS/Metro must use the Expo app entry.
-    main: "expo-router/entry",
     icon: fromMobile(expo.icon),
     splash: expo.splash
       ? {
@@ -109,7 +157,9 @@ module.exports = {
         }
       : expo.web,
     extra: {
-      ...(expo.extra ?? {}),
+      eas: {
+        projectId: EAS_PROJECT_ID,
+      },
       runtimeSupabaseUrl,
       runtimeSupabaseAnonKey,
       ...(runtimeSupabaseUrl ? { EXPO_PUBLIC_SUPABASE_URL: runtimeSupabaseUrl } : {}),
