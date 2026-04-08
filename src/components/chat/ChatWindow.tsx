@@ -510,10 +510,17 @@ export function ChatWindow({
               {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={async () => {
                 setShowBlockConfirm(false);
+                const { error } = await supabase
+                  .from('blocked_users')
+                  .insert({ blocker_id: user?.id, blocked_id: matchedUserId });
+                if (error) {
+                  toast.error(t('common.error'));
+                  return;
+                }
                 toast.success(t('chat.block_user'));
-                // TODO: call block API
+                navigate('/');
               }}
               className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 order-1"
             >

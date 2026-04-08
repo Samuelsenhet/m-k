@@ -2,7 +2,7 @@ import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NativeModules, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,11 +15,32 @@ export default function KemiCheckScreen() {
   const insets = useSafeAreaInsets();
   const { matchId: rawId } = useLocalSearchParams<{ matchId: string | string[] }>();
   const matchId = typeof rawId === "string" ? rawId : rawId?.[0] ?? "";
-  const { session } = useSupabase();
+  const { session, supabase } = useSupabase();
   const [ended, setEnded] = useState(false);
 
-  // TODO: resolve matched user name from match record
-  const matchedUserName = t("mobile.kemicheck.partner");
+  const [matchedUserName, setMatchedUserName] = useState(t("mobile.kemicheck.partner"));
+
+  useEffect(() => {
+    if (!matchId || !session?.user || !supabase) return;
+    const uid = session.user.id;
+    supabase
+      .from("matches")
+      .select("user_id, matched_user_id")
+      .eq("id", matchId)
+      .single()
+      .then(({ data: match }) => {
+        if (!match) return;
+        const partnerId = match.user_id === uid ? match.matched_user_id : match.user_id;
+        supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", partnerId)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile?.display_name) setMatchedUserName(profile.display_name);
+          });
+      });
+  }, [matchId, session?.user, supabase]);
 
   const handleEnd = useCallback(
     (durationSeconds: number) => {
