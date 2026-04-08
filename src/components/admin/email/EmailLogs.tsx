@@ -44,7 +44,7 @@ export default function EmailLogs() {
 
       const { data, error } = await query;
       if (error) {
-        console.error('Error fetching email logs:', error);
+        if (import.meta.env.DEV) console.error('Error fetching email logs:', error);
         setLogs([]);
       } else {
         setLogs((data ?? []) as EmailLogRow[]);

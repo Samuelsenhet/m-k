@@ -73,7 +73,7 @@ export default function AdminAppeals() {
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", appealId);
     if (error) {
-      console.error("Error updating appeal:", error);
+      if (import.meta.env.DEV) console.error("Error updating appeal:", error);
       setUpdatingId(null);
       return;
     }
