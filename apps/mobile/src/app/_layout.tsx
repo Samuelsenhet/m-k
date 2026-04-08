@@ -28,6 +28,7 @@ const I18nRoot = I18nextProvider as any;
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { trackScreenView } from '@/lib/analytics';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 // Custom error boundary — Expo Router picks up the named export.
 export { ErrorBoundaryFallback as ErrorBoundary } from '@/components/ErrorBoundaryFallback';
@@ -115,6 +116,11 @@ function stableSearchParamsKey(params: Record<string, string | string[] | undefi
   return parts.join('&');
 }
 
+function RealtimeNotificationsBridge() {
+  useRealtimeNotifications();
+  return null;
+}
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
@@ -132,6 +138,7 @@ function RootLayoutNav() {
   return (
     <I18nRoot i18n={i18n}>
       <SupabaseProvider>
+        <RealtimeNotificationsBridge />
         <PurchasesProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
