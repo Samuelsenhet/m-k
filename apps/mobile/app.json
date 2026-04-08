@@ -1,73 +1,15 @@
 {
   "expo": {
-    "name": "MÄÄK",
-    "slug": "maak",
-    "version": "1.0.0",
-    "runtimeVersion": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "maak",
-    "platforms": [
-      "ios",
-      "web"
-    ],
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F2F0EF"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.samuelsenhet.maak",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "MÄÄK behöver tillgång till din kamera för Kemi-Check videosamtal.",
-        "NSMicrophoneUsageDescription": "MÄÄK behöver tillgång till din mikrofon för Kemi-Check videosamtal."
-      }
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "autolinking": {
-      "exclude": [
-        "@capacitor/ios"
-      ]
-    },
-    "plugins": [
-      "expo-updates",
-      "expo-router",
-      "expo-localization",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "MÄÄK behöver tillgång till dina foton för att ladda upp profilbilder."
-        }
-      ],
-      "expo-image",
-      "expo-secure-store"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
     "extra": {
+      "runtimeSupabaseUrl": "https://jappgthiyedycwhttpcu.supabase.co",
+      "runtimeSupabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcHBndGhpeWVkeWN3aHR0cGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDM0NzQsImV4cCI6MjA4NDgxOTQ3NH0.ztXAOOFh0AUuTBNDsvvVxcxncsKP4sju4AgfghvDNVc",
+      "EXPO_PUBLIC_SUPABASE_URL": "https://jappgthiyedycwhttpcu.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcHBndGhpeWVkeWN3aHR0cGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDM0NzQsImV4cCI6MjA4NDgxOTQ3NH0.ztXAOOFh0AUuTBNDsvvVxcxncsKP4sju4AgfghvDNVc",
+      "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "test_ppFmJIiHXdKjjYiiSgrULtiKsac",
+      "router": {},
       "eas": {
         "projectId": "4d900a70-4327-4740-83cc-4ac6745ef8eb"
       }
-    },
-    "owner": "samuelsenhet",
-    "updates": {
-      "url": "https://u.expo.dev/4d900a70-4327-4740-83cc-4ac6745ef8eb",
-      "requestHeaders": {
-        "expo-channel-name": "production"
-      }
-    },
-    "android": {
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
     }
   }
 }
