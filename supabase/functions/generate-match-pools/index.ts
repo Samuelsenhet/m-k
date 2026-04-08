@@ -295,6 +295,65 @@ interface MatchPoolCandidate {
   commonInterests?: string[];
 }
 
+const CATEGORY_TITLES: Record<string, string> = {
+  DIPLOMAT: "Diplomaten",
+  STRATEGER: "Strategen",
+  BYGGARE: "Byggaren",
+  UPPTÄCKARE: "Upptäckaren",
+};
+const CATEGORY_SHORT: Record<string, string> = {
+  DIPLOMAT: "empatisk och värdesätter djupa relationer",
+  STRATEGER: "analytisk och målinriktad",
+  BYGGARE: "praktisk och pålitlig",
+  UPPTÄCKARE: "spontan och äventyrlig",
+};
+const COMPLEMENTARY_POOL_INSIGHT: Record<string, Record<string, string>> = {
+  DIPLOMAT: {
+    STRATEGER: "Din empati och deras tydlighet kan balansera varandra.",
+    BYGGARE: "Din känslighet och deras stabilitet skapar trygghet.",
+    UPPTÄCKARE: "Du bidrar med djup, de med energi och nya perspektiv.",
+  },
+  STRATEGER: {
+    DIPLOMAT: "Din analytiska sida och deras empati kompletterar varandra.",
+    BYGGARE: "Du ser helheten, de gör saker verklighet.",
+    UPPTÄCKARE: "Din planering möter deras spontanitet.",
+  },
+  BYGGARE: {
+    DIPLOMAT: "Din stabilitet och deras värme ger balans.",
+    STRATEGER: "Du förankrar i vardagen, de tänker stort.",
+    UPPTÄCKARE: "Du ger grunden, de ger nya impulser.",
+  },
+  UPPTÄCKARE: {
+    DIPLOMAT: "Din energi och deras djup ger meningsfulla äventyr.",
+    STRATEGER: "Din spontanitet och deras strategi inspirerar varandra.",
+    BYGGARE: "Du bidrar med nyfikenhet, de med trygghet.",
+  },
+};
+
+function buildPoolInsight(
+  matchType: "similar" | "complementary",
+  userCategory: PersonalityCategory,
+  candidateCategory: PersonalityCategory,
+  candidateName: string,
+): string {
+  if (matchType === "similar") {
+    const title = CATEGORY_TITLES[userCategory] ?? userCategory;
+    const desc = CATEGORY_SHORT[userCategory] ?? "";
+    return `Ni är båda ${title} – ${desc}. Det gör det lättare att förstå varandras behov.`;
+  }
+  const insight = COMPLEMENTARY_POOL_INSIGHT[userCategory]?.[candidateCategory]
+    ?? "Era olika styrkor kan komplettera varandra.";
+  const uTitle = CATEGORY_TITLES[userCategory] ?? userCategory;
+  const cTitle = CATEGORY_TITLES[candidateCategory] ?? candidateCategory;
+  return `Du är ${uTitle}, ${candidateName} är ${cTitle}. ${insight}`;
+}
+
+function findCommonInterests(a: string[], b: string[]): string[] {
+  if (!a.length || !b.length) return [];
+  const setB = new Set(b.map((x) => x.toLowerCase()));
+  return a.filter((x) => setB.has(x.toLowerCase()));
+}
+
 function ageFromDob(dob: string | null): number | undefined {
   if (!dob) return undefined;
   const birth = new Date(dob);
@@ -399,7 +458,9 @@ serve(async (req: Request) => {
         bio: (p.bio as string) || undefined,
         age,
         gender: (p.gender as string) || undefined,
-        interests: [],
+        interests: typeof p.interested_in === "string" && p.interested_in.trim()
+          ? p.interested_in.split(",").map((s: string) => s.trim()).filter(Boolean)
+          : [],
         onboardingCompleted: p.onboarding_completed === true,
       };
       candidatesList.push(candidate);
@@ -413,14 +474,15 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Yesterday's delivered match ids per user (for repeat avoidance)
-    const { data: yesterdayMatches } = await supabase
+    // 2. Recent match ids per user (7-day window to avoid repeat fatigue)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 864e5).toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" });
+    const { data: recentMatches } = await supabase
       .from("matches")
       .select("user_id, matched_user_id")
-      .eq("match_date", yesterday);
+      .gte("match_date", sevenDaysAgo);
 
     const previousByUser = new Map<string, string[]>();
-    for (const row of yesterdayMatches || []) {
+    for (const row of recentMatches || []) {
       const uid = (row as { user_id: string }).user_id;
       const mid = (row as { matched_user_id: string }).matched_user_id;
       if (!previousByUser.has(uid)) previousByUser.set(uid, []);
@@ -500,9 +562,17 @@ serve(async (req: Request) => {
         dimensionBreakdown: m.dimensionBreakdown,
         archetypeScore: m.archetypeScore ?? 80,
         anxietyScore: m.anxietyScore ?? 75,
-        icebreakers: ["Hej!", "Hur mår du?", "Vad gör du?"],
-        personalityInsight: "Ni delar liknande värderingar",
-        commonInterests: [],
+        icebreakers: [],
+        personalityInsight: buildPoolInsight(
+          m.matchType,
+          currentUser.category,
+          m.user.category,
+          m.user.displayName,
+        ),
+        commonInterests: findCommonInterests(
+          currentUser.interests ?? [],
+          m.user.interests ?? [],
+        ),
       }));
 
       // user_daily_match_pools.user_id must equal auth.uid() for match-daily to find the pool

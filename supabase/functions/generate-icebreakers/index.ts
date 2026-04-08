@@ -16,21 +16,37 @@ const corsHeaders = {
 // Valid icebreaker categories
 type IcebreakerCategory = 'funny' | 'deep' | 'activity' | 'compliment' | 'general';
 
-const CATEGORY_PROMPTS: Record<IcebreakerCategory, string> = {
-  funny: 'Skapa lättsamma, humoristiska och lekfulla isbrytare som får personen att le eller skratta.',
-  deep: 'Skapa meningsfulla och tankeväckande frågor som leder till djupare samtal om livet, drömmar och värderingar.',
-  activity: 'Föreslå aktiviteter att göra tillsammans baserat på gemensamma intressen, som "Ska vi testa X tillsammans?"',
-  compliment: 'Skapa genuina, respektfulla komplimanger baserade på personens profil eller intressen (inte utseende).',
-  general: 'Skapa en blandning av olika stilar - lite humor, lite djup, lite aktivitetsförslag.',
+const CATEGORY_PROMPTS: Record<string, Record<IcebreakerCategory, string>> = {
+  sv: {
+    funny: 'Skapa lättsamma, humoristiska och lekfulla isbrytare som får personen att le eller skratta.',
+    deep: 'Skapa meningsfulla och tankeväckande frågor som leder till djupare samtal om livet, drömmar och värderingar.',
+    activity: 'Föreslå aktiviteter att göra tillsammans baserat på gemensamma intressen, som "Ska vi testa X tillsammans?"',
+    compliment: 'Skapa genuina, respektfulla komplimanger baserade på personens profil eller intressen (inte utseende).',
+    general: 'Skapa en blandning av olika stilar - lite humor, lite djup, lite aktivitetsförslag.',
+  },
+  en: {
+    funny: 'Create lighthearted, humorous and playful icebreakers that make the person smile or laugh.',
+    deep: 'Create meaningful and thought-provoking questions that lead to deeper conversations about life, dreams and values.',
+    activity: 'Suggest activities to do together based on shared interests, like "Want to try X together?"',
+    compliment: 'Create genuine, respectful compliments based on the person\'s profile or interests (not appearance).',
+    general: 'Create a mix of different styles - some humor, some depth, some activity suggestions.',
+  },
 };
 
 // Optional situation context for when icebreakers are used
 type IcebreakerSituation = 'default' | 'after_video' | 'before_date';
 
-const SITUATION_PROMPTS: Record<IcebreakerSituation, string> = {
-  default: '',
-  after_video: '\n**Situation:** Användaren har precis avslutat ett kort videomöte (Kemi-Check) med sin match. Isbrytarna ska vara lämpliga för att fortsätta konversationen i chatt – referera gärna till något från videomötet eller föreslå ämnen att fördjupa.',
-  before_date: '\n**Situation:** Användaren ska snart träffas på en dejt. Isbrytarna ska vara lämpliga för att bekräfta planer, visa entusiasm eller föreslå konkreta aktiviteter/platser inför träffan.',
+const SITUATION_PROMPTS: Record<string, Record<IcebreakerSituation, string>> = {
+  sv: {
+    default: '',
+    after_video: '\n**Situation:** Användaren har precis avslutat ett kort videomöte (Kemi-Check) med sin match. Isbrytarna ska vara lämpliga för att fortsätta konversationen i chatt – referera gärna till något från videomötet eller föreslå ämnen att fördjupa.',
+    before_date: '\n**Situation:** Användaren ska snart träffas på en dejt. Isbrytarna ska vara lämpliga för att bekräfta planer, visa entusiasm eller föreslå konkreta aktiviteter/platser inför träffan.',
+  },
+  en: {
+    default: '',
+    after_video: '\n**Situation:** The user just finished a short video call (Chemistry Check) with their match. The icebreakers should be suitable for continuing the conversation in chat – reference the video call or suggest topics to explore.',
+    before_date: '\n**Situation:** The user is about to meet their match on a date. The icebreakers should confirm plans, show enthusiasm or suggest specific activities/places for the meetup.',
+  },
 };
 
 interface ProfileData {
@@ -79,7 +95,10 @@ serve(async (req) => {
       situation = 'default',
       userInterests = [],
       matchedUserInterests = [],
+      language = 'sv',
     } = await req.json().catch(() => ({}));
+
+    const lang = language === 'en' ? 'en' : 'sv';
 
     if (!matchId || typeof matchId !== 'string') {
       return new Response(
@@ -293,7 +312,23 @@ ${matchedContext}
     }
 
     // Add category-specific instructions
-    prompt += `\n**Stil:** ${CATEGORY_PROMPTS[validCategory]}${SITUATION_PROMPTS[validSituation]}
+    const categoryPrompt = CATEGORY_PROMPTS[lang]?.[validCategory] ?? CATEGORY_PROMPTS.sv[validCategory];
+    const situationPrompt = SITUATION_PROMPTS[lang]?.[validSituation] ?? SITUATION_PROMPTS.sv[validSituation];
+
+    if (lang === 'en') {
+      prompt += `\n**Style:** ${categoryPrompt}${situationPrompt}
+
+Create three unique icebreakers that:
+1. Are friendly and respectful
+2. Encourage deeper conversation
+3. Consider both people's profiles and interests
+4. Are in English
+5. Reference specific details from the profiles when possible
+
+Reply ONLY with a JSON array of exactly 3 strings, nothing else:
+["icebreaker 1", "icebreaker 2", "icebreaker 3"]`;
+    } else {
+      prompt += `\n**Stil:** ${categoryPrompt}${situationPrompt}
 
 Skapa tre unika isbrytare som:
 1. Är vänliga och respektfulla
@@ -304,6 +339,7 @@ Skapa tre unika isbrytare som:
 
 Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
 ["icebreaker 1", "icebreaker 2", "icebreaker 3"]`;
+    }
 
     console.log('Enhanced prompt with profile context');
 
@@ -316,7 +352,10 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'Du är en hjälpsam assistent som genererar konversationsstartare för en svensk dejtingapp. Svara alltid på svenska. Var kreativ och personlig baserat på profilinformationen.' },
+          { role: 'system', content: lang === 'en'
+            ? 'You are a helpful assistant generating conversation starters for a dating app. Always reply in English. Be creative and personal based on the profile information.'
+            : 'Du är en hjälpsam assistent som genererar konversationsstartare för en svensk dejtingapp. Svara alltid på svenska. Var kreativ och personlig baserat på profilinformationen.'
+          },
           { role: 'user', content: prompt }
         ],
       }),
@@ -358,10 +397,12 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
     } catch (parseError) {
       console.error('Failed to parse icebreakers:', parseError);
       // Fallback icebreakers based on category
-      icebreakers = getFallbackIcebreakers(validCategory, commonInterests);
+      icebreakers = getFallbackIcebreakers(validCategory, commonInterests, lang);
     }
 
-    // Store icebreakers in database with category
+    // Store icebreakers in database with category (replace any previous set for this match)
+    await supabase.from('icebreakers').delete().eq('match_id', matchId);
+
     const icebreakerInserts = icebreakers.slice(0, 3).map((text, index) => ({
       match_id: matchId,
       icebreaker_text: text,
@@ -407,40 +448,77 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
   }
 });
 
-// Fallback icebreakers by category
-function getFallbackIcebreakers(category: IcebreakerCategory, commonInterests: string[]): string[] {
-  const interestMention = commonInterests.length > 0
+// Fallback icebreakers by category and language
+function getFallbackIcebreakers(category: IcebreakerCategory, commonInterests: string[], lang = 'sv'): string[] {
+  if (lang === 'en') {
+    const mention = commonInterests.length > 0
+      ? ` I noticed we both like ${commonInterests[0]}!`
+      : '';
+    switch (category) {
+      case 'funny':
+        return [
+          `Hey!${mention} If you were a pizza topping, which one would you be and why? 🍕`,
+          `Tell me your most embarrassing but funny story - I promise not to judge! 😄`,
+          `Hey there! What's the weirdest thing you've googled this week?`,
+        ];
+      case 'deep':
+        return [
+          `Hey!${mention} What's something you're passionate about that most people don't know?`,
+          `If you could send a message to yourself 10 years ago, what would it be?`,
+          `What's the most important lesson life has taught you so far?`,
+        ];
+      case 'activity':
+        return [
+          `Hey!${mention} Would you like to grab a coffee sometime?`,
+          `Have you tried anything new and interesting lately that you'd like to share?`,
+          `How about exploring a new restaurant together?`,
+        ];
+      case 'compliment':
+        return [
+          `Hey! I got curious about you -${mention} your profile seemed genuinely interesting!`,
+          `You seem to have a fascinating life story - I'd love to hear more!`,
+          `I liked what you wrote about yourself - feels like you know what you want!`,
+        ];
+      default:
+        return [
+          `Hey! I saw that we matched -${mention} what do you like to do on a day off?`,
+          `Hey there! Tell me about the last thing that made you laugh?`,
+          `Hey! What's the best thing about being you?`,
+        ];
+    }
+  }
+
+  const mention = commonInterests.length > 0
     ? ` Jag såg att vi båda gillar ${commonInterests[0]}!`
     : '';
-
   switch (category) {
     case 'funny':
       return [
-        `Hej!${interestMention} Om du vore en pizza-topping, vilken skulle du vara och varför? 🍕`,
+        `Hej!${mention} Om du vore en pizza-topping, vilken skulle du vara och varför? 🍕`,
         `Berätta om din mest pinsamma men roliga historia - jag lovar att inte döma! 😄`,
         `Hej där! Vad är det konstigaste du har googlat den här veckan?`,
       ];
     case 'deep':
       return [
-        `Hej!${interestMention} Vad är något du brinner för som de flesta inte vet om dig?`,
+        `Hej!${mention} Vad är något du brinner för som de flesta inte vet om dig?`,
         `Om du kunde skicka ett meddelande till dig själv för 10 år sedan, vad skulle det vara?`,
         `Vad är den viktigaste lärdomen livet har lärt dig hittills?`,
       ];
     case 'activity':
       return [
-        `Hej!${interestMention} Skulle du vilja ta en fika någon gång?`,
+        `Hej!${mention} Skulle du vilja ta en fika någon gång?`,
         `Har du testat något nytt intressant på sistone som du skulle vilja dela med dig av?`,
         `Vad sägs om att utforska en ny restaurang tillsammans?`,
       ];
     case 'compliment':
       return [
-        `Hej! Jag blev nyfiken på dig -${interestMention} din profil verkade genuint intressant!`,
+        `Hej! Jag blev nyfiken på dig -${mention} din profil verkade genuint intressant!`,
         `Du verkar ha en spännande livshistoria - skulle gärna höra mer!`,
         `Jag gillade det du skrev om dig själv - känns som du vet vad du vill!`,
       ];
     default:
       return [
-        `Hej! Jag såg att vi matchade -${interestMention} vad gör du helst på en ledig dag?`,
+        `Hej! Jag såg att vi matchade -${mention} vad gör du helst på en ledig dag?`,
         `Hej där! Berätta om det senaste som fick dig att skratta?`,
         `Hej! Vad är det bästa med att vara du?`,
       ];
