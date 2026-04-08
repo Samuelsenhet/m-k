@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { maakTokens } from "@maak/core";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ export function ErrorBoundaryFallback({ error, retry }: Props) {
 
   return (
     <View style={styles.root}>
-      <Text style={styles.emoji}>🌿</Text>
+      <Emoji style={styles.emoji}>🌿</Emoji>
       <Text style={styles.title}>{t("errors.boundary_title", { defaultValue: "Något gick fel" })}</Text>
       <Text style={styles.body}>
         {t("errors.boundary_body", {

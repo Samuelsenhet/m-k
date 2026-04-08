@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import {
   ARCHETYPE_CODES_BY_CATEGORY,
   ARCHETYPE_INFO,
@@ -175,7 +176,7 @@ export function ProfileDetailsModal({
                   { backgroundColor: catStyle.bg, borderColor: catStyle.border },
                 ]}
               >
-                <Text style={styles.catEmoji}>{CATEGORY_INFO[cat].emoji}</Text>
+                <Emoji style={styles.catEmoji}>{CATEGORY_INFO[cat].emoji}</Emoji>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.catTitleSerif}>{localizedCategoryI18n?.title}</Text>
                   <Text style={styles.mutedSm}>{localizedCategoryI18n?.description}</Text>
@@ -209,7 +210,7 @@ export function ProfileDetailsModal({
                         isUser && { borderColor: GRID_SELECTION_BORDER, borderWidth: 3 },
                       ]}
                     >
-                      <Text style={styles.gridEmoji}>{info.emoji}</Text>
+                      <Emoji style={styles.gridEmoji}>{info.emoji}</Emoji>
                       <Text style={styles.gridTitle} numberOfLines={2}>
                         {gridTitle}
                         {isUser ? (
@@ -235,7 +236,7 @@ export function ProfileDetailsModal({
                 ]}
               >
                 <View style={styles.archetypeHead}>
-                  <Text style={styles.bigEmoji}>{archetypeInfo.emoji}</Text>
+                  <Emoji style={styles.bigEmoji}>{archetypeInfo.emoji}</Emoji>
                   <View>
                     <Text style={styles.archTitleSerif}>{localizedUserArchetype?.title}</Text>
                     <Text style={styles.mutedSm}>{archetypeInfo.name}</Text>

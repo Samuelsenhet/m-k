@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { ProfileDetailsModal } from "@/components/profile/ProfileDetailsModal";
 import { SubscriptionBanner } from "@/components/profile/SubscriptionBanner";
 import { useSupabase } from "@/contexts/SupabaseProvider";
@@ -402,7 +403,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
                 end={{ x: 1, y: 1 }}
                 style={[StyleSheet.absoluteFill, styles.emptyPhotoInner]}
               >
-                <Text style={styles.emptyEmoji}>{archetypeInfo?.emoji ?? "👤"}</Text>
+                <Emoji style={styles.emptyEmoji}>{archetypeInfo?.emoji ?? "👤"}</Emoji>
                 <Text style={styles.emptyPhotoHint}>{t("profile.no_photos_yet")}</Text>
                 <Pressable style={styles.addPhotoBtn} onPress={onEdit}>
                   <Ionicons name="create-outline" size={18} color={maakTokens.primaryForeground} />
@@ -494,7 +495,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
               {archetypeInfo && cat ? (
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryBadgeTxt}>
-                    {CATEGORY_BADGE_EMOJI[cat]}{" "}
+                    <Emoji>{CATEGORY_BADGE_EMOJI[cat]}</Emoji>{" "}
                     {t(`personality.guide_category_${cat}_title`, {
                       defaultValue: CATEGORY_INFO[cat].title,
                     })}

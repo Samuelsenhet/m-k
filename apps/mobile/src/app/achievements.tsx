@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { useAchievementsRN } from "@/hooks/useAchievementsRN";
 import { PaywallGate } from "@/components/paywall/PaywallGate";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -110,7 +111,7 @@ export default function AchievementsScreen() {
                 >
                   <View style={[styles.achIcon, isEarned ? styles.achIconOn : styles.achIconOff]}>
                     {isEarned ? (
-                      <Text style={styles.emoji}>{a.icon}</Text>
+                      <Emoji style={styles.emoji}>{a.icon}</Emoji>
                     ) : (
                       <Ionicons name="lock-closed" size={20} color={maakTokens.mutedForeground} />
                     )}

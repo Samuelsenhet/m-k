@@ -1,7 +1,7 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens } from "@maak/core";
 import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -21,8 +21,11 @@ export function IcebreakerPanel({ matchId, matchedUserId, onSelectSuggestion }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [limitHit, setLimitHit] = useState(false);
+  const generatingRef = useRef(false);
 
   const generate = useCallback(async () => {
+    if (generatingRef.current) return;
+    generatingRef.current = true;
     setError(null);
     setSuggestions([]);
     setLoading(true);
@@ -59,6 +62,7 @@ export function IcebreakerPanel({ matchId, matchedUserId, onSelectSuggestion }: 
       setError(t("chat.followup_error"));
     } finally {
       setLoading(false);
+      generatingRef.current = false;
     }
   }, [matchId, matchedUserId, supabase, t]);
 
@@ -93,9 +97,9 @@ export function IcebreakerPanel({ matchId, matchedUserId, onSelectSuggestion }: 
               <Text style={styles.upgradeTxt}>{t("chat.icebreaker_upgrade")}</Text>
             </Pressable>
           ) : null}
-          {suggestions.map((line) => (
+          {suggestions.map((line, idx) => (
             <Pressable
-              key={line}
+              key={`${matchId}-icebreaker-${idx}`}
               style={styles.chip}
               onPress={() => {
                 onSelectSuggestion(line);

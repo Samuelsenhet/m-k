@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { IdVerificationPlaceholderRN } from "@/components/onboarding/IdVerificationPlaceholderRN";
 import { PersonalityResultRN } from "@/components/onboarding/PersonalityResultRN";
 import { PersonalityTestRN } from "@/components/onboarding/PersonalityTestRN";
@@ -397,9 +398,9 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
                 : t("mobile.wizard.test_done")}
             </Text>
             <View style={styles.card}>
-              <Text style={styles.bigEmoji}>
+              <Emoji style={styles.bigEmoji}>
                 {ARCHETYPE_INFO[personalityResult.archetype].emoji}
-              </Text>
+              </Emoji>
               <Text style={styles.cardTitle}>
                 {ARCHETYPE_INFO[personalityResult.archetype].name}
               </Text>

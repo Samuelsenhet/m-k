@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { maakTokens } from "@maak/core";
 import {
   ARCHETYPE_CODES_BY_CATEGORY,
@@ -102,7 +103,7 @@ export function PersonalityGuideRN() {
               style={[styles.catCard, { borderColor: border }]}
             >
               <View style={styles.catHead}>
-                <Text style={styles.catEmoji}>{category.emoji}</Text>
+                <Emoji style={styles.catEmoji}>{category.emoji}</Emoji>
                 <Text style={styles.catTitle}>{catTitle}</Text>
               </View>
               <Text style={styles.catDesc}>{catDesc}</Text>
@@ -131,7 +132,7 @@ export function PersonalityGuideRN() {
                       style={[styles.archRow, { borderColor: border }]}
                       onPress={() => toggle(code)}
                     >
-                      <Text style={styles.archEmoji}>{info.emoji}</Text>
+                      <Emoji style={styles.archEmoji}>{info.emoji}</Emoji>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.archTitle}>{archTitle}</Text>
                         <Text style={styles.archCode}>{info.name}</Text>

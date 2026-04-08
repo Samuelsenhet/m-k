@@ -94,8 +94,12 @@ export function ChatThread({
     void fetchMessages();
   }, [fetchMessages]);
 
+  const markedRef = useRef(false);
   useEffect(() => {
-    if (!loading && messages.length > 0 && userId) void markRead(messages);
+    if (!loading && messages.length > 0 && userId && !markedRef.current) {
+      markedRef.current = true;
+      void markRead(messages);
+    }
   }, [loading, messages, markRead, userId]);
 
   useEffect(() => {

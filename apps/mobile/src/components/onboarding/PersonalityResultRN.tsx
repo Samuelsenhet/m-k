@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import {
   ARCHETYPE_INFO,
   maakTokens,
@@ -41,7 +42,7 @@ export function PersonalityResultRN({ result, onContinue }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.emoji}>{info.emoji}</Text>
+        <Emoji style={styles.emoji}>{info.emoji}</Emoji>
         <Text style={styles.title}>{info.name}</Text>
         <Text style={styles.subtitle}>{title}</Text>
         <Text style={styles.desc}>{description}</Text>

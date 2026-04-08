@@ -21,6 +21,14 @@ export function useOnlineCount(userId: string | undefined, hasValidConfig: boole
   useEffect(() => {
     if (!hasValidConfig) return;
 
+    // Remove any existing channel with the same name so we can attach
+    // presence callbacks before subscribing (Supabase reuses channel objects
+    // and throws if callbacks are added after subscribe()).
+    const existing = supabase.getChannels().find((ch) => ch.topic === `realtime:${ONLINE_CHANNEL}`);
+    if (existing) {
+      void supabase.removeChannel(existing);
+    }
+
     const channel: RealtimeChannel = supabase.channel(ONLINE_CHANNEL, {
       config: { presence: { key: presenceKey } },
     });

@@ -15,9 +15,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, useGlobalSearchParams, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, LogBox, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import 'react-native-reanimated';
+
+// RevenueCat SDK logs cancelled purchases as console.error; suppress in LogBox.
+LogBox.ignoreLogs([/\[RevenueCat\].*Purchase was cancelled/]);
 
 /** react-i18next + React 19 JSX: FC return type includes Promise<ReactNode>; cast at root only. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- upstream I18nextProvider vs @types/react 19

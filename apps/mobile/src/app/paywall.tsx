@@ -1,3 +1,4 @@
+import { usePurchases } from "@/contexts/PurchasesProvider";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Ionicons } from "@expo/vector-icons";
 import { maakTokens } from "@maak/core";
@@ -10,7 +11,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  NativeModules,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,8 +18,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const hasNativeModule = !!NativeModules.RNPurchases;
 
 // ─── Feature row data (MÄÄK-aligned) ────────────────────────────────
 type Feature = {
@@ -45,26 +43,68 @@ export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { refreshSubscription } = useSubscription();
+  const { configured, offering, purchasePackage, restorePurchases } = usePurchases();
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<TierKey>("premium");
 
-  // ── Custom paywall (always shown — RC native paywall only used if
-  //    a paywall is configured in the RevenueCat dashboard) ─────────────
   const handleSubscribe = async () => {
-    if (!hasNativeModule) {
+    if (!configured || !offering) {
       Alert.alert(t("mobile.paywall.not_configured_title"), t("mobile.paywall.not_configured_body"));
       return;
     }
-    // TODO: Use usePurchases().purchasePackage() when offerings are wired
-    Alert.alert(t("mobile.paywall.not_configured_title"), t("mobile.paywall.not_configured_body"));
+
+    // Map tier to RC package: premium → annual (save badge), basic → monthly
+    const pkg =
+      selected === "premium"
+        ? (offering.annual ?? offering.monthly)
+        : (offering.monthly ?? offering.weekly);
+
+    if (!pkg) {
+      Alert.alert(t("mobile.paywall.not_configured_title"), t("mobile.paywall.not_configured_body"));
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const result = await purchasePackage(pkg);
+      if (result.success) {
+        await refreshSubscription();
+        router.back();
+      } else if (!result.cancelled) {
+        Alert.alert(
+          t("mobile.paywall.error_title", { defaultValue: "Något gick fel" }),
+          result.error?.message ?? t("mobile.paywall.error_body", { defaultValue: "Försök igen senare." }),
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleRestore = async () => {
-    if (!hasNativeModule) {
-      Alert.alert(t("mobile.paywall.restore_empty_title"), t("mobile.paywall.not_configured_body"));
+    if (!configured) {
+      Alert.alert(t("mobile.paywall.not_configured_title"), t("mobile.paywall.not_configured_body"));
       return;
     }
-    Alert.alert(t("mobile.paywall.restore_empty_title"), t("mobile.paywall.not_configured_body"));
+    setBusy(true);
+    try {
+      const result = await restorePurchases();
+      if (result.success) {
+        await refreshSubscription();
+        Alert.alert(
+          t("mobile.paywall.restore_success_title", { defaultValue: "Återställt" }),
+          t("mobile.paywall.restore_success_body", { defaultValue: "Ditt köp har återställts." }),
+        );
+        router.back();
+      } else {
+        Alert.alert(
+          t("mobile.paywall.restore_empty_title"),
+          result.error?.message ?? t("mobile.paywall.restore_empty_body", { defaultValue: "Inga tidigare köp hittades." }),
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

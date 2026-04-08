@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { archetypeDisplayTitle } from "@/lib/archetypeTitle";
 import {
@@ -280,7 +281,7 @@ export function MatchProfileScreen({
             <View style={styles.personalitySection}>
               <Text style={styles.sectionTitle}>{t("personality.main_category_label")}</Text>
               <View style={[styles.catCard, { backgroundColor: CATEGORY_CARD_BG[cat].bg, borderColor: CATEGORY_CARD_BG[cat].border }]}>
-                <Text style={styles.catCardEmoji}>{CATEGORY_INFO[cat].emoji}</Text>
+                <Emoji style={styles.catCardEmoji}>{CATEGORY_INFO[cat].emoji}</Emoji>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.catCardTitle}>
                     {t(`personality.guide_category_${cat}_title`, { defaultValue: CATEGORY_INFO[cat].title })}
@@ -294,7 +295,7 @@ export function MatchProfileScreen({
               <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t("personality.your_archetype_card")}</Text>
               <View style={[styles.archCard, { backgroundColor: CATEGORY_CARD_BG[cat].bg, borderColor: CATEGORY_CARD_BG[cat].border }]}>
                 <View style={styles.archHead}>
-                  <Text style={styles.archEmoji}>{archetypeInfo.emoji}</Text>
+                  <Emoji style={styles.archEmoji}>{archetypeInfo.emoji}</Emoji>
                   <View>
                     <Text style={styles.archTitle}>
                       {t(`personality.archetypes.${archetypeCode}.title`, { defaultValue: archetypeInfo.title })}

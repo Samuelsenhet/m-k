@@ -1,0 +1,6 @@
+appId: com.samuelsenhet.maak
+---
+- launchApp
+- assertVisible: 'Kom igång gratis'
+- tapOn: 'Logga in'
+- assertVisible: '.*'

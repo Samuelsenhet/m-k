@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { maakTokens } from "@maak/core";
@@ -47,7 +48,7 @@ export function WelcomeScreenRN({ displayName, onContinue, userId }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right", "bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.mascot}>🌿</Text>
+        <Emoji style={styles.mascot}>🌿</Emoji>
         <Text style={styles.guide}>{t("maak.guide")}</Text>
         <Text style={styles.h1}>{welcomeTitle}</Text>
         <Text style={styles.sub}>{t("mobile.welcome.subtitle")}</Text>
@@ -62,7 +63,7 @@ export function WelcomeScreenRN({ displayName, onContinue, userId }: Props) {
         <View style={styles.features}>
           {features.map((f) => (
             <View key={f.title} style={styles.featureCard}>
-              <Text style={styles.featureEmoji}>{f.emoji}</Text>
+              <Emoji style={styles.featureEmoji}>{f.emoji}</Emoji>
               <View style={styles.featureText}>
                 <Text style={styles.featureTitle}>{f.title}</Text>
                 <Text style={styles.featureDesc}>{f.description}</Text>

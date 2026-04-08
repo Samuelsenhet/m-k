@@ -8,7 +8,7 @@ type SetMatches = React.Dispatch<React.SetStateAction<Match[]>>;
 
 export function useMatchActions(matches: Match[], setMatches: SetMatches) {
   const { supabase, session } = useSupabase();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const generateIcebreakers = useCallback(
     async (
@@ -27,6 +27,7 @@ export function useMatchActions(matches: Match[], setMatches: SetMatches) {
             matchedUserArchetype: matchedUserArchetype ?? null,
             userName,
             matchedUserName,
+            language: i18n.language?.startsWith("en") ? "en" : "sv",
           },
           headers: sess?.access_token
             ? { Authorization: `Bearer ${sess.access_token}` }

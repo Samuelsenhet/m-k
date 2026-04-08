@@ -261,13 +261,14 @@ export default function MatchesScreen() {
           return (
             <View style={styles.emptyCard}>
               <Image
-                source={MascotAssets.plantingSeed}
+                source={MascotAssets.waitingTea}
                 style={styles.emptyMascot}
                 contentFit="contain"
                 accessibilityIgnoresInvertColors
               />
               <Text style={styles.emptyTitle}>{t("matches.noMatches")}</Text>
-              <Text style={styles.emptyBody}>{t("matches.noMatchesDescription")}</Text>
+              <Text style={styles.emptyBody}>{t("matches.noMatchesEncourage")}</Text>
+              <Text style={styles.emptyQuote}>{t("maak.waiting")}</Text>
             </View>
           );
         case "section":
@@ -654,6 +655,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 20,
     textAlign: "center",
+  },
+  emptyQuote: {
+    fontSize: 13,
+    fontStyle: "italic",
+    color: maakTokens.primary,
+    textAlign: "center",
+    marginTop: 12,
+    paddingHorizontal: 16,
   },
   loadMore: { marginTop: 16, padding: 14, alignItems: "center" },
   loadMoreText: { color: maakTokens.primary, fontWeight: "600" },

@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
@@ -247,10 +248,10 @@ export default function LandingScreen() {
             </View>
 
             <View style={styles.emojiChat} accessibilityElementsHidden pointerEvents="none">
-              <Text style={styles.emoji}>💬</Text>
+              <Emoji style={styles.emoji}>💬</Emoji>
             </View>
             <View style={styles.emojiPass} accessibilityElementsHidden pointerEvents="none">
-              <Text style={styles.emojiSmall}>🙅</Text>
+              <Emoji style={styles.emojiSmall}>🙅</Emoji>
             </View>
           </View>
 

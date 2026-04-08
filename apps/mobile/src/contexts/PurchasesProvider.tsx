@@ -51,20 +51,25 @@ const PurchasesContext = createContext<PurchasesContextValue | null>(null);
  * Source of truth for entitlement is Supabase `subscriptions` (read by useSubscription).
  * This provider exposes the client SDK for the purchase flow only.
  */
+// Module-level flag survives HMR (the ref inside the component does not).
+let _purchasesConfigured = false;
+
 export function PurchasesProvider({ children }: { children: ReactNode }) {
   const { session } = useSupabase();
   const userId = session?.user?.id ?? null;
-  const configuredRef = useRef(false);
 
-  const [configured, setConfigured] = useState(false);
+  const [configured, setConfigured] = useState(_purchasesConfigured);
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!_purchasesConfigured);
 
   // Configure once per app lifetime. No-op when the native module is absent
   // (Expo Go, web, Android, or any env without a dev-client / standalone build).
   useEffect(() => {
-    if (configuredRef.current) return;
+    if (_purchasesConfigured) {
+      setConfigured(true);
+      return;
+    }
     if (Platform.OS !== "ios" || !NativeModules.RNPurchases) {
       setLoading(false);
       return;
@@ -77,7 +82,7 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
     }
     try {
       Purchases.configure({ apiKey });
-      configuredRef.current = true;
+      _purchasesConfigured = true;
       setConfigured(true);
     } catch (err) {
       if (__DEV__) console.error("[PurchasesProvider] configure failed:", err);
@@ -86,26 +91,35 @@ export function PurchasesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Identify / anonymise on auth changes.
+  // Uses a ref to avoid spurious logOut when userId is transiently null
+  // (e.g. Supabase INITIAL_SESSION fires before getSession resolves).
+  const lastIdentifiedRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!configured) return;
     let cancelled = false;
+
     (async () => {
       try {
         if (userId) {
-          await Purchases.logIn(userId);
-        } else {
+          if (lastIdentifiedRef.current !== userId) {
+            await Purchases.logIn(userId);
+            if (!cancelled) lastIdentifiedRef.current = userId;
+          }
+        } else if (lastIdentifiedRef.current !== null) {
+          // Only log out if we previously identified a real user
           const isAnonymous = await Purchases.isAnonymous();
-          if (!isAnonymous) {
+          if (!isAnonymous && !cancelled) {
             await Purchases.logOut();
+            if (!cancelled) lastIdentifiedRef.current = null;
           }
         }
       } catch (err) {
         if (__DEV__ && !cancelled) console.error("[PurchasesProvider] logIn/logOut:", err);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+
+    return () => { cancelled = true; };
   }, [configured, userId]);
 
   // Fetch offerings + customerInfo once configured, and whenever user changes.
