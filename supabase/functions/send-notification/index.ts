@@ -7,6 +7,8 @@ interface NotificationPayload {
   title: string;
   message: string;
   type?: "info" | "success" | "warning" | "error";
+  /** Notification category — used to check user preferences before sending push */
+  category?: "new_match" | "message" | "system";
 }
 
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
@@ -113,10 +115,38 @@ serve(async (req: Request) => {
       await supabaseClient.removeChannel(channel);
     }
 
+    // --- Check user notification preferences before sending push ---
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    let pushAllowed = true;
+
+    if (serviceRoleKey && payload.category) {
+      try {
+        const adminClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          serviceRoleKey,
+        );
+        const { data: prefs } = await adminClient
+          .from("profiles")
+          .select("push_new_matches, push_messages")
+          .eq("id", payload.user_id)
+          .maybeSingle();
+
+        if (prefs) {
+          if (payload.category === "new_match" && prefs.push_new_matches === false) {
+            pushAllowed = false;
+          } else if (payload.category === "message" && prefs.push_messages === false) {
+            pushAllowed = false;
+          }
+          // "system" category always allowed
+        }
+      } catch (prefErr) {
+        console.warn("send-notification: preference check failed, allowing push", prefErr);
+      }
+    }
+
     // --- Expo Push (mobile, best-effort) ---
     // Uses service role to read expo_push_tokens for the target user
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (serviceRoleKey) {
+    if (serviceRoleKey && pushAllowed) {
       try {
         const adminClient = createClient(
           Deno.env.get("SUPABASE_URL") ?? "",
