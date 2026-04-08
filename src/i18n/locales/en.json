@@ -201,6 +201,7 @@
     "load_more": "Load more",
     "load_more_error": "Could not load more matches",
     "noMatchesDescription": "Come back tomorrow for new matches!",
+    "noMatchesEncourage": "Right now I'm looking for someone who truly fits you. It sometimes takes a little time — but it means I won't settle until it feels right. New matches can appear as early as tomorrow.",
     "mutual_section": "Mutual matches ({{count}})",
     "active_chats_section": "Active chats ({{count}})",
     "discover_section": "Discover",

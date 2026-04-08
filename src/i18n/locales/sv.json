@@ -201,6 +201,7 @@
     "load_more": "Hämta fler",
     "load_more_error": "Kunde inte hämta fler matchningar",
     "noMatchesDescription": "Kom tillbaka imorgon för nya matchningar!",
+    "noMatchesEncourage": "Just nu letar jag efter någon som verkligen passar dig. Det tar ibland lite tid — men det betyder att jag inte ger mig förrän det känns rätt. Nya matchningar kan dyka upp redan imorgon.",
     "mutual_section": "Ömsesidiga matchningar ({{count}})",
     "active_chats_section": "Aktiva chattar ({{count}})",
     "discover_section": "Upptäck",
