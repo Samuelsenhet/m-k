@@ -796,8 +796,10 @@
   },
   "admin": {
     "reports_title": "Moderering - Rapporter",
+    "appeals_title": "Moderering - Överklaganden",
     "access_denied": "Du har inte behörighet att visa denna sida.",
     "no_reports": "Inga rapporter ännu.",
+    "no_appeals": "Inga överklaganden ännu.",
     "status": "Status",
     "mobile_intro": "Modereringsvy för rapporter. Kräver moderatorbehörighet."
   },
