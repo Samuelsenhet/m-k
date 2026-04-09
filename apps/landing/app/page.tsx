@@ -36,7 +36,8 @@ const NAV_LINKS = [
   { href: "#features", label: "Funktioner" },
   { href: "#stats", label: "Om appen" },
 ] as const;
-const APP_STORE_URL = "https://apps.apple.com";
+const APP_STORE_URL =
+  process.env.NEXT_PUBLIC_APP_STORE_URL || "https://apps.apple.com/app/maak";
 
 export default function HomePage() {
   return (
