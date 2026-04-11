@@ -11,6 +11,11 @@ RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# /vilkor/ är svensk alias för /terms/ – Next's redirect() funkar inte i
+# static export så vi gör 301 på Apache-nivå. Fullständig URL så att
+# redirecten landar direkt på HTTPS (annars gissar Apache HTTP).
+RewriteRule ^vilkor/?$ https://%{HTTP_HOST}/terms/ [L,R=301]
+
 # Trailing slash på mappar — Apache mod_dir gör detta default men via HTTP.
 # Stäng av mod_dir's auto-slash och lägg till egen regel som går direkt till HTTPS.
 DirectorySlash Off

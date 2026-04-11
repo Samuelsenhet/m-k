@@ -25,11 +25,13 @@ const features = [
   },
 ];
 
-const stats = [
-  { value: "500+", label: "Användare" },
-  { value: "1 200+", label: "Matchningar" },
-  { value: "85%", label: "Matchar första veckan" },
-  { value: "3 000+", label: "Samtal startade" },
+// Kvalitativa punkter istället för ouppmätta användarsiffror —
+// ingen siffra står här som inte kan backas upp.
+const facts = [
+  { value: "2026", label: "Ny på App Store" },
+  { value: "iOS", label: "Nativ upplevelse" },
+  { value: "GDPR", label: "EU-baserad data" },
+  { value: "SE", label: "Svenskt team" },
 ];
 
 const NAV_LINKS = [
@@ -199,28 +201,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── 4. Stats ───────────────────────────────────────── */}
+        {/* ── 4. Om appen ────────────────────────────────────── */}
         <section id="stats" className="scroll-mt-20 border-t border-maak-border/60 bg-maak-bg py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-bold tracking-tight text-maak-foreground md:text-4xl">
-              Riktiga möten.
+              Byggd för riktiga möten.
             </h2>
             <p className="mx-auto mt-2 max-w-md text-center text-lg text-maak-muted-fg">
-              En ny typ av dejtande tar form.
+              En annorlunda dejtingapp från Sverige.
             </p>
 
             <div className="mt-10 rounded-3xl border border-maak-border/80 bg-white/80 p-4 shadow-[0_16px_44px_-34px_rgba(37,61,44,0.45)] md:p-6">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              {stats.map((s) => (
+              {facts.map((f) => (
                 <div
-                  key={s.label}
+                  key={f.label}
                   className="flex flex-col items-center rounded-2xl bg-maak-card/75 px-4 py-6 ring-1 ring-maak-border/80 transition hover:bg-maak-card"
                 >
                   <span className="text-3xl font-bold tracking-tight text-maak-foreground md:text-4xl">
-                    {s.value}
+                    {f.value}
                   </span>
                   <span className="mt-1 text-xs font-medium uppercase tracking-wider text-maak-muted-fg">
-                    {s.label}
+                    {f.label}
                   </span>
                 </div>
               ))}
