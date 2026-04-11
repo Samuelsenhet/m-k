@@ -71,5 +71,11 @@ buildServer.json
 # Backup directory
 m-k-backup/
 
+# Cyberduck/FTP snapshots — someone pulled the Loopia webroot into the repo
+# by accident. Canonical source is apps/landing/out/ after `npm run build`.
+/maakapp.se/
+posthog-setup-report.md
+.posthog-events.json
+
 # Claude Code
 .claude/
