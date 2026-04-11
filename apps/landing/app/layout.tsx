@@ -1,13 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans } from "next/font/google";
 import { PostHogScript } from "@/components/PostHogScript";
 import "./globals.css";
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
 
 const SITE = "https://maakapp.se";
 const NAME = "määk";
@@ -126,7 +119,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sv" className={dmSans.variable}>
+    <html lang="sv">
       <body className="min-h-screen font-sans">
         <script
           type="application/ld+json"

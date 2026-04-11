@@ -24,7 +24,21 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        // System font stack — noll nätverks-lastning, noll FOUT/FOIT,
+        // noll main-thread parse. Macos → SF Pro, iOS → SF, Win → Segoe UI,
+        // Android → Roboto. Alla är redan renderade vid page load.
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI"',
+          "Roboto",
+          "Oxygen",
+          "Ubuntu",
+          "Cantarell",
+          '"Open Sans"',
+          '"Helvetica Neue"',
+          "sans-serif",
+        ],
       },
     },
   },
