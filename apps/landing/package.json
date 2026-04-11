@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 3000",
-    "prebuild": "node scripts/optimize-images.mjs",
+    "prebuild": "node scripts/optimize-images.mjs && node scripts/generate-favicons.mjs",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
-    "optimize:images": "node scripts/optimize-images.mjs"
+    "optimize:images": "node scripts/optimize-images.mjs",
+    "favicons": "node scripts/generate-favicons.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.7.0",

@@ -27,3 +27,44 @@ RewriteRule ^(.+[^/])$ https://%{HTTP_HOST}/$1/ [L,R=301]
 <Files "opengraph-image">
   ForceType image/png
 </Files>
+
+# ---- Cache-kontroll ----------------------------------------------------------
+# Next's /_next/static/**-filer har innehålls-hash i filnamnet → immutable 1 år.
+# Bilder i /screenshots/ och /icon*-filerna byts sällan → 1 år.
+# HTML byts vid varje deploy → måste revalidera direkt.
+#
+# mod_expires/mod_headers wrappas i IfModule så .htaccess inte kraschar om
+# någon modul saknas (Loopia shared host har båda enabled).
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # Hashade Next-assets – säkra att cacha för evigt
+  <FilesMatch "\.(js|css|woff2?|ttf|eot|otf)$">
+    ExpiresDefault "access plus 1 year"
+  </FilesMatch>
+
+  # Bilder & ikoner – byts sällan, 1 år räcker
+  <FilesMatch "\.(webp|png|jpg|jpeg|gif|svg|ico)$">
+    ExpiresDefault "access plus 1 year"
+  </FilesMatch>
+
+  # HTML & JSON – alltid revalidera (byts vid varje deploy)
+  <FilesMatch "\.(html|htm|json|xml|webmanifest|txt)$">
+    ExpiresDefault "access plus 0 seconds"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Immutable för hashade assets
+  <FilesMatch "\.(js|css|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(webp|png|jpg|jpeg|gif|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # HTML: revalidera varje gång men cacha under validering (snabb 304)
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>

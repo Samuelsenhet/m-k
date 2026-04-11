@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project: MÄÄK
 
-Swedish personality-based dating app. Web (PWA) + iOS. Phone OTP auth, daily matches, real-time chat, group chats ("Samlingar"), video "Kemi-Check", personality test (5 dimensions → 16 archetypes → 4 categories: DIPLOMAT/STRATEGER/BYGGARE/UPPTÄCKARE). Swedish-first, English fallback.
+Swedish personality-based dating app. **Ships iOS-only**; the Vite/React web app at repo root is dev-only (runs on localhost + Vercel preview, not on the public domain). Public-facing web presence is the static Next.js landing page at `apps/landing/`, served from `https://maakapp.se`.
+
+Features: Phone OTP auth, daily matches, real-time chat, group chats ("Samlingar"), video "Kemi-Check", personality test (5 dimensions → 16 archetypes → 4 categories: DIPLOMAT/STRATEGER/BYGGARE/UPPTÄCKARE). Swedish-first, English fallback.
 
 ## Monorepo layout
 
@@ -54,7 +56,8 @@ Run from repo root unless noted.
 - **Mobile**: Expo ~55, expo-router ~55, React Native 0.83.4, react-native-purchases (RevenueCat)
 - **Backend**: Supabase (Postgres + RLS, Realtime, Edge Functions in Deno)
 - **Auth**: Phone OTP via Twilio through Supabase
-- **Build**: EAS for iOS; Vercel for web; Capacitor kept as legacy path
+- **Build**: EAS for iOS; Vercel for dev-only web previews; Capacitor kept as legacy path
+- **Landing**: Next.js 15 App Router, static export (`output: "export"`), deployed to **Loopia webbhotell** via FTP — not Vercel. See "Landing deployment" section below.
 
 ## Core data flow
 
@@ -122,6 +125,45 @@ Copy `.env.example` → `.env` at repo root. Required:
 - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` for RevenueCat paywall in mobile.
 
 Never commit real keys. ASC submit keys go through `eas credentials`, never into `eas.json`.
+
+## Landing deployment (maakapp.se on Loopia)
+
+The public site at `https://maakapp.se` is the Next.js landing page at `apps/landing/`, **not** the Vite web app at the repo root.
+
+### Build
+```bash
+cd apps/landing
+rm -rf out .next       # clean slate (skip if you trust incremental)
+npm run build          # runs prebuild: optimize-images.mjs + generate-favicons.mjs
+cp public/.htaccess out/.htaccess   # Next doesn't copy the root .htaccess into out/ reliably
+```
+
+The build emits `apps/landing/out/` (~1.6 MB) with static HTML per route, hashed JS/CSS under `_next/`, WebP screenshots, `sitemap.xml`, `robots.txt`, `opengraph-image` (no extension), and `.htaccess`.
+
+### Upload
+FTP host `ftpcluster.loopia.se`, path `/maakapp.se/public_html/`. Drag the **contents** of `out/` (Cmd+A inside the folder) — never the `out/` folder itself. Cyberduck needs `View → Show Hidden Files` so `.htaccess` is visible.
+
+Existing webroot should be wiped before first upload and between major changes; stale files cause confusing routing. If only HTML changed, uploading just the changed files is fine.
+
+### Key conventions
+- `next.config.ts`: `output: "export"`, `trailingSlash: true`, no basePath. Landing lives at the root — `/`, `/about/`, `/privacy/`, `/terms/`, `/reporting/`.
+- `/vilkor/` is a pure `.htaccess` redirect to `/terms/` — don't add a Next route, `redirect()` crashes at build time with static export.
+- `apps/landing/images-src/` holds PNG originals **outside** `public/` so Next doesn't ship them in `out/`. WebP variants get generated to `public/screenshots/` via `scripts/optimize-images.mjs`. Same for favicons via `scripts/generate-favicons.mjs`.
+- All copy lives in `apps/landing/content/home.ts` — edit there, not in JSX. Sections in `apps/landing/components/*.tsx` just render the constants.
+- Feature copy ("5 dagliga matchningar", "AI-isbrytare", etc.) mirrors the shipping iOS features — update here when the app features change, not with placeholder marketing copy.
+
+### Loopia gotchas (burned-in from debug sessions)
+- Apache (`mpm-itk 2.4`) runs **behind an nginx proxy**. `%{HTTPS}` is always `off` inside Apache. `.htaccess` HTTPS-redirects must check `%{HTTP:X-Forwarded-Proto}` or you get a redirect loop.
+- `.well-known/acme-challenge/` must be **exempt** from the HTTPS redirect or Let's Encrypt can't issue the cert. Loopia has its own ACME responder that needs HTTP access.
+- Loopia's shared host rejects some `.htaccess` directives with 500 (rich `Header` / `Deflate` blocks). Wrap everything in `<IfModule>` and keep it minimal — see `apps/landing/public/.htaccess` for the known-good config.
+- Next's `opengraph-image.tsx` emits a file named `opengraph-image` **without an extension**. Apache serves it as `application/octet-stream` unless `.htaccess` has `<Files "opengraph-image"> ForceType image/png </Files>`.
+- `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.tsx` all need `export const dynamic = "force-static"` at `output: "export"` — without it `next build` fails.
+- DNS: NS records at `ns1.loopia.se` + `ns2.loopia.se` (**only two — `ns3.loopia.se` does not exist**, panel rejects it). A-record `93.188.2.52` range, managed by Loopia panel.
+- SSL auto-provisions via Let's Encrypt once (a) NS points at Loopia, (b) "Hemsida hos Loopia" is set, (c) root URL returns a non-500 response. No manual button.
+
+### Where not to look
+- The root `vercel.json` is for the Vite web app previews on Vercel, not for landing.
+- Supabase Edge Functions (`revenuecat-webhook`, `match-daily`, etc.) are independent of this migration — they run on Supabase infra, not on `maakapp.se`.
 
 ## Git / PRs
 
