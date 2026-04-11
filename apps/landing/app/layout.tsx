@@ -51,7 +51,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    creator: "@maakapp",
+    // Lämna creator/site orefererade — vi har ingen X-närvaro, och ett
+    // trasigt handle blir en 404 för den som klickar från rich cards.
   },
   robots: {
     index: true,
