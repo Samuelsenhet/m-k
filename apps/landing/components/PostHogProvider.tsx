@@ -105,17 +105,47 @@ function PageViewTracker({ client }: { client: PHClient | null }) {
   return null;
 }
 
+/**
+ * Document-level click delegation. Lyssnar på alla klick under <body>,
+ * letar efter närmsta `<a data-track-source="...">` och firar eventet.
+ *
+ * Poängen: alla fem App Store-CTA:er är pure server-components. De har
+ * ingen onClick-prop och ingen client boundary. Vi sparar massiv
+ * hydration-tid genom att hantera tracking från EN plats.
+ */
+function AppStoreClickDelegator({ client }: { client: PHClient | null }) {
+  useEffect(() => {
+    if (!client) return;
+    // Fånga i en lokal konstant så TypeScript narrow:ar genom closure.
+    const ph = client;
+    function handleClick(e: MouseEvent) {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest<HTMLAnchorElement>("a[data-track-source]");
+      if (!link) return;
+      const source = link.dataset.trackSource;
+      if (source) {
+        ph.capture("landing_app_store_click", { source });
+      }
+    }
+    document.addEventListener("click", handleClick, { capture: true });
+    return () => {
+      document.removeEventListener("click", handleClick, { capture: true });
+    };
+  }, [client]);
+  return null;
+}
+
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const [client, setClient] = useState<PHClient | null>(null);
 
-  // Provider wraps children direkt – ingen PHProvider från posthog-js/react
-  // här, eftersom den skulle tvinga in biblioteket i initial bundle.
   return (
     <>
       <LazyPostHogInitializer onReady={setClient} />
       <Suspense fallback={null}>
         <PageViewTracker client={client} />
       </Suspense>
+      <AppStoreClickDelegator client={client} />
       {children}
     </>
   );

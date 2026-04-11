@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { SITE } from "@/content/home";
 
@@ -18,31 +16,16 @@ type Props = {
 };
 
 /**
- * Wrapper runt alla App Store-CTA:er på landing. Fångar PostHog-eventet
- * `landing_app_store_click` med `source` så vi kan se vilken knapp som
- * driver flest klick.
+ * Server component — renderar en vanlig `<a>` med `data-track-source`.
  *
- * **Varför inte usePostHog()?** Hooken pullar in hela posthog-js i route-
- * chunken vid build, vilket ökar First Load JS med ~60 KB. Vi vill att
- * posthog-js stannar i sin egna lazy-chunk från providern. Istället
- * använder vi `window.posthog` som providern exponerar globalt efter
- * initiering.
+ * Click-tracking sker via en enda document-level listener i
+ * PostHogProvider, inte via en React onClick per länk. Det betyder:
+ *   - Ingen client boundary per länk → sparar hydration-tid
+ *   - `posthog-js` stannar i sin lazy-chunk, pullas inte in via
+ *     user-hook-grafen
+ *   - Alla fem CTA:er (header/hero/cta/footer/icon) är fortfarande
+ *     bara en länk i HTML:en – ingen behöver hydreras
  */
-
-type PostHogGlobal = {
-  capture: (event: string, props?: Record<string, unknown>) => void;
-};
-
-function captureClick(source: Source) {
-  if (typeof window === "undefined") return;
-  const ph = (window as unknown as { posthog?: PostHogGlobal }).posthog;
-  if (ph && typeof ph.capture === "function") {
-    ph.capture("landing_app_store_click", { source });
-  }
-  // Om PostHog inte hunnit init än (sällsynt) → tyst no-op.
-  // Klicket går fortfarande vidare till App Store.
-}
-
 export function TrackedAppStoreLink({
   source,
   children,
@@ -56,7 +39,7 @@ export function TrackedAppStoreLink({
       rel="noopener noreferrer"
       className={className}
       aria-label={ariaLabel}
-      onClick={() => captureClick(source)}
+      data-track-source={source}
     >
       {children}
     </a>
