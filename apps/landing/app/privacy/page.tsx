@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Integritetspolicy | määk",
-  description: "Integritetspolicy för määk.",
+export const metadata: Metadata = {
+  title: "Integritetspolicy",
+  description:
+    "Så här hanterar määk dina personuppgifter enligt GDPR – datainsamling, användning, tredjepart, rättigheter och kontaktvägar.",
+  alternates: { canonical: "/privacy/" },
+  openGraph: {
+    title: "Integritetspolicy · määk",
+    description: "GDPR-kompatibel integritetspolicy för määk.",
+    url: "/privacy/",
+    type: "article",
+  },
 };
 
 export default function PrivacyPage() {

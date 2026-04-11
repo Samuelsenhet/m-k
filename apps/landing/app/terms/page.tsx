@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Användarvillkor | määk",
-  description: "Användarvillkor för määk.",
+export const metadata: Metadata = {
+  title: "Användarvillkor",
+  description:
+    "Användarvillkor för määk: åldersgräns, verifiering, användaransvar, betalningar, immaterialrätt och tvistlösning.",
+  alternates: { canonical: "/terms/" },
+  openGraph: {
+    title: "Användarvillkor · määk",
+    description: "Fullständiga användarvillkor för määk.",
+    url: "/terms/",
+    type: "article",
+  },
 };
 
 export default function TermsPage() {

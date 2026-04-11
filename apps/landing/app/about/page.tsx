@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Om MÄÄK | määk",
-  description: "Läs mer om MÄÄK och vår vision.",
+export const metadata: Metadata = {
+  title: "Om määk",
+  description:
+    "määk är en lugn dejtingapp som sätter personlighet och trygghet främst. Läs om visionen, teamet och varför vi bygger en annorlunda dejtingupplevelse.",
+  alternates: { canonical: "/about/" },
+  openGraph: {
+    title: "Om määk",
+    description: "Visionen bakom en mänskligare dejtingapp.",
+    url: "/about/",
+    type: "article",
+  },
 };
 
 export default function AboutPage() {

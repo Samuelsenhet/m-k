@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Rapportering | määk",
-  description: "Rapporteringsinformation för määk.",
+export const metadata: Metadata = {
+  title: "Rapportering & säkerhet",
+  description:
+    "Hur måäk hanterar rapporter, moderering, sanktioner och samarbete med rättsvårdande myndigheter för att hålla plattformen trygg.",
+  alternates: { canonical: "/reporting/" },
+  openGraph: {
+    title: "Rapportering & säkerhet · määk",
+    description: "Säkerhet, moderering och rapporthantering hos määk.",
+    url: "/reporting/",
+    type: "article",
+  },
 };
 
 export default function ReportingPage() {

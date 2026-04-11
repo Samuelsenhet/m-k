@@ -7,9 +7,17 @@ type IphoneMockupProps = {
   /** Optional overlay (e.g. badge) inside the screen area */
   children?: ReactNode;
   className?: string;
+  /** Set true for the hero image so it gets eager-loaded for LCP. */
+  priority?: boolean;
 };
 
-export function IphoneMockup({ src, alt, children, className = "" }: IphoneMockupProps) {
+export function IphoneMockup({
+  src,
+  alt,
+  children,
+  className = "",
+  priority = false,
+}: IphoneMockupProps) {
   return (
     <div
       className={`relative mx-auto w-[min(100%,260px)] ${className}`}
@@ -26,7 +34,7 @@ export function IphoneMockup({ src, alt, children, className = "" }: IphoneMocku
           fill
           className="object-cover object-top"
           sizes="260px"
-          priority={false}
+          priority={priority}
         />
         {children}
       </div>

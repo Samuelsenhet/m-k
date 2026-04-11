@@ -16,3 +16,9 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 DirectorySlash Off
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^(.+[^/])$ https://%{HTTP_HOST}/$1/ [L,R=301]
+
+# Next static export skapar opengraph-image som fil utan extension. Tvinga image/png
+# så sociala crawlers (Facebook, X, LinkedIn, Slack) ser den som riktig bild.
+<Files "opengraph-image">
+  ForceType image/png
+</Files>

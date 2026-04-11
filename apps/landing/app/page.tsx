@@ -8,19 +8,19 @@ const features = [
   {
     title: "Matchning",
     description: "Ingen oändlig swipe – fokus på färre, mer meningsfulla kontakter.",
-    imageSrc: "/screenshots/hero.png",
+    imageSrc: "/screenshots/hero.webp",
     imageAlt: "Skärmbild: matchning i määk",
   },
   {
     title: "Chatt",
     description: "Samtala i lugn takt när ni båda är redo.",
-    imageSrc: "/screenshots/landing-profile-erik.png",
+    imageSrc: "/screenshots/landing-profile-erik.webp",
     imageAlt: "Skärmbild: chatt i määk",
   },
   {
     title: "Profiler",
     description: "Se hela personen – personlighet och preferenser i ett ögonkast.",
-    imageSrc: "/screenshots/landing-profile-merbel.png",
+    imageSrc: "/screenshots/landing-profile-merbel.webp",
     imageAlt: "Skärmbild: profil i määk",
   },
 ];
@@ -124,10 +124,11 @@ export default function HomePage() {
                 aria-label="Ladda ner määk i App Store"
               >
                 <Image
-                  src="/app-icon-light.png"
+                  src="/app-icon-light.webp"
                   alt=""
                   width={512}
                   height={512}
+                  priority
                   className="h-24 w-24 rounded-[1.35rem] object-contain object-center shadow-[0_4px_14px_rgba(37,61,44,0.12)] ring-1 ring-black/[0.06] transition group-hover:scale-[1.04] group-active:scale-[0.98] sm:h-28 sm:w-28 sm:rounded-[1.5rem]"
                   sizes="(max-width: 640px) 96px, 112px"
                 />
@@ -173,7 +174,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-12">
-              <IphoneMockup src="/screenshots/hero.png" alt="määk i telefonen" />
+              <IphoneMockup src="/screenshots/hero.webp" alt="määk i telefonen" priority />
             </div>
           </div>
         </section>
