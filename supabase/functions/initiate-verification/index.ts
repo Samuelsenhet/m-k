@@ -46,12 +46,33 @@ serve(async (req: Request) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  // Update profile with selfie path and set status to pending
+  // LAUNCH MODE
+  //
+  // Real ID verification (Onfido / Jumio / Persona) is not yet integrated.
+  // Until a provider is wired up we have two modes:
+  //
+  //   VERIFICATION_LAUNCH_AUTO_APPROVE=true  (default for v1 launch)
+  //     → store the selfie and set status directly to 'approved'.
+  //       The verified badge is shown, users aren't stuck in a queue.
+  //       Trade-off: trust signal is weaker until a real provider lands.
+  //
+  //   VERIFICATION_LAUNCH_AUTO_APPROVE=false (post-launch, once Onfido is live)
+  //     → store the selfie and set status to 'pending'.
+  //       id-verification-webhook finalises the status.
+  //
+  // Flip the secret with `supabase secrets set` to change modes without
+  // redeploying code.
+  const autoApprove =
+    (Deno.env.get("VERIFICATION_LAUNCH_AUTO_APPROVE") ?? "true").toLowerCase() !==
+    "false";
+  const newStatus = autoApprove ? "approved" : "pending";
+
   const { error: updateErr } = await supabase
     .from("profiles")
     .update({
       selfie_path: selfiePath,
-      id_verification_status: "pending",
+      id_verification_status: newStatus,
+      ...(autoApprove ? { id_verified_at: new Date().toISOString() } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
@@ -63,30 +84,30 @@ serve(async (req: Request) => {
     });
   }
 
-  // --- PRODUCTION ID VERIFICATION (not yet integrated) ---
+  // --- POST-LAUNCH TODO: integrate real ID verification ---
   //
-  // To enable real identity verification, integrate one of:
+  // To move off launch-mode auto-approve, integrate one of:
   //   - Onfido (https://documentation.onfido.com/)
   //   - Jumio (https://docs.jumio.com/)
   //   - Persona (https://docs.withpersona.com/)
   //
   // Steps:
   //   1. Set ONFIDO_API_TOKEN (or equivalent) as a Supabase secret
-  //   2. Create an applicant via POST /v3.6/applicants
+  //   2. Create an applicant via POST /v3.6/applicants with the selfie
   //   3. Create a check with document + selfie reports
   //   4. Return the SDK token to the client for native capture
-  //   5. Handle webhook callback in id-verification-webhook function
-  //      to set id_verification_status = 'approved' | 'rejected'
-  //
-  // Until integrated, selfie is stored and status stays 'pending'
-  // for manual review by moderators via admin panel.
+  //   5. Handle the webhook callback in id-verification-webhook to set
+  //      status to 'approved' or 'rejected'
+  //   6. supabase secrets set VERIFICATION_LAUNCH_AUTO_APPROVE=false
   // ---
 
   return new Response(
     JSON.stringify({
-      status: "pending",
-      message: "Verification initiated — pending manual review",
-      requires_integration: true,
+      status: newStatus,
+      message: autoApprove
+        ? "Verification approved."
+        : "Verification initiated — pending review",
+      auto_approved: autoApprove,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
   );

@@ -69,8 +69,134 @@ const expo = {
     bundleIdentifier: "com.samuelsenhet.maak",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      NSCameraUsageDescription: "MÄÄK behöver tillgång till din kamera för Kemi-Check videosamtal.",
-      NSMicrophoneUsageDescription: "MÄÄK behöver tillgång till din mikrofon för Kemi-Check videosamtal.",
+      // Camera — Kemi-Check video calls + profile photo capture.
+      NSCameraUsageDescription:
+        "MÄÄK behöver tillgång till din kamera för Kemi-Check videosamtal och för att ta profilbilder.",
+      // Mic — video calls only.
+      NSMicrophoneUsageDescription:
+        "MÄÄK behöver tillgång till din mikrofon för Kemi-Check videosamtal.",
+      // Photo library (read) — picking existing photos for profile uploads.
+      // expo-image-picker plugin usually injects this from photosPermission below,
+      // but we set it explicitly so App Store review never sees a missing key.
+      NSPhotoLibraryUsageDescription:
+        "MÄÄK behöver tillgång till dina foton för att du ska kunna välja profilbilder.",
+      // Photo library (write) — saving photos the user generates in-app (e.g.
+      // screenshots of their archetype). Not strictly used today but required
+      // by review if UIImageWriteToSavedPhotosAlbum is ever called from a dep.
+      NSPhotoLibraryAddUsageDescription:
+        "MÄÄK kan spara bilder du skapar i appen till ditt fotobibliotek.",
+    },
+    // Apple Privacy Manifest (iOS 17+). Expo injects this into
+    // ios/MK/PrivacyInfo.xcprivacy on prebuild so it survives
+    // regenerations of the native folder.
+    //
+    // Status: NSPrivacyTracking=false — MÄÄK does not do cross-app
+    // tracking. PostHog runs on our own EU project and is tied to the
+    // user's in-app account, so it's "analytics linked to identity"
+    // but not ATT-relevant tracking.
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyTrackingDomains: [],
+      NSPrivacyAccessedAPITypes: [
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp",
+          NSPrivacyAccessedAPITypeReasons: ["C617.1", "0A2A.1", "3B52.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults",
+          NSPrivacyAccessedAPITypeReasons: ["CA92.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryDiskSpace",
+          NSPrivacyAccessedAPITypeReasons: ["E174.1", "85F4.1"],
+        },
+      ],
+      NSPrivacyCollectedDataTypes: [
+        // Identity — needed for phone OTP auth + profile creation.
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeName",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhoneNumber",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeUserID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+            "NSPrivacyCollectedDataTypePurposeAnalytics",
+          ],
+        },
+        // User-generated content — photos, chat messages.
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePhotosorVideos",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeOtherUserContent",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+        // Sensitive — personality test answers + ID verification.
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeSensitiveInfo",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+        // PostHog — linked because we call posthog.identify(userId).
+        {
+          NSPrivacyCollectedDataType:
+            "NSPrivacyCollectedDataTypeProductInteraction",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAnalytics",
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeOtherUsageData",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAnalytics",
+          ],
+        },
+        // Crashes captured by PostHog / native diagnostics.
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeCrashData",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+          ],
+        },
+      ],
     },
   },
   web: {
@@ -124,6 +250,26 @@ const runtimeSupabaseAnonKey = (
 const runtimeRevenueCatIosKey = (
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || ""
 ).trim();
+
+// Hard-fail the build if production profile is used without a RevenueCat
+// key — without this guard a missing env var silently ships with no IAP
+// at all and every subscribe button is a dead click.
+const easProfile = (process.env.EAS_BUILD_PROFILE || "").trim();
+const isProductionBuild = easProfile === "expo-production" || easProfile === "production";
+if (isProductionBuild && !runtimeRevenueCatIosKey) {
+  throw new Error(
+    "EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set. Production builds need " +
+      "the live RevenueCat iOS key — configure it with `eas env:create` " +
+      "or in apps/mobile/.env before running `eas build`. Aborting.",
+  );
+}
+if (isProductionBuild && runtimeRevenueCatIosKey.startsWith("test_")) {
+  throw new Error(
+    "EXPO_PUBLIC_REVENUECAT_IOS_KEY looks like a test key (starts with " +
+      "'test_'). Production builds must use a live key (appl_* prefix). " +
+      "Aborting.",
+  );
+}
 const posthogProjectToken = (process.env.POSTHOG_PROJECT_TOKEN || "").trim();
 const posthogHost = (
   process.env.POSTHOG_HOST || "https://eu.i.posthog.com"

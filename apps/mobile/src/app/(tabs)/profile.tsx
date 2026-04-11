@@ -117,16 +117,36 @@ export default function ProfileScreen() {
     } catch (e) {
       setSaveError(t("profile.error_saving"));
       if (__DEV__) console.error("[profile save]", e);
+      posthog.capture("profile_save_failed", {
+        error_message: e instanceof Error ? e.message : String(e),
+      });
     } finally {
       setSaving(false);
     }
   };
 
   const signOut = async () => {
-    posthog.capture('user_signed_out');
-    posthog.reset();
-    await supabase.auth.signOut();
-    router.replace("/phone-auth");
+    // Wrapped so a flaky network or router failure surfaces as a dialog
+    // instead of crashing the tab. Happy path still redirects away.
+    try {
+      posthog.capture("user_signed_out");
+      posthog.reset();
+      await supabase.auth.signOut();
+      router.replace("/phone-auth");
+    } catch (e) {
+      if (__DEV__) console.error("[profile signOut]", e);
+      posthog.capture("sign_out_failed", {
+        error_message: e instanceof Error ? e.message : String(e),
+      });
+      // Surface a friendly dialog rather than letting the exception bubble.
+      const { Alert } = await import("react-native");
+      Alert.alert(
+        t("common.error", { defaultValue: "Något gick fel" }),
+        t("profile.error_sign_out", {
+          defaultValue: "Kunde inte logga ut. Kontrollera din anslutning och försök igen.",
+        }),
+      );
+    }
   };
 
   if (!isReady || (!user && isReady)) {
