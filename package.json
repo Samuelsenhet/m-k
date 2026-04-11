@@ -35,6 +35,7 @@
     "mascot:fix": "node scripts/fix-mascot-images.mjs",
     "launch:check": "node scripts/launch-check.mjs",
     "app-store:screenshots": "node scripts/resize-app-store-screenshots.mjs",
+    "assets:app-store": "node scripts/build-app-store-assets.mjs",
     "edge:fix-401": "node scripts/set-edge-secrets-and-deploy.mjs",
     "edge:align-and-deploy": "node scripts/ensure-supabase-project-and-deploy.mjs",
     "test:edge-match-daily": "node scripts/invoke-match-daily-test.mjs",
