@@ -1,4 +1,5 @@
-import { CTA, SITE } from "@/content/home";
+import { CTA } from "@/content/home";
+import { TrackedAppStoreLink } from "./TrackedAppStoreLink";
 
 export function CtaSection() {
   return (
@@ -25,14 +26,12 @@ export function CtaSection() {
           </p>
 
           <div className="relative mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href={SITE.appStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <TrackedAppStoreLink
+              source="cta_primary"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-maak-primary to-maak-primary-mid px-7 py-3.5 text-sm font-semibold text-white shadow-md transition hover:opacity-95"
             >
               {CTA.primary}
-            </a>
+            </TrackedAppStoreLink>
             <a
               href="#features"
               className="inline-flex items-center gap-2 rounded-full border border-maak-border bg-white px-7 py-3.5 text-sm font-semibold text-maak-foreground shadow-sm transition hover:shadow-md"

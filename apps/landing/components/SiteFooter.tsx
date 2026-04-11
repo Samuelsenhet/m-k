@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FOOTER, SITE } from "@/content/home";
+import { TrackedAppStoreLink } from "./TrackedAppStoreLink";
 
 export function SiteFooter() {
   return (
@@ -49,14 +50,12 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
-              <a
-                href={SITE.appStoreUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <TrackedAppStoreLink
+                source="footer"
                 className="inline-flex rounded-full border border-maak-border px-4 py-1.5 text-xs font-semibold text-maak-foreground transition hover:bg-maak-cream"
               >
                 Ladda ner appen
-              </a>
+              </TrackedAppStoreLink>
             </li>
           </ul>
         </div>

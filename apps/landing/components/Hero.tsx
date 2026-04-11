@@ -1,6 +1,7 @@
 import Image from "next/image";
-import { HERO, HERO_VALUES, SITE } from "@/content/home";
+import { HERO, HERO_VALUES } from "@/content/home";
 import { IphoneMockup } from "./IphoneMockup";
+import { TrackedAppStoreLink } from "./TrackedAppStoreLink";
 
 export function Hero() {
   return (
@@ -32,14 +33,12 @@ export function Hero() {
         </p>
 
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-          <a
-            href={SITE.appStoreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <TrackedAppStoreLink
+            source="hero_primary"
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-maak-primary to-maak-primary-mid px-7 py-3.5 text-sm font-semibold text-white shadow-md transition hover:opacity-95"
           >
             {HERO.primaryCta}
-          </a>
+          </TrackedAppStoreLink>
           <a
             href="#features"
             className="inline-flex items-center gap-2 rounded-full border border-maak-border bg-white px-7 py-3.5 text-sm font-semibold text-maak-foreground shadow-sm transition hover:shadow-md"
@@ -52,12 +51,10 @@ export function Hero() {
 
         {/* App-ikon → App Store */}
         <div className="mt-10 flex w-full justify-center">
-          <a
-            href={SITE.appStoreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <TrackedAppStoreLink
+            source="hero_icon_tile"
             className="group flex w-full max-w-[240px] flex-col items-center rounded-2xl border border-maak-border/60 bg-white/70 px-5 py-4 shadow-[0_12px_40px_-28px_rgba(37,61,44,0.35)] backdrop-blur-sm transition hover:border-maak-primary/45 hover:shadow-[0_16px_44px_-28px_rgba(37,61,44,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maak-primary sm:max-w-[260px]"
-            aria-label="Ladda ner määk i App Store"
+            ariaLabel="Ladda ner määk i App Store"
           >
             <Image
               src="/app-icon-light.webp"
@@ -71,7 +68,7 @@ export function Hero() {
             <span className="mt-2 text-xs font-semibold tracking-wide text-maak-primary">
               {HERO.downloadLabel}
             </span>
-          </a>
+          </TrackedAppStoreLink>
         </div>
 
         {/* Värderader */}

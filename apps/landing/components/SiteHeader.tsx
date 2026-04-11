@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NAV_LINKS, SITE } from "@/content/home";
+import { TrackedAppStoreLink } from "./TrackedAppStoreLink";
 
 export function SiteHeader() {
   return (
@@ -31,14 +32,12 @@ export function SiteHeader() {
           >
             Villkor
           </Link>
-          <a
-            href={SITE.appStoreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <TrackedAppStoreLink
+            source="header"
             className="rounded-full bg-gradient-to-r from-maak-primary to-maak-primary-mid px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
           >
             Ladda ner
-          </a>
+          </TrackedAppStoreLink>
         </nav>
       </div>
     </header>
