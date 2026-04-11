@@ -1,42 +1,44 @@
 import { useHostProfile } from "@/hooks/useHostProfile";
 import { Ionicons } from "@expo/vector-icons";
 import { maakTokens } from "@maak/core";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 type Props = {
-  /** The user currently viewed — we'll introduce them to one of our other matches. */
+  /** The user being viewed — becomes user_a in the introduction picker. */
   targetUserId: string;
-  /** Display name of the target — used in alerts. */
+  /** Display name of the target — seeded into the picker's UI. */
   targetUserName?: string;
 };
 
 /**
  * "Introducera" button — lets an active Värd start an introduction flow
- * between two of their own matches.
+ * between the currently-viewed user and another one of their matches.
  *
- * This is scaffolding — the actual picker + introduction-create edge
- * function is built in Fas 4. For now the button just shows a
- * "coming soon" alert when pressed, and is only visible to active
- * hosts so we don't surface a feature to non-hosts that they can't use.
+ * Only renders for active hosts. On press, navigates to the picker screen
+ * with the current user pre-selected as user_a — the picker prompts to
+ * choose user_b and write an optional message, then calls the
+ * introduction-create edge function.
  */
-export function IntroduceButton({ targetUserId: _targetUserId, targetUserName }: Props) {
+export function IntroduceButton({ targetUserId, targetUserName }: Props) {
   const { t } = useTranslation();
+  const router = useRouter();
   const host = useHostProfile();
 
   if (!host.isActive) return null;
 
   function handlePress() {
-    Alert.alert(
-      t("host.introduce.coming_soon_title", {
-        defaultValue: "Kommer snart",
-      }),
-      t("host.introduce.coming_soon_body", {
-        defaultValue:
-          "Snart kan du som Värd koppla ihop två av dina matchningar du tror passar. Vi öppnar funktionen efter lansering.",
-        name: targetUserName ?? "",
-      }),
-    );
+    // `/host/introduce` is a valid expo-router path but the typed-routes
+    // cache may not have regenerated it yet on first compile. Cast until
+    // `expo start` refreshes the routes index.
+    router.push({
+      pathname: "/host/introduce" as unknown as "/",
+      params: {
+        user_a_id: targetUserId,
+        user_a_name: targetUserName ?? "",
+      },
+    });
   }
 
   return (
@@ -68,9 +70,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(75, 110, 72, 0.2)",
   },
-  buttonPressed: {
-    opacity: 0.7,
-  },
+  buttonPressed: { opacity: 0.7 },
   label: {
     fontSize: 13,
     fontWeight: "700",

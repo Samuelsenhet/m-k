@@ -1,32 +1,189 @@
+import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useHostProfile } from "@/hooks/useHostProfile";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
- * Träffar — public IRL events feed. Värd-program scaffolding.
+ * Träffar — public IRL events feed for the Värdar (Hosts) program.
  *
- * This is a placeholder "coming soon" state. When the program launches
- * post-App-Store-release we'll wire up the supabase query against the
- * träffar table (see supabase/migrations/20260411180000_vardar_foundations.sql
- * and docs/VARDAR.md).
+ * Flow:
+ *   1. Load all open/confirmed träffar starting in the future, with their
+ *      current rsvp count from the träff_rsvp_counts view
+ *   2. Load which träffar the current user has already rsvped to
+ *   3. Render a feed with RSVP / Cancel buttons that call the traff-rsvp
+ *      edge function
  *
- * For now the screen:
- *   - Renders a hero + explanation of what Träffar will be
- *   - Shows the current user's host status if they have one
- *   - Surfaces a "Skapa träff" action for active hosts (still a no-op)
- *
- * We ship this screen in Fas 2 so links from Profile → Träffar work
- * and users see that something is planned.
+ * Host profile state is surfaced at the top if the user is pending/active/
+ * paused — mostly as a signal that MÄÄK sees them as a Värd candidate.
  */
+
+type Träff = {
+  id: string;
+  host_user_id: string;
+  title: string;
+  description: string;
+  location_label: string;
+  location_city: string;
+  starts_at: string;
+  duration_minutes: number;
+  max_attendees: number;
+  min_confirm_attendees: number;
+  personality_theme: string | null;
+  status: "open" | "confirmed" | string;
+  rsvp_count: number;
+  user_rsvped: boolean;
+};
+
 export default function TraffarScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { supabase, session } = useSupabase();
   const host = useHostProfile();
+
+  const [träffar, setTräffar] = useState<Träff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [busyTräffId, setBusyTräffId] = useState<string | null>(null);
+
+  const fetchTräffar = useCallback(async () => {
+    const userId = session?.user?.id;
+    try {
+      // 1. Base list of future open/confirmed träffar.
+      const { data: rows, error: listError } = await supabase
+        .from("träffar")
+        .select(
+          "id, host_user_id, title, description, location_label, location_city, starts_at, duration_minutes, max_attendees, min_confirm_attendees, personality_theme, status",
+        )
+        .in("status", ["open", "confirmed"])
+        .gte("starts_at", new Date().toISOString())
+        .order("starts_at", { ascending: true });
+      if (listError) throw listError;
+      const list = (rows ?? []) as Omit<Träff, "rsvp_count" | "user_rsvped">[];
+
+      if (list.length === 0) {
+        setTräffar([]);
+        return;
+      }
+
+      const ids = list.map((t) => t.id);
+
+      // 2. Join RSVP counts via the aggregated view. We use "*" here
+      // because the Supabase TS select parser chokes on the unicode `ä`
+      // in "träff_id, rsvp_count". Cast the result once at the boundary.
+      const { data: countRowsRaw } = await supabase
+        .from("träff_rsvp_counts")
+        .select("*")
+        .in("träff_id", ids);
+      const countRows = (countRowsRaw ?? []) as unknown as Array<{
+        träff_id: string;
+        rsvp_count: number | null;
+      }>;
+      const countMap = new Map<string, number>();
+      for (const row of countRows) {
+        countMap.set(row.träff_id, Number(row.rsvp_count ?? 0));
+      }
+
+      // 3. My own RSVPs (only the träffar shown). Same "*" trick for the
+      // ä in the column name — select-string parser can't handle it.
+      const rsvpedSet = new Set<string>();
+      if (userId) {
+        const { data: myRsvpsRaw } = await supabase
+          .from("träff_rsvps")
+          .select("*")
+          .eq("user_id", userId)
+          .in("träff_id", ids);
+        const myRsvps = (myRsvpsRaw ?? []) as unknown as Array<{
+          träff_id: string;
+        }>;
+        for (const r of myRsvps) {
+          rsvpedSet.add(r.träff_id);
+        }
+      }
+
+      setTräffar(
+        list.map((t) => ({
+          ...t,
+          rsvp_count: countMap.get(t.id) ?? 0,
+          user_rsvped: rsvpedSet.has(t.id),
+        })),
+      );
+    } catch (err) {
+      if (__DEV__) console.error("[träffar] fetch error:", err);
+      setTräffar([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [supabase, session?.user?.id]);
+
+  useEffect(() => {
+    void fetchTräffar();
+  }, [fetchTräffar]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    void fetchTräffar();
+  }, [fetchTräffar]);
+
+  const callRsvp = useCallback(
+    async (träffId: string, action: "rsvp" | "cancel") => {
+      setBusyTräffId(träffId);
+      try {
+        const sess = (await supabase.auth.getSession()).data.session;
+        if (!sess?.access_token) {
+          Alert.alert(
+            t("common.error", { defaultValue: "Fel" }),
+            t("traffar.error_not_logged_in", {
+              defaultValue: "Du behöver vara inloggad.",
+            }),
+          );
+          return;
+        }
+        const { data, error: fnError } = await supabase.functions.invoke(
+          "traff-rsvp",
+          {
+            body: { träff_id: träffId, action },
+            headers: { Authorization: `Bearer ${sess.access_token}` },
+          },
+        );
+        if (fnError) throw fnError;
+        if (data && typeof data === "object" && "error" in data) {
+          throw new Error(String((data as { error: string }).error));
+        }
+        await fetchTräffar();
+      } catch (err) {
+        if (__DEV__) console.error("[träffar] rsvp error:", err);
+        Alert.alert(
+          t("common.error", { defaultValue: "Fel" }),
+          action === "rsvp"
+            ? t("traffar.error_rsvp", {
+                defaultValue: "Kunde inte anmäla dig. Försök igen.",
+              })
+            : t("traffar.error_cancel", {
+                defaultValue: "Kunde inte avboka. Försök igen.",
+              }),
+        );
+      } finally {
+        setBusyTräffId(null);
+      }
+    },
+    [supabase, fetchTräffar, t],
+  );
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -51,35 +208,30 @@ export default function TraffarScreen() {
           paddingBottom: insets.bottom + 24,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {/* Hero */}
         <View style={styles.hero}>
-          <View style={styles.eyebrow}>
-            <View style={styles.eyebrowDot} />
-            <Text style={styles.eyebrowText}>
-              {t("traffar.eyebrow", { defaultValue: "Kommer snart" })}
-            </Text>
-          </View>
           <Text style={styles.heroTitle}>
-            {t("traffar.hero_title", {
-              defaultValue: "Riktiga möten. I din stad.",
+            {t("traffar.hero_title_real", {
+              defaultValue: "Riktiga möten, nära dig.",
             })}
           </Text>
           <Text style={styles.heroBody}>
-            {t("traffar.hero_body", {
+            {t("traffar.hero_body_real", {
               defaultValue:
-                "Träffar är små IRL-event arrangerade av Värdar – personer som gör mer än att matcha. Brunch, afterwork, promenader. Anmäl dig, dyk upp, träffas.",
+                "Värdar skapar små IRL-event. Anmäl dig, dyk upp, träffas.",
             })}
           </Text>
         </View>
 
-        {/* Host status pill */}
         {host.isActive && (
           <View style={styles.hostCard}>
             <Ionicons name="star" size={18} color={maakTokens.primary} />
             <Text style={styles.hostCardText}>
               {t("traffar.you_are_host", {
-                defaultValue: "Du är Värd. Du kan skapa Träffar.",
+                defaultValue: "Du är Värd. Skapa en Träff i Supabase tills UI finns.",
               })}
             </Text>
           </View>
@@ -95,102 +247,139 @@ export default function TraffarScreen() {
             </Text>
           </View>
         )}
-        {host.isPaused && (
-          <View style={styles.hostCard}>
-            <Ionicons name="pause-circle" size={18} color={maakTokens.mutedForeground} />
-            <Text style={styles.hostCardText}>
-              {t("traffar.you_are_paused", {
+
+        {loading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={maakTokens.primary} />
+          </View>
+        ) : träffar.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons
+              name="calendar-outline"
+              size={48}
+              color={maakTokens.mutedForeground}
+            />
+            <Text style={styles.emptyTitle}>
+              {t("traffar.empty_title", {
+                defaultValue: "Inga Träffar just nu",
+              })}
+            </Text>
+            <Text style={styles.emptyBody}>
+              {t("traffar.empty_body_real", {
                 defaultValue:
-                  "Din Värd-status är pausad. Skapa en ny Samling eller Träff för att aktivera igen.",
+                  "Värdar skapar nya event varje vecka. Kolla tillbaka eller dra ner för att uppdatera.",
               })}
             </Text>
           </View>
+        ) : (
+          träffar.map((t2) => (
+            <TräffCard
+              key={t2.id}
+              träff={t2}
+              busy={busyTräffId === t2.id}
+              onRsvp={() => callRsvp(t2.id, "rsvp")}
+              onCancel={() => callRsvp(t2.id, "cancel")}
+            />
+          ))
         )}
-
-        {/* Coming soon empty state */}
-        <View style={styles.emptyCard}>
-          <Ionicons name="calendar-outline" size={48} color={maakTokens.mutedForeground} />
-          <Text style={styles.emptyTitle}>
-            {t("traffar.empty_title", {
-              defaultValue: "Inga Träffar än",
-            })}
-          </Text>
-          <Text style={styles.emptyBody}>
-            {t("traffar.empty_body", {
-              defaultValue:
-                "Programmet lanseras efter att MÄÄK öppnat på App Store. När det händer dyker event upp här — sorterade på din stad och personlighetstema.",
-            })}
-          </Text>
-        </View>
-
-        {/* Info section */}
-        <View style={styles.infoSection}>
-          <Text style={styles.infoHeading}>
-            {t("traffar.info_heading", { defaultValue: "Så fungerar det" })}
-          </Text>
-          <InfoRow
-            icon="calendar"
-            title={t("traffar.info_create_title", {
-              defaultValue: "Värdar skapar Träffar",
-            })}
-            body={t("traffar.info_create_body", {
-              defaultValue:
-                "Tid, plats, max antal deltagare. Träffen publiceras i din stad.",
-            })}
-          />
-          <InfoRow
-            icon="checkmark-circle"
-            title={t("traffar.info_rsvp_title", {
-              defaultValue: "Du anmäler dig",
-            })}
-            body={t("traffar.info_rsvp_body", {
-              defaultValue:
-                "När 4+ personer har anmält sig bekräftas Träffen och du får en påminnelse.",
-            })}
-          />
-          <InfoRow
-            icon="people"
-            title={t("traffar.info_meet_title", {
-              defaultValue: "Ni träffas på riktigt",
-            })}
-            body={t("traffar.info_meet_body", {
-              defaultValue:
-                "Ingen gruppchatt mellan anmälan och eventet — bara själva mötet. Efteråt kan du matcha med de du gillade.",
-            })}
-          />
-        </View>
       </ScrollView>
     </View>
   );
 }
 
-function InfoRow({
-  icon,
-  title,
-  body,
+function TräffCard({
+  träff,
+  busy,
+  onRsvp,
+  onCancel,
 }: {
-  icon: "calendar" | "checkmark-circle" | "people";
-  title: string;
-  body: string;
+  träff: Träff;
+  busy: boolean;
+  onRsvp: () => void;
+  onCancel: () => void;
 }) {
+  const { t } = useTranslation();
+  const startsAt = new Date(träff.starts_at);
+  const dateLabel = startsAt.toLocaleDateString("sv-SE", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const timeLabel = startsAt.toLocaleTimeString("sv-SE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const full = träff.rsvp_count >= träff.max_attendees;
+  const confirmed = träff.status === "confirmed";
+
   return (
-    <View style={styles.infoRow}>
-      <View style={styles.infoIconWrap}>
-        <Ionicons name={icon} size={20} color={maakTokens.primary} />
+    <View style={styles.träffCard}>
+      <View style={styles.träffHeader}>
+        <View style={styles.träffDateBlock}>
+          <Text style={styles.träffDate}>{dateLabel}</Text>
+          <Text style={styles.träffTime}>{timeLabel}</Text>
+        </View>
+        {confirmed && (
+          <View style={styles.confirmedPill}>
+            <Ionicons name="checkmark-circle" size={12} color={maakTokens.primary} />
+            <Text style={styles.confirmedText}>
+              {t("traffar.confirmed", { defaultValue: "Bekräftad" })}
+            </Text>
+          </View>
+        )}
       </View>
-      <View style={styles.infoRowText}>
-        <Text style={styles.infoRowTitle}>{title}</Text>
-        <Text style={styles.infoRowBody}>{body}</Text>
+      <Text style={styles.träffTitle}>{träff.title}</Text>
+      <Text style={styles.träffLocation}>{träff.location_label}</Text>
+      <Text style={styles.träffDescription} numberOfLines={3}>
+        {träff.description}
+      </Text>
+      <View style={styles.träffFooter}>
+        <Text style={styles.träffCount}>
+          {träff.rsvp_count} / {träff.max_attendees}{" "}
+          {t("traffar.going", { defaultValue: "anmälda" })}
+        </Text>
+        {träff.user_rsvped ? (
+          <Pressable
+            onPress={onCancel}
+            disabled={busy}
+            style={[styles.rsvpButton, styles.rsvpButtonCancel]}
+          >
+            {busy ? (
+              <ActivityIndicator size="small" color={maakTokens.primary} />
+            ) : (
+              <Text style={styles.rsvpCancelLabel}>
+                {t("traffar.cancel_rsvp", { defaultValue: "Avboka" })}
+              </Text>
+            )}
+          </Pressable>
+        ) : full ? (
+          <View style={[styles.rsvpButton, styles.rsvpButtonFull]}>
+            <Text style={styles.rsvpFullLabel}>
+              {t("traffar.full", { defaultValue: "Fullt" })}
+            </Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={onRsvp}
+            disabled={busy}
+            style={[styles.rsvpButton, styles.rsvpButtonActive]}
+          >
+            {busy ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.rsvpLabel}>
+                {t("traffar.rsvp", { defaultValue: "Anmäl mig" })}
+              </Text>
+            )}
+          </Pressable>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: maakTokens.background,
-  },
+  root: { flex: 1, backgroundColor: maakTokens.background },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -198,59 +387,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  topTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: maakTokens.foreground,
-  },
-  hero: {
-    paddingTop: 24,
-    paddingBottom: 12,
-  },
-  eyebrow: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "rgba(37, 61, 44, 0.08)",
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#F97068",
-  },
-  eyebrowText: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.8,
-    color: maakTokens.primary,
-    textTransform: "uppercase",
-  },
+  topTitle: { fontSize: 17, fontWeight: "700", color: maakTokens.foreground },
+  hero: { paddingTop: 16, paddingBottom: 8 },
   heroTitle: {
-    marginTop: 14,
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "700",
-    lineHeight: 38,
+    lineHeight: 34,
     color: maakTokens.foreground,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   heroBody: {
-    marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 20,
     color: maakTokens.mutedForeground,
   },
   hostCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginTop: 20,
+    marginTop: 16,
     padding: 14,
     borderRadius: 14,
     backgroundColor: "#D9EDE4",
@@ -264,6 +420,7 @@ const styles = StyleSheet.create({
     color: maakTokens.primary,
     lineHeight: 18,
   },
+  loadingWrap: { padding: 40, alignItems: "center" },
   emptyCard: {
     marginTop: 24,
     padding: 28,
@@ -286,48 +443,98 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: maakTokens.mutedForeground,
   },
-  infoSection: {
-    marginTop: 32,
-  },
-  infoHeading: {
-    fontSize: 13,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    color: maakTokens.mutedForeground,
-    marginBottom: 14,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    padding: 14,
-    borderRadius: 14,
+  träffCard: {
+    marginTop: 14,
+    padding: 16,
+    borderRadius: 18,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(37, 61, 44, 0.06)",
-    marginBottom: 10,
+    borderColor: "rgba(37, 61, 44, 0.08)",
   },
-  infoIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#D9EDE4",
-    justifyContent: "center",
+  träffHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  infoRowText: {
-    flex: 1,
+  träffDateBlock: { flexDirection: "row", alignItems: "center", gap: 8 },
+  träffDate: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: maakTokens.primary,
+    textTransform: "capitalize",
   },
-  infoRowTitle: {
-    fontSize: 14,
+  träffTime: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: maakTokens.mutedForeground,
+  },
+  confirmedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "#D9EDE4",
+  },
+  confirmedText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: maakTokens.primary,
+  },
+  träffTitle: {
+    fontSize: 17,
     fontWeight: "700",
     color: maakTokens.foreground,
-  },
-  infoRowBody: {
     marginTop: 2,
+  },
+  träffLocation: {
     fontSize: 13,
-    lineHeight: 18,
     color: maakTokens.mutedForeground,
+    marginTop: 2,
+  },
+  träffDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: maakTokens.foreground,
+    marginTop: 10,
+  },
+  träffFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+  },
+  träffCount: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: maakTokens.mutedForeground,
+  },
+  rsvpButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 100,
+  },
+  rsvpButtonActive: { backgroundColor: maakTokens.primary },
+  rsvpButtonCancel: {
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: maakTokens.primary,
+  },
+  rsvpButtonFull: { backgroundColor: "#EBEAE8" },
+  rsvpLabel: { color: "#FFF", fontSize: 13, fontWeight: "700" },
+  rsvpCancelLabel: {
+    color: maakTokens.primary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  rsvpFullLabel: {
+    color: maakTokens.mutedForeground,
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
