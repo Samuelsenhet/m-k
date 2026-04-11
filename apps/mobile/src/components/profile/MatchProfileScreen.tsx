@@ -1,4 +1,5 @@
 import { Emoji } from "@/components/Emoji";
+import { IntroduceButton } from "@/components/host/IntroduceButton";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { archetypeDisplayTitle } from "@/lib/archetypeTitle";
 import {
@@ -324,6 +325,10 @@ export function MatchProfileScreen({
               </Pressable>
             ) : null}
           </View>
+          {/* IntroduceButton auto-hides for non-hosts. Wrapper is dark-safe. */}
+          <View style={styles.hostCtaRow}>
+            <IntroduceButton targetUserId={userId} targetUserName={profile?.display_name ?? undefined} />
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -423,4 +428,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14, borderRadius: 22, backgroundColor: maakTokens.primary,
   },
   chatBtnText: { fontSize: 16, fontWeight: "700", color: maakTokens.primaryForeground },
+  // IntroduceButton wrapper — host-only CTA beneath the like/pass/chat row.
+  // Null when the viewer isn't an active Värd (IntroduceButton returns null).
+  hostCtaRow: { marginTop: 12, alignItems: "flex-start" },
 });

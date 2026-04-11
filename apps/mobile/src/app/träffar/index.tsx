@@ -227,14 +227,28 @@ export default function TraffarScreen() {
         </View>
 
         {host.isActive && (
-          <View style={styles.hostCard}>
-            <Ionicons name="star" size={18} color={maakTokens.primary} />
+          <Pressable
+            onPress={() =>
+              router.push("/träffar/create" as unknown as "/")
+            }
+            style={styles.hostCard}
+            accessibilityRole="button"
+            accessibilityLabel={t("traffar.create_button_a11y", {
+              defaultValue: "Skapa en ny Träff",
+            })}
+          >
+            <Ionicons name="add-circle" size={22} color={maakTokens.primary} />
             <Text style={styles.hostCardText}>
-              {t("traffar.you_are_host", {
-                defaultValue: "Du är Värd. Skapa en Träff i Supabase tills UI finns.",
+              {t("traffar.create_button", {
+                defaultValue: "Du är Värd — skapa en Träff",
               })}
             </Text>
-          </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={maakTokens.primary}
+            />
+          </Pressable>
         )}
         {host.isPending && (
           <View style={styles.hostCard}>

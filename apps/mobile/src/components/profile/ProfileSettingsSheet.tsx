@@ -243,6 +243,20 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                   label={t("settings.achievements")}
                   onPress={() => go("/achievements")}
                 />
+                {/* Värdar program entries — both available to everyone. Non-hosts
+                    see an empty inbox but can still browse träffar feeds. */}
+                <MenuRow
+                  icon="calendar-outline"
+                  label={t("settings.traffar", { defaultValue: "Träffar" })}
+                  onPress={() => go("/träffar" as unknown as "/")}
+                />
+                <MenuRow
+                  icon="mail-unread-outline"
+                  label={t("settings.intro_inbox", {
+                    defaultValue: "Introduktioner",
+                  })}
+                  onPress={() => go("/host/inbox" as unknown as "/")}
+                />
                 <MenuRow label={t("settings.terms")} onPress={() => go("/terms")} />
                 <MenuRow label={t("settings.privacy_policy")} onPress={() => go("/privacy")} />
                 <MenuRow label={t("settings.reporting")} onPress={() => go("/reporting")} />
