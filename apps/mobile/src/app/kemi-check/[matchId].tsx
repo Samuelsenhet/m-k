@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NativeModules, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 const hasWebRTC = !!NativeModules.WebRTCModule;
 
@@ -13,6 +14,7 @@ export default function KemiCheckScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { matchId: rawId } = useLocalSearchParams<{ matchId: string | string[] }>();
   const matchId = typeof rawId === "string" ? rawId : rawId?.[0] ?? "";
   const { session, supabase } = useSupabase();
@@ -92,7 +94,10 @@ export default function KemiCheckScreen() {
           matchId={matchId}
           matchedUserName={matchedUserName}
           isInitiator
-          onEnd={handleEnd}
+          onEnd={(durationSeconds: number) => {
+            posthog.capture('kemi_check_started', { match_id: matchId, duration_seconds: durationSeconds });
+            handleEnd(durationSeconds);
+          }}
         />
       ) : null}
     </>

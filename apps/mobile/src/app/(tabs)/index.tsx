@@ -8,6 +8,7 @@ import { useMatchStatus } from "@/hooks/useMatchStatus";
 import { useMatches } from "@/hooks/useMatches";
 import { useMatchActions } from "@/hooks/useMatchActions";
 import { useSundayRematch } from "@/hooks/useSundayRematch";
+import { usePostHog } from "posthog-react-native";
 import { isSupabaseInvokeUnauthorized } from "@maak/core";
 import { maakTokens } from "@maak/core";
 import * as Haptics from "expo-haptics";
@@ -62,7 +63,13 @@ export default function MatchesScreen() {
     setMatches,
   } = useMatches(authLoading);
 
-  const { passMatch } = useMatchActions(matches, setMatches);
+  const posthog = usePostHog();
+  const { passMatch: passMatchAction } = useMatchActions(matches, setMatches);
+
+  const passMatch = useCallback((matchId: string) => {
+    posthog.capture('match_passed', { match_id: matchId });
+    passMatchAction(matchId);
+  }, [passMatchAction, posthog]);
 
   const {
     status: matchStatus,
@@ -334,6 +341,8 @@ export default function MatchesScreen() {
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
   const signOutAndRedirect = async () => {
+    posthog.capture('user_signed_out');
+    posthog.reset();
     await supabase.auth.signOut();
     router.replace("/phone-auth");
   };

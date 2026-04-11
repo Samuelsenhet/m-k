@@ -5,7 +5,7 @@ import { maakTokens } from "@maak/core";
 import { MascotAssets } from "@/lib/mascotAssets";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 // ─── Feature row data (MÄÄK-aligned) ────────────────────────────────
 type Feature = {
@@ -44,8 +45,13 @@ export default function PaywallScreen() {
   const insets = useSafeAreaInsets();
   const { refreshSubscription } = useSubscription();
   const { configured, offering, purchasePackage, restorePurchases } = usePurchases();
+  const posthog = usePostHog();
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<TierKey>("premium");
+
+  useEffect(() => {
+    posthog.capture('paywall_viewed');
+  }, []);
 
   const handleSubscribe = async () => {
     if (!configured || !offering) {
@@ -64,10 +70,12 @@ export default function PaywallScreen() {
       return;
     }
 
+    posthog.capture('subscription_purchase_initiated', { tier: selected });
     setBusy(true);
     try {
       const result = await purchasePackage(pkg);
       if (result.success) {
+        posthog.capture('subscription_purchased', { tier: selected });
         await refreshSubscription();
         router.back();
       } else if (!result.cancelled) {
@@ -86,6 +94,7 @@ export default function PaywallScreen() {
       Alert.alert(t("mobile.paywall.not_configured_title"), t("mobile.paywall.not_configured_body"));
       return;
     }
+    posthog.capture('subscription_restore_initiated');
     setBusy(true);
     try {
       const result = await restorePurchases();
@@ -147,7 +156,7 @@ export default function PaywallScreen() {
             period={t("mobile.paywall.premium_period_label")}
             sub={t("mobile.paywall.premium_sub")}
             selected={selected === "premium"}
-            onSelect={() => setSelected("premium")}
+            onSelect={() => { setSelected("premium"); posthog.capture('subscription_tier_selected', { tier: 'premium' }); }}
             badgeText={t("mobile.paywall.save_badge")}
           />
           <TierRow
@@ -156,7 +165,7 @@ export default function PaywallScreen() {
             period={t("mobile.paywall.basic_period_label")}
             sub={t("mobile.paywall.basic_sub")}
             selected={selected === "basic"}
-            onSelect={() => setSelected("basic")}
+            onSelect={() => { setSelected("basic"); posthog.capture('subscription_tier_selected', { tier: 'basic' }); }}
           />
 
           {/* ── What You'll Get ────────────────────────────── */}

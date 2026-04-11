@@ -5,9 +5,11 @@ import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
 import { Stack, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { usePostHog } from "posthog-react-native";
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const { supabase, session, isReady } = useSupabase();
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -75,6 +77,7 @@ export default function OnboardingScreen() {
         /* welcome utan förnamn */
       }
     }
+    posthog.capture('onboarding_completed');
     setShowWelcome(true);
   };
 

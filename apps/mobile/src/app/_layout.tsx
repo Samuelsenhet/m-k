@@ -30,6 +30,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { trackScreenView } from '@/lib/analytics';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useExpoPushToken } from '@/hooks/useExpoPushToken';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from '@/lib/posthog';
 
 // Custom error boundary — Expo Router picks up the named export.
 export { ErrorBoundaryFallback as ErrorBoundary } from '@/components/ErrorBoundaryFallback';
@@ -135,9 +137,18 @@ function RootLayoutNav() {
       pathname,
       params: paramsSnapshot,
     });
+    posthog.screen(pathname, { ...paramsSnapshot });
   }, [pathname, paramsKey, paramsSnapshot]);
 
   return (
+    <PostHogProvider
+      client={posthog}
+      autocapture={{
+        captureScreens: false,
+        captureTouches: true,
+        propsToCapture: ['testID'],
+      }}
+    >
     <I18nRoot i18n={i18n}>
       <SupabaseProvider>
         <RealtimeNotificationsBridge />
@@ -172,5 +183,6 @@ function RootLayoutNav() {
         </PurchasesProvider>
       </SupabaseProvider>
     </I18nRoot>
+    </PostHogProvider>
   );
 }

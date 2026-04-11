@@ -7,6 +7,7 @@ import { useMutualChatMatches } from "@/hooks/useMutualChatMatches";
 import { useSubscription } from "@/hooks/useSubscription";
 import { appLocaleTag } from "@/lib/appLocale";
 import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
+import { usePostHog } from "posthog-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,6 +51,7 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
+  const posthog = usePostHog();
   const { canCreateGroups } = useSubscription();
   const { matches, loading, error, refresh } = useMutualChatMatches();
   const {
@@ -130,12 +132,13 @@ export default function ChatScreen() {
   }, [refresh, refreshGroups]);
 
   const openThread = useCallback((m: (typeof matches)[0]) => {
+    posthog.capture('chat_opened', { match_id: m.id });
     setSelected({
       id: m.id,
       matched_user_id: m.matched_user_id,
       matched_profile: m.matched_profile,
     });
-  }, []);
+  }, [posthog]);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -322,7 +325,10 @@ export default function ChatScreen() {
               renderItem={({ item }) => (
                 <Pressable
                   style={styles.row}
-                  onPress={() => router.push(`/group-chat/${item.id}`)}
+                  onPress={() => {
+                    posthog.capture('group_chat_opened', { group_id: item.id });
+                    router.push(`/group-chat/${item.id}`);
+                  }}
                 >
                   <View style={styles.avatarPh}>
                     <Text style={styles.avatarTxt}>{item.name.slice(0, 1).toUpperCase()}</Text>
@@ -346,6 +352,7 @@ export default function ChatScreen() {
         visible={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(id) => {
+          posthog.capture('group_chat_created', { group_id: id });
           setCreateOpen(false);
           router.push(`/group-chat/${id}`);
         }}

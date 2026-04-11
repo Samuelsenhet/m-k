@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 import { maakTokens } from "@maak/core";
 
@@ -15,6 +16,7 @@ export default function ViewMatchScreen() {
   const insets = useSafeAreaInsets();
   const { supabase, session, isReady } = useSupabase();
   const user = session?.user;
+  const posthog = usePostHog();
   const authLoading = !isReady;
   const { matches } = useMatches(authLoading);
   const { match: matchParam } = useLocalSearchParams<{ match?: string }>();
@@ -69,6 +71,16 @@ export default function ViewMatchScreen() {
   const score = matchFromList?.matchScore;
   const status = rowStatus ?? matchFromList?.status ?? undefined;
   const showChat = status === "active_chat" || status === "pending_intro";
+
+  useEffect(() => {
+    if (matchId && matchedUserId) {
+      posthog.capture('match_profile_viewed', {
+        match_id: matchId,
+        match_status: status,
+        match_score: score,
+      });
+    }
+  }, [matchId, matchedUserId]);
 
   if (!matchId) {
     return (

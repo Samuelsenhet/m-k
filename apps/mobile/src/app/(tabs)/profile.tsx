@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 type ProfileMode = "view" | "edit";
 
@@ -28,6 +29,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { supabase, session, isReady } = useSupabase();
   const user = session?.user;
+  const posthog = usePostHog();
 
   const [mode, setMode] = useState<ProfileMode>("view");
   const [viewKey, setViewKey] = useState(0);
@@ -104,6 +106,10 @@ export default function ProfileScreen() {
         })
         .eq(profileKey, user.id);
       if (error) throw error;
+      posthog.capture('profile_saved', {
+        has_display_name: !!displayName.trim(),
+        has_bio: !!bio.trim(),
+      });
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2500);
       setViewKey((k) => k + 1);
@@ -117,6 +123,8 @@ export default function ProfileScreen() {
   };
 
   const signOut = async () => {
+    posthog.capture('user_signed_out');
+    posthog.reset();
     await supabase.auth.signOut();
     router.replace("/phone-auth");
   };

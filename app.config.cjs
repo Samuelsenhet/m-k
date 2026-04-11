@@ -63,7 +63,9 @@ const expo = {
     backgroundColor: "#F2F0EF",
   },
   ios: {
-    supportsTablet: true,
+    // iPhone-only for v1 launch — disables App Store Connect's iPad screenshot requirement.
+    // To re-enable iPad later: flip to true, add iPad screenshots, rebuild + submit.
+    supportsTablet: false,
     bundleIdentifier: "com.samuelsenhet.maak",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
@@ -122,6 +124,10 @@ const runtimeSupabaseAnonKey = (
 const runtimeRevenueCatIosKey = (
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || ""
 ).trim();
+const posthogProjectToken = (process.env.POSTHOG_PROJECT_TOKEN || "").trim();
+const posthogHost = (
+  process.env.POSTHOG_HOST || "https://eu.i.posthog.com"
+).trim();
 
 /**
  * app.json paths are relative to apps/mobile. Use absolute paths under mobileRoot so prebuild finds files
@@ -176,6 +182,8 @@ module.exports = {
       ...(runtimeRevenueCatIosKey
         ? { EXPO_PUBLIC_REVENUECAT_IOS_KEY: runtimeRevenueCatIosKey }
         : {}),
+      posthogProjectToken,
+      posthogHost,
     },
   },
 };

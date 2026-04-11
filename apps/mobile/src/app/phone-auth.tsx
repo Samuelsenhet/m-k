@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
+import { usePostHog } from "posthog-react-native";
 
 /** Same grouping as web `PhoneInput` (Swedish mobile: 07X XXX XX XX). */
 const formatPhoneNumber = (value: string): string => {
@@ -58,6 +59,7 @@ export default function PhoneAuthScreen() {
     [t, i18n.language],
   );
   const router = useRouter();
+  const posthog = usePostHog();
   const { supabase, session } = useSupabase();
   const {
     step,
@@ -89,10 +91,16 @@ export default function PhoneAuthScreen() {
         .maybeSingle();
 
       if (profile?.onboarding_completed) {
+        posthog.identify(session.user.id, {
+          $set: { phone_verified: true },
+        });
         router.replace("/(tabs)");
         return;
       }
       if (profile?.date_of_birth) {
+        posthog.identify(session.user.id, {
+          $set: { phone_verified: true },
+        });
         router.replace("/onboarding");
         return;
       }
@@ -115,6 +123,7 @@ export default function PhoneAuthScreen() {
       clearError();
       const ok = await sendOtp(phone);
       if (ok) {
+        posthog.capture('otp_requested');
         Alert.alert("", `${t("auth.sendCode")}!`);
         setCountdown(60);
       }
@@ -132,6 +141,7 @@ export default function PhoneAuthScreen() {
       clearError();
       const ok = await verifyOtp(phone, otp);
       if (ok) {
+        posthog.capture('otp_verified');
         Alert.alert("", `${t("auth.verify")}!`);
       }
     } catch (e) {
@@ -225,6 +235,11 @@ export default function PhoneAuthScreen() {
         savedProfile = insertedProfile;
       }
 
+      posthog.identify(sessionUserId, {
+        $set: { phone_verified: true },
+        $set_once: { first_seen: new Date().toISOString() },
+      });
+      posthog.capture('profile_created', { is_new_user: !updatedProfile });
       Alert.alert("", t("auth.profile_created"));
 
       if (!savedProfile?.date_of_birth) {
