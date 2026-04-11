@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
-import { PostHogProvider } from "@/components/PostHogProvider";
+import { PostHogScript } from "@/components/PostHogScript";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -133,7 +133,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // JSON.stringify escapar alla citat korrekt; XSS-säkert så länge vi kontrollerar innehållet.
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <PostHogProvider>{children}</PostHogProvider>
+        {children}
+        <PostHogScript />
       </body>
     </html>
   );
