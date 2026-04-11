@@ -173,6 +173,7 @@ function RootLayoutNav() {
               <Stack.Screen name="appeal" options={{ headerShown: false }} />
               <Stack.Screen name="admin-reports" options={{ headerShown: false }} />
               <Stack.Screen name="achievements" options={{ headerShown: false }} />
+              <Stack.Screen name="träffar" options={{ headerShown: false }} />
               <Stack.Screen name="user/[userId]" options={{ headerShown: false }} />
               <Stack.Screen name="paywall" options={{ headerShown: false, presentation: 'modal' }} />
               <Stack.Screen name="kemi-check/[matchId]" options={{ headerShown: false }} />
