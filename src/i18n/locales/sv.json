@@ -21,7 +21,8 @@
     "close": "Stäng",
     "not_found_title": "Sidan hittades inte",
     "not_found_message": "Den här skärmen finns inte.",
-    "not_found_link": "Till startsidan"
+    "not_found_link": "Till startsidan",
+    "delete": "Ta bort"
   },
   "nav": {
     "matches": "Matchningar",
@@ -228,6 +229,7 @@
   },
   "chat": {
     "newMatch": "Ny match! 🎉",
+    "why_you_matched": "Varför ni matchades",
     "chooseIcebreaker": "Välj en konversationsstartare eller skriv ditt eget meddelande",
     "startConversation": "Starta konversationen med en isbrytare!",
     "typeMessage": "Skriv ett meddelande...",

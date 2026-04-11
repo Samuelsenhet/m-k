@@ -21,7 +21,8 @@
     "close": "Close",
     "not_found_title": "Page not found",
     "not_found_message": "This screen does not exist.",
-    "not_found_link": "Go to home"
+    "not_found_link": "Go to home",
+    "delete": "Delete"
   },
   "nav": {
     "matches": "Matches",
@@ -228,6 +229,7 @@
   },
   "chat": {
     "newMatch": "New match! 🎉",
+    "why_you_matched": "Why you matched",
     "chooseIcebreaker": "Choose a conversation starter or write your own message",
     "startConversation": "Start the conversation with an icebreaker!",
     "typeMessage": "Type a message...",

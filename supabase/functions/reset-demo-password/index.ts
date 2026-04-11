@@ -1,3 +1,27 @@
+// reset-demo-password — resets the password for the single demo/reviewer
+// account that App Store review uses when evaluating MÄÄK. It is gated by
+// two layers:
+//
+//   1. `ALLOW_DEMO_RESET` must be the literal string "true" (default: not set
+//      → function returns 403). DO NOT set this in production. It is intended
+//      for a short review window; flip it off again as soon as Apple review
+//      has finished.
+//
+//   2. Only the email in `DEMO_ACCOUNT_EMAIL` can have its password reset —
+//      arbitrary emails are rejected with 403 even when the flag is on.
+//
+// There is no JWT / API key check beyond the env flag. That is deliberate
+// for the demo workflow, but it also means ALLOW_DEMO_RESET=true in prod is
+// equivalent to leaving a password reset endpoint unauthenticated. Treat the
+// flag as the entire security boundary: set it only when needed, unset it
+// immediately after.
+//
+// Alarm/safety:
+//   - `supabase secrets list --project-ref <ref>` should be part of the
+//     post-launch checklist to confirm ALLOW_DEMO_RESET is unset in prod.
+//   - If Apple ever requests ongoing access, wire this behind a stronger
+//     mechanism (JWT scope, per-call signature, IP allowlist).
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 

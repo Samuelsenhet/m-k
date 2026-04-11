@@ -251,11 +251,27 @@ const runtimeRevenueCatIosKey = (
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || ""
 ).trim();
 
-// Hard-fail the build if production profile is used without a RevenueCat
+// Hard-fail on any build (not just production) if the RevenueCat key
+// looks like a server-side secret (sk_ prefix). Those keys give FULL
+// REST API access — they must never ship inside a mobile binary. We
+// fail closed for everyone, not just production, because a dev-client
+// build is still distributable and can be decompiled.
+if (runtimeRevenueCatIosKey.startsWith("sk_")) {
+  throw new Error(
+    "EXPO_PUBLIC_REVENUECAT_IOS_KEY looks like a RevenueCat SECRET key " +
+      "(starts with 'sk_'). Secret keys give full REST API access and " +
+      "MUST NOT be embedded in a mobile app. Rotate it in the RevenueCat " +
+      "dashboard immediately and replace it with the public iOS SDK key " +
+      "(starts with 'appl_'). Aborting.",
+  );
+}
+
+// Hard-fail the production build if the key is missing or still a test
 // key — without this guard a missing env var silently ships with no IAP
 // at all and every subscribe button is a dead click.
 const easProfile = (process.env.EAS_BUILD_PROFILE || "").trim();
-const isProductionBuild = easProfile === "expo-production" || easProfile === "production";
+const isProductionBuild =
+  easProfile === "expo-production" || easProfile === "production";
 if (isProductionBuild && !runtimeRevenueCatIosKey) {
   throw new Error(
     "EXPO_PUBLIC_REVENUECAT_IOS_KEY is not set. Production builds need " +
