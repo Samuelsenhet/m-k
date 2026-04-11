@@ -1,0 +1,18 @@
+# MÄÄK – landing-sajt på Loopia webbhotell (Apache 2.4 + nginx-proxy)
+# Next.js static export. Bara statisk HTML.
+
+RewriteEngine On
+
+# Tvinga HTTPS – undanta ACME challenge (Let's Encrypt validering).
+# Loopia har nginx framför Apache; %{HTTPS} är alltid "off" på Apache-nivån,
+# så kolla X-Forwarded-Proto från nginx istället.
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Trailing slash på mappar — Apache mod_dir gör detta default men via HTTP.
+# Stäng av mod_dir's auto-slash och lägg till egen regel som går direkt till HTTPS.
+DirectorySlash Off
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.+[^/])$ https://%{HTTP_HOST}/$1/ [L,R=301]
