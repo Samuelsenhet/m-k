@@ -45,7 +45,6 @@ alter table public.profiles
   validate constraint profiles_age_gate_20;
 
 comment on constraint profiles_age_gate_20 on public.profiles is
-  'MÄÄK age gate: 20+ required. Enforced at the DB layer so the age ' ||
-  'check cannot be bypassed by hitting the REST API directly.';
+  'MAAK age gate: 20+ required. Enforced at the DB layer so the age check cannot be bypassed by hitting the REST API directly.';
 
 commit;
