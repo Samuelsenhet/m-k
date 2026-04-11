@@ -1,11 +1,17 @@
 import {
   Brain,
   Compass,
+  Crown,
+  Gift,
   Heart,
+  Home,
   Leaf,
   Shield,
+  Sparkles,
   Trophy,
+  UserPlus,
   Users,
+  Utensils,
   Video,
   type LucideIcon,
 } from "lucide-react";
@@ -26,6 +32,7 @@ export const SITE = {
 export const NAV_LINKS = [
   { href: "#features", label: "Funktioner" },
   { href: "#more", label: "Mer" },
+  { href: "#vardar", label: "Värdar" },
   { href: "#stats", label: "Om appen" },
 ] as const;
 
@@ -118,6 +125,75 @@ export const EXTRAS: ReadonlyArray<{
     description: "Badges och XP för uppgifter du klarar – engagemang utan press.",
   },
 ];
+
+// ---- Värdar / Hosts Program ----
+// Visas på landing som en teaser innan programmet lanseras post-launch.
+// Copyn är avsiktligt konkret och jordnära – ingen "become an ambassador
+// today"-känsla. Värd-status är earned, inte ansökt om.
+
+export const VARDAR_HEADING = {
+  eyebrow: "Värdar",
+  title: "För dig som samlar människor",
+  subtitle:
+    "Vissa användare skapar inte bara kontakter — de skapar sammanhang. De kallas Värdar, och de är en del av MÄÄK:s innersta krets.",
+} as const;
+
+export const VARDAR_BENEFITS: ReadonlyArray<{
+  Icon: LucideIcon;
+  title: string;
+  description: string;
+}> = [
+  {
+    Icon: Crown,
+    title: "Värd-status",
+    description:
+      "En earned roll — inte köpt, inte ansökt. Vi tilldelar den när du visar att du skapar genuin social energi.",
+  },
+  {
+    Icon: Sparkles,
+    title: "Skapa Träffar",
+    description:
+      "Värdar kan skapa publika IRL-event — brunch, afterwork, promenad — som andra MÄÄK-användare kan RSVP:a till.",
+  },
+  {
+    Icon: UserPlus,
+    title: "Introduktioner",
+    description:
+      "Koppla ihop två av dina matchningar som du tror passar. Mänsklig matchning som komplement till algoritmen.",
+  },
+  {
+    Icon: Home,
+    title: "Värdrummet",
+    description:
+      "En privat Samling endast för andra Värdar. Här möts de som håller MÄÄK levande och delar tips.",
+  },
+  {
+    Icon: Utensils,
+    title: "Värdmiddag",
+    description:
+      "Fyra gånger per år bjuds Värdar till en middag i sin stad — Stockholm, Göteborg eller Malmö.",
+  },
+  {
+    Icon: Gift,
+    title: "Premium ingår",
+    description:
+      "Så länge du är en aktiv Värd är Premium inkluderat. Ingen revenue share, inga provisioner — bara verktygen.",
+  },
+];
+
+export const VARDAR_HOW = {
+  eyebrow: "Så blir du en Värd",
+  title: "Kvalitet, inte kvantitet.",
+  description:
+    "Du behöver inte ansöka. Vi ser vilka som redan gör rätt saker – och kontaktar dig när du gjort något av följande:",
+  criteria: [
+    "Skapat en Samling som hålls levande av 5+ aktiva medlemmar",
+    "Genomfört en Träff med minst 4 deltagare på plats",
+    "Gjort tre lyckade introduktioner mellan dina matchningar",
+  ],
+  footnote:
+    "Programmet lanseras efter att MÄÄK öppnat på App Store. Värd-status är manuellt utvald av teamet.",
+} as const;
 
 export const FACTS_HEADING = {
   title: "Byggd för riktiga möten.",

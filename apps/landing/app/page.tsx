@@ -5,6 +5,7 @@ import { FeaturesSection } from "@/components/FeaturesSection";
 import { Hero } from "@/components/Hero";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { VardarSection } from "@/components/VardarSection";
 
 // Landing-hem. Sektionerna är separata komponenter så copy (content/home.ts)
 // och markup kan utvecklas oberoende av varandra.
@@ -16,6 +17,7 @@ export default function HomePage() {
         <Hero />
         <FeaturesSection />
         <ExtrasSection />
+        <VardarSection />
         <FactsSection />
         <CtaSection />
       </main>
