@@ -16,6 +16,10 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # redirecten landar direkt på HTTPS (annars gissar Apache HTTP).
 RewriteRule ^vilkor/?$ https://%{HTTP_HOST}/terms/ [L,R=301]
 
+# Brandad 404 istället för Apache defaulten. Next bygger out/404.html från
+# app/not-found.tsx.
+ErrorDocument 404 /404.html
+
 # Trailing slash på mappar — Apache mod_dir gör detta default men via HTTP.
 # Stäng av mod_dir's auto-slash och lägg till egen regel som går direkt till HTTPS.
 DirectorySlash Off
