@@ -27,9 +27,11 @@ const TARGETS = [
     webpQuality: 80,
   },
   {
+    // Displayas som 96×96 på mobile, 112×112 på desktop. 2× DPR → 224 pixlar.
+    // 512 var overkill och drog in ~20 KB extra för ingen synlig skillnad.
     file: "app-icon-light.png",
-    maxWidth: 512,
-    webpQuality: 90,
+    maxWidth: 224,
+    webpQuality: 88,
   },
 ];
 

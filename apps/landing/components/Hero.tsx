@@ -56,12 +56,14 @@ export function Hero() {
             className="group flex w-full max-w-[240px] flex-col items-center rounded-2xl border border-maak-border/60 bg-white/70 px-5 py-4 shadow-[0_12px_40px_-28px_rgba(37,61,44,0.35)] backdrop-blur-sm transition hover:border-maak-primary/45 hover:shadow-[0_16px_44px_-28px_rgba(37,61,44,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maak-primary sm:max-w-[260px]"
             ariaLabel="Ladda ner määk i App Store"
           >
+            {/* INGEN priority här — hero.webp ska vinna bandbredds-racet
+                under initial paint så LCP landar på iPhone-mockupen */}
             <Image
               src="/app-icon-light.webp"
               alt=""
-              width={512}
-              height={512}
-              priority
+              width={224}
+              height={224}
+              loading="lazy"
               className="h-24 w-24 rounded-[1.35rem] object-contain object-center shadow-[0_4px_14px_rgba(37,61,44,0.12)] ring-1 ring-black/[0.06] transition group-hover:scale-[1.04] group-active:scale-[0.98] sm:h-28 sm:w-28 sm:rounded-[1.5rem]"
               sizes="(max-width: 640px) 96px, 112px"
             />
