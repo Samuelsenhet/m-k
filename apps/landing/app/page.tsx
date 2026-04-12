@@ -6,6 +6,7 @@ import { Hero } from "@/components/Hero";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VardarSection } from "@/components/VardarSection";
+import { WaitlistBanner } from "@/components/WaitlistBanner";
 
 // Landing-hem. Sektionerna är separata komponenter så copy (content/home.ts)
 // och markup kan utvecklas oberoende av varandra.
@@ -15,6 +16,7 @@ export default function HomePage() {
       <SiteHeader />
       <main className="flex-1">
         <Hero />
+        <WaitlistBanner />
         <FeaturesSection />
         <ExtrasSection />
         <VardarSection />

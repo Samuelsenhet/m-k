@@ -19,6 +19,7 @@ const ROUTES: Route[] = [
   { path: "/privacy", changeFrequency: "yearly", priority: 0.4 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.4 },
   { path: "/reporting", changeFrequency: "yearly", priority: 0.4 },
+  { path: "/vanta", changeFrequency: "monthly", priority: 0.6 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

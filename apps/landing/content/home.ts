@@ -34,6 +34,7 @@ export const NAV_LINKS = [
   { href: "#more", label: "Mer" },
   { href: "#vardar", label: "Värdar" },
   { href: "#stats", label: "Om appen" },
+  { href: "/vanta/", label: "Väntelista" },
 ] as const;
 
 export const HERO = {
