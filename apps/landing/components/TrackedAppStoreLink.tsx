@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { SITE } from "@/content/home";
 
 type Source =
   | "header"
@@ -16,15 +15,22 @@ type Props = {
 };
 
 /**
- * Server component — renderar en vanlig `<a>` med `data-track-source`.
+ * Server component - renderar en vanlig `<a>` med `data-track-source`.
+ *
+ * Pre-launch: alla "Ladda ner"-CTA:er pekar på /vanta/-väntelistan
+ * istället för App Store. När MÄÄK är live i App Store: byt href
+ * tillbaka till SITE.appStoreUrl, lägg tillbaka target="_blank" och
+ * rel="noopener noreferrer", och importera SITE igen från @/content/home.
  *
  * Click-tracking sker via en enda document-level listener i
- * PostHogProvider, inte via en React onClick per länk. Det betyder:
+ * PostHogScript, inte via en React onClick per länk. Det betyder:
  *   - Ingen client boundary per länk → sparar hydration-tid
  *   - `posthog-js` stannar i sin lazy-chunk, pullas inte in via
  *     user-hook-grafen
  *   - Alla fem CTA:er (header/hero/cta/footer/icon) är fortfarande
- *     bara en länk i HTML:en – ingen behöver hydreras
+ *     bara en länk i HTML:en - ingen behöver hydreras
+ *   - Event-namnet `landing_app_store_click` speglar fortfarande
+ *     CTA:ns intent (download-knappen), oavsett destination.
  */
 export function TrackedAppStoreLink({
   source,
@@ -34,9 +40,7 @@ export function TrackedAppStoreLink({
 }: Props) {
   return (
     <a
-      href={SITE.appStoreUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+      href="/vanta/"
       className={className}
       aria-label={ariaLabel}
       data-track-source={source}

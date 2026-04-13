@@ -4,9 +4,9 @@ import "./globals.css";
 
 const SITE = "https://maakapp.se";
 const NAME = "määk";
-const TITLE = "määk – träffa människor som passar dig";
+const TITLE = "määk - träffa människor som passar dig";
 const DESCRIPTION =
-  "En lugn dejtingapp utan swipe-stress. Matchning, chatt och profiler – designad för att kännas trygg och mänsklig.";
+  "En lugn dejtingapp utan swipe-stress. Matchning, chatt och profiler - designad för att kännas trygg och mänsklig.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     images: ["/opengraph-image"],
-    // Lämna creator/site orefererade — vi har ingen X-närvaro, och ett
+    // Lämna creator/site orefererade - vi har ingen X-närvaro, och ett
     // trasigt handle blir en 404 för den som klickar från rich cards.
   },
   robots: {
@@ -99,7 +99,7 @@ export const viewport: Viewport = {
   ],
 };
 
-// Organization + WebSite JSON-LD – hjälper Google bygga rich snippets och Knowledge Graph.
+// Organization + WebSite JSON-LD - hjälper Google bygga rich snippets och Knowledge Graph.
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [

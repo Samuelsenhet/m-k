@@ -1,7 +1,7 @@
 import Script from "next/script";
 
 /**
- * PostHog via <Script> — laddar officiella CDN-snippet istället för
+ * PostHog via <Script> - laddar officiella CDN-snippet istället för
  * posthog-js npm-paketet. Inga client components, ingen React
  * hydration, ingen posthog-js i Next-bundeln.
  *
@@ -21,7 +21,7 @@ const POSTHOG_HOST =
 export function PostHogScript() {
   if (!POSTHOG_KEY) return null;
 
-  // Officiella PostHog-snippet – byggs från posthog-js/dist/array.full.js vid behov.
+  // Officiella PostHog-snippet - byggs från posthog-js/dist/array.full.js vid behov.
   // Vi skriver init-anropet direkt efter snippet-loadern så posthog
   // har rätt konfiguration direkt.
   const initScript = `

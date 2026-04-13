@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
 export const dynamic = "force-static";
-export const alt = "määk – träffa människor som passar dig";
+export const alt = "määk - träffa människor som passar dig";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

@@ -113,11 +113,11 @@ export default function ReportingPage() {
             <p className="mt-2">Baserat på allvarlighetsgrad och tidigare överträdelser:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>Varning (för första gången, låg allvarlighetsgrad)</li>
-              <li>Tillfällig avstängning (7–30 dagar för medelgradiga överträdelser)</li>
+              <li>Tillfällig avstängning (7-30 dagar för medelgradiga överträdelser)</li>
               <li>Permanent avstängning (för allvarliga eller upprepade överträdelser)</li>
               <li>
                 Eskalering till myndigheter vid misstanke om brott (t.ex. våldshot, sexualbrott, grova
-                hatbrott) – i enlighet med svensk lag
+                hatbrott) - i enlighet med svensk lag
               </li>
             </ul>
             <p className="mt-2">

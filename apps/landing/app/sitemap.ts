@@ -12,7 +12,7 @@ type Route = {
   priority: number;
 };
 
-// /vilkor är alias för /terms — inkluderas inte för att undvika duplicerat innehåll i sitemap.
+// /vilkor är alias för /terms - inkluderas inte för att undvika duplicerat innehåll i sitemap.
 const ROUTES: Route[] = [
   { path: "", changeFrequency: "weekly", priority: 1.0 },
   { path: "/about", changeFrequency: "monthly", priority: 0.7 },

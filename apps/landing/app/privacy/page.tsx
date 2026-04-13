@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Integritetspolicy",
   description:
-    "Så här hanterar määk dina personuppgifter enligt GDPR – datainsamling, användning, tredjepart, rättigheter och kontaktvägar.",
+    "Så här hanterar määk dina personuppgifter enligt GDPR - datainsamling, användning, tredjepart, rättigheter och kontaktvägar.",
   alternates: { canonical: "/privacy/" },
   openGraph: {
     title: "Integritetspolicy · määk",
@@ -70,24 +70,24 @@ export default function PrivacyPage() {
                 Vi anlitar följande personuppgiftsbiträden för att tillhandahålla tjänsten:
                 <ul className="mt-1 list-[circle] space-y-1 pl-5">
                   <li>
-                    <strong>Supabase</strong> (EU) – databas, autentisering och filhantering.
+                    <strong>Supabase</strong> (EU) - databas, autentisering och filhantering.
                   </li>
                   <li>
-                    <strong>Twilio</strong> (EU/US) – SMS-verifiering vid inloggning.
+                    <strong>Twilio</strong> (EU/US) - SMS-verifiering vid inloggning.
                   </li>
                   <li>
-                    <strong>Resend</strong> (EU/US) – transaktionella mejl (rapporter, överklaganden,
+                    <strong>Resend</strong> (EU/US) - transaktionella mejl (rapporter, överklaganden,
                     väntelistan).
                   </li>
                   <li>
-                    <strong>RevenueCat</strong> (US) – hantering av prenumerationer och köpkvitton.
+                    <strong>RevenueCat</strong> (US) - hantering av prenumerationer och köpkvitton.
                   </li>
                   <li>
-                    <strong>PostHog</strong> (EU) – anonym produktanalys. Du kan välja bort detta i
+                    <strong>PostHog</strong> (EU) - anonym produktanalys. Du kan välja bort detta i
                     appen under Inställningar → Integritetskontroller → Delad data.
                   </li>
                   <li>
-                    <strong>OpenAI</strong> (US) – AI-genererade isbrytare och matchningsinsikter. Inga
+                    <strong>OpenAI</strong> (US) - AI-genererade isbrytare och matchningsinsikter. Inga
                     meddelanden eller personliga identifierare skickas.
                   </li>
                 </ul>

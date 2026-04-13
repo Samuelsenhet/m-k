@@ -56,7 +56,7 @@ export function Hero() {
             className="group flex w-full max-w-[240px] flex-col items-center rounded-2xl border border-maak-border/60 bg-white/70 px-5 py-4 shadow-[0_12px_40px_-28px_rgba(37,61,44,0.35)] backdrop-blur-sm transition hover:border-maak-primary/45 hover:shadow-[0_16px_44px_-28px_rgba(37,61,44,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maak-primary sm:max-w-[260px]"
             ariaLabel="Ladda ner määk i App Store"
           >
-            {/* INGEN priority här — hero.webp ska vinna bandbredds-racet
+            {/* INGEN priority här - hero.webp ska vinna bandbredds-racet
                 under initial paint så LCP landar på iPhone-mockupen */}
             <Image
               src="/app-icon-light.webp"

@@ -6,7 +6,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-maak-border/60 bg-maak-bg">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-3">
-        {/* Col 1 – Brand */}
+        {/* Col 1 - Brand */}
         <div>
           <span className="text-xl font-bold tracking-tight text-maak-foreground">
             {SITE.name}
@@ -16,7 +16,7 @@ export function SiteFooter() {
           </p>
         </div>
 
-        {/* Col 2 – Support */}
+        {/* Col 2 - Support */}
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-maak-muted-fg">
             {FOOTER.supportHeading}
@@ -35,7 +35,7 @@ export function SiteFooter() {
           </ul>
         </div>
 
-        {/* Col 3 – Kontakt */}
+        {/* Col 3 - Kontakt */}
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-maak-muted-fg">
             {FOOTER.contactHeading}

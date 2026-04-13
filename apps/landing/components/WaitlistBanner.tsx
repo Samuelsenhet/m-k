@@ -29,7 +29,7 @@ export function WaitlistBanner() {
                 Gå med i väntelistan
               </h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-maak-muted-fg">
-                Vi lanserar snart. Var bland de första att testa MÄÄK — skriv
+                Vi lanserar snart. Var bland de första att testa MÄÄK - skriv
                 upp dig så hör vi av oss på lanseringsdagen.
               </p>
             </div>

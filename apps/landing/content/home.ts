@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-// All landing-copy på ett ställe – separerad från markup så copy kan ändras
+// All landing-copy på ett ställe - separerad från markup så copy kan ändras
 // utan att någon behöver navigera genom JSX.
 //
 // Uppdateras när appen får nya features. Håll copyn kort: en mening per fält,
@@ -56,7 +56,7 @@ export const HERO_VALUES = [
 
 export const FEATURES_HEADING = {
   title: "Så fungerar det",
-  subtitle: "Matchas → Chatta → Träffas – utan svep-stress.",
+  subtitle: "Matchas → Chatta → Träffas - utan svep-stress.",
 } as const;
 
 // Top 3 hero-features med skärmbild. Matchar exakt vad iOS-appen shippar.
@@ -64,21 +64,21 @@ export const FEATURES = [
   {
     title: "5 dagliga matchningar",
     description:
-      "Inget svepande. Algoritmen väger personlighet (40 %), arketyp (30 %) och intressen (30 %) – du får några få, välvalda personer varje dag.",
+      "Inget svepande. Algoritmen väger personlighet (40 %), arketyp (30 %) och intressen (30 %) - du får några få, välvalda personer varje dag.",
     imageSrc: "/screenshots/hero.webp",
     imageAlt: "Skärmbild: dagens matchningar i määk",
   },
   {
     title: "AI-isbrytare",
     description:
-      "Fem personliga öppningar för varje matchning – byggda utifrån era personligheter, inte generiska mallar. Roligt, djupt, aktivitet eller komplimang.",
+      "Fem personliga öppningar för varje matchning - byggda utifrån era personligheter, inte generiska mallar. Roligt, djupt, aktivitet eller komplimang.",
     imageSrc: "/screenshots/landing-profile-erik.webp",
     imageAlt: "Skärmbild: chatt med AI-isbrytare",
   },
   {
     title: "Verifierade profiler",
     description:
-      "ID-kontroll och personlighetsarketyp syns på varje profil. Du vet vem du pratar med – både person och stil.",
+      "ID-kontroll och personlighetsarketyp syns på varje profil. Du vet vem du pratar med - både person och stil.",
     imageSrc: "/screenshots/landing-profile-merbel.webp",
     imageAlt: "Skärmbild: verifierad profil i määk",
   },
@@ -91,7 +91,7 @@ export const EXTRAS_HEADING = {
     "Små funktioner som gör stor skillnad när du vill lära känna någon på riktigt.",
 } as const;
 
-// Sekundära features – visas som mindre ikon-kort.
+// Sekundära features - visas som mindre ikon-kort.
 export const EXTRAS: ReadonlyArray<{
   Icon: LucideIcon;
   title: string;
@@ -100,13 +100,13 @@ export const EXTRAS: ReadonlyArray<{
   {
     Icon: Video,
     title: "Kemi-Check",
-    description: "Kort videosamtal innan ni träffas IRL – testa kemin riskfritt.",
+    description: "Kort videosamtal innan ni träffas IRL - testa kemin riskfritt.",
   },
   {
     Icon: Users,
     title: "Samlingar",
     description:
-      "Små grupper kring gemensamma intressen – möt nya via de ni redan matchat med.",
+      "Små grupper kring gemensamma intressen - möt nya via de ni redan matchat med.",
   },
   {
     Icon: Leaf,
@@ -118,25 +118,25 @@ export const EXTRAS: ReadonlyArray<{
     Icon: Compass,
     title: "Personlighetskompassen",
     description:
-      "30 frågor, 16 arketyper, 4 kategorier – förstå din och andras dejtingstil.",
+      "30 frågor, 16 arketyper, 4 kategorier - förstå din och andras dejtingstil.",
   },
   {
     Icon: Trophy,
     title: "Prestationer",
-    description: "Badges och XP för uppgifter du klarar – engagemang utan press.",
+    description: "Badges och XP för uppgifter du klarar - engagemang utan press.",
   },
 ];
 
 // ---- Värdar / Hosts Program ----
 // Visas på landing som en teaser innan programmet lanseras post-launch.
-// Copyn är avsiktligt konkret och jordnära – ingen "become an ambassador
+// Copyn är avsiktligt konkret och jordnära - ingen "become an ambassador
 // today"-känsla. Värd-status är earned, inte ansökt om.
 
 export const VARDAR_HEADING = {
   eyebrow: "Värdar",
   title: "För dig som samlar människor",
   subtitle:
-    "Vissa användare skapar inte bara kontakter — de skapar sammanhang. De kallas Värdar, och de är en del av MÄÄK:s innersta krets.",
+    "Vissa användare skapar inte bara kontakter - de skapar sammanhang. De kallas Värdar, och de är en del av MÄÄK:s innersta krets.",
 } as const;
 
 export const VARDAR_BENEFITS: ReadonlyArray<{
@@ -148,13 +148,13 @@ export const VARDAR_BENEFITS: ReadonlyArray<{
     Icon: Crown,
     title: "Värd-status",
     description:
-      "En earned roll — inte köpt, inte ansökt. Vi tilldelar den när du visar att du skapar genuin social energi.",
+      "En earned roll - inte köpt, inte ansökt. Vi tilldelar den när du visar att du skapar genuin social energi.",
   },
   {
     Icon: Sparkles,
     title: "Skapa Träffar",
     description:
-      "Värdar kan skapa publika IRL-event — brunch, afterwork, promenad — som andra MÄÄK-användare kan RSVP:a till.",
+      "Värdar kan skapa publika IRL-event - brunch, afterwork, promenad - som andra MÄÄK-användare kan RSVP:a till.",
   },
   {
     Icon: UserPlus,
@@ -172,13 +172,13 @@ export const VARDAR_BENEFITS: ReadonlyArray<{
     Icon: Utensils,
     title: "Värdmiddag",
     description:
-      "Fyra gånger per år bjuds Värdar till en middag i sin stad — Stockholm, Göteborg eller Malmö.",
+      "Fyra gånger per år bjuds Värdar till en middag i sin stad - Stockholm, Göteborg eller Malmö.",
   },
   {
     Icon: Gift,
     title: "Premium ingår",
     description:
-      "Så länge du är en aktiv Värd är Premium inkluderat. Ingen revenue share, inga provisioner — bara verktygen.",
+      "Så länge du är en aktiv Värd är Premium inkluderat. Ingen revenue share, inga provisioner - bara verktygen.",
   },
 ];
 
@@ -186,7 +186,7 @@ export const VARDAR_HOW = {
   eyebrow: "Så blir du en Värd",
   title: "Kvalitet, inte kvantitet.",
   description:
-    "Du behöver inte ansöka. Vi ser vilka som redan gör rätt saker – och kontaktar dig när du gjort något av följande:",
+    "Du behöver inte ansöka. Vi ser vilka som redan gör rätt saker - och kontaktar dig när du gjort något av följande:",
   criteria: [
     "Skapat en Samling som hålls levande av 5+ aktiva medlemmar",
     "Genomfört en Träff med minst 4 deltagare på plats",

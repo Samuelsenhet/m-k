@@ -40,14 +40,12 @@ export default function NotFound() {
           >
             Till startsidan
           </Link>
-          <a
-            href={SITE.appStoreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/vanta/"
             className="inline-flex items-center gap-2 rounded-full border border-maak-border bg-white px-7 py-3.5 text-sm font-semibold text-maak-foreground shadow-sm transition hover:shadow-md"
           >
-            Hämta appen
-          </a>
+            Gå med i väntelistan
+          </Link>
         </div>
 
         <p className="mt-8 text-xs text-maak-muted-fg">

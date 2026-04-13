@@ -27,7 +27,7 @@ export function ConsentGate() {
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      /* ignore — state still updates in-memory for the session */
+      /* ignore - state still updates in-memory for the session */
     }
     setDecision(next);
   };
