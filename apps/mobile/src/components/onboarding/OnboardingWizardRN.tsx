@@ -490,6 +490,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
                 value={privacy.showAge}
                 onValueChange={(v) => setPrivacy((p) => ({ ...p, showAge: v }))}
                 trackColor={{ true: maakTokens.primary }}
+                accessibilityLabel={t("mobile.wizard.show_age")}
               />
             </View>
             <View style={styles.switchRow}>
@@ -498,6 +499,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
                 value={privacy.showJob}
                 onValueChange={(v) => setPrivacy((p) => ({ ...p, showJob: v }))}
                 trackColor={{ true: maakTokens.primary }}
+                accessibilityLabel={t("mobile.wizard.show_job")}
               />
             </View>
             <View style={styles.switchRow}>
@@ -506,6 +508,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
                 value={privacy.showEducation}
                 onValueChange={(v) => setPrivacy((p) => ({ ...p, showEducation: v }))}
                 trackColor={{ true: maakTokens.primary }}
+                accessibilityLabel={t("mobile.wizard.show_education")}
               />
             </View>
             <View style={styles.switchRow}>
@@ -514,6 +517,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
                 value={privacy.showLastName}
                 onValueChange={(v) => setPrivacy((p) => ({ ...p, showLastName: v }))}
                 trackColor={{ true: maakTokens.primary }}
+                accessibilityLabel={t("mobile.wizard.show_last_name")}
               />
             </View>
           </View>

@@ -320,6 +320,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
         visible={privacyOpen}
         onClose={() => setPrivacyOpen(false)}
         onOpenPrivacyPolicy={() => go("/privacy")}
+        onOpenSharedData={() => go("/shared-data" as unknown as "/")}
       />
     </>
   );

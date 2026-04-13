@@ -355,6 +355,14 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
       ? heroLayout.y + heroLayout.height
       : heroLayout.y + heroMinH;
 
+  // Resolve the active photo in a bounds-safe way. If a background refetch
+  // shrinks `photos` before the clamp effect runs, `currentPhotoIndex` can
+  // briefly point past the end of the array for a single render — optional
+  // chaining here prevents a crash during that window.
+  const safePhotoIdx =
+    photos.length > 0 ? Math.min(currentPhotoIndex, photos.length - 1) : -1;
+  const currentPhoto = safePhotoIdx >= 0 ? photos[safePhotoIdx] : null;
+
   return (
     <>
       <View style={[styles.pageRoot, { paddingTop: insets.top }]}>
@@ -366,13 +374,13 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
             setHeroLayout({ y, height });
           }}
         >
-            {photos.length > 0 ? (
+            {currentPhoto ? (
               <>
-                {photos[currentPhotoIndex]?.media_type === "video" ? (
-                  <HeroVideo uri={videoUrlCache.current.get(photos[currentPhotoIndex]!.storage_path) ?? null} />
+                {currentPhoto.media_type === "video" ? (
+                  <HeroVideo uri={videoUrlCache.current.get(currentPhoto.storage_path) ?? null} />
                 ) : (
                   <Image
-                    source={{ uri: getPublicUrl(photos[currentPhotoIndex]!.storage_path) }}
+                    source={{ uri: getPublicUrl(currentPhoto.storage_path) }}
                     style={styles.heroImageFill}
                     contentFit="cover"
                     contentPosition={{ top: "22%", left: "50%" }}

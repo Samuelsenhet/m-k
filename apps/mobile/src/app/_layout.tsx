@@ -168,6 +168,7 @@ function RootLayoutNav() {
               <Stack.Screen name="reporting" options={{ headerShown: false }} />
               <Stack.Screen name="personality-guide" options={{ headerShown: false }} />
               <Stack.Screen name="notifications" options={{ headerShown: false }} />
+              <Stack.Screen name="shared-data" options={{ headerShown: false }} />
               <Stack.Screen name="report-history" options={{ headerShown: false }} />
               <Stack.Screen name="report" options={{ headerShown: false }} />
               <Stack.Screen name="appeal" options={{ headerShown: false }} />

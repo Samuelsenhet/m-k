@@ -2,7 +2,7 @@ import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens } from "@maak/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VerificationIntroRN } from "./VerificationIntroRN";
 import { VerificationTipsRN } from "./VerificationTipsRN";
@@ -57,15 +57,26 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
 
       if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
 
-      // Call initiate-verification
-      await supabase.functions.invoke("initiate-verification", {
-        body: { selfiePath: filePath },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+      // Call initiate-verification. Without checking `error` here the wizard
+      // used to silently advance to "pending" even when the edge function
+      // rejected the selfie, leaving the user stuck in an indefinite spinner.
+      const { error: fnError } = await supabase.functions.invoke(
+        "initiate-verification",
+        {
+          body: { selfiePath: filePath },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        },
+      );
+      if (fnError) throw fnError;
 
       setStep("pending");
     } catch (e) {
       if (__DEV__) console.error("[VerificationWizard] upload:", e);
+      Alert.alert(
+        t("mobile.verification.upload_error_title"),
+        t("mobile.verification.upload_error_body"),
+      );
+      // Stay on the camera step so the user can retake and retry.
     } finally {
       setUploading(false);
     }
@@ -74,7 +85,13 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Close button */}
-      <Pressable onPress={onSkip} hitSlop={12} style={styles.closeBtn}>
+      <Pressable
+        onPress={onSkip}
+        hitSlop={12}
+        style={styles.closeBtn}
+        accessibilityRole="button"
+        accessibilityLabel={t("common.close")}
+      >
         <Ionicons name="close" size={26} color={maakTokens.foreground} />
       </Pressable>
 

@@ -462,8 +462,9 @@
     "coming_soon": "Kommer snart",
     "notifications_description": "Här kan du styra pushnotiser och e-post. Mer alternativ kommer snart.",
     "notifications_new_matches": "Nya matchningar",
-    "privacy_description": "Här ställer du snart in vem som ser din profil och dina foton. Vill du läsa hur vi behandlar personuppgifter kan du öppna integritetspolicyn.",
+    "privacy_description": "Välj om din profil ska synas i andras dagliga matchningar. Fler integritetsinställningar kommer snart. Vill du läsa hur vi behandlar personuppgifter kan du öppna integritetspolicyn.",
     "profile_visibility": "Profilsynlighet",
+    "profile_visibility_hint": "När av visas du inte i andras dagliga matchningar.",
     "shared_data": "Delad data",
     "verify_id_description": "Ladda upp ditt ID för att verifiera ditt konto",
     "matching_settings": "Matchningsinställningar",
@@ -1080,7 +1081,9 @@
       "consent_title": "Vi värdesätter din integritet",
       "consent_body": "Vi använder verktyg för att beräkna hur många personer vi når ut till och hur vår app används, för att anpassa annonser, förbättra våra marknadsföringsaktiviteter, göra sociala funktioner möjliga och förbättra vår förståelse för hur våra tjänster som helhet används. Dessa verktyg spårar inte dig över olika appar eller webbplatser.",
       "consent_accept": "Jag accepterar",
-      "consent_customize": "Anpassa mina val"
+      "consent_customize": "Anpassa mina val",
+      "upload_error_title": "Verifiering misslyckades",
+      "upload_error_body": "Din selfie kunde inte skickas. Kontrollera anslutningen och försök igen."
     },
     "photo": {
       "permission_title": "Behörighet",
@@ -1254,6 +1257,30 @@
       "edit_open_code": "Öppna koden för den här skärmen:",
       "edit_save_reload": "Ändra texten, spara filen så uppdateras appen automatiskt.",
       "edit_docs_link": "Tryck här om appen inte uppdateras efter dina ändringar"
+    }
+  },
+  "shared_data": {
+    "title": "Delad data",
+    "description": "Här styr du hur din data används, laddar ner en kopia och ser vilka tjänster som behandlar den.",
+    "analytics_title": "Produktanalys",
+    "analytics_description": "När på hjälper anonyma användningsdata oss att förbättra MÄÄK. Du kan stänga av detta när som helst.",
+    "analytics_toggle_label": "Tillåt produktanalys",
+    "export_title": "Exportera min data",
+    "export_description": "Ladda ner en kopia av din profil, matchningar och aktivitet som en JSON-fil.",
+    "export_button": "Skapa export",
+    "export_creating": "Skapar export…",
+    "export_messages_note": "Chattmeddelanden ingår inte i den automatiska exporten. Kontakta support@maakapp.se för en fullständig kopia.",
+    "export_too_large": "Din data är för stor för direktexport. Kontakta support@maakapp.se för en fullständig kopia.",
+    "export_error": "Kunde inte skapa exporten. Försök igen om en stund.",
+    "services_title": "Tjänster som hanterar din data",
+    "services_description": "Dessa tjänster behandlar delar av din data för att MÄÄK ska fungera. Tryck på en tjänst för att läsa deras integritetspolicy.",
+    "services": {
+      "supabase_purpose": "Lagring av profil, matchningar och meddelanden",
+      "twilio_purpose": "SMS-verifiering vid inloggning",
+      "resend_purpose": "Transaktionella mejl (rapporter, överklaganden)",
+      "revenuecat_purpose": "Hantering av prenumerationer",
+      "posthog_purpose": "Anonym produktanalys (kan stängas av ovan)",
+      "openai_purpose": "AI-isbrytare och matchningsinsikter"
     }
   }
 }

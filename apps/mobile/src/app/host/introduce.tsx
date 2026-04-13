@@ -200,7 +200,12 @@ export default function IntroducePickerScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.close")}
+          >
             <Ionicons name="close" size={26} color={maakTokens.foreground} />
           </Pressable>
           <Text style={styles.topTitle}>{t("host.introduce.title", { defaultValue: "Introducera" })}</Text>

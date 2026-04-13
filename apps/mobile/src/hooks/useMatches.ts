@@ -169,6 +169,7 @@ export function useMatches(authLoading: boolean) {
 
   const fetchMoreMatches = useCallback(async () => {
     if (!session?.user || !nextCursor || !hasMore) return;
+    const uid = session.user.id;
     const {
       data: { session: s },
     } = await supabase.auth.getSession();
@@ -178,15 +179,36 @@ export function useMatches(authLoading: boolean) {
     setError(null);
     setErrorDetail(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("match-daily", {
-        body: {
-          user_id: session.user.id,
-          page_size: PAGE_SIZE,
-          cursor: nextCursor,
-        },
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (fnError) throw fnError;
+      const invokeMore = (accessToken: string) =>
+        supabase.functions.invoke("match-daily", {
+          body: {
+            user_id: uid,
+            page_size: PAGE_SIZE,
+            cursor: nextCursor,
+          },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+      let { data, error: fnError } = await invokeMore(token);
+
+      if (fnError && !isSupabaseInvokeUnauthorized(fnError)) {
+        const {
+          data: { session: refreshed },
+        } = await supabase.auth.refreshSession();
+        if (refreshed?.access_token) {
+          ({ data, error: fnError } = await invokeMore(refreshed.access_token));
+        }
+      }
+
+      if (fnError) {
+        if (__DEV__ && isSupabaseInvokeUnauthorized(fnError)) {
+          console.warn(
+            "[match-daily pagination] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md.",
+          );
+        }
+        throw fnError;
+      }
+
       if (!data || !Array.isArray((data as { matches?: unknown }).matches)) {
         setHasMore(false);
         return;

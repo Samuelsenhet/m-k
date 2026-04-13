@@ -4,6 +4,7 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import {
   createMaakSupabaseClient,
   parseMaakSupabaseEnv,
+  resolveProfilesAuthKey,
   type MaakAuthStorage,
 } from "@maak/core";
 import React, {
@@ -13,6 +14,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { posthog } from "@/lib/posthog";
 
 const storageAdapter: MaakAuthStorage = {
   getItem: (key) => SecureStore.getItemAsync(key),
@@ -137,6 +139,32 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, [supabase]);
+
+  // Honor the user's analytics_opt_out preference across app launches.
+  // Without this, PostHog's local opt-state would reset on reinstall.
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const key = await resolveProfilesAuthKey(supabase, userId);
+        const { data } = await supabase
+          .from("profiles")
+          .select("analytics_opt_out")
+          .eq(key, userId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data?.analytics_opt_out) posthog.optOut();
+        else posthog.optIn();
+      } catch {
+        /* default to opt-in on error; user can still toggle from Delad data */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, session?.user?.id]);
 
   const value = useMemo(
     () => ({

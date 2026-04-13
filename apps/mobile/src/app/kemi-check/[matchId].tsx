@@ -59,7 +59,13 @@ export default function KemiCheckScreen() {
       <>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={[styles.fallback, { paddingTop: insets.top }]}>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.closeBtn}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.close")}
+          >
             <Ionicons name="close" size={28} color={maakTokens.foreground} />
           </Pressable>
           <Ionicons name="videocam-off-outline" size={48} color={maakTokens.primary} />

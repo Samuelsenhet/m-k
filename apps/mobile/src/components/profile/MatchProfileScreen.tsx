@@ -103,6 +103,7 @@ export function MatchProfileScreen({
   const { supabase } = useSupabase();
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -114,6 +115,7 @@ export function MatchProfileScreen({
   const load = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+    setError(null);
     try {
       const profileKey = await resolveProfilesAuthKey(supabase, userId);
       const [profileRes, photosRes, archRes] = await Promise.all([
@@ -129,17 +131,28 @@ export function MatchProfileScreen({
           .order("display_order"),
         supabase.from("personality_results").select("archetype").eq("user_id", userId).maybeSingle(),
       ]);
+      if (profileRes.error) throw profileRes.error;
+      if (photosRes.error) throw photosRes.error;
+      if (archRes.error) throw archRes.error;
       if (profileRes.data) setProfile(profileRes.data as ProfileRow);
+      else setError(t("profile.load_error"));
       if (photosRes.data?.length) setPhotos(photosRes.data.filter((p) => p.storage_path) as PhotoRow[]);
       if (archRes.data?.archetype) setArchetype(archRes.data.archetype);
     } catch (e) {
       if (__DEV__) console.error("[MatchProfileScreen]", e);
+      setError(t("profile.load_error"));
     } finally {
       setLoading(false);
     }
-  }, [supabase, userId]);
+  }, [supabase, userId, t]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Keep photoIndex in bounds when the photos array shrinks (refetch, deletion, etc.).
+  useEffect(() => {
+    if (photos.length === 0) return;
+    setPhotoIndex((i) => Math.min(i, photos.length - 1));
+  }, [photos.length]);
 
   const getPublicUrl = (path: string) =>
     supabase.storage.from("profile-photos").getPublicUrl(path).data.publicUrl;
@@ -166,6 +179,31 @@ export function MatchProfileScreen({
     );
   }
 
+  if (error || !profile) {
+    return (
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
+        <Pressable
+          onPress={onBack}
+          hitSlop={12}
+          style={styles.errorBackBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.back")}
+        >
+          <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+        </Pressable>
+        <Text style={styles.errorText}>{error ?? t("profile.load_error")}</Text>
+        <Pressable
+          style={styles.retryBtn}
+          onPress={() => void load()}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.retry")}
+        >
+          <Text style={styles.retryTxt}>{t("common.retry")}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.pageRoot, { paddingTop: insets.top }]}>
       {/* Hero photo */}
@@ -177,7 +215,11 @@ export function MatchProfileScreen({
         {photos.length > 0 ? (
           <>
             <Image
-              source={{ uri: getPublicUrl(photos[photoIndex]!.storage_path) }}
+              source={{
+                uri: getPublicUrl(
+                  photos[Math.min(photoIndex, photos.length - 1)]!.storage_path,
+                ),
+              }}
               style={styles.heroImg}
               contentFit="cover"
               contentPosition={{ top: "22%", left: "50%" }}
@@ -337,7 +379,30 @@ export function MatchProfileScreen({
 
 const styles = StyleSheet.create({
   pageRoot: { flex: 1, backgroundColor: CHARCOAL_CARD, position: "relative" },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: PAGE_BG },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: PAGE_BG, paddingHorizontal: 32 },
+  errorBackBtn: {
+    position: "absolute",
+    top: 56,
+    left: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: maakTokens.radiusLg,
+    backgroundColor: maakTokens.primary,
+  },
+  retryTxt: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: maakTokens.primaryForeground,
+  },
   hero: { overflow: "hidden", position: "relative" },
   heroImg: { ...StyleSheet.absoluteFillObject },
   heroGradient: { ...StyleSheet.absoluteFillObject },

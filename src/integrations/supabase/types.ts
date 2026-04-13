@@ -1253,6 +1253,7 @@ export type Database = {
       profiles: {
         Row: {
           alcohol: string | null
+          analytics_opt_out: boolean
           avatar_url: string | null
           bio: string | null
           country: string | null
@@ -1274,6 +1275,7 @@ export type Database = {
           id_verification_submitted_at: string | null
           instagram: string | null
           interested_in: string | null
+          is_visible: boolean
           linkedin: string | null
           looking_for: string | null
           max_age: number | null
@@ -1304,6 +1306,7 @@ export type Database = {
         }
         Insert: {
           alcohol?: string | null
+          analytics_opt_out?: boolean
           avatar_url?: string | null
           bio?: string | null
           country?: string | null
@@ -1325,6 +1328,7 @@ export type Database = {
           id_verification_submitted_at?: string | null
           instagram?: string | null
           interested_in?: string | null
+          is_visible?: boolean
           linkedin?: string | null
           looking_for?: string | null
           max_age?: number | null
@@ -1355,6 +1359,7 @@ export type Database = {
         }
         Update: {
           alcohol?: string | null
+          analytics_opt_out?: boolean
           avatar_url?: string | null
           bio?: string | null
           country?: string | null
@@ -1376,6 +1381,7 @@ export type Database = {
           id_verification_submitted_at?: string | null
           instagram?: string | null
           interested_in?: string | null
+          is_visible?: boolean
           linkedin?: string | null
           looking_for?: string | null
           max_age?: number | null
@@ -1772,6 +1778,30 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified_at: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified_at?: string | null
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified_at?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           created_at: string
@@ -1962,5 +1992,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-A new version of Supabase CLI is available: v2.84.2 (currently installed v2.75.0)
-We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

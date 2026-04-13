@@ -390,7 +390,8 @@ serve(async (req: Request) => {
       .select(
         "id, user_id, display_name, avatar_url, date_of_birth, gender, min_age, max_age, interested_in, looking_for, onboarding_completed, bio"
       )
-      .eq("onboarding_completed", true);
+      .eq("onboarding_completed", true)
+      .eq("is_visible", true);
 
     if (profilesError) {
       console.error("Profiles error:", profilesError);

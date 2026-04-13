@@ -462,8 +462,9 @@
     "coming_soon": "Coming soon",
     "notifications_description": "Control push notifications and email here. More options coming soon.",
     "notifications_new_matches": "New matches",
-    "privacy_description": "You’ll soon be able to choose who sees your profile and photos. To read how we handle personal data, open the privacy policy.",
+    "privacy_description": "Choose whether your profile is visible in other users’ daily matches. More privacy controls are coming soon. To read how we handle personal data, open the privacy policy.",
     "profile_visibility": "Profile visibility",
+    "profile_visibility_hint": "When off, you won’t appear in other users’ daily matches.",
     "shared_data": "Shared data",
     "verify_id_description": "Upload your ID to verify your account",
     "matching_settings": "Matching settings",
@@ -1080,7 +1081,9 @@
       "consent_title": "We value your privacy",
       "consent_body": "We use tools to measure how many people we reach and how our app is used, to customize ads, improve our marketing activities, enable social features, and improve our understanding of how our services are used overall. These tools do not track you across different apps or websites.",
       "consent_accept": "I accept",
-      "consent_customize": "Customize my choices"
+      "consent_customize": "Customize my choices",
+      "upload_error_title": "Verification failed",
+      "upload_error_body": "We couldn’t send your selfie. Check your connection and try again."
     },
     "photo": {
       "permission_title": "Permission",
@@ -1254,6 +1257,30 @@
       "edit_open_code": "Open the code for this screen:",
       "edit_save_reload": "Change any text, save the file, and the app will update automatically.",
       "edit_docs_link": "Tap here if the app does not update after you make changes"
+    }
+  },
+  "shared_data": {
+    "title": "Shared data",
+    "description": "Control how your data is used, download a copy, and see which services process it.",
+    "analytics_title": "Product analytics",
+    "analytics_description": "When on, anonymous usage data helps us improve MÄÄK. You can turn it off at any time.",
+    "analytics_toggle_label": "Allow product analytics",
+    "export_title": "Export my data",
+    "export_description": "Download a copy of your profile, matches and activity as a JSON file.",
+    "export_button": "Create export",
+    "export_creating": "Creating export…",
+    "export_messages_note": "Chat messages are not included in the automatic export. Contact support@maakapp.se for a complete copy.",
+    "export_too_large": "Your data is too large for a direct export. Contact support@maakapp.se for a complete copy.",
+    "export_error": "Couldn’t create the export. Please try again in a moment.",
+    "services_title": "Services that handle your data",
+    "services_description": "These services process parts of your data so MÄÄK can function. Tap a service to read its privacy policy.",
+    "services": {
+      "supabase_purpose": "Storage of profile, matches and messages",
+      "twilio_purpose": "SMS verification during sign-in",
+      "resend_purpose": "Transactional emails (reports, appeals)",
+      "revenuecat_purpose": "Subscription management",
+      "posthog_purpose": "Anonymous product analytics (can be disabled above)",
+      "openai_purpose": "AI icebreakers and matching insights"
     }
   }
 }

@@ -27,6 +27,7 @@ export function IcebreakerPanel({ matchId, matchedUserId, onSelectSuggestion }: 
     if (generatingRef.current) return;
     generatingRef.current = true;
     setError(null);
+    setLimitHit(false);
     setSuggestions([]);
     setLoading(true);
     try {
