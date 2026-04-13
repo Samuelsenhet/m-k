@@ -6,7 +6,7 @@
 
 - [ ] **Database:** Nya tabeller har RLS på och policies är granskade (inga onödiga `WITH CHECK (true)` för `authenticated`).
 - [ ] **Migrations:** DDL finns som fil under `supabase/migrations/` (inte bara SQL Editor / MCP utan git-fil).
-- [ ] **Secrets:** Inga servernycklar (`service_role`, Lovable, Resend, Stripe `sk_live`, …) i `src/`, `apps/mobile/` eller `packages/core/` — endast Edge secrets / server.
+- [ ] **Secrets:** Inga servernycklar (`service_role`, Anthropic, Resend, Stripe `sk_live`, …) i `src/`, `apps/mobile/` eller `packages/core/` — endast Edge secrets / server.
 - [ ] **Web:** `npm run lint` och `npm run build` (om relevant för ändringen).
 - [ ] **Mobil:** `npx tsc --noEmit -p apps/mobile/tsconfig.json` (om `apps/mobile/` eller delad core ändrats).
 

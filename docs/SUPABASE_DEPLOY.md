@@ -28,7 +28,7 @@ Sätt under **Project → Edge Functions → Secrets** (eller projektets secrets
 |--------|-------------------|
 | `SUPABASE_URL` | Ofta injicerad av plattformen; annars projekt-URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Endast Edge (service client); **aldrig** i klient |
-| `LOVABLE_API_KEY` | AI-anrop (Lovable-gateway) från Edge |
+| `ANTHROPIC_API_KEY` | AI-anrop (Claude Haiku 4.5) från Edge för `ai-assistant`, `generate-icebreakers`, `generate-followups` |
 | `RESEND_API_KEY` | `send-email`, ev. spårning |
 | `AI_GLOBAL_DAILY_MAX_CALLS` | Globalt tak AI-anrop (0 = av) |
 | `AI_RATE_USER_PER_MINUTE` / `AI_RATE_USER_PER_DAY` / `AI_RATE_IP_PER_MINUTE` / `AI_RATE_IP_PER_HOUR` | Rate limits (valfritt) |
@@ -52,7 +52,7 @@ Se avsnitt **MCP snapshot** längst ned i denna fil efter manuell eller agent-k�
 ## Incident / rotation (kort)
 
 - **Läckt service role:** rotera i Supabase Dashboard → API → service_role; uppdatera Edge secrets och alla interna skript.
-- **Läckt Resend/Lovable:** rotera nyckel hos leverantör + Edge secrets.
+- **Läckt Resend/Anthropic:** rotera nyckel hos leverantör + Edge secrets.
 - **Status:** [Supabase Status](https://status.supabase.com/), [Resend Status](https://resend.com/status) (vid behov).
 
 ## Löpande checklista (prod, audit, advisors)

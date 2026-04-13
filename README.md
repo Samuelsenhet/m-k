@@ -113,7 +113,6 @@ Appen levereras som **Expo iOS-app** via **EAS** (`apps/mobile`). Produktion + e
 ## Editing the code
 
 - **Local IDE**: Clone the repo, run `npm i` and `npm run dev`. Node.js 22+ recommended (see `.nvmrc`).
-- **Lovable**: If this project is connected to Lovable, you can edit there; changes can be committed back to this repo.
 - **GitHub**: Edit files in the GitHub UI and commit.
 
 ## Design reference

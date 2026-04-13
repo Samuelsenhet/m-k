@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 # GNU grep extended regex (GitHub Actions ubuntu)
-PATTERN='SUPABASE_SERVICE_ROLE_KEY|LOVABLE_API_KEY[[:space:]]*=|RESEND_API_KEY[[:space:]]*=|sk_live_[0-9a-zA-Z]+|OPENAI_API_KEY[[:space:]]*=|ANTHROPIC_API_KEY[[:space:]]*='
+PATTERN='SUPABASE_SERVICE_ROLE_KEY|ANTHROPIC_API_KEY[[:space:]]*=|RESEND_API_KEY[[:space:]]*=|sk_live_[0-9a-zA-Z]+|OPENAI_API_KEY[[:space:]]*=|LOVABLE_API_KEY[[:space:]]*='
 
 scan_dir() {
   local dir="$1"

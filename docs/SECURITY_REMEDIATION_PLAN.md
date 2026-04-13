@@ -92,7 +92,7 @@ Add a **new dated migration** under `supabase/migrations/` (do not edit old migr
 1. New table e.g. **`public.ai_usage_events`** or **`public.rate_limit_buckets`** with columns like `(user_id, scope, window_start, count)` or append-only **events** + count query; **RLS: no policies for authenticated INSERT/UPDATE** (deny by default), only **service role** from Edge writes.
 2. **Refactor `generate-followups`:** record usage **after** successful AI call (or increment bucket) via service client; **rate check** reads counts from this table (same pattern as today but **immutable** from client). Optionally keep `icebreaker_analytics` for ML flags but **remove UPDATE policy** for normal users or restrict UPDATE to non-rate-critical columns only.
 3. **Shared helper** in `supabase/functions/_shared/`: `checkAndConsumeRateLimit({ userId, ip, scope, limits })` backed by Postgres (upsert + return allowed). **Trust `x-forwarded-for` / `cf-connecting-ip` only behind a configured trusted proxy** (env flag or allowlisted CIDRs). Parse safely: split on comma, trim each hop, and take the **first public** address—treat as **non-public** (skip and try the next hop or fall back) at least: **RFC 1918** `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`; **RFC 4193 ULA** `fc00::/7`; **RFC 6598 CGNAT** `100.64.0.0/10`; **loopback** `127.0.0.0/8`, `::1`; **link-local** `169.254.0.0/16`, `fe80::/10`; and other **reserved / multicast** blocks your runtime documents. **Recommend a vetted IP library** (e.g. **ipaddr.js** for Node/Deno, or equivalent) to parse and classify hops instead of hand-rolled regex. **Log** whenever a header-derived IP is ignored, untrusted, or replaced with a fallback. Fall back to the connection remote address when headers are absent or untrusted.
-4. **Apply to all AI functions:** `ai-assistant`, `generate-icebreakers`, `generate-followups` (and any other Lovable/OpenRouter callers). Define per-scope limits (e.g. `ai_assistant_per_minute`, `icebreakers_per_day`).
+4. **Apply to all AI functions:** `ai-assistant`, `generate-icebreakers`, `generate-followups` (and any other Anthropic/OpenRouter callers). Define per-scope limits (e.g. `ai_assistant_per_minute`, `icebreakers_per_day`).
 5. **IP limits:** same helper with `scope` prefix `ip:` and hourly/daily windows so user-limit bypass still hits a ceiling (as in `twilio-send-otp` conceptually, but durable).
 6. **Frontend (web + mobil):** optional debounce / toast only; **no** security reliance. Rate limits enforced in Edge apply equally to iOS and web callers.
 
@@ -113,7 +113,7 @@ Add a **new dated migration** under `supabase/migrations/` (do not edit old migr
 ## Phase 6: Budget cap / kill switch
 
 - Edge env vars, e.g. `AI_GLOBAL_DAILY_MAX_CALLS` and/or `AI_GLOBAL_DAILY_MAX_TOKENS` (if you log usage).
-- Before calling Lovable gateway in AI functions: if global counter (Postgres row or daily aggregate) exceeds cap, return **503** with stable error code. Optional: **per-user** daily cap for free tier aligned with `match-daily` limits.
+- Before calling Anthropic API in AI functions: if global counter (Postgres row or daily aggregate) exceeds cap, return **503** with stable error code. Optional: **per-user** daily cap for free tier aligned with `match-daily` limits.
 - Document reset semantics (UTC vs Stockholm) to match `match-daily` timezone usage.
 
 ## Phase 7: Definition of done

@@ -102,10 +102,10 @@ Overview of how the main app features work end-to-end: matching, matches UI, vid
 
 1. **Panel:** User opens AI panel (e.g. from Matches). Types: “Full analysis”, “Matching tips”, “Profile tips”, optional “Icebreakers” for a specific match.
 2. **Request:** Frontend calls `supabase.functions.invoke('ai-assistant', { body: { userId, type, matchedUserId? } })`. Auth token is sent automatically.
-3. **Backend:** `ai-assistant` verifies user, loads profile and personality from Supabase, then calls Lovable AI gateway (e.g. Gemini) with a system + user prompt built from type. Returns a text suggestion.
-4. **UI:** Suggestion is shown in the panel; errors (e.g. 429, 402) are surfaced.
+3. **Backend:** `ai-assistant` verifies user, loads profile and personality from Supabase, then calls Anthropic Messages API (Claude Haiku 4.5) with a system + user prompt built from type. Returns a text suggestion. Every call is logged to `ai_usage` (tokens, latency, status) for cost tracking.
+4. **UI:** Suggestion is shown in the panel; errors (e.g. 429) are surfaced.
 
-**Related:** Icebreakers and follow-ups use `generate-icebreakers` and `generate-followups` Edge Functions (same AI gateway, different prompts).
+**Related:** Icebreakers and follow-ups use `generate-icebreakers` and `generate-followups` Edge Functions (same Anthropic provider, different prompts).
 
 **Relevant code:** `AIAssistantPanel.tsx`, `supabase/functions/ai-assistant/index.ts`, `ChatWindow.tsx` (icebreakers/followups).
 
