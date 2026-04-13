@@ -175,10 +175,13 @@ serve(async (req) => {
     if (matchedProfileRes.data) matchedProfile = matchedProfileRes.data;
     if (matchedPersonalityRes.data) matchedPersonality = matchedPersonalityRes.data;
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY is not configured');
     }
+    const AI_MODEL = 'claude-haiku-4-5-20251001';
+    const AI_PROVIDER = 'anthropic';
+    const FUNCTION_NAME = 'generate_icebreakers';
 
     // Build rich context for the AI prompt
     const userDisplayName = userName || userProfile?.display_name || 'Användare';
@@ -343,27 +346,47 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
 
     console.log('Enhanced prompt with profile context');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const systemPrompt = lang === 'en'
+      ? 'You are a helpful assistant generating conversation starters for a dating app. Always reply in English. Be creative and personal based on the profile information.'
+      : 'Du är en hjälpsam assistent som genererar konversationsstartare för en svensk dejtingapp. Svara alltid på svenska. Var kreativ och personlig baserat på profilinformationen.';
+
+    const aiStartedAt = Date.now();
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: AI_MODEL,
+        max_tokens: 1024,
+        system: systemPrompt,
         messages: [
-          { role: 'system', content: lang === 'en'
-            ? 'You are a helpful assistant generating conversation starters for a dating app. Always reply in English. Be creative and personal based on the profile information.'
-            : 'Du är en hjälpsam assistent som genererar konversationsstartare för en svensk dejtingapp. Svara alltid på svenska. Var kreativ och personlig baserat på profilinformationen.'
-          },
-          { role: 'user', content: prompt }
+          { role: 'user', content: prompt },
         ],
       }),
     });
+    const latencyMs = Date.now() - aiStartedAt;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+      console.error('Anthropic API error:', response.status, errorText);
+
+      try {
+        const { error: usageErr } = await supabase.from('ai_usage').insert({
+          user_id: userId,
+          function_name: FUNCTION_NAME,
+          provider: AI_PROVIDER,
+          model: AI_MODEL,
+          latency_ms: latencyMs,
+          status: 'error',
+          error_message: `anthropic_${response.status}: ${errorText.slice(0, 200)}`,
+        });
+        if (usageErr) console.warn('[ai_usage] insert failed:', usageErr.message);
+      } catch (e) {
+        console.warn('[ai_usage] insert crashed:', e);
+      }
 
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later.' }), {
@@ -371,18 +394,31 @@ Svara ENDAST med ett JSON-array med exakt 3 strängar, inget annat:
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content || '';
-    console.log('AI response:', content);
+    const content = (data.content?.[0]?.text ?? '') as string;
+    const usage = (data.usage ?? {}) as { input_tokens?: number; output_tokens?: number };
+    console.log('Anthropic response length:', content.length);
+
+    // Fire-and-forget token/latency logging (awaited to survive Deno isolate lifecycle).
+    try {
+      const { error: usageErr } = await supabase.from('ai_usage').insert({
+        user_id: userId,
+        function_name: FUNCTION_NAME,
+        provider: AI_PROVIDER,
+        model: AI_MODEL,
+        prompt_tokens: usage.input_tokens ?? null,
+        completion_tokens: usage.output_tokens ?? null,
+        total_tokens: (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) || null,
+        latency_ms: latencyMs,
+        status: 'ok',
+      });
+      if (usageErr) console.warn('[ai_usage] insert failed:', usageErr.message);
+    } catch (e) {
+      console.warn('[ai_usage] insert crashed:', e);
+    }
 
     // Parse the JSON array from the response
     let icebreakers: string[];

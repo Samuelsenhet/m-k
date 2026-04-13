@@ -70,10 +70,13 @@ serve(async (req) => {
 
     const { matchedUserId, matchId } = body;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
+    const AI_MODEL = "claude-haiku-4-5-20251001";
+    const AI_PROVIDER = "anthropic";
+    const FUNCTION_NAME = "ai_assistant";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -265,42 +268,73 @@ Håll det kortfattat och uppmuntrande.`;
 
     console.log(`AI Assistant request - Type: ${type}, User: ${userId}`);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiStartedAt = Date.now();
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: AI_MODEL,
+        max_tokens: 1024,
+        system: systemPrompt,
         messages: [
-          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 1000,
       }),
     });
+    const latencyMs = Date.now() - aiStartedAt;
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Anthropic API error:", response.status, errorText);
+
+      try {
+        const { error: usageErr } = await supabase.from("ai_usage").insert({
+          user_id: userId,
+          function_name: FUNCTION_NAME,
+          provider: AI_PROVIDER,
+          model: AI_MODEL,
+          latency_ms: latencyMs,
+          status: "error",
+          error_message: `anthropic_${response.status}: ${errorText.slice(0, 200)}`,
+        });
+        if (usageErr) console.warn("[ai_usage] insert failed:", usageErr.message);
+      } catch (e) {
+        console.warn("[ai_usage] insert crashed:", e);
+      }
+
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "För många förfrågningar, vänta en stund och försök igen." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI-tjänsten är inte tillgänglig just nu." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI gateway error");
+      throw new Error("Anthropic API error");
     }
 
     const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
+    const content = aiResponse.content?.[0]?.text;
+    const usage = (aiResponse.usage ?? {}) as { input_tokens?: number; output_tokens?: number };
+
+    try {
+      const { error: usageErr } = await supabase.from("ai_usage").insert({
+        user_id: userId,
+        function_name: FUNCTION_NAME,
+        provider: AI_PROVIDER,
+        model: AI_MODEL,
+        prompt_tokens: usage.input_tokens ?? null,
+        completion_tokens: usage.output_tokens ?? null,
+        total_tokens: (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) || null,
+        latency_ms: latencyMs,
+        status: "ok",
+      });
+      if (usageErr) console.warn("[ai_usage] insert failed:", usageErr.message);
+    } catch (e) {
+      console.warn("[ai_usage] insert crashed:", e);
+    }
 
     if (!content) {
       throw new Error("No content in AI response");
