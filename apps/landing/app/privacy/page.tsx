@@ -11,7 +11,9 @@ export const metadata: Metadata = {
     description: "GDPR-kompatibel integritetspolicy för määk.",
     url: "/privacy/",
     type: "article",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Integritetspolicy · määk" }],
   },
+  twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };
 
 export default function PrivacyPage() {
@@ -65,7 +67,30 @@ export default function PrivacyPage() {
                 samtycke, utom när lagligen krävt.
               </li>
               <li>
-                Vi använder leverantörer som Supabase (databas) och Google AI för tekniska tjänster.
+                Vi anlitar följande personuppgiftsbiträden för att tillhandahålla tjänsten:
+                <ul className="mt-1 list-[circle] space-y-1 pl-5">
+                  <li>
+                    <strong>Supabase</strong> (EU) – databas, autentisering och filhantering.
+                  </li>
+                  <li>
+                    <strong>Twilio</strong> (EU/US) – SMS-verifiering vid inloggning.
+                  </li>
+                  <li>
+                    <strong>Resend</strong> (EU/US) – transaktionella mejl (rapporter, överklaganden,
+                    väntelistan).
+                  </li>
+                  <li>
+                    <strong>RevenueCat</strong> (US) – hantering av prenumerationer och köpkvitton.
+                  </li>
+                  <li>
+                    <strong>PostHog</strong> (EU) – anonym produktanalys. Du kan välja bort detta i
+                    appen under Inställningar → Integritetskontroller → Delad data.
+                  </li>
+                  <li>
+                    <strong>OpenAI</strong> (US) – AI-genererade isbrytare och matchningsinsikter. Inga
+                    meddelanden eller personliga identifierare skickas.
+                  </li>
+                </ul>
               </li>
             </ul>
           </section>

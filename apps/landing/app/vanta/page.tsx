@@ -17,7 +17,9 @@ export const metadata: Metadata = {
     description: VANTA.metaDescription,
     url: "/vanta/",
     type: "website",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: VANTA.title }],
   },
+  twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };
 
 export default function VantaPage() {
@@ -58,7 +60,7 @@ export default function VantaPage() {
 
           <div className="mb-[-2rem] flex justify-center">
             <Image
-              src="/mascot-vanta.png"
+              src="/mascot-vanta.webp"
               alt="MÄÄK mascot"
               width={140}
               height={140}
@@ -91,6 +93,8 @@ export default function VantaPage() {
                 fallbackCount={VANTA.fallbackCount}
               />
             </div>
+
+            <p className="mt-6 text-xs text-maak-muted-fg">{VANTA.ageNote}</p>
           </div>
         </div>
       </div>

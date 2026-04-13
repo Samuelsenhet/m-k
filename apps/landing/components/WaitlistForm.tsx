@@ -21,21 +21,22 @@ type Props = {
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
-const FALLBACK_COLORS = ["#8B6CAE", "#5B8DB8", "#5FA886", "#D4A846"];
+// Four calm maak-palette colors used as an anonymous social-proof indicator.
+// We intentionally avoid Gravatar (would ship email hashes to a US third party
+// without a DPA disclosure and add extra HTTP round-trips on the critical path).
+const PROOF_COLORS = ["#8B6CAE", "#5B8DB8", "#5FA886", "#D4A846"];
 
 export function WaitlistForm(props: Props) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [count, setCount] = useState<string>(props.fallbackCount);
-  const [avatars, setAvatars] = useState<string[]>([]);
 
   useEffect(() => {
     fetch(props.apiUrl, { method: "GET" })
       .then((r) => r.json())
       .then((d) => {
         if (typeof d.count === "number" && d.count > 0) setCount(String(d.count));
-        if (Array.isArray(d.avatars) && d.avatars.length > 0) setAvatars(d.avatars);
       })
       .catch(() => {});
   }, [props.apiUrl]);
@@ -108,14 +109,17 @@ export function WaitlistForm(props: Props) {
             </p>
           )}
         </div>
-        <SocialProof count={count} suffix={props.socialProofSuffix} avatars={avatars} />
+        <SocialProof count={count} suffix={props.socialProofSuffix} />
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <form onSubmit={handleSubmit} className="flex items-center gap-0 rounded-full border border-maak-border bg-white p-1.5 shadow-sm transition focus-within:border-maak-primary/40 focus-within:shadow-md">
+      <form
+        onSubmit={handleSubmit}
+        className="flex items-center gap-0 rounded-full border border-maak-border bg-white p-1.5 shadow-sm transition focus-within:border-maak-primary/40 focus-within:shadow-md"
+      >
         <input
           type="email"
           value={email}
@@ -124,6 +128,7 @@ export function WaitlistForm(props: Props) {
             if (status === "error") setStatus("idle");
           }}
           placeholder={props.placeholder}
+          aria-label={props.placeholder}
           required
           className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm text-maak-foreground placeholder:text-maak-muted-fg/60 focus:outline-none"
         />
@@ -136,11 +141,15 @@ export function WaitlistForm(props: Props) {
         </button>
       </form>
 
-      {status === "error" && errorMsg && (
-        <p className="text-center text-xs text-maak-coral">{errorMsg}</p>
-      )}
+      <p
+        role="alert"
+        aria-live="polite"
+        className="min-h-[1rem] text-center text-xs text-maak-coral"
+      >
+        {status === "error" ? errorMsg : ""}
+      </p>
 
-      <SocialProof count={count} suffix={props.socialProofSuffix} avatars={avatars} />
+      <SocialProof count={count} suffix={props.socialProofSuffix} />
     </div>
   );
 }
@@ -148,34 +157,24 @@ export function WaitlistForm(props: Props) {
 function SocialProof({
   count,
   suffix,
-  avatars,
 }: {
   count: string;
   suffix: string;
-  avatars: string[];
 }) {
   return (
     <div className="flex items-center justify-center gap-3">
-      <div className="flex -space-x-2.5">
-        {avatars.length > 0
-          ? avatars.map((hash) => (
-              <img
-                key={hash}
-                src={`https://www.gravatar.com/avatar/${hash}?s=64&d=mp`}
-                alt=""
-                className="inline-block h-8 w-8 rounded-full object-cover ring-2 ring-white"
-              />
-            ))
-          : FALLBACK_COLORS.map((bg) => (
-              <span
-                key={bg}
-                className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
-                style={{ backgroundColor: bg }}
-              />
-            ))}
+      <div className="flex -space-x-2.5" aria-hidden="true">
+        {PROOF_COLORS.map((bg) => (
+          <span
+            key={bg}
+            className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
+            style={{ backgroundColor: bg }}
+          />
+        ))}
       </div>
       <p className="text-sm text-maak-muted-fg">
-        {count}{!count.includes("+") && "+"} {suffix}
+        {count}
+        {!count.includes("+") && "+"} {suffix}
       </p>
     </div>
   );

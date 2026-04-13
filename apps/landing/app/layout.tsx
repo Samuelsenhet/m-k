@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { PostHogScript } from "@/components/PostHogScript";
+import { ConsentGate } from "@/components/ConsentGate";
 import "./globals.css";
 
 const SITE = "https://maakapp.se";
@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   applicationName: NAME,
+  appleWebApp: {
+    capable: true,
+    title: NAME,
+    statusBarStyle: "black-translucent",
+  },
   authors: [{ name: "määk", url: SITE }],
   creator: "määk",
   publisher: "määk",
@@ -40,11 +45,20 @@ export const metadata: Metadata = {
     siteName: NAME,
     title: TITLE,
     description: DESCRIPTION,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: TITLE,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
+    images: ["/opengraph-image"],
     // Lämna creator/site orefererade — vi har ingen X-närvaro, och ett
     // trasigt handle blir en 404 för den som klickar från rich cards.
   },
@@ -127,7 +141,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
-        <PostHogScript />
+        <ConsentGate />
       </body>
     </html>
   );

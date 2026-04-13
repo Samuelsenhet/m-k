@@ -17,4 +17,5 @@ export const VANTA = {
   errorRateLimit: "För många försök. Prova igen om en stund.",
   socialProofSuffix: "personer väntar redan",
   fallbackCount: "10+",
+  ageNote: "MÄÄK är en dejtingapp för dig som är 20+.",
 } as const;

@@ -17,7 +17,7 @@ export function WaitlistBanner() {
 
           <div className="relative flex flex-col items-center gap-5">
             <Image
-              src="/mascot-vanta.png"
+              src="/mascot-vanta.webp"
               alt="MÄÄK mascot"
               width={100}
               height={100}

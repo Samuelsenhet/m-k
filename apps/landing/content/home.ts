@@ -43,7 +43,7 @@ export const HERO = {
   lead: "määk hjälper dig hitta rätt personer i lugn takt. Färre svep, mer riktiga samtal och tryggare möten.",
   primaryCta: "Ladda ner määk",
   secondaryCta: "Se funktioner",
-  availability: "Tillgänglig på iOS",
+  availability: "Tillgänglig på iOS · För dig som är 20+",
   downloadLabel: "Hämta i App Store",
 } as const;
 
@@ -215,7 +215,7 @@ export const CTA = {
   body: "Ladda ner määk och börja med lugnare, tryggare och mer mänskligt dejtande.",
   primary: "Ladda ner määk",
   secondary: "Utforska funktioner",
-  availability: "Tillgänglig på iOS",
+  availability: "Tillgänglig på iOS · För dig som är 20+",
 } as const;
 
 export const FOOTER = {

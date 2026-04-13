@@ -33,6 +33,13 @@ const TARGETS = [
     maxWidth: 224,
     webpQuality: 88,
   },
+  {
+    // Används på /vanta/ (140×140) och i <WaitlistBanner> (100×100).
+    // 2× DPR → 280 pixlar. 320 ger lite headroom utan att dra in 1 MB PNG.
+    file: "mascot-vanta.png",
+    maxWidth: 320,
+    webpQuality: 85,
+  },
 ];
 
 function formatBytes(bytes) {
