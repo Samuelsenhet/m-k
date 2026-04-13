@@ -5,7 +5,7 @@
 export const MascotAssets = {
   /** `landing_hero`, onboarding welcome, moment-of-depth */
   onboarding: require("../../assets/images/mascot/onboarding.png"),
-  /** Landing card badge — matches web `/mascot/sitting.png` */
+  /** Landing card badge - matches web `/mascot/sitting.png` */
   sitting: require("../../assets/images/mascot/sitting.png"),
   /** `waiting_phase`, `loading` */
   waitingTea: require("../../assets/images/mascot/mascot_waiting_tea.png"),

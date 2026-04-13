@@ -2,7 +2,7 @@ import { MascotAssets } from "@/lib/mascotAssets";
 import { maakTokens } from "@maak/core";
 import { Image, StyleSheet, Text, View } from "react-native";
 
-/** Tom chattlista — `no_chats` → `mascot_practicing_mirror` (web `STATE_TOKEN_MAP`). */
+/** Tom chattlista - `no_chats` → `mascot_practicing_mirror` (web `STATE_TOKEN_MAP`). */
 
 export function ChatEmptyStateWithMascot({
   title,

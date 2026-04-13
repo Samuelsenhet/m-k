@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
- * Introduction inbox — pending introductions the current user needs to
+ * Introduction inbox - pending introductions the current user needs to
  * respond to. Shows:
  *   • Who's been introduced (the other user, host's display name)
  *   • The host's optional message
@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
  *     function
  *
  * Resolved introductions (match_created=true) are hidden. Declines are
- * also hidden after the fact — we only show rows where the caller's own
+ * also hidden after the fact - we only show rows where the caller's own
  * accepted_by_* flag is still null.
  */
 

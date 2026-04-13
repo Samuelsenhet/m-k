@@ -28,7 +28,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-/** After N answers — Moment of Depth (plan: 5–10). */
+/** After N answers - Moment of Depth (plan: 5-10). */
 const MOMENT_DEPTH_AFTER = 7;
 
 type Props = { onComplete: (result: PersonalityTestResult) => void };

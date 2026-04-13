@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14, borderRadius: 22, backgroundColor: maakTokens.primary,
   },
   chatBtnText: { fontSize: 16, fontWeight: "700", color: maakTokens.primaryForeground },
-  // IntroduceButton wrapper — host-only CTA beneath the like/pass/chat row.
+  // IntroduceButton wrapper - host-only CTA beneath the like/pass/chat row.
   // Null when the viewer isn't an active Värd (IntroduceButton returns null).
   hostCtaRow: { marginTop: 12, alignItems: "flex-start" },
 });

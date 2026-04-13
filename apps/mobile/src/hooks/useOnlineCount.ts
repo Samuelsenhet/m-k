@@ -9,7 +9,7 @@ function randomAnonKey() {
 }
 
 /**
- * Supabase Realtime presence on global channel — same idea as web useOnlineCount.
+ * Supabase Realtime presence on global channel - same idea as web useOnlineCount.
  */
 export function useOnlineCount(userId: string | undefined, hasValidConfig: boolean): number {
   const { supabase } = useSupabase();

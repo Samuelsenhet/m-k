@@ -97,7 +97,7 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
     const filePath = `${userId}/${Date.now()}-${slotIndex}.${safeExt}`;
 
     try {
-      // Build FormData with the local file URI — works reliably for both
+      // Build FormData with the local file URI - works reliably for both
       // images and videos on iOS (fetch(uri).blob() returns 0 bytes for videos).
       const formData = new FormData();
       formData.append("file", {

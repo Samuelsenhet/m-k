@@ -53,7 +53,7 @@ export default function KemiCheckScreen() {
     [router],
   );
 
-  // Expo Go fallback — no native WebRTC module
+  // Expo Go fallback - no native WebRTC module
   if (!hasWebRTC) {
     return (
       <>

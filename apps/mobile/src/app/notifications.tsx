@@ -185,7 +185,7 @@ export default function NotificationsScreen() {
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.feedName} numberOfLines={1}>
-                  {v.viewer_display_name || "—"}{" "}
+                  {v.viewer_display_name || "-"}{" "}
                   <Text style={styles.feedMeta}>{t("notifications.your_view_this")}</Text>
                 </Text>
                 <Text style={styles.time}>
@@ -225,7 +225,7 @@ export default function NotificationsScreen() {
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.feedName} numberOfLines={1}>
-                  {i.sender_display_name || "—"}{" "}
+                  {i.sender_display_name || "-"}{" "}
                   <Text style={styles.feedMeta}>{t("notifications.your_match_request")}</Text>
                 </Text>
                 <Text style={styles.time}>

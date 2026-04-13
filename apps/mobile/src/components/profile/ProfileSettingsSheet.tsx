@@ -77,7 +77,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
     ? `@${displayName.toLowerCase().replace(/\s+/g, "_")}`
     : null;
   const u = user as { email?: string; phone?: string; id: string } | undefined;
-  const accountLine = u?.email ?? u?.phone ?? u?.id ?? "—";
+  const accountLine = u?.email ?? u?.phone ?? u?.id ?? "-";
 
   const setLang = async (lng: "sv" | "en") => {
     await i18n.changeLanguage(lng);
@@ -243,7 +243,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                   label={t("settings.achievements")}
                   onPress={() => go("/achievements")}
                 />
-                {/* Värdar program entries — both available to everyone. Non-hosts
+                {/* Värdar program entries - both available to everyone. Non-hosts
                     see an empty inbox but can still browse träffar feeds. */}
                 <MenuRow
                   icon="calendar-outline"

@@ -57,7 +57,7 @@ export function useMatchStatus(authLoading: boolean) {
         setErrorDetail(fnError);
         if (__DEV__ && isSupabaseInvokeUnauthorized(fnError)) {
           console.warn(
-            "[match-status] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
+            "[match-status] 401 - Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
           );
         }
         throw new Error(

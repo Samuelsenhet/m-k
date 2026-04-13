@@ -28,7 +28,7 @@ export function webAppUrl(path: string): string {
 
 /**
  * URL for villkor / integritet öppnade i Safari/WebBrowser från mobil.
- * Localhost, loopback och LAN-IP (Expo dev) pekar inte på den deployade webbens `/terms` — använd produktion.
+ * Localhost, loopback och LAN-IP (Expo dev) pekar inte på den deployade webbens `/terms` - använd produktion.
  * Sätt `EXPO_PUBLIC_LEGAL_URL` om juridik ska läsas från staging.
  */
 export function legalWebUrl(pathWithOptionalHash: string): string {

@@ -77,11 +77,11 @@ export function PersonalityGuideRN() {
           <View style={{ gap: 8, marginTop: 8 }}>
             <Text style={styles.bullet}>
               <Text style={styles.bulletNum}>1.</Text>{" "}
-              {t("personality.main_category_label")} – {t("personality.main_category_sub")}
+              {t("personality.main_category_label")} - {t("personality.main_category_sub")}
             </Text>
             <Text style={styles.bullet}>
               <Text style={styles.bulletNum}>2.</Text>{" "}
-              {t("personality.four_archetypes_label")} – {t("personality.four_archetypes_sub")}
+              {t("personality.four_archetypes_label")} - {t("personality.four_archetypes_sub")}
             </Text>
           </View>
         </View>

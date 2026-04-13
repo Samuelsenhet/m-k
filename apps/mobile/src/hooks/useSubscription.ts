@@ -2,14 +2,14 @@ import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Pricing tiers (mobile IAP — products configured in App Store Connect + RevenueCat):
+ * Pricing tiers (mobile IAP - products configured in App Store Connect + RevenueCat):
  *
- *   free     — core experience: browse matches (5/dag), kemichat (1-on-1), basic filters.
+ *   free     - core experience: browse matches (5/dag), kemichat (1-on-1), basic filters.
  *              Samlingsgrupp: kan gå med via inbjudan men INTE skapa.
  *              Isbrytare: max 5/dag.
- *   basic    — Basic weekly (69 kr): fler matchningar, söndagsmatchning, skapa
+ *   basic    - Basic weekly (69 kr): fler matchningar, söndagsmatchning, skapa
  *              samlingsgrupp, obegränsade isbrytare, avancerade filter.
- *   premium  — Premium monthly (199 kr): allt i Basic + läskvitton i chatten.
+ *   premium  - Premium monthly (199 kr): allt i Basic + läskvitton i chatten.
  *
  * Match *quantity* is already gated in the match-daily edge function (5 vs unlimited).
  * Source of truth: `subscriptions` table, written only by the RevenueCat webhook.
@@ -69,7 +69,7 @@ function mapSubscription(row: SubscriptionRow | null): UserSubscription {
 
 /**
  * Read-only subscription state from `subscriptions` (RLS: SELECT only for own row).
- * Client never writes — RevenueCat webhook is the only writer.
+ * Client never writes - RevenueCat webhook is the only writer.
  */
 export function useSubscription() {
   const { supabase, session } = useSupabase();

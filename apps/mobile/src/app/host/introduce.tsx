@@ -20,12 +20,12 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
- * Introduction picker — active Värdar pick a second match to introduce
+ * Introduction picker - active Värdar pick a second match to introduce
  * together with user_a (passed as route param from IntroduceButton).
  *
  * Flow:
  *   1. Load the Värd's own matches, excluding user_a, excluding anyone
- *      they have already introduced to user_a (local-only — the edge
+ *      they have already introduced to user_a (local-only - the edge
  *      function has its own dedup).
  *   2. Display avatars + names. Tap one → highlight as user_b.
  *   3. Optional message field (max 300 chars).

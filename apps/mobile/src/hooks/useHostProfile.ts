@@ -2,16 +2,16 @@ import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Värdar (Hosts program) — host_profiles state for the current user.
+ * Värdar (Hosts program) - host_profiles state for the current user.
  *
  * See docs/VARDAR.md for the full spec. Status meaning:
- *   pending  — MÄÄK team has seen you as a candidate, hasn't approved yet
- *   active   — approved, can host Träffar, make introductions, see Värdrummet
- *   paused   — was active but dropped below activity floor (60 days inactive)
- *   declined — team reviewed and declined
- *   revoked  — was active, lost status due to moderation
+ *   pending  - MÄÄK team has seen you as a candidate, hasn't approved yet
+ *   active   - approved, can host Träffar, make introductions, see Värdrummet
+ *   paused   - was active but dropped below activity floor (60 days inactive)
+ *   declined - team reviewed and declined
+ *   revoked  - was active, lost status due to moderation
  *
- * Client never writes this table — all transitions go through edge
+ * Client never writes this table - all transitions go through edge
  * functions (host-eligibility-check, host-approve, host-pause).
  */
 export type HostStatus = "pending" | "active" | "paused" | "declined" | "revoked";
@@ -67,7 +67,7 @@ function mapHostProfile(row: HostProfileRow | null): HostProfile {
 /**
  * Read-only host profile for the current user. Returns `status = null`
  * if no row exists, which is the common case for non-hosts. Don't
- * branch on `status === 'active'` — use the derived `isActive` flag.
+ * branch on `status === 'active'` - use the derived `isActive` flag.
  */
 export function useHostProfile() {
   const { supabase, session } = useSupabase();
@@ -94,7 +94,7 @@ export function useHostProfile() {
       setProfile(mapHostProfile(data as HostProfileRow | null));
       setError(null);
     } catch (err) {
-      // host_profiles table doesn't exist yet in production — swallow
+      // host_profiles table doesn't exist yet in production - swallow
       // the error cleanly so the rest of the app keeps working.
       if (__DEV__) console.log("useHostProfile (pre-launch, table may not exist):", err);
       setError(err instanceof Error ? err : new Error("Failed to fetch host profile"));

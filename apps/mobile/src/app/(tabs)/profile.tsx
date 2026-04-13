@@ -176,7 +176,7 @@ export default function ProfileScreen() {
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{
         paddingTop: insets.top + 16,
-        /* Tab scene sits above the bar — no tabBarHeight. Extra tail so photo grid clears the tab bar when scrolled. */
+        /* Tab scene sits above the bar - no tabBarHeight. Extra tail so photo grid clears the tab bar when scrolled. */
         paddingBottom: insets.bottom + 56,
         paddingHorizontal: maakTokens.screenPaddingHorizontal,
       }}

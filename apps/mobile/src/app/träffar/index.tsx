@@ -18,7 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
- * Träffar — public IRL events feed for the Värdar (Hosts) program.
+ * Träffar - public IRL events feed for the Värdar (Hosts) program.
  *
  * Flow:
  *   1. Load all open/confirmed träffar starting in the future, with their
@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
  *      edge function
  *
  * Host profile state is surfaced at the top if the user is pending/active/
- * paused — mostly as a signal that MÄÄK sees them as a Värd candidate.
+ * paused - mostly as a signal that MÄÄK sees them as a Värd candidate.
  */
 
 type Träff = {
@@ -99,7 +99,7 @@ export default function TraffarScreen() {
       }
 
       // 3. My own RSVPs (only the träffar shown). Same "*" trick for the
-      // ä in the column name — select-string parser can't handle it.
+      // ä in the column name - select-string parser can't handle it.
       const rsvpedSet = new Set<string>();
       if (userId) {
         const { data: myRsvpsRaw } = await supabase
@@ -240,7 +240,7 @@ export default function TraffarScreen() {
             <Ionicons name="add-circle" size={22} color={maakTokens.primary} />
             <Text style={styles.hostCardText}>
               {t("traffar.create_button", {
-                defaultValue: "Du är Värd — skapa en Träff",
+                defaultValue: "Du är Värd - skapa en Träff",
               })}
             </Text>
             <Ionicons
@@ -256,7 +256,7 @@ export default function TraffarScreen() {
             <Text style={styles.hostCardText}>
               {t("traffar.you_are_pending", {
                 defaultValue:
-                  "Vi har sett din aktivitet. Du är nominerad som Värd — vi hör av oss.",
+                  "Vi har sett din aktivitet. Du är nominerad som Värd - vi hör av oss.",
               })}
             </Text>
           </View>

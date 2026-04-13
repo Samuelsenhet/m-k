@@ -33,7 +33,7 @@ import { useExpoPushToken } from '@/hooks/useExpoPushToken';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
 
-// Custom error boundary — Expo Router picks up the named export.
+// Custom error boundary - Expo Router picks up the named export.
 export { ErrorBoundaryFallback as ErrorBoundary } from '@/components/ErrorBoundaryFallback';
 
 export const unstable_settings = {

@@ -151,7 +151,7 @@ export function MatchingSettingsRN() {
         <View style={styles.labelRow}>
           <Text style={styles.label}>{t("settings.age")}</Text>
           <Text style={styles.value}>
-            {Math.max(preferences.min_age, AGE_MIN)}–{preferences.max_age}
+            {Math.max(preferences.min_age, AGE_MIN)}-{preferences.max_age}
           </Text>
         </View>
         <Text style={styles.subLabel}>{fromLabel}</Text>

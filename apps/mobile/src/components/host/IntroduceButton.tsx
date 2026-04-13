@@ -6,18 +6,18 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 type Props = {
-  /** The user being viewed — becomes user_a in the introduction picker. */
+  /** The user being viewed - becomes user_a in the introduction picker. */
   targetUserId: string;
-  /** Display name of the target — seeded into the picker's UI. */
+  /** Display name of the target - seeded into the picker's UI. */
   targetUserName?: string;
 };
 
 /**
- * "Introducera" button — lets an active Värd start an introduction flow
+ * "Introducera" button - lets an active Värd start an introduction flow
  * between the currently-viewed user and another one of their matches.
  *
  * Only renders for active hosts. On press, navigates to the picker screen
- * with the current user pre-selected as user_a — the picker prompts to
+ * with the current user pre-selected as user_a - the picker prompts to
  * choose user_b and write an optional message, then calls the
  * introduction-create edge function.
  */

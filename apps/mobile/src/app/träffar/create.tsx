@@ -20,13 +20,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
- * Skapa Träff — form för aktiva Värdar.
+ * Skapa Träff - form för aktiva Värdar.
  *
  * Skriver direkt mot `träffar`-tabellen via supabase-client. RLS-policyn
  * `träffar_active_host_insert` kollar att user_id finns i host_profiles
  * med status='active', så vi får defence-in-depth: frontend gate + RLS.
  *
- * Time-pickern är medvetet enkel — rå TextInput för ISO-datum. En
+ * Time-pickern är medvetet enkel - rå TextInput för ISO-datum. En
  * riktig wheel/calendar kan läggas till senare när UI-polishing tas.
  */
 
@@ -62,7 +62,7 @@ export default function CreateTraffScreen() {
       Alert.alert(
         t("common.error", { defaultValue: "Fel" }),
         t("traffar.create.error_title", {
-          defaultValue: `Titeln måste vara ${TITLE_MIN}–${TITLE_MAX} tecken.`,
+          defaultValue: `Titeln måste vara ${TITLE_MIN}-${TITLE_MAX} tecken.`,
         }),
       );
       return;
@@ -71,7 +71,7 @@ export default function CreateTraffScreen() {
       Alert.alert(
         t("common.error", { defaultValue: "Fel" }),
         t("traffar.create.error_description", {
-          defaultValue: `Beskrivningen måste vara ${DESC_MIN}–${DESC_MAX} tecken.`,
+          defaultValue: `Beskrivningen måste vara ${DESC_MIN}-${DESC_MAX} tecken.`,
         }),
       );
       return;
@@ -327,7 +327,7 @@ export default function CreateTraffScreen() {
 
           <Field
             label={t("traffar.create.field_max_attendees", {
-              defaultValue: "Max antal deltagare (4–20)",
+              defaultValue: "Max antal deltagare (4-20)",
             })}
             value={maxAttendees}
             onChangeText={setMaxAttendees}

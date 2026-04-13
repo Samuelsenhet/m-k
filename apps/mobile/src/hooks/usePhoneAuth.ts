@@ -57,7 +57,7 @@ export function usePhoneAuth() {
         if (lower.includes("captcha")) {
           throw new Error(i18n.t("mobile.phone_errors.captcha"));
         }
-        // Only match explicit GoTrue "phone off" messages — do not use broad "provider"
+        // Only match explicit GoTrue "phone off" messages - do not use broad "provider"
         // (Twilio/SMS config errors often contain "provider" and were mislabeled as Phone off).
         if (
           lower.includes("phone provider is disabled") ||

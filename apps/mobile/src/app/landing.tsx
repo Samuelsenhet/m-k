@@ -51,7 +51,7 @@ const LANDING_FEATURES = [
 ];
 
 /**
- * Bundled profilkort — samma PNG som webb `src/assets/landing/landing-profile-*.png`
+ * Bundled profilkort - samma PNG som webb `src/assets/landing/landing-profile-*.png`
  * (synkas hit från repots kanoniska filer).
  */
 const PROFILE_IMAGES: Record<SlideId, ImageSourcePropType> = {
@@ -60,7 +60,7 @@ const PROFILE_IMAGES: Record<SlideId, ImageSourcePropType> = {
   erik: require("../../assets/images/landing/landing-profile-erik.png"),
 };
 
-/** w-60 card, p-4 — same inner width as web `aspect-[3/4]` photo area */
+/** w-60 card, p-4 - same inner width as web `aspect-[3/4]` photo area */
 const MAIN_CARD_W = 240;
 const MAIN_CARD_PAD = 16;
 const PHOTO_INNER_W = MAIN_CARD_W - MAIN_CARD_PAD * 2;
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-  /** Inloggad utan topbar — samma ikoner som webbens nav (md+) */
+  /** Inloggad utan topbar - samma ikoner som webbens nav (md+) */
   mobileQuickNav: {
     flexDirection: "row",
     justifyContent: "center",

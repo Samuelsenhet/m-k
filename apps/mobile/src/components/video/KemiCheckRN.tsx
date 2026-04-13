@@ -33,7 +33,7 @@ type Props = {
 };
 
 /**
- * Kemi-Check video call — port of web `VideoChatWindow.tsx`.
+ * Kemi-Check video call - port of web `VideoChatWindow.tsx`.
  * Uses plain WebRTC with Supabase Realtime signaling.
  */
 export function KemiCheckRN({ matchId, matchedUserName, isInitiator, onEnd }: Props) {

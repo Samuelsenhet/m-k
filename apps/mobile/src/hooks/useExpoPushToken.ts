@@ -29,7 +29,7 @@ export function useExpoPushToken() {
   useEffect(() => {
     if (!userId || registered.current) return;
     if (!Device.isDevice) {
-      if (__DEV__) console.log("[Push] Skipping — not a physical device");
+      if (__DEV__) console.log("[Push] Skipping - not a physical device");
       return;
     }
 

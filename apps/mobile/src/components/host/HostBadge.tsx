@@ -9,9 +9,9 @@ type Props = {
 };
 
 /**
- * Värd-badge — shown on profile rows / cards when the user is an active host.
+ * Värd-badge - shown on profile rows / cards when the user is an active host.
  *
- * Not a generic "verified" badge — the crown icon + Värd label is specifically
+ * Not a generic "verified" badge - the crown icon + Värd label is specifically
  * about the hosts program. For verified-profile indicators, use the existing
  * VerifiedBadge component.
  */

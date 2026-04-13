@@ -18,7 +18,7 @@ export function SubscriptionBanner() {
   const router = useRouter();
   const { tier, isPremium } = useSubscription();
 
-  // Already on highest tier — hide banner
+  // Already on highest tier - hide banner
   if (isPremium) return null;
 
   const isBasic = tier === "basic";

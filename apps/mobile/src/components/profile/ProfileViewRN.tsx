@@ -15,7 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 
-// Try to load expo-video — fails gracefully if native module is absent.
+// Try to load expo-video - fails gracefully if native module is absent.
 let useVideoPlayer: any = null;
 let VideoView: any = null;
 let hasExpoVideo = false;
@@ -53,7 +53,7 @@ const PROFILE_CARD_OVERLAP_DOWN = 152;
 /**
  * Inset above the **visual card lip** (photo → rounded card). Same 24px as web `bottom-6`, but on
  * mobile the card overlaps the hero heavily (`PROFILE_CARD_OVERLAP_DOWN`), so we must not anchor to
- * the hero layout bottom — that would paint dots mid-card (see layout vs web `-mt-7`).
+ * the hero layout bottom - that would paint dots mid-card (see layout vs web `-mt-7`).
  */
 const STORY_INDICATORS_ABOVE_CARD = 24;
 /** Height of the absolute strip that contains the segment row (active bar is 4px tall). */
@@ -202,7 +202,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const { t } = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  /** Custom `MaakTabBar` / Expo Tabs can leave context unset; hook throws — use context + fallback. */
+  /** Custom `MaakTabBar` / Expo Tabs can leave context unset; hook throws - use context + fallback. */
   const tabBarHeightCtx = BottomTabBarHeightContext as Context<number | undefined>;
   const tabBarHeight =
     useContext(tabBarHeightCtx) ?? (Platform.OS === "ios" ? 62 : 56);
@@ -219,9 +219,9 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
-  /** Pre-resolved signed URLs for video slots — keyed by storage_path. */
+  /** Pre-resolved signed URLs for video slots - keyed by storage_path. */
   const videoUrlCache = useRef<Map<string, string>>(new Map());
-  /** Hero frame in pageRoot coords — dots are a sibling overlay so they aren’t covered by the card. */
+  /** Hero frame in pageRoot coords - dots are a sibling overlay so they aren’t covered by the card. */
   const [heroLayout, setHeroLayout] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
 
   const fetchData = useCallback(async () => {
@@ -357,7 +357,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
 
   // Resolve the active photo in a bounds-safe way. If a background refetch
   // shrinks `photos` before the clamp effect runs, `currentPhotoIndex` can
-  // briefly point past the end of the array for a single render — optional
+  // briefly point past the end of the array for a single render - optional
   // chaining here prevents a crash during that window.
   const safePhotoIdx =
     photos.length > 0 ? Math.min(currentPhotoIndex, photos.length - 1) : -1;
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     backgroundColor: "rgba(255,255,255,0.45)",
   },
-  /** Translucent gray glass — matches reference hero controls (not solid white). */
+  /** Translucent gray glass - matches reference hero controls (not solid white). */
   heroIconBtn: {
     width: 48,
     height: 48,

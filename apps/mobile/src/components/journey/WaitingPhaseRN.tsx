@@ -95,7 +95,7 @@ export function WaitingPhaseRN({
             /* Short content: center block vertically so empty space splits top/bottom (no huge band only under footer). */
             justifyContent: "center",
             paddingTop: insets.top + 16,
-            /* Tab scene already sits above the tab bar — do not add tabBarHeight. */
+            /* Tab scene already sits above the tab bar - do not add tabBarHeight. */
             paddingBottom: insets.bottom + 20,
           },
         ]}

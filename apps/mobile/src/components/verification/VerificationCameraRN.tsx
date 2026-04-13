@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 
-// Lazy-load expo-camera (native module required — not in Expo Go)
+// Lazy-load expo-camera (native module required - not in Expo Go)
 const hasCameraModule = !!NativeModules.ExpoCameraView || !!NativeModules.ExponentCamera;
 let CameraView: any = null;
 let useCameraPermissions: any = null;
@@ -52,7 +52,7 @@ export function VerificationCameraRN({ onCapture, onSkip, uploading }: Props) {
   return <CameraInner cameraRef={cameraRef} photo={photo} setPhoto={setPhoto} onCapture={onCapture} onSkip={onSkip} uploading={uploading} />;
 }
 
-/** Inner component — only rendered when camera module exists (hooks safe). */
+/** Inner component - only rendered when camera module exists (hooks safe). */
 function CameraInner({
   cameraRef,
   photo,
@@ -89,7 +89,7 @@ function CameraInner({
     );
   }
 
-  // Preview mode — user took a photo
+  // Preview mode - user took a photo
   if (photo) {
     return (
       <View style={styles.previewRoot}>

@@ -132,7 +132,7 @@ export function useMatches(authLoading: boolean) {
       if (fnError) {
         if (__DEV__ && isSupabaseInvokeUnauthorized(fnError)) {
           console.warn(
-            "[match-daily] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
+            "[match-daily] 401 - Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
           );
         }
         throw fnError;
@@ -203,7 +203,7 @@ export function useMatches(authLoading: boolean) {
       if (fnError) {
         if (__DEV__ && isSupabaseInvokeUnauthorized(fnError)) {
           console.warn(
-            "[match-daily pagination] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md.",
+            "[match-daily pagination] 401 - Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md.",
           );
         }
         throw fnError;

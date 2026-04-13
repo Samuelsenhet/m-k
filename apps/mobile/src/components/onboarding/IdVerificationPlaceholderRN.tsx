@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
- * ID verification step in onboarding — opens the verification wizard.
+ * ID verification step in onboarding - opens the verification wizard.
  * User can also skip and verify later from profile settings.
  */
 export function IdVerificationPlaceholderRN({ onContinue }: { onContinue: () => void }) {

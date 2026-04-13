@@ -13,7 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/** ~10 s for 16 lines — see docs/MOMENT_OF_DEPTH_SCRIPT.md */
+/** ~10 s for 16 lines - see docs/MOMENT_OF_DEPTH_SCRIPT.md */
 export const MOMENT_DEPTH_LINE_MS = 580;
 
 const LINE_KEYS = Array.from({ length: 16 }, (_, i) => {
