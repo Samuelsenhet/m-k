@@ -18,7 +18,14 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned after `latest` rolled to a CLI version that broke `db push`
+          # (observed 2026-04-14 — first successful run on 769a8c6 worked, the
+          # next run on 0394486 failed with exit 1 despite no migration changes
+          # to the path). Bump deliberately when we want a new CLI.
+          version: 2.40.7
+
+      - name: Print CLI version
+        run: supabase --version
 
       - name: Require production Supabase project ref
         run: |

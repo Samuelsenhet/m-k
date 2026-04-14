@@ -10,8 +10,9 @@ if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
   exit 1
 fi
 
-# --yes avoids interactive prompts in CI
-out=$(supabase db push --linked --dry-run --yes -p "$SUPABASE_DB_PASSWORD" 2>&1) || {
+# Recent Supabase CLI removed --linked (push is always linked after `supabase link`)
+# and -p (password comes from SUPABASE_DB_PASSWORD env). --yes keeps it non-interactive.
+out=$(supabase db push --dry-run --yes 2>&1) || {
   echo "$out"
   echo "::error::supabase db push --dry-run failed (link, password, or CLI error)."
   exit 1

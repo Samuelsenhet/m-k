@@ -28,7 +28,8 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned — see production.yaml for rationale.
+          version: 2.40.7
 
       - name: Require production secrets
         run: |
