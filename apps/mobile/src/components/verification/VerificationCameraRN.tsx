@@ -22,16 +22,36 @@ try {
   useCameraPermissions = mod.useCameraPermissions;
 } catch {}
 
+// Lazy-load expo-image-manipulator — required to bake EXIF orientation into
+// pixels for front-camera selfies. If the binary predates this dep, fall
+// back to the raw URI (photo still captured, just possibly rotated).
+let ImageManipulator: any = null;
+try {
+  ImageManipulator = require("expo-image-manipulator");
+} catch {}
+
 type Props = {
   onCapture: (uri: string) => void;
   onSkip: () => void;
   uploading: boolean;
 };
 
+type CapturedPhoto = {
+  uri: string;
+  /**
+   * True when ImageManipulator was unavailable and the raw URI is used.
+   * RN <Image> ignores EXIF orientation, so front-camera iOS selfies render
+   * 90° sideways — we compensate with a CSS transform on the preview.
+   * (The uploaded file still has EXIF orientation baked in, which browsers
+   * and the moderator dashboard respect correctly.)
+   */
+  needsCssRotation: boolean;
+};
+
 export function VerificationCameraRN({ onCapture, onSkip, uploading }: Props) {
   const { t } = useTranslation();
   const cameraRef = useRef<any>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
 
   // Camera not available (Expo Go)
   if (!CameraView || !useCameraPermissions) {
@@ -62,14 +82,15 @@ function CameraInner({
   uploading,
 }: {
   cameraRef: React.MutableRefObject<any>;
-  photo: string | null;
-  setPhoto: (uri: string | null) => void;
+  photo: CapturedPhoto | null;
+  setPhoto: (photo: CapturedPhoto | null) => void;
   onCapture: (uri: string) => void;
   onSkip: () => void;
   uploading: boolean;
 }) {
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
+  const [frameSize, setFrameSize] = useState<{ w: number; h: number } | null>(null);
 
   if (!permission?.granted) {
     return (
@@ -93,20 +114,60 @@ function CameraInner({
   if (photo) {
     return (
       <View style={styles.previewRoot}>
-        <Image source={{ uri: photo }} style={styles.previewImage} resizeMode="cover" />
-        <View style={styles.previewOverlay}>
+        <View style={styles.previewHeaderRow}>
+          <Text style={styles.previewHeaderTitle}>
+            {t("mobile.verification.preview_title", { defaultValue: "Ser bilden rätt ut?" })}
+          </Text>
+          <Text style={styles.previewHeaderHint}>
+            {t("mobile.verification.preview_hint", {
+              defaultValue: "Ditt ansikte ska vara tydligt synligt och upprätt.",
+            })}
+          </Text>
+        </View>
+        <View
+          style={styles.previewFrame}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            if (width > 0 && height > 0) setFrameSize({ w: width, h: height });
+          }}
+        >
+          {photo.needsCssRotation && frameSize ? (
+            // Raw EXIF-oriented image: swap dimensions (H×W) so after the
+            // 90° CSS rotation the image exactly fills the portrait frame.
+            // Offset centers the pre-rotation landscape box inside the frame.
+            <Image
+              source={{ uri: photo.uri }}
+              style={{
+                position: "absolute",
+                width: frameSize.h,
+                height: frameSize.w,
+                left: (frameSize.w - frameSize.h) / 2,
+                top: (frameSize.h - frameSize.w) / 2,
+                transform: [{ rotate: "90deg" }],
+              }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image
+              source={{ uri: photo.uri }}
+              style={styles.previewImage}
+              resizeMode="cover"
+            />
+          )}
+        </View>
+        <View style={styles.previewActionRow}>
           {uploading ? (
             <ActivityIndicator size="large" color="#fff" />
           ) : (
-            <View style={styles.previewActions}>
+            <>
               <Pressable style={styles.retakeBtn} onPress={() => setPhoto(null)}>
                 <Ionicons name="refresh" size={22} color={maakTokens.foreground} />
                 <Text style={styles.retakeText}>{t("mobile.verification.retake")}</Text>
               </Pressable>
-              <Pressable style={styles.cta} onPress={() => onCapture(photo)}>
+              <Pressable style={styles.cta} onPress={() => onCapture(photo.uri)}>
                 <Text style={styles.ctaText}>{t("mobile.verification.use_photo")}</Text>
               </Pressable>
-            </View>
+            </>
           )}
         </View>
       </View>
@@ -116,8 +177,26 @@ function CameraInner({
   // Camera mode
   const takePicture = async () => {
     if (!cameraRef.current) return;
-    const result = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-    if (result?.uri) setPhoto(result.uri);
+    const raw = await cameraRef.current.takePictureAsync({ quality: 0.9, exif: false });
+    if (!raw?.uri) return;
+    // <Image> ignores EXIF orientation, so front-camera iOS selfies render sideways.
+    // manipulateAsync with no actions rewrites the file with orientation baked into pixels.
+    // If the native module isn't in this binary yet (old dev-client / Expo Go),
+    // fall back to the raw URI and mark the photo as needing a CSS rotation on preview.
+    if (ImageManipulator?.manipulateAsync) {
+      try {
+        const normalized = await ImageManipulator.manipulateAsync(
+          raw.uri,
+          [],
+          { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
+        );
+        setPhoto({ uri: normalized.uri, needsCssRotation: false });
+        return;
+      } catch (e) {
+        if (__DEV__) console.warn("[VerificationCamera] manipulateAsync failed:", e);
+      }
+    }
+    setPhoto({ uri: raw.uri, needsCssRotation: true });
   };
 
   return (
@@ -158,17 +237,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   oval: {
-    width: 220,
-    height: 300,
-    borderRadius: 110,
-    borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.6)",
+    width: 240,
+    height: 320,
+    borderRadius: 120,
+    borderWidth: 4,
+    borderColor: "rgba(255,255,255,0.85)",
   },
   ovalHint: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 15,
-    marginTop: 16,
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 20,
     textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   captureRow: {
     position: "absolute",
@@ -176,18 +259,19 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   captureBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 4,
     borderColor: "#fff",
+    backgroundColor: "rgba(255,255,255,0.22)",
     alignItems: "center",
     justifyContent: "center",
   },
   captureBtnInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "#fff",
   },
   skipBtnCamera: {
@@ -195,18 +279,46 @@ const styles = StyleSheet.create({
     bottom: 48,
     alignSelf: "center",
   },
-  previewRoot: { flex: 1, backgroundColor: "#000" },
-  previewImage: { flex: 1 },
-  previewOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 24,
-    paddingBottom: 60,
-    backgroundColor: "rgba(0,0,0,0.4)",
+  previewRoot: {
+    flex: 1,
+    backgroundColor: "#0a0a0a",
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 40,
   },
-  previewActions: { gap: 12 },
+  previewHeaderRow: {
+    paddingTop: 8,
+    paddingBottom: 16,
+    alignItems: "center",
+  },
+  previewHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+    textAlign: "center",
+  },
+  previewHeaderHint: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 6,
+    textAlign: "center",
+    maxWidth: 300,
+  },
+  previewFrame: {
+    flex: 1,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#1a1a1a",
+    marginBottom: 20,
+    // Soft green border mirrors the MÄÄK primary token.
+    borderWidth: 2,
+    borderColor: `${maakTokens.primary}66`,
+  },
+  previewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  previewActionRow: { gap: 12 },
   retakeBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -214,9 +326,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: maakTokens.radius2xl,
-    backgroundColor: maakTokens.card,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.25)",
   },
-  retakeText: { fontSize: 15, fontWeight: "600", color: maakTokens.foreground },
+  retakeText: { fontSize: 15, fontWeight: "600", color: "#fff" },
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: `${maakTokens.primary}1A`,
