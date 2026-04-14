@@ -71,7 +71,17 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
 
       setStep("pending");
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
       if (__DEV__) console.error("[VerificationWizard] upload:", e);
+      try {
+        const { posthog } = await import("@/lib/posthog");
+        posthog.capture("verification_upload_failed", {
+          error_message: message,
+          user_id: session?.user?.id,
+        });
+      } catch {
+        // posthog may be a no-op shim in some environments; don't swallow the user-facing alert.
+      }
       Alert.alert(
         t("mobile.verification.upload_error_title"),
         t("mobile.verification.upload_error_body"),
