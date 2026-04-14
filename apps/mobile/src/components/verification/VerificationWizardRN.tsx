@@ -72,11 +72,29 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
       setStep("pending");
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
-      if (__DEV__) console.error("[VerificationWizard] upload:", e);
+      // FunctionsHttpError wraps the non-2xx Response in `context`. Read the
+      // body so we can see what the edge function actually returned — this is
+      // the difference between "upload failed" (useless) and the exact Postgres
+      // error (diagnoseable).
+      let detail = "";
+      try {
+        const ctx = (e as { context?: unknown })?.context;
+        if (ctx && typeof (ctx as Response).text === "function") {
+          detail = await (ctx as Response).text();
+        } else if (ctx) {
+          detail = typeof ctx === "string" ? ctx : JSON.stringify(ctx);
+        }
+      } catch {
+        /* ignore body-read errors */
+      }
+      if (__DEV__) {
+        console.error("[VerificationWizard] upload:", e, "\ndetail:", detail);
+      }
       try {
         const { posthog } = await import("@/lib/posthog");
         posthog.capture("verification_upload_failed", {
           error_message: message,
+          error_detail: detail || null,
           user_id: session?.user?.id,
         });
       } catch {
@@ -84,7 +102,9 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
       }
       Alert.alert(
         t("mobile.verification.upload_error_title"),
-        t("mobile.verification.upload_error_body"),
+        __DEV__ && detail
+          ? `${t("mobile.verification.upload_error_body")}\n\nDEV: ${detail.slice(0, 500)}`
+          : t("mobile.verification.upload_error_body"),
       );
       // Stay on the camera step so the user can retake and retry.
     } finally {
