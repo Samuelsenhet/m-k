@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Rapportering & säkerhet",
   description:
-    "Hur måäk hanterar rapporter, moderering, sanktioner och samarbete med rättsvårdande myndigheter för att hålla plattformen trygg.",
+    "Hur määk hanterar rapporter, moderering, sanktioner och samarbete med rättsvårdande myndigheter för att hålla plattformen trygg.",
   alternates: { canonical: "/reporting/" },
   openGraph: {
     title: "Rapportering & säkerhet · määk",
