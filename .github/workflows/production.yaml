@@ -18,11 +18,9 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          # Pinned after `latest` rolled to a CLI version that broke `db push`
-          # (observed 2026-04-14 — first successful run on 769a8c6 worked, the
-          # next run on 0394486 failed with exit 1 despite no migration changes
-          # to the path). Bump deliberately when we want a new CLI.
-          version: 2.40.7
+          # Pinned after `latest` rolled and broke `db push` 2026-04-14.
+          # Bump deliberately when we want a newer CLI.
+          version: 2.52.0
 
       - name: Print CLI version
         run: supabase --version
@@ -35,10 +33,12 @@ jobs:
           fi
 
       - name: Link to Production Project
-        run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}
+        # -p explicit to cover CLI versions that don't read SUPABASE_DB_PASSWORD
+        # env var for the link command (observed failing at 0.0s on 2.40.7).
+        run: supabase link --project-ref "${{ secrets.PRODUCTION_PROJECT_ID }}" -p "$SUPABASE_DB_PASSWORD"
 
       - name: Push Migrations to Production
-        run: supabase db push
+        run: supabase db push -p "$SUPABASE_DB_PASSWORD" --yes
 
       - name: Deploy Edge Functions to Production
         run: supabase functions deploy
