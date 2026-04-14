@@ -800,9 +800,17 @@
   "admin": {
     "reports_title": "Moderation - Reports",
     "appeals_title": "Moderation - Appeals",
+    "verifications_title": "Moderation - Verifications",
     "access_denied": "You do not have permission to view this page.",
     "no_reports": "No reports yet.",
     "no_appeals": "No appeals yet.",
+    "no_pending_verifications": "No verifications pending review.",
+    "verifications_pending_since": "Pending review",
+    "verifications_view_selfie": "View selfie",
+    "verifications_approve": "Approve",
+    "verifications_reject": "Reject",
+    "verifications_signed_url_failed": "Could not load the image. Please try again.",
+    "verifications_decision_failed": "Could not save the decision. Please try again.",
     "status": "Status",
     "mobile_intro": "Moderation view for reports. Requires moderator access."
   },

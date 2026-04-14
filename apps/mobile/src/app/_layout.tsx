@@ -173,6 +173,7 @@ function RootLayoutNav() {
               <Stack.Screen name="report" options={{ headerShown: false }} />
               <Stack.Screen name="appeal" options={{ headerShown: false }} />
               <Stack.Screen name="admin-reports" options={{ headerShown: false }} />
+              <Stack.Screen name="admin-verifications" options={{ headerShown: false }} />
               <Stack.Screen name="achievements" options={{ headerShown: false }} />
               <Stack.Screen name="traffar/index" options={{ headerShown: false }} />
               <Stack.Screen name="traffar/create" options={{ headerShown: false, presentation: "modal" }} />

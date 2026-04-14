@@ -278,10 +278,16 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                 />
                 <MenuRow label={t("appeal.title")} onPress={() => go("/appeal")} />
                 {isModerator ? (
-                  <MenuRow
-                    label={t("admin.reports_title")}
-                    onPress={() => go("/admin-reports")}
-                  />
+                  <>
+                    <MenuRow
+                      label={t("admin.reports_title")}
+                      onPress={() => go("/admin-reports")}
+                    />
+                    <MenuRow
+                      label={t("admin.verifications_title")}
+                      onPress={() => go("/admin-verifications")}
+                    />
+                  </>
                 ) : null}
               </View>
 

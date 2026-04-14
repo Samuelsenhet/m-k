@@ -363,6 +363,9 @@ verify_jwt = false
 [functions.initiate-verification]
 verify_jwt = false
 
+[functions.moderate-verification]
+verify_jwt = false
+
 [functions.ai-assistant]
 verify_jwt = false
 

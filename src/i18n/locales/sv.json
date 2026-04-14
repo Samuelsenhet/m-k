@@ -800,9 +800,17 @@
   "admin": {
     "reports_title": "Moderering - Rapporter",
     "appeals_title": "Moderering - Överklaganden",
+    "verifications_title": "Moderering - Verifieringar",
     "access_denied": "Du har inte behörighet att visa denna sida.",
     "no_reports": "Inga rapporter ännu.",
     "no_appeals": "Inga överklaganden ännu.",
+    "no_pending_verifications": "Inga verifieringar väntar på granskning.",
+    "verifications_pending_since": "Väntar på granskning",
+    "verifications_view_selfie": "Visa selfie",
+    "verifications_approve": "Godkänn",
+    "verifications_reject": "Avvisa",
+    "verifications_signed_url_failed": "Kunde inte hämta bilden. Försök igen.",
+    "verifications_decision_failed": "Kunde inte spara beslutet. Försök igen.",
     "status": "Status",
     "mobile_intro": "Modereringsvy för rapporter. Kräver moderatorbehörighet."
   },
