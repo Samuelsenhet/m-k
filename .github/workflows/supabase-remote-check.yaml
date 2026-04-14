@@ -29,7 +29,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           # Pinned — see production.yaml for rationale.
-          version: 2.52.0
+          version: 2.75.0
 
       - name: Require production secrets
         run: |
@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: Link to production project
-        run: supabase link --project-ref "${{ secrets.PRODUCTION_PROJECT_ID }}" -p "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "${{ secrets.PRODUCTION_PROJECT_ID }}"
 
       - name: Fail if remote is behind git migrations
         run: bash scripts/ci-supabase-remote-drift.sh
