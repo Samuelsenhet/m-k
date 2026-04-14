@@ -21,16 +21,25 @@ serve(async (req: Request) => {
     });
   }
 
-  const { supabaseUrl, serviceRoleKey } = getSupabaseEnv();
+  const envResult = getSupabaseEnv(req);
+  if (envResult instanceof Response) return envResult;
+  const { supabaseUrl, supabaseAnonKey } = envResult;
+
   const authHeader = req.headers.get("Authorization") ?? "";
-  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
-  const payload = await verifySupabaseJWT(jwt);
-  if (!payload?.sub) {
+  const userId = await verifySupabaseJWT(authHeader, supabaseUrl, supabaseAnonKey);
+  if (!userId) {
     return new Response(JSON.stringify({ error: "Not authenticated" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401,
     });
   }
-  const userId = payload.sub as string;
+
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceRoleKey) {
+    return new Response(
+      JSON.stringify({ error: "SUPABASE_SERVICE_ROLE_KEY not configured" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 503 },
+    );
+  }
 
   let selfiePath: string | undefined;
   try {
