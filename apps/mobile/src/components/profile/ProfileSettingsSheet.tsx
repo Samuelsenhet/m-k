@@ -140,8 +140,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <>
-      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={[styles.overlay, { paddingTop: insets.top }]}>
           <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
             <View style={styles.headerRow}>
@@ -248,7 +247,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                 <MenuRow
                   icon="calendar-outline"
                   label={t("settings.traffar", { defaultValue: "Träffar" })}
-                  onPress={() => go("/träffar" as unknown as "/")}
+                  onPress={() => go("/traffar" as unknown as "/")}
                 />
                 <MenuRow
                   icon="mail-unread-outline"
@@ -314,15 +313,13 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
             </ScrollView>
           </View>
         </View>
-      </Modal>
-
       <PrivacyControlsSheet
         visible={privacyOpen}
         onClose={() => setPrivacyOpen(false)}
         onOpenPrivacyPolicy={() => go("/privacy")}
         onOpenSharedData={() => go("/shared-data" as unknown as "/")}
       />
-    </>
+    </Modal>
   );
 }
 

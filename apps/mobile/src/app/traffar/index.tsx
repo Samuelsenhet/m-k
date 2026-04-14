@@ -229,7 +229,7 @@ export default function TraffarScreen() {
         {host.isActive && (
           <Pressable
             onPress={() =>
-              router.push("/träffar/create" as unknown as "/")
+              router.push("/traffar/create" as unknown as "/")
             }
             style={styles.hostCard}
             accessibilityRole="button"

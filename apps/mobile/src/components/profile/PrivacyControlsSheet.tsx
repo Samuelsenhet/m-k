@@ -65,11 +65,22 @@ export function PrivacyControlsSheet({
     setSaving(true);
     try {
       const key = await resolveProfilesAuthKey(supabase, user.id);
-      const { error } = await supabase
+      // .select().single() turns a silent no-op (wrong auth key or RLS deny
+      // returning 0 rows) into a loud error so the user sees a retry prompt
+      // instead of a toggle that pops back on next reload.
+      const { data, error } = await supabase
         .from("profiles")
         .update({ is_visible: next })
-        .eq(key, user.id);
+        .eq(key, user.id)
+        .select("is_visible")
+        .single();
       if (error) throw error;
+      if (!data || data.is_visible !== next) {
+        throw new Error(
+          `profiles.is_visible write no-op — resolved key='${key}', userId='${user.id}' matched 0 rows`,
+        );
+      }
+      setIsVisibleProfile(data.is_visible);
     } catch (e) {
       if (__DEV__) console.warn("[PrivacyControlsSheet toggle]", e);
       setIsVisibleProfile(previous);

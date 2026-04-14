@@ -174,8 +174,8 @@ function RootLayoutNav() {
               <Stack.Screen name="appeal" options={{ headerShown: false }} />
               <Stack.Screen name="admin-reports" options={{ headerShown: false }} />
               <Stack.Screen name="achievements" options={{ headerShown: false }} />
-              <Stack.Screen name="träffar/index" options={{ headerShown: false }} />
-              <Stack.Screen name="träffar/create" options={{ headerShown: false, presentation: "modal" }} />
+              <Stack.Screen name="traffar/index" options={{ headerShown: false }} />
+              <Stack.Screen name="traffar/create" options={{ headerShown: false, presentation: "modal" }} />
               <Stack.Screen name="host/introduce" options={{ headerShown: false, presentation: "modal" }} />
               <Stack.Screen name="host/inbox" options={{ headerShown: false }} />
               <Stack.Screen name="user/[userId]" options={{ headerShown: false }} />
