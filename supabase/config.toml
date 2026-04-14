@@ -349,12 +349,54 @@ authorization_url_path = "/oauth/consent"
 allow_dynamic_registration = false
 
 # Gateway JWT verification off: validate inside the handler with GoTrue (getUser).
-# Some projects (asymmetric JWT / ES256) get 401 at the gateway while tokens are valid for Auth;
-# verify_jwt = false avoids that; security relies on verifySupabaseJWT in each function.
+# Project uses asymmetric JWT (ES256) — the platform gateway's JWT verifier
+# rejects them with "Invalid JWT" even when GoTrue accepts the same token.
+# Every function that calls verifySupabaseJWT internally MUST be listed here
+# with verify_jwt = false, otherwise its first real invocation from the client
+# fails 401 at the gateway before reaching the handler code.
 [functions.match-daily]
 verify_jwt = false
 
 [functions.match-status]
+verify_jwt = false
+
+[functions.initiate-verification]
+verify_jwt = false
+
+[functions.ai-assistant]
+verify_jwt = false
+
+[functions.generate-icebreakers]
+verify_jwt = false
+
+[functions.generate-followups]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-notification]
+verify_jwt = false
+
+[functions.send-bulk-email]
+verify_jwt = false
+
+[functions.introduction-create]
+verify_jwt = false
+
+[functions.introduction-respond]
+verify_jwt = false
+
+[functions.traff-rsvp]
+verify_jwt = false
+
+[functions.super-responder]
+verify_jwt = false
+
+[functions.create-video-session]
+verify_jwt = false
+
+[functions.sunday-rematch]
 verify_jwt = false
 
 [edge_runtime]
