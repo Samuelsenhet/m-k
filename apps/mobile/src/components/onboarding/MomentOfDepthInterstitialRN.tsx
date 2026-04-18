@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -13,7 +14,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/** ~10 s for 16 lines - see docs/MOMENT_OF_DEPTH_SCRIPT.md */
 export const MOMENT_DEPTH_LINE_MS = 580;
 
 const LINE_KEYS = Array.from({ length: 16 }, (_, i) => {
@@ -90,23 +90,37 @@ export function MomentOfDepthInterstitialRN({ visible, onContinue }: Props) {
             contentFit="contain"
             accessibilityIgnoresInvertColors
           />
-          {linesToShow.map((key) => (
-            <Text key={key} style={styles.line}>
-              {t(key)}
-            </Text>
-          ))}
+
+          <View style={styles.linesCard}>
+            {linesToShow.map((key, i) => {
+              const isEmphasis = i === 4 || i === 11;
+              return (
+                <Animated.Text
+                  key={key}
+                  entering={FadeIn.duration(400)}
+                  style={[styles.line, isEmphasis && styles.lineEmphasis]}
+                >
+                  {t(key)}
+                </Animated.Text>
+              );
+            })}
+          </View>
+
           {showStory ? (
-            <View style={styles.storyBlock}>
+            <Animated.View entering={FadeIn.duration(500)} style={styles.storyCard}>
               <Text style={styles.storyTitle}>{t("maak_matching_story.title")}</Text>
               <Text style={styles.storyP}>{t("maak_matching_story.body_1")}</Text>
               <Text style={styles.storyP}>{t("maak_matching_story.body_2")}</Text>
               <Text style={styles.storyP}>{t("maak_matching_story.body_3")}</Text>
-            </View>
+            </Animated.View>
           ) : null}
+
           {showStory ? (
-            <Pressable style={styles.cta} onPress={onContinue} accessibilityRole="button">
-              <Text style={styles.ctaTxt}>{t("maak_moment_of_depth.continue_cta")}</Text>
-            </Pressable>
+            <Animated.View entering={FadeIn.duration(400).delay(200)} style={styles.ctaWrap}>
+              <Pressable style={styles.cta} onPress={onContinue} accessibilityRole="button">
+                <Text style={styles.ctaTxt}>{t("maak_moment_of_depth.continue_cta")}</Text>
+              </Pressable>
+            </Animated.View>
           ) : null}
         </ScrollView>
       </View>
@@ -117,56 +131,78 @@ export function MomentOfDepthInterstitialRN({ visible, onContinue }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "#0a0a0c",
+    backgroundColor: maakTokens.background,
   },
   scroll: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 32,
     alignItems: "center",
   },
   mascot: {
-    width: 112,
-    height: 112,
-    marginBottom: 16,
+    width: 120,
+    height: 120,
+    marginBottom: 20,
+  },
+  linesCard: {
+    backgroundColor: maakTokens.card,
+    borderRadius: maakTokens.radius2xl,
+    borderWidth: 1,
+    borderColor: maakTokens.border,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    width: "100%",
+    maxWidth: 400,
+    alignItems: "center",
   },
   line: {
-    color: "#f4f4f5",
-    fontSize: 17,
-    lineHeight: 26,
+    color: maakTokens.foreground,
+    fontSize: 16,
+    lineHeight: 25,
     textAlign: "center",
-    marginBottom: 10,
-    fontWeight: "500",
+    marginBottom: 8,
+    fontStyle: "italic",
   },
-  storyBlock: {
-    marginTop: 20,
-    marginBottom: 24,
-    paddingTop: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255,255,255,0.22)",
+  lineEmphasis: {
+    fontWeight: "700",
+    fontStyle: "normal",
+    color: maakTokens.primary,
+    fontSize: 17,
+  },
+  storyCard: {
+    marginTop: 16,
+    backgroundColor: `${maakTokens.primary}0A`,
+    borderRadius: maakTokens.radiusXl,
+    borderWidth: 1,
+    borderColor: `${maakTokens.primary}22`,
+    padding: 20,
     width: "100%",
     maxWidth: 400,
   },
   storyTitle: {
-    color: "#fafafa",
+    color: maakTokens.foreground,
     fontSize: 18,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 14,
   },
   storyP: {
-    color: "rgba(244,244,245,0.88)",
+    color: maakTokens.mutedForeground,
     fontSize: 15,
     lineHeight: 23,
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  ctaWrap: {
+    marginTop: 20,
+    alignSelf: "stretch",
+    maxWidth: 400,
+    width: "100%",
   },
   cta: {
     backgroundColor: maakTokens.primary,
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: maakTokens.radiusLg,
-    alignSelf: "stretch",
-    maxWidth: 400,
     alignItems: "center",
   },
   ctaTxt: {

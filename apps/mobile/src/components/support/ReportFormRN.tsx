@@ -1,5 +1,5 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
-import { readFileAsBytes } from "@/lib/readFileAsBytes";
+import { readFileAsBase64 } from "@/lib/readFileAsBytes";
 import { SupportHeader } from "@/components/support/SupportHeader";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
@@ -141,7 +141,7 @@ export function ReportFormRN() {
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
         const path = `${user.id}/${uuid}.${safeExt}`;
-        const bytes = await readFileAsBytes(file.uri);
+        const base64 = await readFileAsBase64(file.uri);
         const contentType =
           file.mimeType ||
           (safeExt === "png"
@@ -151,11 +151,29 @@ export function ReportFormRN() {
               : safeExt === "webp"
                 ? "image/webp"
                 : "image/jpeg");
-        const { error: uploadError } = await supabase.storage
-          .from("report-evidence")
-          .upload(path, bytes, { upsert: false, contentType });
+        // Route via storage-proxy edge function: direct storage.upload is
+        // unreliable on this project's storage-api (see PhotoUploadRN).
+        const { error: uploadError } = await supabase.functions.invoke(
+          "storage-proxy",
+          {
+            body: {
+              action: "upload",
+              bucket: "report-evidence",
+              path,
+              contentType,
+              base64,
+            },
+          },
+        );
         if (uploadError) {
-          throw new Error(uploadError.message || t("report.upload_error"));
+          let detail = "";
+          try {
+            const ctx = (uploadError as { context?: Response }).context;
+            if (ctx) detail = await ctx.text();
+          } catch {
+            /* ignore */
+          }
+          throw new Error(detail || uploadError.message || t("report.upload_error"));
         }
         evidencePaths.push(path);
       }

@@ -177,7 +177,12 @@ function CameraInner({
   // Camera mode
   const takePicture = async () => {
     if (!cameraRef.current) return;
-    const raw = await cameraRef.current.takePictureAsync({ quality: 0.9, exif: false });
+    let raw;
+    try {
+      raw = await cameraRef.current.takePictureAsync({ quality: 0.9, exif: false });
+    } catch {
+      return;
+    }
     if (!raw?.uri) return;
     // <Image> ignores EXIF orientation, so front-camera iOS selfies render sideways.
     // manipulateAsync with no actions rewrites the file with orientation baked into pixels.
@@ -249,9 +254,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 20,
     textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadow: "0px 1px 3px rgba(0,0,0,0.6)",
   },
   captureRow: {
     position: "absolute",

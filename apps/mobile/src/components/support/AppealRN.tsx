@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -37,40 +38,42 @@ export function AppealRN() {
       return;
     }
     setSubmitting(true);
-    const { data: newAppeal, error } = await supabase
-      .from("appeals")
-      .insert({
-        user_id: user.id,
-        reason: reason.trim(),
-        status: "pending",
-      })
-      .select("id")
-      .single();
-    if (error) {
-      if (__DEV__) console.warn("[AppealRN]", error);
-      Alert.alert("", t("appeal.submit_error"));
-      setSubmitting(false);
-      return;
-    }
-    const userEmail = user.email?.trim();
-    const isPlaceholderEmail = userEmail?.includes("@phone.maak.app") ?? true;
-    if (userEmail && !isPlaceholderEmail && newAppeal?.id) {
-      try {
-        await supabase.functions.invoke("send-email", {
-          body: {
-            to: userEmail,
-            template: "appeal_received",
-            data: { appeal_id: newAppeal.id },
-            language: i18n.language?.startsWith("en") ? "en" : "sv",
-          },
-        });
-      } catch (e) {
-        if (__DEV__) console.warn("[AppealRN] email", e);
+    try {
+      const { data: newAppeal, error } = await supabase
+        .from("appeals")
+        .insert({
+          user_id: user.id,
+          reason: reason.trim(),
+          status: "pending",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      const userEmail = user.email?.trim();
+      const isPlaceholderEmail = userEmail?.includes("@phone.maak.app") ?? true;
+      if (userEmail && !isPlaceholderEmail && newAppeal?.id) {
+        try {
+          await supabase.functions.invoke("send-email", {
+            body: {
+              to: userEmail,
+              template: "appeal_received",
+              data: { appeal_id: newAppeal.id },
+              language: i18n.language?.startsWith("en") ? "en" : "sv",
+            },
+          });
+        } catch (e) {
+          if (__DEV__) console.warn("[AppealRN] email", e);
+        }
       }
+      setSubmitted(true);
+      Alert.alert("", t("appeal.received"));
+    } catch (e) {
+      if (__DEV__) console.warn("[AppealRN]", e);
+      Alert.alert("", t("appeal.submit_error"));
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
-    setSubmitted(true);
-    Alert.alert("", t("appeal.received"));
   };
 
   if (!user) {
@@ -103,9 +106,14 @@ export function AppealRN() {
   }
 
   return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
     <ScrollView
       style={styles.root}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
       contentContainerStyle={{
         paddingTop: insets.top + 12,
         paddingBottom: insets.bottom + 32,
@@ -145,6 +153,7 @@ export function AppealRN() {
         <Text style={styles.policyLinkTxt}>{t("report.view_policy")}</Text>
       </Pressable>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

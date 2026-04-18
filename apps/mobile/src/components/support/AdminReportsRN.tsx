@@ -1,7 +1,7 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { SupportHeader } from "@/components/support/SupportHeader";
 import { maakTokens } from "@maak/core";
-import { Picker } from "@react-native-picker/picker";
+import { SelectField } from "@/components/onboarding/SelectField";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -168,22 +168,14 @@ export function AdminReportsRN() {
                 {t("report.context_evidence")}: {r.context}
               </Text>
               <View style={styles.statusRow}>
-                <Text style={styles.statusLabel}>{t("admin.status")}</Text>
-                <View style={styles.pickerWrap}>
-                  <Picker
-                    selectedValue={r.status}
-                    enabled={updatingId !== r.id}
+                <View style={styles.statusSelect}>
+                  <SelectField
+                    label={t("admin.status")}
+                    value={r.status}
+                    placeholder={t("admin.status")}
+                    options={STATUSES.map((s) => ({ value: s, label: t(`report.status_${s}`) }))}
                     onValueChange={(v) => void updateStatus(r.id, v as ReportStatus)}
-                    style={styles.picker}
-                  >
-                    {STATUSES.map((s) => (
-                      <Picker.Item
-                        key={s}
-                        label={t(`report.status_${s}`)}
-                        value={s}
-                      />
-                    ))}
-                  </Picker>
+                  />
                 </View>
                 {updatingId === r.id ? (
                   <ActivityIndicator size="small" color={maakTokens.primary} />
@@ -222,16 +214,7 @@ const styles = StyleSheet.create({
   desc: { fontSize: 13, color: maakTokens.mutedForeground, marginBottom: 8 },
   ctx: { fontSize: 12, color: maakTokens.mutedForeground, marginBottom: 10 },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  statusLabel: { fontSize: 12, color: maakTokens.mutedForeground },
-  pickerWrap: {
-    flex: 1,
-    minWidth: 140,
-    borderWidth: 1,
-    borderColor: maakTokens.border,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  picker: { width: "100%" },
+  statusSelect: { flex: 1, minWidth: 140 },
   primaryBtn: {
     backgroundColor: maakTokens.primary,
     paddingVertical: 14,

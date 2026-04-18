@@ -1,8 +1,15 @@
 import { maakTokens } from "@maak/core";
-import { Picker } from "@react-native-picker/picker";
-import { useMemo } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { calculateAge } from "@/lib/age";
 
@@ -26,10 +33,14 @@ type Props = {
   error?: string;
 };
 
+type ColumnKey = "day" | "month" | "year";
+
 export function AgeVerificationRN({ dateOfBirth, onChange, error }: Props) {
   const { t, i18n } = useTranslation();
   const { day, month, year } = dateOfBirth;
   const daysInMonth = getDaysInMonth(month, year);
+  const [openCol, setOpenCol] = useState<ColumnKey | null>(null);
+
   const days = useMemo(
     () => Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString().padStart(2, "0")),
     [daysInMonth],
@@ -57,51 +68,45 @@ export function AgeVerificationRN({ dateOfBirth, onChange, error }: Props) {
     age = null;
   }
 
+  const selectDay = (v: string) => {
+    onChange({ ...dateOfBirth, day: v });
+    setOpenCol(null);
+  };
+  const selectMonth = (v: string) => {
+    onChange({ ...dateOfBirth, month: v });
+    setOpenCol(null);
+  };
+  const selectYear = (v: string) => {
+    onChange({ ...dateOfBirth, year: v });
+    setOpenCol(null);
+  };
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{t("mobile.age.dob")}</Text>
       <Text style={styles.hint}>{t("mobile.age.hint")}</Text>
 
       <View style={styles.row}>
-        <View style={styles.pickerCol}>
-          <Picker
-            selectedValue={day || ""}
-            onValueChange={(v) => onChange({ ...dateOfBirth, day: v })}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            <Picker.Item label={t("mobile.age.day")} value="" enabled={false} />
-            {days.map((d) => (
-              <Picker.Item key={d} label={d} value={d} />
-            ))}
-          </Picker>
-        </View>
-        <View style={styles.pickerColWide}>
-          <Picker
-            selectedValue={month || ""}
-            onValueChange={(v) => onChange({ ...dateOfBirth, month: v })}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            <Picker.Item label={t("mobile.age.month")} value="" enabled={false} />
-            {months.map((m) => (
-              <Picker.Item key={m.value} label={m.label} value={m.value} />
-            ))}
-          </Picker>
-        </View>
-        <View style={styles.pickerCol}>
-          <Picker
-            selectedValue={year || ""}
-            onValueChange={(v) => onChange({ ...dateOfBirth, year: v })}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            <Picker.Item label={t("mobile.age.year")} value="" enabled={false} />
-            {YEARS.map((y) => (
-              <Picker.Item key={y} label={y} value={y} />
-            ))}
-          </Picker>
-        </View>
+        <Pressable style={[styles.pickerCol, !day && styles.pickerEmpty]} onPress={() => setOpenCol("day")}>
+          <Text style={[styles.pickerText, !day && styles.pickerPlaceholder]}>
+            {day || t("mobile.age.day")}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={maakTokens.mutedForeground} />
+        </Pressable>
+
+        <Pressable style={[styles.pickerColWide, !month && styles.pickerEmpty]} onPress={() => setOpenCol("month")}>
+          <Text style={[styles.pickerText, !month && styles.pickerPlaceholder]}>
+            {month ? months.find((m) => m.value === month)?.label ?? month : t("mobile.age.month")}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={maakTokens.mutedForeground} />
+        </Pressable>
+
+        <Pressable style={[styles.pickerCol, !year && styles.pickerEmpty]} onPress={() => setOpenCol("year")}>
+          <Text style={[styles.pickerText, !year && styles.pickerPlaceholder]}>
+            {year || t("mobile.age.year")}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={maakTokens.mutedForeground} />
+        </Pressable>
       </View>
 
       {showAgeWarning ? (
@@ -115,23 +120,105 @@ export function AgeVerificationRN({ dateOfBirth, onChange, error }: Props) {
       ) : null}
 
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+
+      <Modal visible={openCol === "day"} transparent animationType="fade" onRequestClose={() => setOpenCol(null)}>
+        <Pressable style={styles.backdrop} onPress={() => setOpenCol(null)}>
+          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
+            <Text style={styles.sheetTitle}>{t("mobile.age.day")}</Text>
+            <FlatList
+              data={days}
+              keyExtractor={(d) => d}
+              style={styles.list}
+              renderItem={({ item }) => (
+                <Pressable style={[styles.option, item === day && styles.optionActive]} onPress={() => selectDay(item)}>
+                  <Text style={[styles.optionText, item === day && styles.optionTextActive]}>{item}</Text>
+                  {item === day ? <Ionicons name="checkmark" size={20} color={maakTokens.primary} /> : null}
+                </Pressable>
+              )}
+              initialScrollIndex={day ? Math.max(0, days.indexOf(day) - 2) : 0}
+              getItemLayout={(_, index) => ({ length: 48, offset: 48 * index, index })}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={openCol === "month"} transparent animationType="fade" onRequestClose={() => setOpenCol(null)}>
+        <Pressable style={styles.backdrop} onPress={() => setOpenCol(null)}>
+          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
+            <Text style={styles.sheetTitle}>{t("mobile.age.month")}</Text>
+            <FlatList
+              data={months}
+              keyExtractor={(m) => m.value}
+              style={styles.list}
+              renderItem={({ item }) => (
+                <Pressable style={[styles.option, item.value === month && styles.optionActive]} onPress={() => selectMonth(item.value)}>
+                  <Text style={[styles.optionText, item.value === month && styles.optionTextActive]}>{item.label}</Text>
+                  {item.value === month ? <Ionicons name="checkmark" size={20} color={maakTokens.primary} /> : null}
+                </Pressable>
+              )}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={openCol === "year"} transparent animationType="fade" onRequestClose={() => setOpenCol(null)}>
+        <Pressable style={styles.backdrop} onPress={() => setOpenCol(null)}>
+          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
+            <Text style={styles.sheetTitle}>{t("mobile.age.year")}</Text>
+            <FlatList
+              data={YEARS}
+              keyExtractor={(y) => y}
+              style={styles.list}
+              renderItem={({ item }) => (
+                <Pressable style={[styles.option, item === year && styles.optionActive]} onPress={() => selectYear(item)}>
+                  <Text style={[styles.optionText, item === year && styles.optionTextActive]}>{item}</Text>
+                  {item === year ? <Ionicons name="checkmark" size={20} color={maakTokens.primary} /> : null}
+                </Pressable>
+              )}
+              initialScrollIndex={year ? Math.max(0, YEARS.indexOf(year) - 2) : 0}
+              getItemLayout={(_, index) => ({ length: 48, offset: 48 * index, index })}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: maakTokens.foreground,
-  },
+  label: { fontSize: 15, fontWeight: "600", color: maakTokens.foreground },
   hint: { fontSize: 13, color: maakTokens.mutedForeground },
-  row: { flexDirection: "row", gap: 4, alignItems: "stretch" },
-  pickerCol: { flex: 1, minWidth: 72 },
-  pickerColWide: { flex: 1.4, minWidth: 100 },
-  picker: { width: "100%" },
-  pickerItem: { fontSize: 15 },
+  row: { flexDirection: "row", gap: 8, alignItems: "stretch" },
+  pickerCol: {
+    flex: 1,
+    minWidth: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: maakTokens.border,
+    borderRadius: maakTokens.radiusMd,
+    backgroundColor: maakTokens.muted,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  pickerColWide: {
+    flex: 1.4,
+    minWidth: 100,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: maakTokens.border,
+    borderRadius: maakTokens.radiusMd,
+    backgroundColor: maakTokens.muted,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  pickerEmpty: {},
+  pickerText: { fontSize: 15, color: maakTokens.foreground, marginRight: 4 },
+  pickerPlaceholder: { color: maakTokens.mutedForeground },
   warnBox: {
     backgroundColor: `${maakTokens.destructive}18`,
     padding: 12,
@@ -140,4 +227,37 @@ const styles = StyleSheet.create({
   warnText: { color: maakTokens.destructive, fontSize: 13 },
   ok: { fontSize: 13, color: maakTokens.primary },
   fieldError: { fontSize: 13, color: maakTokens.destructive },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: maakTokens.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
+    maxHeight: "50%",
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: maakTokens.foreground,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  list: { paddingHorizontal: 12 },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: maakTokens.radiusMd,
+    height: 48,
+  },
+  optionActive: { backgroundColor: `${maakTokens.primary}14` },
+  optionText: { fontSize: 16, color: maakTokens.foreground },
+  optionTextActive: { color: maakTokens.primary, fontWeight: "600" },
 });

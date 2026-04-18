@@ -1,8 +1,8 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { maakTokens } from "@maak/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { VerificationIntroRN } from "./VerificationIntroRN";
 import { VerificationTipsRN } from "./VerificationTipsRN";
@@ -10,9 +10,10 @@ import { VerificationHowItWorksRN } from "./VerificationHowItWorksRN";
 import { VerificationConsentRN } from "./VerificationConsentRN";
 import { VerificationCameraRN } from "./VerificationCameraRN";
 import { VerificationPendingRN } from "./VerificationPendingRN";
+import { MascotAssets } from "@/lib/mascotAssets";
 import { Ionicons } from "@expo/vector-icons";
 
-type Step = "intro" | "tips" | "how" | "consent" | "camera" | "pending";
+type Step = "loading" | "intro" | "tips" | "how" | "consent" | "camera" | "pending" | "already";
 
 type Props = {
   onDone: () => void;
@@ -23,9 +24,39 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { supabase, session } = useSupabase();
-  const [step, setStep] = useState<Step>("intro");
-  const [selfieUri, setSelfieUri] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("loading");
+  const [, setSelfieUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Block re-runs: once approved or pending, the wizard is a read-only status screen.
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const userId = session?.user?.id;
+      if (!userId) {
+        if (!cancelled) setStep("intro");
+        return;
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id_verification_status")
+        .eq("id", userId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        setStep("intro");
+        return;
+      }
+      const status = data?.id_verification_status;
+      if (status === "approved") setStep("already");
+      else if (status === "pending") setStep("pending");
+      else setStep("intro");
+    };
+    void check();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, session?.user?.id]);
 
   const uploadSelfie = async (uri: string) => {
     if (!session?.user?.id) return;
@@ -45,6 +76,8 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
       const bucketUrl = supabase.storage.from("id-documents").getPublicUrl("").data.publicUrl
         .replace("/object/public/id-documents/", "");
       const uploadUrl = `${bucketUrl}/object/id-documents/${filePath}`;
+
+      if (!session.access_token) throw new Error("No active session");
 
       const uploadRes = await fetch(uploadUrl, {
         method: "POST",
@@ -125,6 +158,38 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
         <Ionicons name="close" size={26} color={maakTokens.foreground} />
       </Pressable>
 
+      {step === "loading" && (
+        <View style={styles.centered}>
+          <ActivityIndicator color={maakTokens.primary} />
+        </View>
+      )}
+      {step === "already" && (
+        <View style={styles.centered}>
+          <Image
+            source={MascotAssets.waitingTea}
+            style={styles.mascot}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
+          <Ionicons
+            name="shield-checkmark"
+            size={32}
+            color={maakTokens.primary}
+            style={{ marginBottom: 8 }}
+          />
+          <Text style={styles.alreadyTitle}>
+            {t("mobile.verification.already_verified_title")}
+          </Text>
+          <Text style={styles.alreadyBody}>
+            {t("mobile.verification.already_verified_body")}
+          </Text>
+          <Pressable style={styles.alreadyCta} onPress={onDone}>
+            <Text style={styles.alreadyCtaText}>
+              {t("mobile.verification.done")}
+            </Text>
+          </Pressable>
+        </View>
+      )}
       {step === "intro" && (
         <VerificationIntroRN
           onContinue={() => setStep("tips")}
@@ -169,4 +234,38 @@ export function VerificationWizardRN({ onDone, onSkip }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: maakTokens.background },
   closeBtn: { position: "absolute", top: 56, right: 16, zIndex: 10 },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    gap: 8,
+  },
+  mascot: { width: 120, height: 120, marginBottom: 16 },
+  alreadyTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: maakTokens.foreground,
+    textAlign: "center",
+  },
+  alreadyBody: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: maakTokens.mutedForeground,
+    textAlign: "center",
+    maxWidth: 300,
+    marginBottom: 24,
+  },
+  alreadyCta: {
+    alignSelf: "stretch",
+    backgroundColor: maakTokens.primary,
+    borderRadius: maakTokens.radius2xl,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  alreadyCtaText: {
+    color: maakTokens.primaryForeground,
+    fontSize: 16,
+    fontWeight: "700",
+  },
 });

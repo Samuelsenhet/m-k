@@ -1,5 +1,5 @@
-import { MomentOfDepthInterstitialRN } from "@/components/onboarding/MomentOfDepthInterstitialRN";
 import { buildPersonalityQuestions, QUESTION_SHELLS } from "@/data/questions";
+import { MascotAssets } from "@/lib/mascotAssets";
 import {
   calculateArchetype,
   getCategoryFromArchetype,
@@ -7,10 +7,11 @@ import {
   type DimensionKey,
   type PersonalityTestResult,
 } from "@maak/core";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,9 +29,6 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-/** After N answers - Moment of Depth (plan: 5-10). */
-const MOMENT_DEPTH_AFTER = 7;
-
 type Props = { onComplete: (result: PersonalityTestResult) => void };
 
 export function PersonalityTestRN({ onComplete }: Props) {
@@ -39,8 +37,6 @@ export function PersonalityTestRN({ onComplete }: Props) {
   const shuffledQuestions = useMemo(() => shuffleArray(questions), [questions]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [showMomentOfDepth, setShowMomentOfDepth] = useState(false);
-  const momentDepthTriggeredRef = useRef(false);
 
   const currentQuestion = shuffledQuestions[currentIndex];
   const answeredCount = Object.keys(answers).length;
@@ -50,26 +46,11 @@ export function PersonalityTestRN({ onComplete }: Props) {
     if (!currentQuestion) return;
     setAnswers((prev) => {
       const next = { ...prev, [currentQuestion.id]: value };
-      const nextCount = Object.keys(next).length;
-
-      if (!momentDepthTriggeredRef.current && nextCount === MOMENT_DEPTH_AFTER) {
-        momentDepthTriggeredRef.current = true;
-        setTimeout(() => setShowMomentOfDepth(true), 380);
-        return next;
-      }
-
       if (currentIndex < shuffledQuestions.length - 1) {
         setTimeout(() => setCurrentIndex((i) => i + 1), 350);
       }
       return next;
     });
-  };
-
-  const dismissMomentOfDepth = () => {
-    setShowMomentOfDepth(false);
-    if (currentIndex < shuffledQuestions.length - 1) {
-      setTimeout(() => setCurrentIndex((i) => i + 1), 200);
-    }
   };
 
   const computeResult = (): PersonalityTestResult => {
@@ -127,10 +108,9 @@ export function PersonalityTestRN({ onComplete }: Props) {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <MomentOfDepthInterstitialRN visible={showMomentOfDepth} onContinue={dismissMomentOfDepth} />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.brandRow}>
-          <Text style={styles.brandHeart}>♥</Text>
+          <Image source={MascotAssets.brand} style={styles.brandMascot} resizeMode="contain" />
           <Text style={styles.brand}>MÄÄK</Text>
         </View>
         <Text style={styles.h1}>{t("personality.testTitle")}</Text>
@@ -188,7 +168,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: maakTokens.background },
   scroll: { padding: 20, paddingBottom: 40 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
-  brandHeart: { fontSize: 22, color: maakTokens.primary },
+  brandMascot: { width: 28, height: 28 },
   brand: { fontSize: 18, fontWeight: "700", color: maakTokens.foreground },
   h1: { fontSize: 24, fontWeight: "700", color: maakTokens.foreground, marginBottom: 4 },
   muted: { fontSize: 14, color: maakTokens.mutedForeground, marginBottom: 16 },

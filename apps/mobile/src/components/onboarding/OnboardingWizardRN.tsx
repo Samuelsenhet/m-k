@@ -1,5 +1,6 @@
 import { Emoji } from "@/components/Emoji";
 import { IdVerificationPlaceholderRN } from "@/components/onboarding/IdVerificationPlaceholderRN";
+import { MomentOfDepthInterstitialRN } from "@/components/onboarding/MomentOfDepthInterstitialRN";
 import { PersonalityResultRN } from "@/components/onboarding/PersonalityResultRN";
 import { PersonalityTestRN } from "@/components/onboarding/PersonalityTestRN";
 import {
@@ -23,15 +24,17 @@ import { localizeSelectOptions } from "@/lib/localizeSelectOptions";
 import {
   ARCHETYPE_INFO,
   maakTokens,
-  resolveProfilesAuthKey,
   type PersonalityTestResult,
 } from "@maak/core";
+import { MascotAssets } from "@/lib/mascotAssets";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -41,6 +44,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 interface ProfileData {
   firstName: string;
@@ -74,6 +78,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
   const { t, i18n } = useTranslation();
   const { supabase, hasValidSupabaseConfig } = useSupabase();
   const onlineCount = useOnlineCount(userId, hasValidSupabaseConfig);
+  const posthog = usePostHog();
 
   const STEPS = useMemo(
     () => [
@@ -90,6 +95,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [showMomentOfDepth, setShowMomentOfDepth] = useState(false);
 
   const [profile, setProfile] = useState<ProfileData>({
     firstName: "",
@@ -133,20 +139,26 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
   const photoCount = photos.filter((p) => p.storage_path).length;
 
   const checkExistingPersonality = useCallback(async () => {
-    const { data } = await supabase
-      .from("personality_results")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("personality_results")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (data) {
-      setHasExistingPersonality(true);
-      setPersonalityResult({
-        scores: data.scores as PersonalityTestResult["scores"],
-        category: data.category as PersonalityTestResult["category"],
-        archetype: (data.archetype || "INFJ") as PersonalityTestResult["archetype"],
-        answers: [],
-      });
+      if (error) throw error;
+
+      if (data) {
+        setHasExistingPersonality(true);
+        setPersonalityResult({
+          scores: data.scores as PersonalityTestResult["scores"],
+          category: data.category as PersonalityTestResult["category"],
+          archetype: (data.archetype || "INFJ") as PersonalityTestResult["archetype"],
+          answers: [],
+        });
+      }
+    } catch (e) {
+      if (__DEV__) console.warn("[OnboardingWizard] checkExistingPersonality:", e);
     }
   }, [supabase, userId]);
 
@@ -197,11 +209,20 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
   };
 
   const handleNext = () => {
+    if (currentStep === 0 && !personalityResult) {
+      setShowMomentOfDepth(true);
+      return;
+    }
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((p) => p + 1);
     } else {
       void handleComplete();
     }
+  };
+
+  const handleMomentOfDepthDone = () => {
+    setShowMomentOfDepth(false);
+    setCurrentStep(1);
   };
 
   const handleBack = () => {
@@ -214,12 +235,18 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
     setPersonalityResult(result);
     setShowPersonalityResult(true);
     if (!hasExistingPersonality) {
-      await supabase.from("personality_results").insert({
-        user_id: userId,
-        scores: result.scores,
-        category: result.category,
-        archetype: result.archetype,
-      });
+      try {
+        const { error } = await supabase.from("personality_results").insert({
+          user_id: userId,
+          scores: result.scores,
+          category: result.category,
+          archetype: result.archetype,
+        });
+        if (error) throw error;
+      } catch (e) {
+        if (__DEV__) console.warn("[OnboardingWizard] personality insert failed:", e);
+        Alert.alert(t("common.error"), t("common.retry"));
+      }
     }
   };
 
@@ -231,7 +258,6 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
   const handleComplete = async () => {
     setSaving(true);
     try {
-      const profileKey = await resolveProfilesAuthKey(supabase, userId);
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -259,13 +285,19 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
           show_education: privacy.showEducation,
           show_last_name: privacy.showLastName,
         })
-        .eq(profileKey, userId);
+        .eq("id", userId);
 
       if (error) throw error;
       Alert.alert("", t("mobile.wizard.profile_created"));
       onComplete();
     } catch (e) {
-      Alert.alert(t("mobile.wizard.save_failed_title"), e instanceof Error ? e.message : "");
+      const message = e instanceof Error ? e.message : String(e);
+      const code = (e as { code?: string })?.code;
+      posthog.capture("onboarding_wizard_save_failed", { code, message });
+      Alert.alert(
+        t("mobile.wizard.save_failed_title"),
+        message || t("common.retry"),
+      );
     } finally {
       setSaving(false);
     }
@@ -273,10 +305,14 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
 
   const getPhotoUrl = (path: string) => {
     const { data } = supabase.storage.from("profile-photos").getPublicUrl(path);
-    return data.publicUrl;
+    return data?.publicUrl ?? "";
   };
 
   const completion = calculateCompletion();
+
+  if (showMomentOfDepth) {
+    return <MomentOfDepthInterstitialRN visible onContinue={handleMomentOfDepthDone} />;
+  }
 
   if (currentStep === 1 && !personalityResult) {
     return <PersonalityTestRN onComplete={handlePersonalityComplete} />;
@@ -295,7 +331,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.header}>
         <View style={styles.brandRow}>
-          <Text style={styles.brandHeart}>♥</Text>
+          <Image source={MascotAssets.brand} style={styles.brandMascot} resizeMode="contain" />
           <Text style={styles.brand}>MÄÄK</Text>
         </View>
         {hasValidSupabaseConfig ? (
@@ -317,7 +353,16 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
         </Text>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        style={styles.kbv}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {currentStep === 0 && (
           <View style={styles.section}>
             <Text style={styles.stepTitle}>{t("mobile.wizard.about_you_title")}</Text>
@@ -357,6 +402,9 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
               value={profile.instagram}
               onChangeText={(v) => updateProfile("instagram", v)}
               placeholder={t("mobile.wizard.username_ph")}
+              autoCorrect={false}
+              autoCapitalize="none"
+              keyboardType="twitter"
             />
             <Text style={styles.label}>{t("mobile.wizard.linkedin")}</Text>
             <TextInput
@@ -364,6 +412,9 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
               value={profile.linkedin}
               onChangeText={(v) => updateProfile("linkedin", v)}
               placeholder={t("mobile.wizard.username_ph")}
+              autoCorrect={false}
+              autoCapitalize="none"
+              keyboardType="twitter"
             />
             <SelectField
               label={t("mobile.wizard.identify_as")}
@@ -553,6 +604,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <SafeAreaView edges={["bottom"]} style={styles.footerSafe}>
         <View style={styles.footer}>
@@ -593,7 +645,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: maakTokens.background },
   header: { paddingHorizontal: 16, paddingBottom: 8 },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8, justifyContent: "center" },
-  brandHeart: { fontSize: 22, color: maakTokens.primary },
+  brandMascot: { width: 28, height: 28 },
   brand: { fontSize: 20, fontWeight: "700", color: maakTokens.foreground },
   online: {
     textAlign: "center",
@@ -616,6 +668,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: "center",
   },
+  kbv: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 24 },
   section: { gap: 12 },
