@@ -14,25 +14,47 @@ import {
 } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 
-// Try to load expo-video - fails gracefully if native module is absent.
+// Expo Go ships an older expo-video native binary whose VideoPlayer
+// constructor takes 2 args, while the current JS build (55.0.14) always
+// passes 3 (source, autoPlay, playerBuilderOptions). That throws "Received
+// 3 arguments, but 2 was expected" on every render. Skip expo-video in
+// Expo Go; dev-client and production builds bundle the matching binary.
+function detectExpoGo(): boolean {
+  try {
+    const execEnv = Constants.executionEnvironment;
+    if (execEnv === ExecutionEnvironment.StoreClient) return true;
+    if (execEnv === ExecutionEnvironment.Standalone) return false;
+    if (execEnv === ExecutionEnvironment.Bare) return false;
+    const ownership = (Constants as any)?.appOwnership;
+    if (ownership === "expo") return true;
+    if (ownership === "standalone" || ownership === "guest") return false;
+    return execEnv === undefined;
+  } catch {
+    return true;
+  }
+}
+const IS_EXPO_GO = detectExpoGo();
+
 let useVideoPlayer: any = null;
 let VideoView: any = null;
 let hasExpoVideo = false;
-try {
-  const mod = require("expo-video");
-  // Verify the module actually works by checking for the hook
-  if (typeof mod.useVideoPlayer === "function") {
-    useVideoPlayer = mod.useVideoPlayer;
-    VideoView = mod.VideoView;
-    hasExpoVideo = true;
+if (!IS_EXPO_GO) {
+  try {
+    const mod = require("expo-video");
+    if (typeof mod.useVideoPlayer === "function") {
+      useVideoPlayer = mod.useVideoPlayer;
+      VideoView = mod.VideoView;
+      hasExpoVideo = true;
+    }
+  } catch {
+    // expo-video native module missing
   }
-} catch {
-  // expo-video not available
 }
 import { LinearGradient } from "expo-linear-gradient";
 import { BottomTabBarHeightContext } from "@react-navigation/bottom-tabs";
-import { useCallback, useContext, useEffect, useRef, useState, type Context } from "react";
+import { Component, useCallback, useContext, useEffect, useRef, useState, type Context, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -47,7 +69,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /** Max hero height (px); actual height scales with window so “Visa mer” fits on smaller phones. */
-const HERO_H_MAX = 512;
+const HERO_H_MAX = 640;
 /** Negative margin pulls card onto hero; larger = more photo visible above card. */
 const PROFILE_CARD_OVERLAP_DOWN = 152;
 /**
@@ -185,31 +207,65 @@ function HeroVideoPlayer({ uri }: { uri: string }) {
     <VideoView
       player={player}
       style={StyleSheet.absoluteFill}
-      contentFit="cover"
+      contentFit="contain"
       nativeControls={false}
     />
   );
+}
+
+/**
+ * Safety net for the Expo Go / expo-video constructor mismatch: if the
+ * module-load guard above ever mis-detects the runtime and HeroVideoPlayer
+ * still throws during render, this boundary catches the error and falls
+ * back to the static icon instead of crashing the profile screen.
+ */
+class HeroVideoErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: Error) {
+    if (__DEV__) console.warn("[HeroVideo] render error, using fallback:", error.message);
+  }
+  render() {
+    if (this.state.failed) return <HeroVideoFallback />;
+    return this.props.children;
+  }
 }
 
 /** Renders video player with a pre-resolved URL. Shows spinner if URL not yet cached. */
 function HeroVideo({ uri }: { uri: string | null }) {
   if (!hasExpoVideo) return <HeroVideoFallback />;
   if (!uri) return <HeroVideoLoading />;
-  return <HeroVideoPlayer uri={uri} />;
+  return (
+    <HeroVideoErrorBoundary>
+      <HeroVideoPlayer uri={uri} />
+    </HeroVideoErrorBoundary>
+  );
 }
 
 export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
   const { t } = useTranslation();
-  const { height: windowHeight } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   /** Custom `MaakTabBar` / Expo Tabs can leave context unset; hook throws - use context + fallback. */
   const tabBarHeightCtx = BottomTabBarHeightContext as Context<number | undefined>;
   const tabBarHeight =
     useContext(tabBarHeightCtx) ?? (Platform.OS === "ios" ? 62 : 56);
-  /** Height available above tab bar (tab scene). Hero fills this so more photo shows above the overlay card. */
+  /** Height available above tab bar (tab scene). Used only as an upper safety cap on hero height. */
   const availableH = windowHeight - insets.top - insets.bottom - tabBarHeight;
-  /** Minimum photo strip height; hero also uses flex:1 so it grows and eats “dead” space above the tab bar. */
-  const heroMinH = Math.max(260, Math.min(HERO_H_MAX, Math.round(availableH * 0.38)));
+  /**
+   * Taller 3:4 hero so the profile card sits lower on the screen and fills
+   * the dead space below "Visa mer" on larger phones. Capped at a portion
+   * of availableH so the card still fits on shorter devices (iPhone SE).
+   */
+  const heroMinH = Math.max(
+    280,
+    Math.min(HERO_H_MAX, Math.round(Math.min(windowWidth * (4 / 3), availableH * 0.88))),
+  );
   const { supabase, session } = useSupabase();
   const user = session?.user;
 
@@ -368,7 +424,7 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
       <View style={[styles.pageRoot, { paddingTop: insets.top }]}>
         <View
           collapsable={false}
-          style={[styles.hero, { flex: 1, minHeight: heroMinH }]}
+          style={[styles.hero, { height: heroMinH }]}
           onLayout={(e) => {
             const { y, height } = e.nativeEvent.layout;
             setHeroLayout({ y, height });
@@ -379,13 +435,23 @@ export function ProfileViewRN({ onEdit, onSettings }: ProfileViewRNProps) {
                 {currentPhoto.media_type === "video" ? (
                   <HeroVideo uri={videoUrlCache.current.get(currentPhoto.storage_path) ?? null} />
                 ) : (
-                  <Image
-                    source={{ uri: getPublicUrl(currentPhoto.storage_path) }}
-                    style={styles.heroImageFill}
-                    contentFit="cover"
-                    contentPosition={{ top: "22%", left: "50%" }}
-                    transition={200}
-                  />
+                  <>
+                    {/* Blurred cover fills letterbox space so non-4:5 photos don't sit on a flat dark band. */}
+                    <Image
+                      source={{ uri: getPublicUrl(currentPhoto.storage_path) }}
+                      style={styles.heroImageFill}
+                      contentFit="cover"
+                      blurRadius={28}
+                      transition={200}
+                    />
+                    <Image
+                      source={{ uri: getPublicUrl(currentPhoto.storage_path) }}
+                      style={styles.heroImageFill}
+                      contentFit="contain"
+                      contentPosition="center"
+                      transition={200}
+                    />
+                  </>
                 )}
                 {photos.length > 1 ? (
                   <>

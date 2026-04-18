@@ -19,8 +19,20 @@ import { ActivityIndicator, LogBox, View } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import 'react-native-reanimated';
 
-// RevenueCat SDK logs cancelled purchases as console.error; suppress in LogBox.
-LogBox.ignoreLogs([/\[RevenueCat\].*Purchase was cancelled/]);
+// Dev-only log noise that is safe to hide:
+//  - RevenueCat logs cancelled purchases as console.error
+//  - expo-notifications nags about Expo Go every time the module imports;
+//    we already skip the runtime calls via isExpoGo in useExpoPushToken,
+//    but the import-time warnings still fire, so silence them here.
+LogBox.ignoreLogs([
+  /\[RevenueCat\].*Purchase was cancelled/,
+  /expo-notifications.*Expo Go/,
+  /expo-notifications.*Android Push notifications.*removed from Expo Go/,
+  /`expo-notifications` functionality is not fully supported in Expo Go/,
+  // expo-video native-binary mismatch in Expo Go. Caught by HeroVideoErrorBoundary
+  // in ProfileViewRN; dev-client and production builds ship a matching binary.
+  /Received 3 arguments, but 2 was expected/,
+]);
 
 /** react-i18next + React 19 JSX: FC return type includes Promise<ReactNode>; cast at root only. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- upstream I18nextProvider vs @types/react 19
@@ -73,7 +85,7 @@ export default function RootLayout() {
   // Do not hard-crash production if custom font loading fails.
   // We can safely continue with system font fallback.
   useEffect(() => {
-    if (playfairError || monoError) {
+    if (__DEV__ && (playfairError || monoError)) {
       console.error(
         '[startup] font load failed, continuing with fallback fonts',
         { playfairError, monoError },

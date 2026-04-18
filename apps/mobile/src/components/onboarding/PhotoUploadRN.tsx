@@ -1,5 +1,5 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
-import { readFileAsBytes } from "@/lib/readFileAsBytes";
+import { readFileAsBase64 } from "@/lib/readFileAsBytes";
 import { maakTokens } from "@maak/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as ImagePicker from "expo-image-picker";
@@ -59,6 +59,8 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images", "videos"],
         videoMaxDuration: MAX_VIDEO_DURATION,
+        base64: true,
+        quality: 0.9,
       });
       if (result.canceled || !result.assets[0]) return;
 
@@ -98,13 +100,33 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
       const { error: refreshError } = await supabase.auth.refreshSession();
       if (refreshError) throw new Error(t("auth.session_expired"));
 
-      const bytes = await readFileAsBytes(uri);
+      // Upload via storage-proxy edge function. Direct storage.upload to
+      // profile-photos returns 403 RLS on this project despite correct
+      // policies — platform bug. Edge function validates JWT, then writes
+      // via service_role.
+      let base64 = asset.base64 ?? "";
+      if (!base64) base64 = await readFileAsBase64(uri);
+      if (!base64) throw new Error("Kunde inte läsa bildfilen — välj en annan");
 
-      const { error: upErr } = await supabase.storage
-        .from("profile-photos")
-        .upload(filePath, bytes, { contentType, upsert: true, cacheControl: "3600" });
-
-      if (upErr) throw new Error(upErr.message || JSON.stringify(upErr));
+      const { error: fnErr } = await supabase.functions.invoke("storage-proxy", {
+        body: {
+          action: "upload",
+          bucket: "profile-photos",
+          path: filePath,
+          contentType,
+          base64,
+        },
+      });
+      if (fnErr) {
+        let detail = "";
+        try {
+          const ctx = (fnErr as { context?: Response }).context;
+          if (ctx) detail = await ctx.text();
+        } catch {
+          /* ignore */
+        }
+        throw new Error(detail || fnErr.message || t("profile.photos.upload_failed"));
+      }
 
       const { data: existing } = await supabase
         .from("profile_photos")
@@ -114,7 +136,14 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
         .maybeSingle();
 
       if (existing?.storage_path && existing.storage_path !== filePath) {
-        await supabase.storage.from("profile-photos").remove([existing.storage_path]);
+        // Best-effort; ignore errors so a failed cleanup doesn't break new upload
+        await supabase.functions.invoke("storage-proxy", {
+          body: {
+            action: "remove",
+            bucket: "profile-photos",
+            paths: [existing.storage_path],
+          },
+        });
       }
 
       const { data: row, error: dbErr } = await supabase
@@ -164,7 +193,13 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
     if (!slot?.storage_path || !slot.id) return;
     setBusySlot(slotIndex);
     try {
-      await supabase.storage.from("profile-photos").remove([slot.storage_path]);
+      await supabase.functions.invoke("storage-proxy", {
+        body: {
+          action: "remove",
+          bucket: "profile-photos",
+          paths: [slot.storage_path],
+        },
+      });
       await supabase.from("profile_photos").delete().eq("id", slot.id);
       const next = [...photos];
       next[slotIndex] = { storage_path: "", display_order: slotIndex, prompt: "", media_type: "image" };
