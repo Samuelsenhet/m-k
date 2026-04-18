@@ -1,8 +1,9 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
+import { readFileAsBytes } from "@/lib/readFileAsBytes";
 import { SupportHeader } from "@/components/support/SupportHeader";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
+import { SelectField } from "@/components/onboarding/SelectField";
 import * as DocumentPicker from "expo-document-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -10,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -135,9 +137,11 @@ export function ReportFormRN() {
       for (const file of evidence) {
         const ext = file.name.split(".").pop()?.split("?")[0] || "bin";
         const safeExt = /^[a-z0-9]+$/i.test(ext) ? ext.toLowerCase() : "jpg";
-        const path = `${user.id}/${crypto.randomUUID()}.${safeExt}`;
-        const response = await fetch(file.uri);
-        const blob = await response.blob();
+        const uuid = typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const path = `${user.id}/${uuid}.${safeExt}`;
+        const bytes = await readFileAsBytes(file.uri);
         const contentType =
           file.mimeType ||
           (safeExt === "png"
@@ -149,12 +153,9 @@ export function ReportFormRN() {
                 : "image/jpeg");
         const { error: uploadError } = await supabase.storage
           .from("report-evidence")
-          .upload(path, blob, { upsert: false, contentType });
+          .upload(path, bytes, { upsert: false, contentType });
         if (uploadError) {
-          if (__DEV__) console.warn("[ReportFormRN] upload", uploadError);
-          Alert.alert("", t("report.upload_error"));
-          setSubmitting(false);
-          return;
+          throw new Error(uploadError.message || t("report.upload_error"));
         }
         evidencePaths.push(path);
       }
@@ -239,9 +240,14 @@ export function ReportFormRN() {
   }
 
   return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
     <ScrollView
       style={styles.root}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
       contentContainerStyle={{
         paddingTop: insets.top + 12,
         paddingBottom: insets.bottom + 32,
@@ -254,19 +260,13 @@ export function ReportFormRN() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t("report.form_title")}</Text>
 
-        <Text style={styles.label}>{t("report.violation_type")} *</Text>
-        <View style={styles.pickerWrap}>
-          <Picker
-            selectedValue={violationType}
-            onValueChange={(v) => setViolationType(String(v))}
-            style={styles.picker}
-          >
-            <Picker.Item label={t("report.select_violation")} value="" color={maakTokens.mutedForeground} />
-            {violationItems.map((it) => (
-              <Picker.Item key={it.value} label={it.label} value={it.value} />
-            ))}
-          </Picker>
-        </View>
+        <SelectField
+          label={`${t("report.violation_type")} *`}
+          value={violationType}
+          placeholder={t("report.select_violation")}
+          options={violationItems}
+          onValueChange={(v) => setViolationType(v)}
+        />
 
         <Text style={styles.label}>{t("report.context_evidence")} *</Text>
         <TextInput
@@ -287,7 +287,12 @@ export function ReportFormRN() {
               <Text style={styles.evidenceName} numberOfLines={1}>
                 {f.name}
               </Text>
-              <Pressable onPress={() => removeEvidence(i)} hitSlop={8}>
+              <Pressable
+                onPress={() => removeEvidence(i)}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.delete")}
+              >
                 <Ionicons name="close-circle" size={20} color={maakTokens.mutedForeground} />
               </Pressable>
             </View>
@@ -343,6 +348,7 @@ export function ReportFormRN() {
         <Text style={styles.policyLinkTxt}>{t("report.view_policy")}</Text>
       </Pressable>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -376,14 +382,6 @@ const styles = StyleSheet.create({
     color: maakTokens.foreground,
     marginBottom: 6,
   },
-  pickerWrap: {
-    borderWidth: 1,
-    borderColor: maakTokens.border,
-    borderRadius: maakTokens.radiusMd,
-    marginBottom: 14,
-    overflow: "hidden",
-  },
-  picker: { width: "100%" },
   textArea: {
     minHeight: 100,
     borderWidth: 1,

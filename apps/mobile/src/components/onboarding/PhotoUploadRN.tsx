@@ -1,4 +1,5 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
+import { readFileAsBytes } from "@/lib/readFileAsBytes";
 import { maakTokens } from "@maak/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as ImagePicker from "expo-image-picker";
@@ -24,8 +25,7 @@ export interface PhotoSlotRN {
 }
 
 const MAX_PHOTOS = 6;
-const MAX_VIDEO_DURATION = 30; // seconds
-const MAX_VIDEO_SIZE_MB = 50;
+const MAX_VIDEO_DURATION = 30;
 
 const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
 const VIDEO_EXTENSIONS = ["mp4", "mov", "m4v"];
@@ -49,133 +49,110 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
   const promptAt = (i: number) => t(`mobile.wizard.photo_prompt_${i}`);
 
   const pickAndUpload = async (slotIndex: number) => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert(t("mobile.photo.permission_title"), t("mobile.photo.permission_body"));
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
-      quality: 0.85,
-      videoMaxDuration: MAX_VIDEO_DURATION,
-    });
-    if (result.canceled || !result.assets[0]) return;
-
-    const asset = result.assets[0];
-    const isVideo = asset.type === "video";
-
-    // Validate video duration
-    if (isVideo && asset.duration && asset.duration / 1000 > MAX_VIDEO_DURATION) {
-      Alert.alert(
-        t("mobile.photo.video_too_long_title"),
-        t("mobile.photo.video_too_long_body", { max: MAX_VIDEO_DURATION }),
-      );
-      return;
-    }
-
-    setBusySlot(slotIndex);
-    const uri = asset.uri;
-    const ext = uri.split(".").pop()?.split("?")[0] || (isVideo ? "mp4" : "jpg");
-    const extLower = (ext || "").toLowerCase();
-
-    let safeExt: string;
-    let contentType: string;
-    let mediaType: "image" | "video";
-
-    if (VIDEO_EXTENSIONS.includes(extLower)) {
-      safeExt = extLower;
-      contentType = safeExt === "mov" ? "video/quicktime" : "video/mp4";
-      mediaType = "video";
-    } else {
-      safeExt = IMAGE_EXTENSIONS.includes(extLower) ? extLower : "jpg";
-      contentType =
-        safeExt === "png" ? "image/png" : safeExt === "webp" ? "image/webp" : "image/jpeg";
-      mediaType = "image";
-    }
-
-    const filePath = `${userId}/${Date.now()}-${slotIndex}.${safeExt}`;
-
     try {
-      // Build FormData with the local file URI - works reliably for both
-      // images and videos on iOS (fetch(uri).blob() returns 0 bytes for videos).
-      const formData = new FormData();
-      formData.append("file", {
-        uri,
-        name: filePath.split("/").pop() ?? `upload.${safeExt}`,
-        type: contentType,
-      } as unknown as Blob);
-
-      // Upload via raw fetch to Supabase Storage REST API (supports FormData)
-      const bucketUrl = supabase.storage.from("profile-photos").getPublicUrl("").data.publicUrl.replace("/object/public/profile-photos/", "");
-      const uploadUrl = `${bucketUrl}/object/profile-photos/${filePath}`;
-      const session = (await supabase.auth.getSession()).data.session;
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session?.access_token ?? ""}`,
-          "x-upsert": "true",
-          "cache-control": "3600",
-        },
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errBody = await uploadRes.text();
-        throw new Error(errBody || `Upload failed: ${uploadRes.status}`);
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(t("mobile.photo.permission_title"), t("mobile.photo.permission_body"));
+        return;
       }
 
-      const upErr: { message: string } | null = null;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        videoMaxDuration: MAX_VIDEO_DURATION,
+      });
+      if (result.canceled || !result.assets[0]) return;
 
-      if (upErr) throw upErr;
+      const asset = result.assets[0];
+      const isVideo = asset.type === "video";
 
-      const slot = photos[slotIndex];
-      if (slot?.id) {
-        if (slot.storage_path) {
-          await supabase.storage.from("profile-photos").remove([slot.storage_path]);
-        }
-        const { error: uErr } = await supabase
-          .from("profile_photos")
-          .update({ storage_path: filePath, media_type: mediaType })
-          .eq("id", slot.id);
-        if (uErr) throw uErr;
-        const next = [...photos];
-        next[slotIndex] = {
-          ...next[slotIndex],
-          storage_path: filePath,
-          display_order: slotIndex,
-          prompt: promptAt(slotIndex),
-          media_type: mediaType,
-        };
-        onPhotosChange(next);
+      if (isVideo && asset.duration && asset.duration / 1000 > MAX_VIDEO_DURATION) {
+        Alert.alert(
+          t("mobile.photo.video_too_long_title"),
+          t("mobile.photo.video_too_long_body", { max: MAX_VIDEO_DURATION }),
+        );
+        return;
+      }
+
+      setBusySlot(slotIndex);
+      const uri = asset.uri;
+      const ext = uri.split(".").pop()?.split("?")[0] || (isVideo ? "mp4" : "jpg");
+      const extLower = (ext || "").toLowerCase();
+
+      let safeExt: string;
+      let contentType: string;
+      let mediaType: "image" | "video";
+
+      if (VIDEO_EXTENSIONS.includes(extLower)) {
+        safeExt = extLower;
+        contentType = safeExt === "mov" ? "video/quicktime" : "video/mp4";
+        mediaType = "video";
       } else {
-        const { data: row, error: iErr } = await supabase
-          .from("profile_photos")
-          .insert({
+        safeExt = IMAGE_EXTENSIONS.includes(extLower) ? extLower : "jpg";
+        contentType =
+          safeExt === "png" ? "image/png" : safeExt === "webp" ? "image/webp" : "image/jpeg";
+        mediaType = "image";
+      }
+
+      const filePath = `${userId}/${Date.now()}-${slotIndex}.${safeExt}`;
+
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw new Error(t("auth.session_expired"));
+
+      const bytes = await readFileAsBytes(uri);
+
+      const { error: upErr } = await supabase.storage
+        .from("profile-photos")
+        .upload(filePath, bytes, { contentType, upsert: true, cacheControl: "3600" });
+
+      if (upErr) throw new Error(upErr.message || JSON.stringify(upErr));
+
+      const { data: existing } = await supabase
+        .from("profile_photos")
+        .select("id, storage_path")
+        .eq("user_id", userId)
+        .eq("display_order", slotIndex)
+        .maybeSingle();
+
+      if (existing?.storage_path && existing.storage_path !== filePath) {
+        await supabase.storage.from("profile-photos").remove([existing.storage_path]);
+      }
+
+      const { data: row, error: dbErr } = await supabase
+        .from("profile_photos")
+        .upsert(
+          {
+            ...(existing?.id ? { id: existing.id } : {}),
             user_id: userId,
             storage_path: filePath,
             display_order: slotIndex,
             prompt: promptAt(slotIndex),
             media_type: mediaType,
-          })
-          .select()
-          .single();
-        if (iErr) throw iErr;
-        const next = [...photos];
-        next[slotIndex] = {
-          id: row.id,
-          storage_path: filePath,
-          display_order: slotIndex,
-          prompt: promptAt(slotIndex),
-          media_type: mediaType,
-        };
-        onPhotosChange(next);
-      }
-    } catch (e) {
+          },
+          { onConflict: "user_id,display_order" },
+        )
+        .select()
+        .single();
+      if (dbErr) throw dbErr;
+
+      const next = [...photos];
+      next[slotIndex] = {
+        id: row.id,
+        storage_path: filePath,
+        display_order: slotIndex,
+        prompt: promptAt(slotIndex),
+        media_type: mediaType,
+      };
+      onPhotosChange(next);
+    } catch (e: unknown) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : JSON.stringify(e);
       Alert.alert(
         t("profile.photos.upload"),
-        e instanceof Error ? e.message : t("profile.photos.upload_failed"),
+        msg || t("profile.photos.upload_failed"),
       );
     } finally {
       setBusySlot(null);
@@ -190,10 +167,10 @@ export function PhotoUploadRN({ userId, photos, onPhotosChange }: Props) {
       await supabase.storage.from("profile-photos").remove([slot.storage_path]);
       await supabase.from("profile_photos").delete().eq("id", slot.id);
       const next = [...photos];
-      next[slotIndex] = { storage_path: "", display_order: slotIndex, prompt: "" };
+      next[slotIndex] = { storage_path: "", display_order: slotIndex, prompt: "", media_type: "image" };
       onPhotosChange(next);
-    } catch (e) {
-      if (__DEV__) console.error("[PhotoUploadRN] remove:", e);
+    } catch {
+      // removal is best-effort
     } finally {
       setBusySlot(null);
     }
@@ -277,7 +254,6 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     padding: 6,
   },
-  /** Fills cell minus prompt so `contain` can show the full photo (letterboxing if needed). */
   thumbWrap: {
     flex: 1,
     minHeight: 0,
