@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -107,6 +109,10 @@ export function CreateGroupModal({ visible, onClose, onCreated, createGroup }: P
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <View style={[styles.overlay, { paddingTop: insets.top + 12 }]}>
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <Text style={styles.title}>{t("groupChat.create")}</Text>
@@ -161,6 +167,7 @@ export function CreateGroupModal({ visible, onClose, onCreated, createGroup }: P
           </Pressable>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

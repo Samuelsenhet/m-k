@@ -48,7 +48,12 @@ export async function fetchSamlingGroupById(
     .eq("group_id", groupId);
 
   const userIds = [...new Set((allMembers ?? []).map((m) => m.user_id))];
-  const profileKey = await resolveProfilesAuthKey(supabase, authUserId);
+  let profileKey: "id" | "user_id" = "id";
+  try {
+    profileKey = await resolveProfilesAuthKey(supabase, authUserId);
+  } catch {
+    /* fallback to "id" */
+  }
   const { data: profilesData } = await supabase
     .from("profiles")
     .select(`${profileKey}, display_name, avatar_url`)
@@ -137,7 +142,10 @@ export function useGroups() {
         .in("group_id", groupIds);
 
       const userIds = [...new Set((allMembers ?? []).map((m) => m.user_id))];
-      const profileKey = await resolveProfilesAuthKey(supabase, user.id);
+      let profileKey: "id" | "user_id" = "id";
+      try {
+        profileKey = await resolveProfilesAuthKey(supabase, user.id);
+      } catch { /* fallback to "id" */ }
       const { data: profilesData } = await supabase
         .from("profiles")
         .select(`${profileKey}, display_name, avatar_url`)

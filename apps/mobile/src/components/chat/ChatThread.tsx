@@ -134,7 +134,11 @@ export function ChatThread({
           setMessages((prev) => prev.map((m) => (m.id === row.id ? row : m)));
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (__DEV__ && status === "CHANNEL_ERROR") {
+          console.warn("[ChatThread] realtime subscription error for match:", matchId);
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);

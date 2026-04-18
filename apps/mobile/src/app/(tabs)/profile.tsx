@@ -11,6 +11,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -36,6 +38,8 @@ export default function ProfileScreen() {
 
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [linkedin, setLinkedin] = useState("");
   const [archetype, setArchetype] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -52,7 +56,7 @@ export default function ProfileScreen() {
       const [prof, arch] = await Promise.all([
         supabase
           .from("profiles")
-          .select("display_name, bio")
+          .select("display_name, bio, instagram, linkedin")
           .eq(profileKey, user.id)
           .maybeSingle(),
         supabase
@@ -63,6 +67,8 @@ export default function ProfileScreen() {
       ]);
       setDisplayName(prof.data?.display_name ?? "");
       setBio(prof.data?.bio ?? "");
+      setInstagram(prof.data?.instagram ?? "");
+      setLinkedin(prof.data?.linkedin ?? "");
       setArchetype(arch.data?.archetype ?? null);
     } catch (e) {
       if (__DEV__) console.error("[profile tab]", e);
@@ -103,6 +109,8 @@ export default function ProfileScreen() {
         .update({
           display_name: displayName.trim() || null,
           bio: bio.trim() || null,
+          instagram: instagram.trim() || null,
+          linkedin: linkedin.trim() || null,
         })
         .eq(profileKey, user.id);
       if (error) throw error;
@@ -171,9 +179,14 @@ export default function ProfileScreen() {
   }
 
   return (
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
     <ScrollView
       style={styles.root}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
       contentContainerStyle={{
         paddingTop: insets.top + 16,
         /* Tab scene sits above the bar - no tabBarHeight. Extra tail so photo grid clears the tab bar when scrolled. */
@@ -226,6 +239,32 @@ export default function ProfileScreen() {
               textAlignVertical="top"
             />
 
+            <Text style={[styles.label, { marginTop: 16 }]}>{t("mobile.wizard.instagram")}</Text>
+            <TextInput
+              style={styles.input}
+              value={instagram}
+              onChangeText={setInstagram}
+              placeholder={t("mobile.wizard.username_ph")}
+              placeholderTextColor={maakTokens.mutedForeground}
+              autoCorrect={false}
+              autoCapitalize="none"
+              keyboardType="twitter"
+              maxLength={64}
+            />
+
+            <Text style={[styles.label, { marginTop: 16 }]}>{t("mobile.wizard.linkedin")}</Text>
+            <TextInput
+              style={styles.input}
+              value={linkedin}
+              onChangeText={setLinkedin}
+              placeholder={t("mobile.wizard.username_ph")}
+              placeholderTextColor={maakTokens.mutedForeground}
+              autoCorrect={false}
+              autoCapitalize="none"
+              keyboardType="twitter"
+              maxLength={128}
+            />
+
             {archetype ? (
               <>
                 <Text style={[styles.label, { marginTop: 16 }]}>{t("personality.archetype")}</Text>
@@ -259,6 +298,7 @@ export default function ProfileScreen() {
 
       <ProfileSettingsSheet visible={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

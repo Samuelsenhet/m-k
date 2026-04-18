@@ -283,7 +283,7 @@ export function MatchProfileScreen({
 
           {archLabel ? (
             <View style={styles.categoryRow}>
-              {cat ? <Text style={styles.categoryEmoji}>{CATEGORY_BADGE_EMOJI[cat]}</Text> : null}
+              {cat ? <Emoji style={styles.categoryEmoji}>{CATEGORY_BADGE_EMOJI[cat]}</Emoji> : null}
               <Text style={styles.archLabel}>{archLabel}</Text>
             </View>
           ) : null}

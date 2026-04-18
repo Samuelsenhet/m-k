@@ -19,7 +19,7 @@ export function useMatchActions(matches: Match[], setMatches: SetMatches) {
       matchedUserName: string,
     ) => {
       try {
-        const sess = (await supabase.auth.getSession()).data.session;
+        const sess = (await supabase.auth.getSession()).data?.session;
         const { error: fnError } = await supabase.functions.invoke("generate-icebreakers", {
           body: {
             matchId,

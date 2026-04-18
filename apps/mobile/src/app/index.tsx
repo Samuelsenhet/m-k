@@ -1,5 +1,4 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
-import { resolveProfilesAuthKey } from "@maak/core";
 import { Redirect, Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
@@ -20,11 +19,10 @@ export default function IndexGate() {
       }
 
       const uid = session.user.id;
-      const profileKey = await resolveProfilesAuthKey(supabase, uid);
       const { data: profile } = await supabase
         .from("profiles")
         .select("onboarding_completed, date_of_birth")
-        .eq(profileKey, uid)
+        .eq("id", uid)
         .maybeSingle();
 
       if (profile?.onboarding_completed) {

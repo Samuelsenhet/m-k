@@ -163,7 +163,13 @@ export function WaitingPhaseRN({
           </View>
         </View>
 
-        <Text style={styles.footerTip}>{t("waiting_phase.footer_tip")}</Text>
+        <View style={styles.quoteBlock}>
+          <Text style={styles.quoteText}>
+            {t("maak_moment_of_depth.lines_13")}{"\n"}
+            {t("maak_moment_of_depth.lines_14")}{"\n"}
+            {t("maak_moment_of_depth.lines_16")}
+          </Text>
+        </View>
       </ScrollView>
     </LinearGradient>
   );
@@ -312,12 +318,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: maakTokens.primaryForeground,
   },
-  footerTip: {
-    fontSize: 14,
+  quoteBlock: {
+    marginTop: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: `${maakTokens.primary}44`,
+  },
+  quoteText: {
+    fontSize: 15,
+    fontStyle: "italic",
+    lineHeight: 24,
     color: maakTokens.mutedForeground,
-    textAlign: "center",
-    marginTop: 12,
-    lineHeight: 20,
-    paddingHorizontal: 8,
+    textAlign: "left",
   },
 });

@@ -2,7 +2,7 @@ import { AgeVerificationRN } from "@/components/AgeVerificationRN";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { usePhoneAuth } from "@/hooks/usePhoneAuth";
 import { calculateAge } from "@/lib/age";
-import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
+import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -10,6 +10,9 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +23,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 import { usePostHog } from "posthog-react-native";
+import { MascotAssets } from "@/lib/mascotAssets";
 
 /** Same grouping as web `PhoneInput` (Swedish mobile: 07X XXX XX XX). */
 const formatPhoneNumber = (value: string): string => {
@@ -81,33 +85,40 @@ export default function PhoneAuthScreen() {
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const checkUserStatus = async () => {
       if (!session?.user || isCompletingProfile) return;
-      const profileKey = await resolveProfilesAuthKey(supabase, session.user.id);
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed, date_of_birth")
-        .eq(profileKey, session.user.id)
-        .maybeSingle();
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed, date_of_birth")
+          .eq("id", session.user.id)
+          .maybeSingle();
 
-      if (profile?.onboarding_completed) {
-        posthog.identify(session.user.id, {
-          $set: { phone_verified: true },
-        });
-        router.replace("/(tabs)");
-        return;
+        if (cancelled) return;
+
+        if (profile?.onboarding_completed) {
+          posthog.identify(session.user.id, {
+            $set: { phone_verified: true },
+          });
+          router.replace("/(tabs)");
+          return;
+        }
+        if (profile?.date_of_birth) {
+          posthog.identify(session.user.id, {
+            $set: { phone_verified: true },
+          });
+          router.replace("/onboarding");
+          return;
+        }
+        setStep("profile");
+      } catch {
+        if (!cancelled) setStep("phone");
       }
-      if (profile?.date_of_birth) {
-        posthog.identify(session.user.id, {
-          $set: { phone_verified: true },
-        });
-        router.replace("/onboarding");
-        return;
-      }
-      setStep("profile");
     };
     void checkUserStatus();
-  }, [session, supabase, router, isCompletingProfile, setStep]);
+    return () => { cancelled = true; };
+  }, [session, supabase, router, isCompletingProfile, setStep, posthog]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -184,69 +195,47 @@ export default function PhoneAuthScreen() {
       }
 
       const sessionUserId = sess.session.user.id;
-      const profileKey = await resolveProfilesAuthKey(supabase, sessionUserId);
       const patch = {
+        id: sessionUserId,
         date_of_birth: dobString,
         phone: formattedPhone,
         phone_verified_at: new Date().toISOString(),
       };
 
-      const { data: updatedProfile, error: updateError } = await supabase
+      const { data: savedProfile, error: upsertError } = await supabase
         .from("profiles")
-        .update(patch)
-        .eq(profileKey, sessionUserId)
+        .upsert(patch, { onConflict: "id" })
         .select("date_of_birth, onboarding_completed")
-        .maybeSingle();
+        .single();
 
-      let savedProfile = updatedProfile;
-
-      if (updateError || !savedProfile) {
-        const insertWithKey = async (key: "id" | "user_id") => {
-          const insertPayload =
-            key === "id"
-              ? { id: sessionUserId, ...patch }
-              : { user_id: sessionUserId, ...patch };
-          return supabase
-            .from("profiles")
-            .insert(insertPayload)
-            .select("date_of_birth, onboarding_completed")
-            .single();
-        };
-
-        let { data: insertedProfile, error: insertError } = await insertWithKey(profileKey);
-        if (insertError) {
-          const fallbackKey: "id" | "user_id" = profileKey === "id" ? "user_id" : "id";
-          const fallbackRes = await insertWithKey(fallbackKey);
-          insertedProfile = fallbackRes.data;
-          insertError = fallbackRes.error;
-        }
-
-        if (insertError) {
-          const details =
-            (insertError as { message?: string }).message ||
-            (updateError as { message?: string } | null)?.message;
-          Alert.alert(
-            t("profile.error_saving"),
-            __DEV__ && details ? details : undefined,
-          );
-          setIsCompletingProfile(false);
-          return;
-        }
-        savedProfile = insertedProfile;
+      if (upsertError || !savedProfile) {
+        const code = (upsertError as { code?: string } | null)?.code;
+        const message = upsertError?.message;
+        posthog.capture("profile_completion_failed", {
+          stage: "age_gate",
+          code,
+          message,
+        });
+        // 23505 = Postgres unique_violation — stale row already owns this phone
+        const isPhoneTaken =
+          code === "23505" &&
+          (message?.includes("phone") ?? false);
+        Alert.alert(
+          t("profile.error_saving"),
+          isPhoneTaken
+            ? t("profile.phone_taken")
+            : (message ?? t("common.retry")),
+        );
+        setIsCompletingProfile(false);
+        return;
       }
 
       posthog.identify(sessionUserId, {
         $set: { phone_verified: true },
         $set_once: { first_seen: new Date().toISOString() },
       });
-      posthog.capture('profile_created', { is_new_user: !updatedProfile });
+      posthog.capture("profile_created");
       Alert.alert("", t("auth.profile_created"));
-
-      if (!savedProfile?.date_of_birth) {
-        Alert.alert(t("common.error"), t("common.retry"));
-        setIsCompletingProfile(false);
-        return;
-      }
 
       if (savedProfile.onboarding_completed) {
         router.replace("/(tabs)");
@@ -260,7 +249,15 @@ export default function PhoneAuthScreen() {
           next[issue.path.join(".")] = issue.message;
         }
         setErrors(next);
+        return;
       }
+      const message = e instanceof Error ? e.message : String(e);
+      posthog.capture("profile_completion_failed", {
+        stage: "age_gate",
+        code: "exception",
+        message,
+      });
+      Alert.alert(t("profile.error_saving"), message || t("common.retry"));
     } finally {
       setIsCompletingProfile(false);
     }
@@ -278,14 +275,20 @@ export default function PhoneAuthScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+        <View style={styles.header}>
+          <Pressable onPress={goBack} style={styles.backRow} hitSlop={12}>
+            <Text style={styles.backText}>{t("common.back")}</Text>
+          </Pressable>
+        </View>
+        <KeyboardAvoidingView
+          style={styles.kbv}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
-          <Pressable onPress={goBack} style={styles.backRow}>
-            <Text style={styles.backText}>{t("common.back")}</Text>
-          </Pressable>
-
           {!hasValidSupabaseConfig && step === "phone" && (
             <View style={styles.bannerWarn}>
               <Text style={styles.bannerText}>{t("auth.supabase_banner")}</Text>
@@ -293,9 +296,12 @@ export default function PhoneAuthScreen() {
           )}
 
           <View style={styles.card}>
-            <View style={styles.iconWrap}>
-              <Text style={styles.iconHeart}>♥</Text>
-            </View>
+            <Image
+              source={MascotAssets.sitting}
+              style={styles.mascot}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
             <Text style={styles.title}>
               {step === "phone" && t("auth.phoneTitle")}
               {step === "verify" && t("auth.verifyTitle")}
@@ -409,6 +415,7 @@ export default function PhoneAuthScreen() {
             )}
           </View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </>
   );
@@ -416,11 +423,19 @@ export default function PhoneAuthScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: maakTokens.background },
+  kbv: { flex: 1 },
+  header: {
+    paddingHorizontal: maakTokens.screenPaddingHorizontal,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
   scroll: {
+    flexGrow: 1,
+    justifyContent: "center",
     paddingHorizontal: maakTokens.screenPaddingHorizontal,
     paddingBottom: 32,
   },
-  backRow: { marginBottom: 16, alignSelf: "flex-start" },
+  backRow: { alignSelf: "flex-start" },
   backText: { color: maakTokens.mutedForeground, fontSize: 15 },
   bannerWarn: {
     backgroundColor: `${maakTokens.destructive}14`,
@@ -438,17 +453,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: maakTokens.border,
   },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: maakTokens.primary,
+  mascot: {
+    width: 96,
+    height: 96,
     alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
     marginBottom: 16,
   },
-  iconHeart: { fontSize: 28, color: maakTokens.primaryForeground },
   title: {
     fontSize: 22,
     fontWeight: "700",

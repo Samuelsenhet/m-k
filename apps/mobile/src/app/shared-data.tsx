@@ -1,7 +1,7 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { posthog } from "@/lib/posthog";
 import { THIRD_PARTY_SERVICES } from "@/lib/thirdPartyServices";
-import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
+import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -36,11 +36,10 @@ export default function SharedDataScreen() {
   const loadAnalyticsPref = useCallback(async () => {
     if (!user) return;
     try {
-      const key = await resolveProfilesAuthKey(supabase, user.id);
       const { data, error } = await supabase
         .from("profiles")
         .select("analytics_opt_out")
-        .eq(key, user.id)
+        .eq("id", user.id)
         .maybeSingle();
       if (error) throw error;
       setAnalyticsOptOut(data?.analytics_opt_out ?? false);
@@ -63,11 +62,10 @@ export default function SharedDataScreen() {
     setAnalyticsOptOut(nextOptOut);
     setSavingAnalytics(true);
     try {
-      const key = await resolveProfilesAuthKey(supabase, user.id);
       const { error } = await supabase
         .from("profiles")
         .update({ analytics_opt_out: nextOptOut })
-        .eq(key, user.id);
+        .eq("id", user.id);
       if (error) throw error;
       if (nextOptOut) {
         posthog.optOut();
@@ -88,9 +86,8 @@ export default function SharedDataScreen() {
     if (!user || exporting) return;
     setExporting(true);
     try {
-      const key = await resolveProfilesAuthKey(supabase, user.id);
       const results = await Promise.all([
-        supabase.from("profiles").select("*").eq(key, user.id).maybeSingle(),
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("personality_results").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("profile_photos").select("id, storage_path, display_order, created_at").eq("user_id", user.id),
         supabase.from("matches").select("*").eq("user_id", user.id),

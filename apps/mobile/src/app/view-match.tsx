@@ -119,8 +119,9 @@ export default function ViewMatchScreen() {
         }
         onPass={
           status === "pending_intro"
-            ? () => {
-                void supabase.from("matches").update({ status: "passed" }).eq("id", matchId);
+            ? async () => {
+                const { error } = await supabase.from("matches").update({ status: "passed" }).eq("id", matchId);
+                if (error && __DEV__) console.warn("[view-match] pass failed:", error.message);
                 router.back();
               }
             : undefined

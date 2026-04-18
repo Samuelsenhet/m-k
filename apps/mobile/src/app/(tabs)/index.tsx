@@ -180,7 +180,7 @@ export default function MatchesScreen() {
   }, [refetchMatchStatus, refreshMatches]);
 
   const getPublicUrl = useCallback(
-    (path: string) => supabase.storage.from("profile-photos").getPublicUrl(path).data.publicUrl,
+    (path: string) => supabase.storage.from("profile-photos").getPublicUrl(path).data?.publicUrl ?? "",
     [supabase],
   );
 

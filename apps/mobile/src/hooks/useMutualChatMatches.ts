@@ -47,7 +47,7 @@ export function useMutualChatMatches() {
           .or(`user_id.eq.${user.id},matched_user_id.eq.${user.id}`)
           .eq("status", "mutual")
           .order("created_at", { ascending: false }),
-        resolveProfilesAuthKey(supabase, user.id),
+        resolveProfilesAuthKey(supabase, user.id).catch(() => "id" as const),
       ]);
 
       if (matchesResult.error) throw matchesResult.error;

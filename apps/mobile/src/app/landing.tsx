@@ -176,7 +176,6 @@ export default function LandingScreen() {
                 {line}
               </Text>
             ))}
-            <Text style={styles.heroNarrative}>{t("maak_narrative_variants.landing_hero_line")}</Text>
           </View>
 
           <View style={styles.features} accessibilityLabel={t("landing.features_a11y")}>
@@ -255,6 +254,8 @@ export default function LandingScreen() {
             </View>
           </View>
 
+          <Text style={styles.heroNarrative}>{t("maak_narrative_variants.landing_hero_line")}</Text>
+
           {hasValidSupabaseConfig ? (
             <Text
               style={styles.onlineLine}
@@ -330,7 +331,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   heroNarrative: {
-    marginTop: 14,
+    marginTop: 4,
+    marginBottom: 16,
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
@@ -338,6 +340,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontWeight: "600",
     maxWidth: 340,
+    alignSelf: "center",
   },
   features: {
     flexDirection: "row",

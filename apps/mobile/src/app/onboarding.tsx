@@ -1,7 +1,7 @@
 import { OnboardingWizardRN } from "@/components/onboarding/OnboardingWizardRN";
 import { WelcomeScreenRN } from "@/components/onboarding/WelcomeScreenRN";
 import { useSupabase } from "@/contexts/SupabaseProvider";
-import { maakTokens, resolveProfilesAuthKey } from "@maak/core";
+import { maakTokens } from "@maak/core";
 import { Stack, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
@@ -21,11 +21,10 @@ export default function OnboardingScreen() {
   const checkOnboardingStatus = useCallback(async () => {
     if (!userId) return;
     try {
-      const profileKey = await resolveProfilesAuthKey(supabase, userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("onboarding_completed, date_of_birth, display_name")
-        .eq(profileKey, userId)
+        .eq("id", userId)
         .maybeSingle();
 
       if (error || !data) {
@@ -66,11 +65,10 @@ export default function OnboardingScreen() {
   const handleWizardComplete = async () => {
     if (userId) {
       try {
-        const profileKey = await resolveProfilesAuthKey(supabase, userId);
         const { data } = await supabase
           .from("profiles")
           .select("display_name")
-          .eq(profileKey, userId)
+          .eq("id", userId)
           .maybeSingle();
         setDisplayName(data?.display_name?.split(" ")[0] || undefined);
       } catch {

@@ -1,3 +1,4 @@
+import { Emoji } from "@/components/Emoji";
 import { PrivacyControlsSheet } from "@/components/profile/PrivacyControlsSheet";
 import { MatchingSettingsRN } from "@/components/settings/MatchingSettingsRN";
 import { useSupabase } from "@/contexts/SupabaseProvider";
@@ -117,15 +118,18 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
     setDeleting(true);
     try {
       const uid = user.id;
-      await Promise.all([
+      const results = await Promise.allSettled([
         supabase.from("messages").delete().eq("sender_id", uid),
         supabase.from("user_achievements").delete().eq("user_id", uid),
         supabase.from("matches").delete().eq("user_id", uid),
         supabase.from("personality_results").delete().eq("user_id", uid),
         supabase.from("profile_photos").delete().eq("user_id", uid),
       ]);
-      const profileKey = await resolveProfilesAuthKey(supabase, uid);
-      const { error: profileError } = await supabase.from("profiles").delete().eq(profileKey, uid);
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length > 0 && __DEV__) {
+        console.warn("[delete account] partial failures:", failures);
+      }
+      const { error: profileError } = await supabase.from("profiles").delete().eq("id", uid);
       if (profileError) throw profileError;
       await supabase.auth.signOut();
       onClose();
@@ -213,13 +217,13 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
                       onPress={() => void setLang("sv")}
                       style={[styles.flagChip, i18n.language.startsWith("sv") && styles.flagChipOn]}
                     >
-                      <Text style={styles.flagTxt}>🇸🇪</Text>
+                      <Emoji style={styles.flagTxt}>🇸🇪</Emoji>
                     </Pressable>
                     <Pressable
                       onPress={() => void setLang("en")}
                       style={[styles.flagChip, i18n.language.startsWith("en") && styles.flagChipOn]}
                     >
-                      <Text style={styles.flagTxt}>🇬🇧</Text>
+                      <Emoji style={styles.flagTxt}>🇬🇧</Emoji>
                     </Pressable>
                   </View>
                 </View>
@@ -339,7 +343,12 @@ function MenuRow({
   icon?: keyof typeof Ionicons.glyphMap;
 }) {
   return (
-    <Pressable style={styles.menuRow} onPress={onPress}>
+    <Pressable
+      style={styles.menuRow}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       <View style={styles.rowLeft}>
         {icon ? (
           <Ionicons name={icon} size={20} color={maakTokens.foreground} />

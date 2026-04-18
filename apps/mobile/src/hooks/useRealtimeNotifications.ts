@@ -23,6 +23,7 @@ export function useRealtimeNotifications() {
 
   useEffect(() => {
     if (!userId) return;
+    let active = true;
 
     const channel = supabase.channel(`user:${userId}:notifications`, {
       config: { broadcast: { self: false } },
@@ -31,6 +32,7 @@ export function useRealtimeNotifications() {
 
     channel
       .on("broadcast", { event: "notification_received" }, (msg) => {
+        if (!active) return;
         const payload = msg.payload as NotificationPayload;
         if (payload?.title && payload?.message) {
           if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -38,13 +40,10 @@ export function useRealtimeNotifications() {
           }
         }
       })
-      .subscribe((status) => {
-        if (__DEV__ && status === "SUBSCRIBED") {
-          console.log("[Realtime] Subscribed to notifications channel");
-        }
-      });
+      .subscribe();
 
     return () => {
+      active = false;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
