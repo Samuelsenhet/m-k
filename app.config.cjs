@@ -69,6 +69,7 @@ const expo = {
     bundleIdentifier: "com.samuelsenhet.maak",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      UIRequiredDeviceCapabilities: ["armv7", "telephony"],
       // Camera — Kemi-Check video calls + profile photo capture.
       NSCameraUsageDescription:
         "MÄÄK behöver tillgång till din kamera för Kemi-Check videosamtal och för att ta profilbilder.",
