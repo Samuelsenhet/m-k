@@ -220,7 +220,7 @@ async function createMutualMatch(
   const { error: upsertError } = await supabase
     .from("matches")
     .upsert(rows, {
-      onConflict: "user_id,matched_user_id,match_date",
+      onConflict: "user_id,matched_user_id",
       ignoreDuplicates: false,
     });
 

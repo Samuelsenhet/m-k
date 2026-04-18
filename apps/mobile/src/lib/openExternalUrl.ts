@@ -1,5 +1,6 @@
 import * as WebBrowser from "expo-web-browser";
 import { Alert, InteractionManager, Platform } from "react-native";
+import { i18n } from "@/lib/i18n";
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -31,7 +32,7 @@ export async function openExternalUrl(
     await WebBrowser.openBrowserAsync(url);
   } catch (e) {
     if (__DEV__) console.warn("[openExternalUrl]", e);
-    Alert.alert(opts?.title ?? "Error", "Could not open the link. Please try again.");
+    Alert.alert(opts?.title ?? i18n.t("common.error"), i18n.t("common.link_open_failed"));
   }
 }
 

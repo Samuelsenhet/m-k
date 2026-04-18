@@ -4,7 +4,6 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import {
   createMaakSupabaseClient,
   parseMaakSupabaseEnv,
-  resolveProfilesAuthKey,
   type MaakAuthStorage,
 } from "@maak/core";
 import React, {
@@ -127,12 +126,14 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     void supabase.auth.getSession().then(({ data }) => {
       if (!cancelled) {
-        setSession(data.session ?? null);
+        setSession(data?.session ?? null);
         setIsReady(true);
       }
+    }).catch(() => {
+      if (!cancelled) setIsReady(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+      if (!cancelled) setSession(newSession);
     });
     return () => {
       cancelled = true;
@@ -148,11 +149,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     void (async () => {
       try {
-        const key = await resolveProfilesAuthKey(supabase, userId);
         const { data } = await supabase
           .from("profiles")
           .select("analytics_opt_out")
-          .eq(key, userId)
+          .eq("id", userId)
           .maybeSingle();
         if (cancelled) return;
         if (data?.analytics_opt_out) posthog.optOut();

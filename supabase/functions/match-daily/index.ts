@@ -470,7 +470,7 @@ serve(async (req: Request) => {
 
     const { data: insertedMatches, error: insertError } = await dbClient
       .from('matches')
-      .upsert(matchInserts, { onConflict: 'user_id,matched_user_id,match_date', ignoreDuplicates: true })
+      .upsert(matchInserts, { onConflict: 'user_id,matched_user_id', ignoreDuplicates: true })
       .select()
 
     if (insertError) {
