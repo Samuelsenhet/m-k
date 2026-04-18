@@ -17,4 +17,6 @@ export const MascotAssets = {
   lightingLantern: require("../../assets/images/mascot/mascot_lighting_lantern.png"),
   /** Paywall / upgrade moments */
   encouraging: require("../../assets/images/mascot/encouraging.png"),
+  /** Brand icon — header next to MÄÄK name */
+  brand: require("../../assets/images/mascot/mascot_brand.png"),
 } as const;

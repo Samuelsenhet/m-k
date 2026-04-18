@@ -196,6 +196,31 @@ export const VARDAR_HOW = {
     "Programmet lanseras efter att MÄÄK öppnat på App Store. Värd-status är manuellt utvald av teamet.",
 } as const;
 
+export const PHILOSOPHY = {
+  eyebrow: "Vår filosofi",
+  title: "Schrödingers dejt",
+  lines: [
+    "Som fysiker en gång föreställde sig",
+    "existerar Schrödingers katt i två tillstånd samtidigt.",
+    "Levande. Och inte.",
+    "Tills vi väljer att se.",
+    "Det är paradoxen.",
+    "Och det är precis där modernt dejting lever idag.",
+    "Så många möjligheter.",
+    "Så många \"tänk om\".",
+    "Så mycket osäkerhet.",
+    "Men inget verkligt. För inget blir verkligt …",
+    "Tills vi väljer att engagera oss.",
+    "Tills vi startar en konversation.",
+    "På MÄÄK jagar vi inte fler val.",
+    "Vi hjälper dig upptäcka det som är verkligt —",
+    "en interaktion i taget.",
+    "Då börjar något verkligt.",
+  ],
+  emphasisLines: [4, 10, 15] as readonly number[],
+  cta: "Ladda ner määk",
+} as const;
+
 export const FACTS_HEADING = {
   title: "Byggd för riktiga möten.",
   subtitle: "En annorlunda dejtingapp från Sverige.",

@@ -22,7 +22,8 @@
     "not_found_title": "Sidan hittades inte",
     "not_found_message": "Den här skärmen finns inte.",
     "not_found_link": "Till startsidan",
-    "delete": "Ta bort"
+    "delete": "Ta bort",
+    "link_open_failed": "Kunde inte öppna länken. Försök igen."
   },
   "nav": {
     "matches": "Matchningar",
@@ -174,7 +175,8 @@
     "supabase_banner": "Supabase saknas i appen. Lokalt: lägg URL + anon-nyckel i apps/mobile/.env eller i repo-rot .env (EXPO_PUBLIC_* eller samma värden som VITE_SUPABASE_*), starta om Expo. TestFlight/store: sätt EXPO_PUBLIC_SUPABASE_URL och EXPO_PUBLIC_SUPABASE_ANON_KEY som EAS Environment variables (production) och bygg om - se docs/EXPO_ENV.md.",
     "label_phone": "Telefonnummer",
     "phone_placeholder": "7X XXX XX XX",
-    "otp_placeholder": "000000"
+    "otp_placeholder": "000000",
+    "session_expired": "Din session har gått ut. Logga in igen."
   },
   "matches": {
     "title": "Dagens matchningar",
@@ -397,6 +399,7 @@
     "select_placeholder": "Välj...",
     "error_loading": "Kunde inte hämta profil",
     "error_saving": "Kunde inte spara profil",
+    "phone_taken": "Det här telefonnumret är redan kopplat till ett annat konto. Kontakta support om det här är ditt nummer.",
     "profile_saved": "Profil sparad!",
     "changes_saved": "Dina ändringar har sparats",
     "dating_intention_title": "Vad har du för avsikt med att dejta?",
@@ -1081,6 +1084,8 @@
       "done": "Klar",
       "pending_title": "Verifiering pågår",
       "pending_body": "Din selfie granskas. Det tar vanligtvis mindre än 24 timmar. Du ser en verifieringsbadge på din profil när den är godkänd.",
+      "already_verified_title": "Du är verifierad",
+      "already_verified_body": "Ditt konto är bekräftat. Verifieringen är klar och behöver inte göras om.",
       "settings_row": "Verifiera identitet",
       "how_title": "Så här går det till",
       "how_body_1": "Vår teknik för ansiktsigenkänning jämför ansiktet i din videoselfie med bilderna i din profil. Vi behåller tre skärmdumpar från videoselfien så länge kontot finns för att granska och hantera vår selfieverifieringsfunktion. Vi kommer också att spara resultaten av processen (verifierad eller ej).",

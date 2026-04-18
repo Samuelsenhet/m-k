@@ -3,6 +3,7 @@ import { ExtrasSection } from "@/components/ExtrasSection";
 import { FactsSection } from "@/components/FactsSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { Hero } from "@/components/Hero";
+import { PhilosophySection } from "@/components/PhilosophySection";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VardarSection } from "@/components/VardarSection";
@@ -19,6 +20,7 @@ export default function HomePage() {
         <WaitlistBanner />
         <FeaturesSection />
         <ExtrasSection />
+        <PhilosophySection />
         <VardarSection />
         <FactsSection />
         <CtaSection />

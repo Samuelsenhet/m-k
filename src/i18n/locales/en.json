@@ -22,7 +22,8 @@
     "not_found_title": "Page not found",
     "not_found_message": "This screen does not exist.",
     "not_found_link": "Go to home",
-    "delete": "Delete"
+    "delete": "Delete",
+    "link_open_failed": "Could not open the link. Please try again."
   },
   "nav": {
     "matches": "Matches",
@@ -174,7 +175,8 @@
     "supabase_banner": "Supabase is missing from this build. Local: add URL + anon key in apps/mobile/.env or repo-root .env (EXPO_PUBLIC_* or the same values as VITE_SUPABASE_*), restart Expo. TestFlight/App Store: set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY as EAS Environment variables (production) and rebuild - see docs/EXPO_ENV.md.",
     "label_phone": "Phone number",
     "phone_placeholder": "7X XXX XX XX",
-    "otp_placeholder": "000000"
+    "otp_placeholder": "000000",
+    "session_expired": "Your session has expired. Please log in again."
   },
   "matches": {
     "title": "Today's matches",
@@ -397,6 +399,7 @@
     "select_placeholder": "Select...",
     "error_loading": "Could not load profile",
     "error_saving": "Could not save profile",
+    "phone_taken": "This phone number is already linked to another account. Contact support if this is your number.",
     "profile_saved": "Profile saved!",
     "changes_saved": "Your changes have been saved",
     "dating_intention_title": "What is your intention with dating?",
@@ -1081,6 +1084,8 @@
       "done": "Done",
       "pending_title": "Verification in Progress",
       "pending_body": "Your selfie is being reviewed. This usually takes less than 24 hours. You'll see a verified badge on your profile once approved.",
+      "already_verified_title": "You're verified",
+      "already_verified_body": "Your account is confirmed. Verification is complete and does not need to be redone.",
       "settings_row": "Verify Identity",
       "how_title": "How it works",
       "how_body_1": "Our face recognition technology compares your face in your video selfie with the photos in your profile. We keep three screenshots from the video selfie as long as the account exists to review and manage our selfie verification feature. We will also save the results of the process (verified or not).",
