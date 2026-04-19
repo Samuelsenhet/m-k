@@ -310,12 +310,18 @@ module.exports = {
   expo: {
     ...expo,
     // EAS Update (OTA JS). Required for `eas update`; cannot be auto-injected into dynamic app.config.
+    // Launch-hardening (2026-04-20): build 72 crashed at startup in TestFlight via
+    // expo-updates ErrorRecovery.crash() → SIGABRT when remote load returned an incompatible
+    // manifest. Disable automatic check so launch binaries run only embedded JS; re-enable
+    // in v1.0.1 once the channel + runtimeVersion pipeline is verified against a live build.
     updates: {
       url: `https://u.expo.dev/${EAS_PROJECT_ID}`,
       // Bare iOS reads Expo.plist; keep this in sync so `expo export` / docs match the binary.
       requestHeaders: {
         "expo-channel-name": "production",
       },
+      checkAutomatically: "NEVER",
+      fallbackToCacheTimeout: 0,
     },
     // Bare workflow: policy-based runtimeVersion is not supported — use a string (keep in sync with expo.version / native build).
     runtimeVersion: typeof expo.version === "string" ? expo.version : "1.0.0",
