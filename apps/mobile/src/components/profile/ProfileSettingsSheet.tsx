@@ -1,4 +1,5 @@
 import { Emoji } from "@/components/Emoji";
+import { DeactivateAccountSheet } from "@/components/profile/DeactivateAccountSheet";
 import { PrivacyControlsSheet } from "@/components/profile/PrivacyControlsSheet";
 import { MatchingSettingsRN } from "@/components/settings/MatchingSettingsRN";
 import { useSupabase } from "@/contexts/SupabaseProvider";
@@ -16,7 +17,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -45,7 +45,7 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
   const [isModerator, setIsModerator] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
 
   const loadAccount = useCallback(async () => {
     if (!user) return;
@@ -71,7 +71,10 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
   }, [visible, user, loadAccount]);
 
   useEffect(() => {
-    if (!visible) setPrivacyOpen(false);
+    if (!visible) {
+      setPrivacyOpen(false);
+      setDeactivateOpen(false);
+    }
   }, [visible]);
 
   const handle = displayName
@@ -95,52 +98,6 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
     await supabase.auth.signOut();
     onClose();
     router.replace("/phone-auth");
-  };
-
-  const deleteAccount = () => {
-    if (!user || deleting) return;
-    Alert.alert(
-      t("settings.delete_account_title"),
-      t("settings.delete_account_description"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("settings.delete_account_confirm"),
-          style: "destructive",
-          onPress: () => void runDeleteAccount(),
-        },
-      ],
-    );
-  };
-
-  const runDeleteAccount = async () => {
-    if (!user) return;
-    setDeleting(true);
-    try {
-      const uid = user.id;
-      const results = await Promise.allSettled([
-        supabase.from("messages").delete().eq("sender_id", uid),
-        supabase.from("user_achievements").delete().eq("user_id", uid),
-        supabase.from("matches").delete().eq("user_id", uid),
-        supabase.from("personality_results").delete().eq("user_id", uid),
-        supabase.from("profile_photos").delete().eq("user_id", uid),
-      ]);
-      const failures = results.filter((r) => r.status === "rejected");
-      if (failures.length > 0 && __DEV__) {
-        console.warn("[delete account] partial failures:", failures);
-      }
-      const { error: profileError } = await supabase.from("profiles").delete().eq("id", uid);
-      if (profileError) throw profileError;
-      await supabase.auth.signOut();
-      onClose();
-      router.replace("/phone-auth");
-      Alert.alert("", t("settings.delete_account_title"));
-    } catch (e) {
-      if (__DEV__) console.warn("[delete account]", e);
-      Alert.alert(t("common.error"), t("profile.error_saving"));
-    } finally {
-      setDeleting(false);
-    }
   };
 
   return (
@@ -312,13 +269,12 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
 
               <Pressable
                 style={styles.deleteBtn}
-                onPress={deleteAccount}
-                disabled={deleting}
+                onPress={() => setDeactivateOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t("settings.deactivate_account")}
               >
-                <Ionicons name="trash-outline" size={20} color={maakTokens.destructive} />
-                <Text style={styles.deleteTxt}>
-                  {deleting ? t("settings.deleting") : t("settings.delete_account")}
-                </Text>
+                <Ionicons name="pause-circle-outline" size={20} color={maakTokens.destructive} />
+                <Text style={styles.deleteTxt}>{t("settings.deactivate_account")}</Text>
               </Pressable>
             </ScrollView>
           </View>
@@ -328,6 +284,10 @@ export function ProfileSettingsSheet({ visible, onClose }: Props) {
         onClose={() => setPrivacyOpen(false)}
         onOpenPrivacyPolicy={() => go("/privacy")}
         onOpenSharedData={() => go("/shared-data" as unknown as "/")}
+      />
+      <DeactivateAccountSheet
+        visible={deactivateOpen}
+        onClose={() => setDeactivateOpen(false)}
       />
     </Modal>
   );

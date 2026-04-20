@@ -166,6 +166,32 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase, session?.user?.id]);
 
+  // Reactivate a deactivated account on successful login. The 90-day purge
+  // cron only looks at deactivated_at, so clearing it here stops the clock
+  // and brings the profile back into match pools / inboxes automatically.
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ deactivated_at: null })
+          .eq("id", userId)
+          .not("deactivated_at", "is", null);
+        if (!cancelled && error && __DEV__) {
+          console.warn("[SupabaseProvider reactivate]", error);
+        }
+      } catch (e) {
+        if (!cancelled && __DEV__) console.warn("[SupabaseProvider reactivate]", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, session?.user?.id]);
+
   const value = useMemo(
     () => ({
       supabase,

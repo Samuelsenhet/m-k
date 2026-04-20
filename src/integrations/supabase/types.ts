@@ -1261,6 +1261,8 @@ export type Database = {
           date_of_birth: string | null
           dating_intention: string | null
           dating_intention_extra: string | null
+          deactivated_at: string | null
+          deactivation_hidden: boolean
           display_name: string | null
           education: string | null
           email_messages: boolean
@@ -1314,6 +1316,8 @@ export type Database = {
           date_of_birth?: string | null
           dating_intention?: string | null
           dating_intention_extra?: string | null
+          deactivated_at?: string | null
+          deactivation_hidden?: boolean
           display_name?: string | null
           education?: string | null
           email_messages?: boolean
@@ -1367,6 +1371,8 @@ export type Database = {
           date_of_birth?: string | null
           dating_intention?: string | null
           dating_intention_extra?: string | null
+          deactivated_at?: string | null
+          deactivation_hidden?: boolean
           display_name?: string | null
           education?: string | null
           email_messages?: boolean

@@ -391,7 +391,11 @@ serve(async (req: Request) => {
         "id, user_id, display_name, avatar_url, date_of_birth, gender, min_age, max_age, interested_in, looking_for, onboarding_completed, bio"
       )
       .eq("onboarding_completed", true)
-      .eq("is_visible", true);
+      .eq("is_visible", true)
+      // Deactivated-hidden profiles are excluded from all pools. Deactivated-
+      // visible profiles still appear (the owner just won't respond until
+      // they log back in, which auto-clears deactivated_at).
+      .or("deactivated_at.is.null,deactivation_hidden.eq.false");
 
     if (profilesError) {
       console.error("Profiles error:", profilesError);
