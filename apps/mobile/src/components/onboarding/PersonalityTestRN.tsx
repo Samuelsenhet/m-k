@@ -44,13 +44,14 @@ export function PersonalityTestRN({ onComplete }: Props) {
 
   const setAnswer = (value: number) => {
     if (!currentQuestion) return;
-    setAnswers((prev) => {
-      const next = { ...prev, [currentQuestion.id]: value };
-      if (currentIndex < shuffledQuestions.length - 1) {
-        setTimeout(() => setCurrentIndex((i) => i + 1), 350);
-      }
-      return next;
-    });
+    const questionId = currentQuestion.id;
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    // Clamp to last index so rapid double-taps can't push currentIndex past the end
+    // (saw "31 / 30" stuck state on last question with no submit button).
+    setTimeout(
+      () => setCurrentIndex((i) => Math.min(i + 1, shuffledQuestions.length - 1)),
+      350,
+    );
   };
 
   const computeResult = (): PersonalityTestResult => {

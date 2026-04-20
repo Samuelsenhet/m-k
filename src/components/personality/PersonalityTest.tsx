@@ -40,17 +40,13 @@ export const PersonalityTest = ({ onComplete }: PersonalityTestProps) => {
   const isComplete = answeredCount === shuffledQuestions.length;
 
   const setAnswer = (value: number) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.id]: value,
-    }));
-
-    // Auto-advance after a brief delay
-    if (currentIndex < shuffledQuestions.length - 1) {
-      setTimeout(() => {
-        setCurrentIndex((i) => i + 1);
-      }, 400);
-    }
+    const questionId = currentQuestion.id;
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    // Clamp to last index so rapid double-taps can't push currentIndex past the end.
+    setTimeout(
+      () => setCurrentIndex((i) => Math.min(i + 1, shuffledQuestions.length - 1)),
+      400,
+    );
   };
 
   const computeResult = (): PersonalityTestResult => {

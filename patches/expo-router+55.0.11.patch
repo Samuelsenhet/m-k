@@ -20,3 +20,25 @@ index 1467a39..2b5a949 100644
      }
      return Promise.race([
          // TODO: Phase this out in favor of expo-linking on Android.
+diff --git a/node_modules/expo-router/build/link/linking.js b/node_modules/expo-router/build/link/linking.js
+index b9535b5..c915bf8 100644
+--- a/node_modules/expo-router/build/link/linking.js
++++ b/node_modules/expo-router/build/link/linking.js
+@@ -61,7 +61,16 @@ function getInitialURL() {
+     }
+     if (react_native_1.Platform.OS === 'ios') {
+         // Use the new Expo API for iOS. This has better support for App Clips and handoff.
+-        const url = Linking.getLinkingURL();
++        // Fallback when native ExpoLinking.getLinkingURL is missing (Expo Go SDK mismatch / stale native module).
++        let url = null;
++        try {
++            if (typeof Linking.getLinkingURL === 'function') {
++                url = Linking.getLinkingURL();
++            }
++        }
++        catch (_e) {
++            url = null;
++        }
+         return (parseExpoGoUrlFromListener(url) ??
+             // The path will be nullish in bare apps when the app is launched from the home screen.
+             // TODO(EvanBacon): define some policy around notifications.

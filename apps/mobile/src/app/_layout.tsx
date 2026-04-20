@@ -29,6 +29,13 @@ LogBox.ignoreLogs([
   /expo-notifications.*Expo Go/,
   /expo-notifications.*Android Push notifications.*removed from Expo Go/,
   /`expo-notifications` functionality is not fully supported in Expo Go/,
+  // expo-notifications module-init warning in Expo Go: ServerRegistrationModule is
+  // absent so auto-registration probe rejects. Runtime registration is already
+  // gated in useExpoPushToken via isExpoGo.
+  /\[expo-notifications\] Error encountered while fetching auto-registration state/,
+  // posthog-react-native falls through to legacy expo-file-system write path in
+  // Expo Go (native module is incomplete there). Works in dev-client builds.
+  /PostHog storage persist failed/,
   // expo-video native-binary mismatch in Expo Go. Caught by HeroVideoErrorBoundary
   // in ProfileViewRN; dev-client and production builds ship a matching binary.
   /Received 3 arguments, but 2 was expected/,

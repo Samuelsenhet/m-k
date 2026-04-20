@@ -604,8 +604,6 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
           </View>
         )}
       </ScrollView>
-      </KeyboardAvoidingView>
-
       <SafeAreaView edges={["bottom"]} style={styles.footerSafe}>
         <View style={styles.footer}>
           {currentStep > 0 && (
@@ -637,6 +635,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
           </Pressable>
         </View>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
