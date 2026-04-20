@@ -70,12 +70,30 @@ export default function PaywallScreen() {
       return;
     }
 
-    posthog.capture('subscription_purchase_initiated', { tier: selected });
+    // Read price off the RC product for revenue analytics. `$revenue` and
+    // `$currency` are PostHog's reserved revenue-analytics properties — keeping
+    // them on both initiated + purchased events gives us drop-off-by-value.
+    const product = pkg.product;
+    const revenue = typeof product?.price === "number" ? product.price : undefined;
+    const currency = typeof product?.currencyCode === "string" ? product.currencyCode : undefined;
+    const productId = product?.identifier;
+
+    posthog.capture('subscription_purchase_initiated', {
+      tier: selected,
+      product_id: productId,
+      $revenue: revenue,
+      $currency: currency,
+    });
     setBusy(true);
     try {
       const result = await purchasePackage(pkg);
       if (result.success) {
-        posthog.capture('subscription_purchased', { tier: selected });
+        posthog.capture('subscription_purchased', {
+          tier: selected,
+          product_id: productId,
+          $revenue: revenue,
+          $currency: currency,
+        });
         await refreshSubscription();
         router.back();
       } else if (!result.cancelled) {
