@@ -35,6 +35,19 @@ serve(async (req) => {
     });
   }
 
+  // Sweden-only hard gate. ASC territory and Twilio Geo Permissions both
+  // enforce SE externally; this keeps the app honest even if one of those
+  // is misconfigured, and avoids burning a Twilio verification attempt on
+  // a non-SE number.
+  if (typeof phone !== "string" || !/^\+467\d{8}$/.test(phone)) {
+    return new Response(
+      JSON.stringify({
+        error: "Ogiltigt telefonnummer. MÄÄK är just nu tillgänglig i Sverige.",
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   // FIXED: Validate all Twilio configuration
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
     console.error("Missing Twilio configuration:", {
