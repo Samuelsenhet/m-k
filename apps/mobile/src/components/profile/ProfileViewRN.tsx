@@ -690,10 +690,15 @@ const styles = StyleSheet.create({
   heroGradient: {
     ...StyleSheet.absoluteFillObject,
   },
+  // Photo navigation tap zones. `top: 80` keeps them below the hero top bar
+  // (settings + edit buttons at top:16, height:48 = 64 + safety buffer) so
+  // their zIndex:10 gesture-recognizer doesn't compete with the zIndex:20
+  // buttons above — RN iOS didn't always honour the z-order under rapid
+  // photo-tap sequences, making the settings/edit buttons appear stuck.
   tapLeft: {
     position: "absolute",
     left: 0,
-    top: 0,
+    top: 80,
     bottom: 0,
     width: "33.33%",
     zIndex: 10,
@@ -701,7 +706,7 @@ const styles = StyleSheet.create({
   tapRight: {
     position: "absolute",
     right: 0,
-    top: 0,
+    top: 80,
     bottom: 0,
     width: "33.33%",
     zIndex: 10,

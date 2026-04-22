@@ -190,7 +190,6 @@ export default function PhoneAuthScreen() {
       if (!sess.session) {
         Alert.alert(t("common.error"), t("common.retry"));
         setStep("phone");
-        setIsCompletingProfile(false);
         return;
       }
 
@@ -226,7 +225,6 @@ export default function PhoneAuthScreen() {
             ? t("profile.phone_taken")
             : (message ?? t("common.retry")),
         );
-        setIsCompletingProfile(false);
         return;
       }
 

@@ -406,8 +406,11 @@ const styles = StyleSheet.create({
   hero: { overflow: "hidden", position: "relative" },
   heroImg: { ...StyleSheet.absoluteFillObject },
   heroGradient: { ...StyleSheet.absoluteFillObject },
-  tapLeft: { position: "absolute", left: 0, top: 0, bottom: 0, width: "33.33%", zIndex: 10 },
-  tapRight: { position: "absolute", right: 0, top: 0, bottom: 0, width: "33.33%", zIndex: 10 },
+  // top:80 keeps photo-nav zones below the topBar buttons (top:16, height:44)
+  // so their gesture recognizer doesn't compete with the settings/edit/score
+  // buttons — mirrors the fix in ProfileViewRN.
+  tapLeft: { position: "absolute", left: 0, top: 80, bottom: 0, width: "33.33%", zIndex: 10 },
+  tapRight: { position: "absolute", right: 0, top: 80, bottom: 0, width: "33.33%", zIndex: 10 },
   phCenter: { alignItems: "center", justifyContent: "center" },
   phInitials: { fontSize: 56, fontWeight: "700", color: maakTokens.primary, opacity: 0.5 },
   topBar: {
