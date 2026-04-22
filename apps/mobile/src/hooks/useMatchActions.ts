@@ -72,7 +72,7 @@ export function useMatchActions(matches: Match[], setMatches: SetMatches) {
               .from("profiles")
               .select("display_name")
               .eq(profileKey, uid)
-              .single();
+              .maybeSingle();
 
             void generateIcebreakers(
               matchId,

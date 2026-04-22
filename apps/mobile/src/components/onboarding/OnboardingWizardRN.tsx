@@ -120,6 +120,10 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
     useState<PersonalityTestResult | null>(null);
   const [showPersonalityResult, setShowPersonalityResult] = useState(false);
   const [hasExistingPersonality, setHasExistingPersonality] = useState(false);
+  // Set when the personality_results INSERT fails. Blocks the Continue button
+  // on the result screen until a retry succeeds — otherwise the user lands on
+  // Matches with no DB row and match-daily falls back to generic explanations.
+  const [personalityPersistFailed, setPersonalityPersistFailed] = useState(false);
 
   const [photos, setPhotos] = useState<PhotoSlotRN[]>(
     Array.from({ length: 6 }, (_, i) => ({
@@ -231,26 +235,42 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
 
   const handleSkip = () => setCurrentStep((p) => p + 1);
 
+  const persistPersonality = async (result: PersonalityTestResult) => {
+    const { error } = await supabase.from("personality_results").insert({
+      user_id: userId,
+      scores: result.scores,
+      category: result.category,
+      archetype: result.archetype,
+    });
+    if (error) throw error;
+  };
+
   const handlePersonalityComplete = async (result: PersonalityTestResult) => {
     setPersonalityResult(result);
     setShowPersonalityResult(true);
+    setPersonalityPersistFailed(false);
     if (!hasExistingPersonality) {
       try {
-        const { error } = await supabase.from("personality_results").insert({
-          user_id: userId,
-          scores: result.scores,
-          category: result.category,
-          archetype: result.archetype,
-        });
-        if (error) throw error;
+        await persistPersonality(result);
       } catch (e) {
         if (__DEV__) console.warn("[OnboardingWizard] personality insert failed:", e);
+        setPersonalityPersistFailed(true);
         Alert.alert(t("common.error"), t("common.retry"));
       }
     }
   };
 
-  const handlePersonalityResultContinue = () => {
+  const handlePersonalityResultContinue = async () => {
+    if (personalityPersistFailed && personalityResult && !hasExistingPersonality) {
+      try {
+        await persistPersonality(personalityResult);
+        setPersonalityPersistFailed(false);
+      } catch (e) {
+        if (__DEV__) console.warn("[OnboardingWizard] personality retry failed:", e);
+        Alert.alert(t("common.error"), t("common.retry"));
+        return;
+      }
+    }
     setShowPersonalityResult(false);
     handleNext();
   };
@@ -322,7 +342,7 @@ export function OnboardingWizardRN({ onComplete, userId }: Props) {
     return (
       <PersonalityResultRN
         result={personalityResult}
-        onContinue={handlePersonalityResultContinue}
+        onContinue={() => void handlePersonalityResultContinue()}
       />
     );
   }

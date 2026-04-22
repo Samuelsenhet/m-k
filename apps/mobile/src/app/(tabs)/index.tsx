@@ -57,6 +57,7 @@ export default function MatchesScreen() {
     error: matchesError,
     errorDetail: matchesErrorDetail,
     authSessionMissing,
+    preparing: matchesPreparing,
     refreshMatches,
     fetchMoreMatches,
     hasMore,
@@ -561,6 +562,32 @@ export default function MatchesScreen() {
     );
   }
 
+  // Edge function returned 200 with empty matches + "pool not yet generated"
+  // message — show a friendly preparing state + Refresh CTA rather than the
+  // generic empty state (which was what Apple's reviewer interpreted as
+  // "no content loaded after the personality test" on build 75).
+  if (matchesPreparing && matches.length === 0) {
+    return withCelebrationModal(
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={[styles.waitingBox, { paddingTop: insets.top + 16 }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <Image
+          source={MascotAssets.waitingTea}
+          style={styles.preparingMascot}
+          contentFit="contain"
+          accessibilityIgnoresInvertColors
+        />
+        <Text style={styles.waitingTitle}>{t("matches.preparing_title")}</Text>
+        <Text style={styles.waitingBody}>{t("matches.preparing_body")}</Text>
+        <Pressable style={styles.primaryBtn} onPress={() => void refreshMatches()}>
+          <Text style={styles.primaryBtnText}>{t("matches.refresh_cta")}</Text>
+        </Pressable>
+      </ScrollView>,
+    );
+  }
+
   if (matchesLoading && matches.length === 0) {
     return withCelebrationModal(
       <View style={[styles.centered, { paddingTop: insets.top }]}>
@@ -661,6 +688,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyMascot: { width: 160, height: 160, marginBottom: 8 },
+  preparingMascot: { width: 160, height: 160, marginBottom: 12, alignSelf: "center" },
   emptyTitle: { fontSize: 17, fontWeight: "700", color: maakTokens.foreground, textAlign: "center" },
   emptyBody: {
     fontSize: 14,

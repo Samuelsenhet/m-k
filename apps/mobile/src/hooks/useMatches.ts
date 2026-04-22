@@ -86,6 +86,12 @@ export function useMatches(authLoading: boolean) {
   const [authSessionMissing, setAuthSessionMissing] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  // True when match-daily returned an empty matches[] with a "pool not yet
+  // generated" message — distinct from a real no-matches empty state. Lets
+  // the UI show a "preparing matches" screen with a Refresh CTA instead of
+  // the generic "Inga matchningar idag" (which is what Apple's reviewer hit
+  // on build 75 — "no content loaded after the personality test").
+  const [preparing, setPreparing] = useState(false);
   const PAGE_SIZE = 5;
   const userId = session?.user?.id;
   const fetchingRef = useRef(false);
@@ -101,6 +107,7 @@ export function useMatches(authLoading: boolean) {
     setNextCursor(null);
     setHasMore(true);
     setAuthSessionMissing(false);
+    setPreparing(false);
 
     try {
       const {
@@ -150,7 +157,23 @@ export function useMatches(authLoading: boolean) {
         return;
       }
 
-      const payload = data as { matches: MatchDailyMatch[]; next_cursor?: string | null };
+      const payload = data as {
+        matches: MatchDailyMatch[];
+        next_cursor?: string | null;
+        message?: string;
+      };
+
+      // Pool row missing for today → edge function returns 200 with empty
+      // matches and a "not yet generated" message. Surface it distinctly so
+      // the UI can tell the user we're preparing matches rather than showing
+      // a generic empty state.
+      if (payload.matches.length === 0 && /not yet generated/i.test(payload.message ?? "")) {
+        setMatches([]);
+        setHasMore(false);
+        setPreparing(true);
+        return;
+      }
+
       setMatches(payload.matches.map(mapMatch));
       setNextCursor(payload.next_cursor || null);
       setHasMore(!!payload.next_cursor);
@@ -238,6 +261,7 @@ export function useMatches(authLoading: boolean) {
     error,
     errorDetail,
     authSessionMissing,
+    preparing,
     refreshMatches: fetchMatches,
     fetchMoreMatches,
     hasMore,

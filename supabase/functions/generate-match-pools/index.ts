@@ -369,6 +369,25 @@ serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Optional per-user on-demand generation. When match-daily sees an empty
+  // pool for a just-onboarded user (cron only runs 23:00 UTC), it POSTs
+  // { user_id } here so we build that user's pool immediately instead of
+  // regenerating every pool in the system.
+  let targetUserId: string | null = null;
+  if (req.method === "POST") {
+    try {
+      const raw = await req.text();
+      if (raw && raw.trim().length > 0) {
+        const body = JSON.parse(raw) as { user_id?: unknown };
+        if (typeof body.user_id === "string" && body.user_id.length > 0) {
+          targetUserId = body.user_id;
+        }
+      }
+    } catch {
+      // Malformed body — treat as cron-mode (regenerate all).
+    }
+  }
+
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -551,6 +570,10 @@ serve(async (req: Request) => {
     const getProfile = (userId: string) => (profiles || []).find((p: { id: string }) => p.id === userId) as ProfileRow | undefined;
 
     for (const c of candidatesList) {
+      // On-demand mode: only generate a pool for the targeted recipient,
+      // but keep candidatesList complete so they still have peers to match.
+      if (targetUserId && c.userId !== targetUserId) continue;
+
       const profileRow = getProfile(c.userId);
       const currentUser: UserProfile = {
         ...c,

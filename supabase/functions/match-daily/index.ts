@@ -236,7 +236,7 @@ serve(async (req: Request) => {
     }
 
     // 3. Get today's match pool for user (table: user_daily_match_pools, column: pool_date)
-    const { data: matchPool, error: poolError } = await dbClient
+    let { data: matchPool, error: poolError } = await dbClient
       .from('user_daily_match_pools')
       .select('*')
       .eq('user_id', requestUserId)
@@ -257,7 +257,40 @@ serve(async (req: Request) => {
       )
     }
 
-    // If no pool exists, it means batch hasn't been generated yet
+    // No pool for this user today. The cron generator runs 23:00 UTC daily,
+    // so a user who just completed onboarding sits in a pool gap until the
+    // next run. Trigger on-demand pool generation for this specific user so
+    // the Matches tab shows content immediately — the only path Apple's
+    // reviewer (or any first-time user) would otherwise hit as "no content".
+    if (!matchPool && serviceRoleKey) {
+      try {
+        const genUrl = `${supabaseUrl}/functions/v1/generate-match-pools`
+        const genResp = await fetch(genUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ user_id: requestUserId }),
+        })
+        if (genResp.ok) {
+          const retry = await dbClient
+            .from('user_daily_match_pools')
+            .select('*')
+            .eq('user_id', requestUserId)
+            .eq('pool_date', today)
+            .maybeSingle()
+          if (retry.data) {
+            matchPool = retry.data
+          }
+        } else {
+          console.warn('on-demand pool gen non-2xx:', genResp.status)
+        }
+      } catch (genErr) {
+        console.error('on-demand pool gen failed:', genErr)
+      }
+    }
+
     if (!matchPool) {
       return new Response(
         JSON.stringify({

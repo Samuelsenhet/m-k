@@ -81,10 +81,13 @@ export function useExpoPushToken() {
           },
           { onConflict: "user_id,token" }
         );
-
-        registered.current = true;
       } catch (err) {
         if (__DEV__) console.warn("[Push] Registration failed:", err);
+      } finally {
+        // Mark as attempted regardless of outcome so we don't retry forever
+        // within one session if the upsert keeps failing. Next app launch
+        // (new ref instance) will retry naturally.
+        registered.current = true;
       }
     })();
   }, [userId, supabase]);
