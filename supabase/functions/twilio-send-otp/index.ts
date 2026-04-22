@@ -48,6 +48,25 @@ serve(async (req) => {
     );
   }
 
+  // App Review bypass — enabled only during the Apple review window so the
+  // reviewer can reach the post-OTP flow without a live SIM. Skips Twilio
+  // entirely for the whitelisted reviewer phone. Paired with the same gate
+  // in twilio-verify-otp which accepts APP_REVIEW_OTP for this phone only.
+  // DISABLE by unsetting APP_REVIEW_BYPASS_ENABLED once Apple approves.
+  const APP_REVIEW_BYPASS_ENABLED =
+    Deno.env.get("APP_REVIEW_BYPASS_ENABLED") === "true";
+  const APP_REVIEW_PHONE = (Deno.env.get("APP_REVIEW_PHONE") || "").trim();
+  if (
+    APP_REVIEW_BYPASS_ENABLED &&
+    APP_REVIEW_PHONE &&
+    phone === APP_REVIEW_PHONE
+  ) {
+    return new Response(
+      JSON.stringify({ success: true, reviewer: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   // FIXED: Validate all Twilio configuration
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
     console.error("Missing Twilio configuration:", {

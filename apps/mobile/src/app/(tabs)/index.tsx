@@ -340,6 +340,96 @@ export default function MatchesScreen() {
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
+  // Declared before the conditional early-returns below. Moving these after the
+  // early returns used to violate Rules of Hooks (transitions from a loading/
+  // error return into the full render would push React's hook count past the
+  // previous render and crash into the root ErrorBoundary).
+  const listHeader = useMemo(
+    () => (
+      <>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>{t("matches.title")}</Text>
+            <Text style={styles.subtitle}>{t("matches.subtitle")}</Text>
+          </View>
+          <Pressable style={styles.iconBtn} onPress={() => void onRefresh()} hitSlop={12}>
+            <Text style={styles.iconBtnText}>↻</Text>
+          </Pressable>
+        </View>
+
+        {hasValidSupabaseConfig && onlineCount > 0 ? (
+          <Text style={styles.online}>
+            {t("landing.users_seeking_love", { count: onlineCount })}
+          </Text>
+        ) : null}
+
+        <View style={styles.insight}>
+          <Text style={styles.insightTitle}>{t("matches.insight_title")}</Text>
+          <Text style={styles.insightSub}>{t("matches.insight_subtitle")}</Text>
+          <View style={styles.pillRow}>
+            <View style={styles.pillGreen}>
+              <Text style={styles.pillGreenText}>
+                {similarMatches.length} {t("matches.similar")}
+              </Text>
+            </View>
+            <View style={styles.pillCoral}>
+              <Text style={styles.pillCoralText}>
+                {complementaryMatches.length} {t("matches.complementary")}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.tabs}>
+          {(
+            [
+              ["all", t("matches.tabAll"), pendingMatches.length] as const,
+              ["similar", t("matches.tabSimilar"), similarMatches.length] as const,
+              ["complementary", t("matches.tabComplementary"), complementaryMatches.length] as const,
+            ] as const
+          ).map(([key, label, count]) => (
+            <Pressable
+              key={key}
+              style={[styles.tab, activeTab === key && styles.tabActive]}
+              onPress={() => setActiveTab(key)}
+            >
+              <Text style={[styles.tabText, activeTab === key && styles.tabTextActive]}>
+                {label} ({count})
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </>
+    ),
+    [
+      t, onRefresh, hasValidSupabaseConfig, onlineCount,
+      similarMatches.length, complementaryMatches.length,
+      pendingMatches.length, activeTab,
+    ],
+  );
+
+  const listFooter = useMemo(
+    () => (
+      <>
+        {hasMore ? (
+          <Pressable
+            style={styles.loadMore}
+            onPress={() => void fetchMoreMatches()}
+            disabled={matchesLoading}
+          >
+            {matchesLoading ? (
+              <ActivityIndicator color={maakTokens.primary} />
+            ) : (
+              <Text style={styles.loadMoreText}>{t("matches.load_more")}</Text>
+            )}
+          </Pressable>
+        ) : null}
+        <Text style={styles.footerNote}>{t("matches.footer_tomorrow")}</Text>
+      </>
+    ),
+    [hasMore, fetchMoreMatches, matchesLoading, t],
+  );
+
   const signOutAndRedirect = async () => {
     posthog.capture('user_signed_out');
     posthog.reset();
@@ -479,92 +569,6 @@ export default function MatchesScreen() {
       </View>,
     );
   }
-
-  const listHeader = useMemo(
-    () => (
-      <>
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{t("matches.title")}</Text>
-            <Text style={styles.subtitle}>{t("matches.subtitle")}</Text>
-          </View>
-          <Pressable style={styles.iconBtn} onPress={() => void onRefresh()} hitSlop={12}>
-            <Text style={styles.iconBtnText}>↻</Text>
-          </Pressable>
-        </View>
-
-        {hasValidSupabaseConfig && onlineCount > 0 ? (
-          <Text style={styles.online}>
-            {t("landing.users_seeking_love", { count: onlineCount })}
-          </Text>
-        ) : null}
-
-        <View style={styles.insight}>
-          <Text style={styles.insightTitle}>{t("matches.insight_title")}</Text>
-          <Text style={styles.insightSub}>{t("matches.insight_subtitle")}</Text>
-          <View style={styles.pillRow}>
-            <View style={styles.pillGreen}>
-              <Text style={styles.pillGreenText}>
-                {similarMatches.length} {t("matches.similar")}
-              </Text>
-            </View>
-            <View style={styles.pillCoral}>
-              <Text style={styles.pillCoralText}>
-                {complementaryMatches.length} {t("matches.complementary")}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.tabs}>
-          {(
-            [
-              ["all", t("matches.tabAll"), pendingMatches.length] as const,
-              ["similar", t("matches.tabSimilar"), similarMatches.length] as const,
-              ["complementary", t("matches.tabComplementary"), complementaryMatches.length] as const,
-            ] as const
-          ).map(([key, label, count]) => (
-            <Pressable
-              key={key}
-              style={[styles.tab, activeTab === key && styles.tabActive]}
-              onPress={() => setActiveTab(key)}
-            >
-              <Text style={[styles.tabText, activeTab === key && styles.tabTextActive]}>
-                {label} ({count})
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </>
-    ),
-    [
-      t, onRefresh, hasValidSupabaseConfig, onlineCount,
-      similarMatches.length, complementaryMatches.length,
-      pendingMatches.length, activeTab,
-    ],
-  );
-
-  const listFooter = useMemo(
-    () => (
-      <>
-        {hasMore ? (
-          <Pressable
-            style={styles.loadMore}
-            onPress={() => void fetchMoreMatches()}
-            disabled={matchesLoading}
-          >
-            {matchesLoading ? (
-              <ActivityIndicator color={maakTokens.primary} />
-            ) : (
-              <Text style={styles.loadMoreText}>{t("matches.load_more")}</Text>
-            )}
-          </Pressable>
-        ) : null}
-        <Text style={styles.footerNote}>{t("matches.footer_tomorrow")}</Text>
-      </>
-    ),
-    [hasMore, fetchMoreMatches, matchesLoading, t],
-  );
 
   return withCelebrationModal(
     <FlatList

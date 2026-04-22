@@ -46,75 +46,94 @@ serve(async (req) => {
       return jsonError("Ogiltig kod. Koden måste vara 6 siffror.", 400);
     }
 
-    // Validate Twilio configuration
-    if (!TWILIO_VERIFY_SERVICE_SID || !TWILIO_VERIFY_SERVICE_SID.startsWith("VA")) {
-      console.error("Invalid TWILIO_VERIFY_SERVICE_SID:", TWILIO_VERIFY_SERVICE_SID);
-      return jsonError("Server configuration error: Invalid Verify Service SID", 500);
-    }
+    // App Review bypass — see twilio-send-otp for context. When the paired
+    // reviewer phone + OTP match and the env flag is on, we skip Twilio's
+    // VerificationCheck so the reviewer can reach Supabase auth without a
+    // live SIM. Disable by unsetting APP_REVIEW_BYPASS_ENABLED.
+    const APP_REVIEW_BYPASS_ENABLED =
+      Deno.env.get("APP_REVIEW_BYPASS_ENABLED") === "true";
+    const APP_REVIEW_PHONE = (Deno.env.get("APP_REVIEW_PHONE") || "").trim();
+    const APP_REVIEW_OTP = (Deno.env.get("APP_REVIEW_OTP") || "").trim();
+    const isReviewerBypass =
+      APP_REVIEW_BYPASS_ENABLED &&
+      APP_REVIEW_PHONE.length > 0 &&
+      APP_REVIEW_OTP.length > 0 &&
+      phone === APP_REVIEW_PHONE &&
+      code === APP_REVIEW_OTP;
 
-    /* ---------- TWILIO VERIFY ---------- */
-    // Twilio Verify Verification Check endpoint:
-    // POST https://verify.twilio.com/v2/Services/{ServiceSid}/VerificationCheck
-    // Twilio can return 404 if the verification is expired/approved/max-attempts reached.
-    const requestInit: RequestInit = {
-      method: "POST",
-      headers: {
-        Authorization:
-          "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({ To: phone, Code: code }),
-    };
+    if (!isReviewerBypass) {
+      // Validate Twilio configuration
+      if (!TWILIO_VERIFY_SERVICE_SID || !TWILIO_VERIFY_SERVICE_SID.startsWith("VA")) {
+        console.error("Invalid TWILIO_VERIFY_SERVICE_SID:", TWILIO_VERIFY_SERVICE_SID);
+        return jsonError("Server configuration error: Invalid Verify Service SID", 500);
+      }
 
-    const checkUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
+      /* ---------- TWILIO VERIFY ---------- */
+      // Twilio Verify Verification Check endpoint:
+      // POST https://verify.twilio.com/v2/Services/{ServiceSid}/VerificationCheck
+      // Twilio can return 404 if the verification is expired/approved/max-attempts reached.
+      const requestInit: RequestInit = {
+        method: "POST",
+        headers: {
+          Authorization:
+            "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ To: phone, Code: code }),
+      };
 
-    const twilioRes = await fetch(checkUrl, requestInit);
-    const twilioData: unknown = await twilioRes.json().catch(() => ({}));
-    const twilioObj =
-      twilioData && typeof twilioData === "object"
-        ? (twilioData as Record<string, unknown>)
-        : ({} as Record<string, unknown>);
-    const twilioCode = typeof twilioObj.code === "number" ? twilioObj.code : undefined;
-    const twilioMessage =
-      typeof twilioObj.message === "string" ? twilioObj.message : undefined;
-    const twilioStatus =
-      typeof twilioObj.status === "string" ? twilioObj.status : undefined;
+      const checkUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
 
-    console.log("Twilio response:", JSON.stringify(twilioObj));
+      const twilioRes = await fetch(checkUrl, requestInit);
+      const twilioData: unknown = await twilioRes.json().catch(() => ({}));
+      const twilioObj =
+        twilioData && typeof twilioData === "object"
+          ? (twilioData as Record<string, unknown>)
+          : ({} as Record<string, unknown>);
+      const twilioCode = typeof twilioObj.code === "number" ? twilioObj.code : undefined;
+      const twilioMessage =
+        typeof twilioObj.message === "string" ? twilioObj.message : undefined;
+      const twilioStatus =
+        typeof twilioObj.status === "string" ? twilioObj.status : undefined;
 
-    // 404 from Twilio Verify commonly means: expired, already approved, or max attempts reached.
-    if (twilioRes.status === 404) {
-      return jsonError(
-        "Koden har utgått eller har redan använts. Skicka en ny kod och försök igen.",
-        401
-      );
-    }
+      console.log("Twilio response:", JSON.stringify(twilioObj));
 
-    // FIXED: Better error handling for Twilio responses
-    // Check for HTTP-level errors from Twilio (but allow 200 with error codes)
-    if (!twilioRes.ok) {
-      const errorMessage = twilioMessage || `Twilio API error: ${twilioRes.status}`;
-      console.error("Twilio API HTTP error:", errorMessage, twilioObj);
-      return jsonError(errorMessage, 502);
-    }
+      // 404 from Twilio Verify commonly means: expired, already approved, or max attempts reached.
+      if (twilioRes.status === 404) {
+        return jsonError(
+          "Koden har utgått eller har redan använts. Skicka en ny kod och försök igen.",
+          401
+        );
+      }
 
-    // Check for Twilio error codes in response body
-    if (twilioCode && twilioCode !== 0) {
-      const errorMessage = twilioMessage || `Twilio error code: ${twilioCode}`;
-      console.error("Twilio error code:", twilioCode, twilioMessage);
-      return jsonError(errorMessage, 401);
-    }
+      // FIXED: Better error handling for Twilio responses
+      // Check for HTTP-level errors from Twilio (but allow 200 with error codes)
+      if (!twilioRes.ok) {
+        const errorMessage = twilioMessage || `Twilio API error: ${twilioRes.status}`;
+        console.error("Twilio API HTTP error:", errorMessage, twilioObj);
+        return jsonError(errorMessage, 502);
+      }
 
-    // Check verification status
-    if (twilioStatus !== "approved") {
-      const message =
-        twilioStatus === "pending" 
-          ? "Fel kod. Försök igen." 
-          : twilioStatus === "expired"
-          ? "Koden har utgått. Skicka en ny kod."
-          : "Koden är ogiltig. Försök igen.";
-      console.log("Twilio verification status:", twilioStatus);
-      return jsonError(message, 401);
+      // Check for Twilio error codes in response body
+      if (twilioCode && twilioCode !== 0) {
+        const errorMessage = twilioMessage || `Twilio error code: ${twilioCode}`;
+        console.error("Twilio error code:", twilioCode, twilioMessage);
+        return jsonError(errorMessage, 401);
+      }
+
+      // Check verification status
+      if (twilioStatus !== "approved") {
+        const message =
+          twilioStatus === "pending"
+            ? "Fel kod. Försök igen."
+            : twilioStatus === "expired"
+            ? "Koden har utgått. Skicka en ny kod."
+            : "Koden är ogiltig. Försök igen.";
+        console.log("Twilio verification status:", twilioStatus);
+        return jsonError(message, 401);
+      }
+    } else {
+      console.log("[twilio-verify-otp] App Review bypass hit for reviewer phone.");
     }
 
     /* ---------- SUPABASE AUTH ---------- */
