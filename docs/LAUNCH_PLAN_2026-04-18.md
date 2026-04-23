@@ -1,24 +1,82 @@
 # MÄÄK — Launch Plan
 
 > Skriven: 2026-04-18. Ersätter/kompletterar `LAUNCH_NEXT_STEPS.md` från 2026-04-12.
-> Status: build 83 uppladdad, ASC ifyllt, iPad-blocker löst genom `supportsTablet: false` + `UIRequiredDeviceCapabilities: ["armv7","telephony"]`. Rebuild krävs för att flaggorna ska hamna i binär.
+> Status (2026-04-23): **build 80 submittad för review** kl 07:24 — submission ID `c9ba1007-4644-48ae-ae68-d27eb5e8475b`, status `Waiting for Review`. Build-linje: 75 (rejected) → 77 (RLS/personality-test/onboarding fixes) → 79 (response till Apple) → **80** (final submit efter matches-tab + tap-zone + phone-auth fixes). Review notes från `docs/APPLE_RESPONSE_2026-04-21.md` inklistrade i Resolution Center. Privacy-labels satta till "Data Not Used to Track You", "Manually release"-flagga satt. Nästa: bevaka ASC + mail för Apple-svar (~24–48h). Vid approval → Fas 2 (release) → Fas 3 (waitlist). Vid rejection → `hotfix/reviewer-feedback`-worktree.
 
 ## TL;DR — kritisk väg
 
-1. EAS rebuild → build 84+ väljs i ASC → iPad-tabben försvinner
-2. TestFlight-sanity på riktig iPhone
-3. Submit wizard → Submit for Review
-4. Vid approval: stäng av demo-reset, dry-run waitlist, release
-5. Skarpt waitlist-mail
-6. Vecka 1: övervaka PostHog + RevenueCat + Supabase logs
+1. ✅ EAS rebuild → build 80 vald i ASC → iPad-tabben borta
+2. ✅ TestFlight-sanity på riktig iPhone (verifierad före submit)
+3. ✅ Submit wizard → Submit for Review (2026-04-23 07:24, `Waiting for Review`)
+4. **Vänta på Apple-svar (~24–48h)** — vid rejection, hoppa till `hotfix/reviewer-feedback`-worktree
+5. Vid approval: stäng av demo-reset, dry-run waitlist, release
+6. Skarpt waitlist-mail
+7. Vecka 1: övervaka PostHog + RevenueCat + Supabase logs
 
 Allt annat är deferred.
 
 ---
 
+## Worktree-map — vem gör vad parallellt
+
+Sedan 2026-04-19 finns fyra worktrees utcheckade (`git worktree list`):
+
+| Worktree | Path | Branch | Ansvar |
+|---|---|---|---|
+| **main** | `../m-k` | `main` | Launch-kritiska steg — Fas 0 (pre-submit), Fas 1 (submit), Fas 2 (approval), Fas 3 (waitlist). Inga andra ändringar tills `Ready for Sale`. |
+| **v1.0.1** | `../m-k-v1.0.1` | `post-launch/v1.0.1-polish` | ~~Fas 4.2 polish-bundle~~ **redan landad i main före submit** (`9e6af45` + `f76db0d` + `e80b504`, i build 80). Worktree tom — kan avvecklas eller återanvändas för nästa våg fixes. |
+| **hotfix** | `../m-k-hotfix` | `hotfix/reviewer-feedback` | Reserverad för reviewer-förfrågningar eller krasch upptäckt post-submit. Tom tills behov uppstår. Branchar från `main` så hotfix kan pushas snabbt utan att dra in v1.0.1-jobbet. |
+| **develop** | `../m-k-develop` | `develop` | Staging per `CONTRIBUTING.md`. Fas 5-backlog (push-notiser, inbox-badge, Träffar-editing, Värdmiddag, coming-soon-screen etc.) börjar här och PR:as till `main` via `develop`. |
+
+### Detaljerad uppdragsfördelning
+
+| Fas / uppdrag | Worktree | Notis |
+|---|---|---|
+| 0.1 Git-workspace ✅ | main | klart |
+| 0.2 EAS rebuild ✅ | main | build-linje 77→79→80 |
+| 0.3 Välj nya bygget i ASC ✅ | main | build 80 vald 2026-04-23 |
+| 0.4 TestFlight-sanity ✅ | main | verifierad på iPhone före submit |
+| 0.5 `npm run launch:check` ✅ | main | PASS 2026-04-19 |
+| 0.6 Externa system verify ✅ | main | submit hade failat annars |
+| 0.7 Manually-release-flaggan ✅ | main | ASC-toggle satt |
+| 1.1–1.3 Submit wizard ✅ | main | 2026-04-23 07:24, `Waiting for Review` |
+| 2.1–2.3 Approval / release | main | launch-dagen |
+| 3.1–3.5 Waitlist-mail | main | timmar efter release |
+| 4.1 Daglig övervakning | main | monitoring, ingen kod |
+| 4.2.1 Revenue analytics (`$revenue`/`$currency`) ✅ | main | landade i build 80 (`9e6af45`) |
+| 4.2.2 Profile-edit expansion (16+ fält) ✅ | main | landade i build 80 (`f76db0d`) |
+| 4.2.3 `resolveProfilesAuthKey` → hårdkoda `"id"` ✅ | main | landade i build 80 (`e80b504`) |
+| 4.3 Värd-eligibility cron + första Värd-godkänt | **v1.0.1** eller develop | vänta tills ~50 aktiva användare |
+| 4.4 Onfido-integration + flip `VERIFICATION_LAUNCH_AUTO_APPROVE=false` | **develop** | feature-branch post-launch |
+| 5. Push-notiser för intros/RSVPs | **develop** | Fas 5 backlog |
+| 5. Inbox-badge på profile-tab | **develop** | Fas 5 backlog |
+| 5. Date/time-picker i `traffar/create.tsx` | **develop** | Fas 5 backlog |
+| 5. Värd editerar Träff | **develop** | Fas 5 backlog |
+| 5. Värdmiddag + Värdbrev | **develop** | Fas 5 backlog |
+| 5. Component extraction (ProfileViewRN, OnboardingWizardRN) | **develop** | teknisk skuld |
+| 5. TypeScript `strict: true` | **develop** | teknisk skuld |
+| 5. Landing /vardar/, responsive WebP, Sentry | **develop** | landing-backlog |
+| 5. GDPR data-export/radering-UI | **develop** | legal/compliance |
+| Reviewer bug / krasch post-submit | **hotfix** | reserverad |
+| Coming-soon / "Nästa feature"-screen (ProfileSettingsSheet-row + `/coming-soon` route) | **develop** | ny feature från 2026-04-19-diskussion |
+
+### Branchrouting
+
+```
+develop (staging) ──► main (prod)
+  │
+  └─ v1.0.1 polish merge:   post-launch/v1.0.1-polish ──► develop ──► main
+  └─ Fas 5 features:         feature/* ──► develop ──► main
+  └─ reviewer hotfix:        hotfix/reviewer-feedback ──► main (direct) + cherry-pick till develop
+```
+
+Håll worktrees rena (`git status` tom) innan du byter fokus — annars kan `git worktree remove` vägra.
+
+---
+
 ## Fas 0 — Innan submit (blockers)
 
-### 0.1 Städa git-workspacen
+### 0.1 Städa git-workspacen ✅ (klar)
 
 Många modifierade filer + 9 untracked migrations ligger lokalt. Migrations är **redan applicerade till prod**, men bör committas så team-historiken stämmer och reviewer-branchen är ren.
 
@@ -43,7 +101,7 @@ git commit -m "chore(supabase): commit applied migrations + storage-proxy fn"
 
 Övriga modifierade appfiler: gå igenom `git status` och commit det som hör till launch, släpp resten.
 
-### 0.2 EAS rebuild för iPad-fix
+### 0.2 EAS rebuild för iPad-fix ✅ (klar — build 84+)
 
 Build 83 har **inte** `supportsTablet: false` eller `telephony`-capability i Info.plist. Rebuild krävs för att flaggorna ska nå binär.
 
@@ -56,15 +114,15 @@ eas build --platform ios --profile expo-production
 - Nytt build number (84+)
 - Inkluderar dagens fixes: expo-video safety i Expo Go, profile hero polish (commit `85a46d4`)
 
-### 0.3 Välj nya bygget i ASC
+### 0.3 Välj nya bygget i ASC ✅ (klar 2026-04-19)
 
 1. App Store Connect → My Apps → MÄÄK → Version 1.0
 2. Build-sektionen → ta bort 83 → lägg till 84+
 3. **Spara** → iPad-screenshots-tabben ska försvinna
 
-### 0.4 TestFlight-sanity på riktig iPhone
+### 0.4 TestFlight-sanity på riktig iPhone ✅ (klar)
 
-Installera TestFlight-bygget och kör igenom:
+Verifierad på iPhone före submit av build 80. Happy path nedan kördes igenom:
 
 - [ ] Phone OTP med riktigt nummer
 - [ ] Onboarding: personality test + foto-upload (video också om möjligt)
@@ -76,34 +134,35 @@ Installera TestFlight-bygget och kör igenom:
 - [ ] ID-verifiering: selfie-flöde (auto-approve i dev)
 - [ ] Sign out → sign in igen
 
-### 0.5 Preflight-check
+### 0.5 Preflight-check ✅ (klar 2026-04-19)
 
 ```bash
 npm run launch:check
 ```
 
-Ska vara grönt. Om något fails — fixa innan submit.
+PASS 2026-04-19.
 
-### 0.6 Externa system — verifiera
+### 0.6 Externa system — verifiera ✅ (klar 2026-04-23)
 
-- [ ] **Resend**: domänen `maakapp.se` är verified (SPF/DKIM via DNS). Utan detta failar hela waitlist-mailet. Resend dashboard → Domains → status = **Verified**.
-- [ ] **RevenueCat**: iOS offerings `maak_basic_weekly` + `maak_premium_monthly` live, webhook URL pekar på Supabase edge function.
-- [ ] **Supabase edge functions deployed**: `match-daily`, `ai-assistant`, `generate-icebreakers`, `send-notification`, `revenuecat-webhook`, `waitlist-notify`, `storage-proxy`, `id-verification-webhook`.
-- [ ] **Landing**: https://maakapp.se/ laddar, OG-bild syns i Messages/Slack preview.
+- [x] **Resend**: domänen `maakapp.se` = **Verified** på https://resend.com/domains (Ireland eu-west-1, 11 dagar). Dry-run av `waitlist-notify` körde också utan 503 → `RESEND_API_KEY` läsbar från edge fn.
+- [x] **RevenueCat edge function**: `revenuecat-webhook` ACTIVE (version 36 per `supabase functions list` 2026-04-23). ⚠️ **Ingen real paid purchase har någonsin processats** (alla 3 rader i `subscriptions` är `plan_type: "free"`). Paid-flow blir först bekräftad via sandbox-köp i Fas 2.3.
+- [x] **RevenueCat ASC-side**: webhook "Supabase Subscription Sync" konfigurerad, URL = `https://jappgthiyedycwhttpcu.supabase.co/functions/v1/revenuecat-webhook`, environment = Both Production and Sandbox, auth-header satt. iOS subscriptions `maak_basic_weekly` + `maak_premium_monthly` båda i **In Review** (följer app-review). Localization "MÄÄK Membership" (Swedish) står som `Prepare for Submission`, men dess "Submit for Review"-knapp är disabled — bundle med subscription+app-review, inget separat steg krävs.
+- [x] **Supabase edge functions deployed** (verifierad 2026-04-23): `match-daily` v92, `ai-assistant` v52, `generate-icebreakers` v52, `send-notification` v50, `revenuecat-webhook` v36, `waitlist-notify` v28, `storage-proxy` v5, `id-verification-webhook` v49, `moderate-verification` v8 — alla ACTIVE.
+- [x] **Landing**: https://maakapp.se/ laddar. OG-tags verifierade 2026-04-23 — title, description, `sv_SE`, `summary_large_image`, og:image 1200x630 PNG (156KB, cache-busted). `/opengraph-image` returnerar HTTP 200 + `content-type: image/png` (Loopia ForceType-fixen håller).
 
-### 0.7 Verifiera "Manuellt released"-flagga
+### 0.7 Verifiera "Manuellt released"-flagga ✅ (klar)
 
 ASC → Version 1.0 → Version Release → **Manually release this version**. Annars släpps appen direkt vid approval (innan vi hunnit förbereda waitlist).
 
 ---
 
-## Fas 1 — Submit (dag 0)
+## Fas 1 — Submit (dag 0) ✅ (klar 2026-04-23)
 
-### 1.1 Add for Review wizard
+> Build 80 submittad kl 07:24 — submission ID `c9ba1007-4644-48ae-ae68-d27eb5e8475b`. Status: **Waiting for Review**. Review notes från `docs/APPLE_RESPONSE_2026-04-21.md` inklistrade i Resolution Center.
 
-Spara Version 1.0-sidan → klicka **Add for Review**.
+### 1.1 Add for Review wizard ✅
 
-Svara:
+Svar som angavs:
 
 | Fråga | Svar |
 |---|---|
@@ -113,15 +172,33 @@ Svara:
 | Content Rights — third-party content? | **No** |
 | IDFA — advertising identifier? | **No** |
 
-### 1.2 Submit for Review
+### 1.2 Submit for Review ✅
 
-Tryck **Submit for Review**. Status: `Waiting for Review` → `In Review` (24-48h).
+Klickat 2026-04-23 07:24. Status: `Waiting for Review` → `In Review` (24-48h).
 
-### 1.3 Håll koll
+### 1.3 Håll koll — **pågår**
 
 - Aktivera ASC-appens push-notiser på telefon
 - Bevaka email `connection.dts@gmail.com` för Apple-meddelanden
 - Om reviewer ber om login-info: credentials redan i Notes (`+46701234567` / `123456`)
+
+---
+
+## Ytterligare landed scope i build 80 (utöver original-planen)
+
+Arbete som tillkom mellan 2026-04-18 och submit och som **inte** nämns i Fas 0-sektionerna ovan, men är i build 80:
+
+| Commit | Vad |
+|---|---|
+| `49eda2d` | Hårt `+46`-gate i `twilio-send-otp` edge fn (Swedish-only vid launch) |
+| `e72cbf7` | Account `delete` ersatt med `deactivate` + 90-day auto-purge (GDPR-vänligt) |
+| `9e0824f` | `expo-updates` auto-check av → förhindrar `ErrorRecovery`-krasch vid app-start |
+| `99866b2` | `expo-notifications` Expo Go-skip + dep-bump + matches-conflict fix |
+| `12a824a` | Admin-selfie-reviewer + `moderate-verification` edge fn |
+| `2c77ec8` | Reviewer-bypass bakom `APP_REVIEW_BYPASS_ENABLED` (stänger pool-gap) |
+| `c44232c` | On-demand pool-gen + "Preparing"-UX (fallback när daily matches saknas) |
+| `b0217cb` | Tap-zone overlap på profile screens + phone-auth race |
+| `8694da6` | UI-polish över onboarding, verification, support |
 
 ---
 
@@ -138,7 +215,7 @@ supabase secrets unset ALLOW_DEMO_RESET --project-ref jappgthiyedycwhttpcu
 # - `profiles`: reviewer-kontot kan ligga kvar
 ```
 
-- [ ] PostHog EU — skapa "Launch day"-annotation på project 113869 timeline
+- [ ] PostHog EU — skapa "Launch day"-annotation på project 113869 timeline (gör **när du trycker Release**, inte i förväg, annars blir tidsstämpeln fel). Content: `Launch day — MÄÄK 1.0 (80) Ready for Sale`. Scope: Organization.
 - [ ] Kör waitlist dry-run (Fas 3.1 nedan) — kontrollera recipient-listan
 - [ ] Verifiera Resend-domänen en sista gång
 - [ ] Släck "Manually release" är fortfarande satt
@@ -173,7 +250,7 @@ https://supabase.com/dashboard/project/jappgthiyedycwhttpcu/functions/secrets
 export WAITLIST_SECRET="<paste värde>"
 ```
 
-### 3.2 Dry-run (säkerhetsövning — inget skickas)
+### 3.2 Dry-run ✅ körd 2026-04-23 — pipelinen fungerar
 
 ```bash
 curl -X POST https://jappgthiyedycwhttpcu.supabase.co/functions/v1/waitlist-notify \
@@ -182,7 +259,11 @@ curl -X POST https://jappgthiyedycwhttpcu.supabase.co/functions/v1/waitlist-noti
   -d '{"dry_run": true}'
 ```
 
-Verifiera JSON-svaret:
+**Resultat 2026-04-23**: `{ total: 1, recipients: ["samueel.pierre@hotmail.com"], subject: "MÄÄK finns nu i App Store 🎉" }`. Test-raden raderad direkt efter — tabellen är nu tom. Secret roterad.
+
+⚠️ **0 riktiga signups i waitlist**: skarpt skick (Fas 3.3) på launch-dagen kommer inte nå någon om inte signup-drive sker under väntan. Se Riskregister R8.
+
+På launch-dagen, kör dry-run igen (samma curl) och verifiera:
 - `total` — matchar förväntad lista
 - `recipients` — inga test-adresser, inga dubbletter
 - `subject` — copy ser bra ut
@@ -234,15 +315,15 @@ curl -X POST https://jappgthiyedycwhttpcu.supabase.co/functions/v1/waitlist-noti
 | ASC | App Analytics | Impressions, product page views, conversion rate |
 | Resend | Dashboard | Bounces, complaints |
 
-### 4.2 Snabba polish-fixes (kan OTA:as eller in i nästa build)
+### 4.2 Snabba polish-fixes — ✅ redan landade i build 80
 
-| # | Task | Fil | Notes |
+| # | Task | Commit | Status |
 |---|---|---|---|
-| 4.2.1 | **Revenue analytics** — lägg `$revenue` + `$currency` på paywall-eventen | PostHog-capture där `subscription_purchased` fires | 5 min, en fil. Krävs för riktig revenue-analytics i PostHog. Bundle med 4.2.2 eller OTA via expo-updates om konfigurerat. |
-| 4.2.2 | **Profile-edit expansion** — utöka `profile.tsx` edit-läge med alla 16+ fält (pronouns, gender, height, sexuality, looking_for, hometown, work, education, religion, politics, alcohol, smoking, visibility toggles) | `apps/mobile/src/app/(tabs)/profile.tsx` | Återanvänd `SelectField` + `onboardingOptions.ts`. Grupperade sektioner: Grundläggande / Socialt / Bakgrund / Integritet. Räkna om `profile_completion` med samma logik som `OnboardingWizardRN.calculateCompletion()`. |
-| 4.2.3 | **resolveProfilesAuthKey fix** — byt ut mot hårdkodat `"id"` (samma som onboarding-filerna) | `apps/mobile/src/app/(tabs)/profile.tsx` | Del av 4.2.2 |
+| 4.2.1 | **Revenue analytics** — `$revenue` + `$currency` på paywall-eventen | `9e6af45` | ✅ i build 80 |
+| 4.2.2 | **Profile-edit expansion** — alla 16+ fält (pronouns, gender, height, sexuality, looking_for, hometown, work, education, religion, politics, alcohol, smoking, visibility toggles) | `f76db0d` | ✅ i build 80 |
+| 4.2.3 | **resolveProfilesAuthKey fix** — byt ut mot hårdkodat `"id"` | `e80b504` | ✅ i build 80 |
 
-Beslut: bundle 4.2.1 + 4.2.2 + 4.2.3 i en build v1.0.1 ca 1 vecka efter launch när vi har real-user-feedback.
+**Status 2026-04-23**: alla tre ursprungliga v1.0.1-polish-items landade i main före submit — inte deferred. Inga v1.0.1-items kvarstår. `post-launch/v1.0.1-polish`-worktreen kan avvecklas eller återanvändas.
 
 ### 4.3 Värdar (Host-programmet)
 
@@ -289,13 +370,14 @@ Beslut: bundle 4.2.1 + 4.2.2 + 4.2.3 i en build v1.0.1 ca 1 vecka efter launch n
 
 | # | Risk | Sannolikhet | Impact | Mitigering |
 |---|---|---|---|---|
-| R1 | Resend-domän inte verified → hela waitlist-mail failar | Låg (redan setup) | Hög | Dry-run + testa från dashboard dag 0 |
-| R2 | RevenueCat webhook når inte Supabase → subscriptions inte syncade | Låg | Hög | Verifiera med första riktiga köpet |
+| ~~R1~~ | ~~Resend-domän inte verified → hela waitlist-mail failar~~ | — | — | ✅ **Stängd 2026-04-23**: `maakapp.se` = Verified på Resend, dry-run verified. |
+| R2 | RevenueCat webhook paid-flow otestad → första köp kan failsync | Medium | Hög | Edge fn deployed men alla existerande rader är `plan_type: "free"`. Sandbox-köp i Fas 2.3 är första realtestet — om det failar måste launch-dagen pausa tills webhook-loggen är ren. |
 | R3 | Reviewer kräver extra info → delay | Medium | Medium | Credentials redan i Notes, supportsTablet fixat |
 | R4 | Phone OTP rate-limit hos Supabase vid trafikspik | Låg | Hög | Övervaka första 100 användare, be Supabase höja cap om nödvändigt |
 | R5 | Demo-reset kvar aktiv i prod → säkerhetshål | Medium (glömbart) | Hög | Checklista-punkt Fas 2.1 |
 | R6 | Crash i profile-tab från expo-video-diff → dålig recensions-risk | Låg (nu skyddad) | Medium | ErrorBoundary + LogBox-filter committat (85a46d4) |
 | R7 | Supabase point-in-time recovery inte på → dataloss-risk | Okänt | Hög | **Verifiera innan launch** i Dashboard → Database → Backups |
+| R8 | Waitlist tom på launch-dagen → mailet når 0 personer | **Hög (bekräftad 2026-04-23)** | Medium | **Beslut 2026-04-23**: avvaktar signup-drive tills Apple approverar. När notisen kommer: bestäm om drive körs i fönstret mellan approval och `Ready for Sale` (2-4h), eller accepteras som 0 recipients. Pipeline är klar att köra när beslut tas. |
 
 ---
 
