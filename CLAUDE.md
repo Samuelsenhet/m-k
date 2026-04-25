@@ -80,7 +80,7 @@ Run from repo root unless noted.
 
 - `eslint.config.js` **ignores `apps/**` and `packages/**`**. `npm run lint` only covers root `src/`. Lint the mobile workspace separately if needed (it currently has no eslint script — rely on typecheck/tests there).
 - **TypeScript strict mode is OFF** (`"strict": false` in `tsconfig.app.json`). Unused vars, implicit any, etc. are not flagged.
-- Root `tsconfig.json` extends `expo/tsconfig.base` and includes `**/*.ts(x)` project-wide. Separate `tsconfig.app.json` / `tsconfig.node.json` exist for the Vite web build. `apps/mobile/tsconfig.json` and `packages/core/tsconfig.json` are standalone.
+- Root `tsconfig.json` is a project-references shell pointing at `tsconfig.app.json` (Vite web src) and `tsconfig.node.json` (Vite/Vitest tooling). Don't add `extends` or `include` to it — that combination conflicts with `references` and breaks `npm run typecheck`. `apps/mobile/tsconfig.json` is the one that extends `expo/tsconfig.base`. `apps/landing/tsconfig.json` and `packages/core/tsconfig.json` are standalone.
 
 ## Test setup
 
