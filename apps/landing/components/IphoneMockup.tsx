@@ -2,9 +2,10 @@ import Image, { type StaticImageData } from "next/image";
 import type { ReactNode } from "react";
 
 type IphoneMockupProps = {
-  src: string | StaticImageData;
+  /** When omitted, renders an empty maak-cream screen — caller provides content via children. */
+  src?: string | StaticImageData;
   alt: string;
-  /** Optional overlay (e.g. badge) inside the screen area */
+  /** Optional content inside the screen area (badges, chat bubbles, etc.). */
   children?: ReactNode;
   className?: string;
   /** Set true for the hero image so it gets eager-loaded for LCP. */
@@ -28,14 +29,22 @@ export function IphoneMockup({
           className="absolute left-1/2 top-3 z-10 h-[28px] w-[88px] -translate-x-1/2 rounded-full bg-black"
           aria-hidden
         />
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className="object-cover object-top"
-          sizes="260px"
-          priority={priority}
-        />
+        {src ? (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-cover object-top"
+            sizes="260px"
+            priority={priority}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 bg-maak-cream"
+            role="img"
+            aria-label={alt}
+          />
+        )}
         {children}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { FEATURES, FEATURES_HEADING } from "@/content/home";
+import { FEATURES_HEADING, STEPS } from "@/content/home";
 import { FeatureCard } from "./FeatureCard";
 
 export function FeaturesSection() {
@@ -21,8 +21,8 @@ export function FeaturesSection() {
         />
 
         <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((item) => (
-            <FeatureCard key={item.title} {...item} />
+          {STEPS.map((item) => (
+            <FeatureCard key={item.eyebrow} {...item} />
           ))}
         </div>
       </div>

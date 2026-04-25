@@ -56,33 +56,44 @@ export const HERO_VALUES = [
 
 export const FEATURES_HEADING = {
   title: "Så fungerar det",
-  subtitle: "Matchas → Chatta → Träffas - utan svep-stress.",
+  subtitle: "Tre steg från ny match till riktigt möte. Utan svep-stress.",
 } as const;
 
-// Top 3 hero-features med skärmbild. Matchar exakt vad iOS-appen shippar.
-export const FEATURES = [
+// Tre steg: Matchas → Chatta → Träffas. Alla tre rendereras som stylade
+// app-UI-mockups inuti iPhone-frame så story-bågen syns även utan att läsa.
+export const STEPS = [
   {
-    title: "5 dagliga matchningar",
+    step: 1,
+    eyebrow: "Matchas",
+    title: "5 kuraterade förslag varje dag",
     description:
-      "Inget svepande. Algoritmen väger personlighet (40 %), arketyp (30 %) och intressen (30 %) - du får några få, välvalda personer varje dag.",
-    imageSrc: "/screenshots/hero.webp",
-    imageAlt: "Skärmbild: dagens matchningar i määk",
+      "Inget svepande. Algoritmen väger personlighet (40 %), arketyp (30 %) och intressen (30 %) - du får några få, välvalda personer per dag.",
+    variant: "matches" as const,
+    imageAlt: "Mockup: dagens matchningar i määk",
   },
   {
-    title: "AI-isbrytare",
+    step: 2,
+    eyebrow: "Chatta",
+    title: "AI-isbrytare som faktiskt landar",
     description:
-      "Fem personliga öppningar för varje matchning - byggda utifrån era personligheter, inte generiska mallar. Roligt, djupt, aktivitet eller komplimang.",
-    imageSrc: "/screenshots/landing-profile-erik.webp",
-    imageAlt: "Skärmbild: chatt med AI-isbrytare",
+      "Fem personliga öppningar för varje match - byggda på era profiler, inte generiska mallar. Roligt, djupt eller en aktivitet.",
+    variant: "chat" as const,
+    imageAlt: "Mockup: chatt med AI-förslag i määk",
   },
   {
-    title: "Verifierade profiler",
+    step: 3,
+    eyebrow: "Träffas",
+    title: "Trygga möten på riktiga ställen",
     description:
-      "ID-kontroll och personlighetsarketyp syns på varje profil. Du vet vem du pratar med - både person och stil.",
-    imageSrc: "/screenshots/landing-profile-merbel.webp",
-    imageAlt: "Skärmbild: verifierad profil i määk",
+      "Verifierade profiler och valfri Kemi-Check innan ni ses IRL. Du vet vem du möter - både person och stil.",
+    variant: "kemi" as const,
+    imageAlt: "Mockup: Kemi-Check video-samtal i määk",
   },
 ] as const;
+
+// Bakåtkompatibilitet: vissa scripts/komponenter importerar fortfarande FEATURES.
+// Behåll alias tills vidare.
+export const FEATURES = STEPS;
 
 export const EXTRAS_HEADING = {
   eyebrow: "Mer i appen",
@@ -200,24 +211,19 @@ export const PHILOSOPHY = {
   eyebrow: "Vår filosofi",
   title: "Schrödingers dejt",
   lines: [
-    "Som fysiker en gång föreställde sig",
-    "existerar Schrödingers katt i två tillstånd samtidigt.",
+    "Som fysiker en gång föreställde sig, existerar",
+    "Schrödingers katt... i två tillstånd samtidigt.",
     "Levande. Och inte.",
-    "Tills vi väljer att se.",
-    "Det är paradoxen.",
-    "Och det är precis där modernt dejting lever idag.",
-    "Så många möjligheter.",
-    "Så många \"tänk om\".",
-    "Så mycket osäkerhet.",
-    "Men inget verkligt. För inget blir verkligt …",
-    "Tills vi väljer att engagera oss.",
-    "Tills vi startar en konversation.",
-    "På MÄÄK jagar vi inte fler val.",
-    "Vi hjälper dig upptäcka det som är verkligt —",
-    "en interaktion i taget.",
-    "Då börjar något verkligt.",
+    "Tills vi väljer att titta.",
+    "Och precis där befinner sig dagens dejtande.",
+    "inget äkta. För inget blir äkta …",
+    "Tills vi väljer och vågar att engagera oss.",
+    "Tills vi börjar prata och startar en konversation.",
+    "...det som är på riktigt - ett samtal åt gången.",
+    "Det handlar om ögonblicket du dyker upp på riktigt.",
+    "Det är då något äkta börjar.",
   ],
-  emphasisLines: [4, 10, 15] as readonly number[],
+  emphasisLines: [4, 6, 10] as readonly number[],
   cta: "Ladda ner määk",
 } as const;
 
