@@ -130,6 +130,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage: {
+        Row: {
+          completion_tokens: number | null
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          latency_ms: number | null
+          model: string
+          prompt_tokens: number | null
+          provider: string
+          status: string
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          latency_ms?: number | null
+          model: string
+          prompt_tokens?: number | null
+          provider: string
+          status: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          latency_ms?: number | null
+          model?: string
+          prompt_tokens?: number | null
+          provider?: string
+          status?: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_logs: {
         Row: {
           created_at: string
@@ -914,9 +959,10 @@ export type Database = {
           archetype_score: number | null
           bio_preview: string | null
           common_interests: string[] | null
-          compatibility_score: number
+          compatibility_score: number | null
           created_at: string
           dimension_breakdown: Json | null
+          expires_at: string | null
           icebreakers: string[] | null
           id: string
           match_age: number | null
@@ -935,9 +981,10 @@ export type Database = {
           archetype_score?: number | null
           bio_preview?: string | null
           common_interests?: string[] | null
-          compatibility_score: number
+          compatibility_score?: number | null
           created_at?: string
           dimension_breakdown?: Json | null
+          expires_at?: string | null
           icebreakers?: string[] | null
           id?: string
           match_age?: number | null
@@ -956,9 +1003,10 @@ export type Database = {
           archetype_score?: number | null
           bio_preview?: string | null
           common_interests?: string[] | null
-          compatibility_score?: number
+          compatibility_score?: number | null
           created_at?: string
           dimension_breakdown?: Json | null
+          expires_at?: string | null
           icebreakers?: string[] | null
           id?: string
           match_age?: number | null
@@ -1275,6 +1323,7 @@ export type Database = {
           id_document_front_path: string | null
           id_verification_status: string | null
           id_verification_submitted_at: string | null
+          id_verified_at: string | null
           instagram: string | null
           interested_in: string | null
           is_visible: boolean
@@ -1330,6 +1379,7 @@ export type Database = {
           id_document_front_path?: string | null
           id_verification_status?: string | null
           id_verification_submitted_at?: string | null
+          id_verified_at?: string | null
           instagram?: string | null
           interested_in?: string | null
           is_visible?: boolean
@@ -1385,6 +1435,7 @@ export type Database = {
           id_document_front_path?: string | null
           id_verification_status?: string | null
           id_verification_submitted_at?: string | null
+          id_verified_at?: string | null
           instagram?: string | null
           interested_in?: string | null
           is_visible?: boolean
@@ -1854,6 +1905,7 @@ export type Database = {
     }
     Functions: {
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
+      is_profile_visible: { Args: { p_user_id: string }; Returns: boolean }
       mark_group_message_read: {
         Args: { p_message_id: string }
         Returns: undefined
