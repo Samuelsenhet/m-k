@@ -396,9 +396,6 @@ verify_jwt = false
 [functions.super-responder]
 verify_jwt = false
 
-[functions.create-video-session]
-verify_jwt = false
-
 [functions.sunday-rematch]
 verify_jwt = false
 
