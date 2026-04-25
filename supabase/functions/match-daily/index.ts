@@ -236,12 +236,13 @@ serve(async (req: Request) => {
     }
 
     // 3. Get today's match pool for user (table: user_daily_match_pools, column: pool_date)
-    let { data: matchPool, error: poolError } = await dbClient
+    const { data: initialPool, error: poolError } = await dbClient
       .from('user_daily_match_pools')
       .select('*')
       .eq('user_id', requestUserId)
       .eq('pool_date', today)
       .maybeSingle()
+    let matchPool = initialPool
 
     if (poolError) {
       console.error('Pool fetch error:', poolError)
