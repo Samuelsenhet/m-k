@@ -63,7 +63,7 @@ Run from repo root unless noted.
 
 1. **Auth**: Phone OTP → Supabase → `AuthProvider` context
 2. **Personality test**: 5-dimension scores (ei/sn/tf/jp/at, 0–100) → categorized into 4 types → 16 archetypes (INFJ, INTJ, etc.)
-3. **Matching**: Daily matches via `match-daily` Edge Function — scoring: 40% personality similarity, 30% archetype alignment, 30% interest overlap
+3. **Matching** (Monster Match v1, on `feature/monster-match-v1`): nightly `generate-match-pools` (cron 23:00 UTC) builds per-user pools using a multi-factor composite — 45% weighted personality distance (TF/AT weighted higher), 25% 16×16 archetype-pair score, 15% interest overlap, 10% age proximity, 5% golden-complementary bonus — and classifies each candidate as similar / complementary / growth (target batch ratio 50/35/15). For every picked pair the LLM wrapper in `supabase/functions/_shared/llm.ts` produces a `match_story`, dimension breakdown, 3 icebreakers, and a validation_score (cached in `match_story_cache`; divergences vs the math composite > 25 logged in `match_validation_flags`). `match-daily` materializes the pool into `matches` rows including `match_story`, `match_subtype`, `validation_score`, `validation_note`, `fallback_used`. Math primitives live in `packages/core/src/match-classifier.ts` (npm) and are mirrored byte-for-byte in `supabase/functions/_shared/match_math.ts` because Deno can't import npm workspaces.
 4. **Chat**: Real-time messaging via Supabase Realtime channels
 
 ## Important conventions
