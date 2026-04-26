@@ -237,9 +237,9 @@ function scoreCandidate(
 
 // ---------- LLM enrichment per candidate ----------
 
-interface SupabaseLike {
-  from: (t: string) => any;
-}
+// Loose Supabase client surface — we only call .from(table).select/.insert/.upsert/.update.
+// The full @supabase/supabase-js types pull in too much for a local helper alias.
+type SupabaseClient = ReturnType<typeof createClient>;
 
 interface CacheRow {
   cache_key: string;
@@ -252,7 +252,7 @@ interface CacheRow {
 }
 
 async function readCachedStory(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   cacheKey: string,
 ): Promise<CacheRow | null> {
   const { data } = await supabase
@@ -264,7 +264,7 @@ async function readCachedStory(
 }
 
 async function writeCachedStory(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   cacheKey: string,
   output: MatchPayloadOutput,
   locale: "sv" | "en",
@@ -284,7 +284,7 @@ async function writeCachedStory(
   );
 }
 
-async function bumpCacheHit(supabase: SupabaseLike, row: CacheRow): Promise<void> {
+async function bumpCacheHit(supabase: SupabaseClient, row: CacheRow): Promise<void> {
   await supabase
     .from("match_story_cache")
     .update({
@@ -295,7 +295,7 @@ async function bumpCacheHit(supabase: SupabaseLike, row: CacheRow): Promise<void
 }
 
 async function logValidationDivergence(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   args: {
     mathScore: number;
     llmScore: number;
@@ -322,7 +322,7 @@ interface LlmStats {
 }
 
 async function enrichWithLlm(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   user: UserProfile,
   scored: ScoredCandidate,
   stats: LlmStats,
@@ -383,7 +383,7 @@ const BATCH_SIZE = 10;
 const LLM_PARALLEL_CHUNK = 4;
 
 async function generateUserPool(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   user: UserProfile,
   candidates: MatchCandidate[],
   previousMatchedIds: string[],
