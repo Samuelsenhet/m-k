@@ -1,5 +1,7 @@
 import { Emoji } from "@/components/Emoji";
 import { IntroduceButton } from "@/components/host/IntroduceButton";
+import { DimensionBreakdownList } from "@/components/match/DimensionBreakdownList";
+import { MatchExplanationBlock } from "@/components/match/MatchExplanationBlock";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { archetypeDisplayTitle } from "@/lib/archetypeTitle";
 import {
@@ -10,6 +12,7 @@ import {
   type ArchetypeCode,
   type PersonalityCategory,
 } from "@maak/core";
+import type { DimensionBreakdownEntry, MatchSubtype } from "@/types/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -72,6 +75,18 @@ type Props = {
   onChat?: () => void;
   onLike?: () => void;
   onPass?: () => void;
+  /**
+   * Monster Match v1 detail block. When provided, three sections render
+   * under the profile: explanation (story + subtype badge), dimension
+   * breakdown, and icebreakers. Omitted on legacy / cold-load views.
+   */
+  matchDetail?: {
+    subtype: MatchSubtype;
+    story: string | null;
+    fallbackUsed?: boolean;
+    dimensionBreakdown: DimensionBreakdownEntry[];
+    icebreakers: string[];
+  };
 };
 
 function ageFromDob(dob: string | null): number | null {
@@ -96,6 +111,7 @@ export function MatchProfileScreen({
   onBack,
   onChat,
   onPass,
+  matchDetail,
 }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -371,6 +387,37 @@ export function MatchProfileScreen({
           <View style={styles.hostCtaRow}>
             <IntroduceButton targetUserId={userId} targetUserName={profile?.display_name ?? undefined} />
           </View>
+
+          {matchDetail ? (
+            <View style={styles.detailSections}>
+              <View style={styles.detailCard}>
+                <MatchExplanationBlock
+                  subtype={matchDetail.subtype}
+                  story={matchDetail.story}
+                  fallbackUsed={matchDetail.fallbackUsed}
+                />
+              </View>
+              {matchDetail.dimensionBreakdown.length > 0 ? (
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailTitle}>{t("matches.section_dimensions")}</Text>
+                  <DimensionBreakdownList items={matchDetail.dimensionBreakdown} />
+                </View>
+              ) : null}
+              {matchDetail.icebreakers.length > 0 ? (
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailTitle}>{t("matches.section_openers")}</Text>
+                  <View style={styles.openerList}>
+                    {matchDetail.icebreakers.slice(0, 3).map((opener, idx) => (
+                      <View key={idx} style={styles.openerPill}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={maakTokens.primary} />
+                        <Text style={styles.openerText}>{opener}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -499,4 +546,42 @@ const styles = StyleSheet.create({
   // IntroduceButton wrapper - host-only CTA beneath the like/pass/chat row.
   // Null when the viewer isn't an active Värd (IntroduceButton returns null).
   hostCtaRow: { marginTop: 12, alignItems: "flex-start" },
+  detailSections: {
+    marginTop: 24,
+    gap: 14,
+  },
+  detailCard: {
+    backgroundColor: maakTokens.card,
+    borderRadius: maakTokens.radiusXl,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: maakTokens.border,
+    gap: 10,
+  },
+  detailTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: maakTokens.foreground,
+    marginBottom: 6,
+  },
+  openerList: {
+    gap: 10,
+  },
+  openerPill: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: maakTokens.radiusLg,
+    backgroundColor: `${maakTokens.primary}10`,
+    borderWidth: 1,
+    borderColor: `${maakTokens.primary}25`,
+  },
+  openerText: {
+    flex: 1,
+    fontSize: 14,
+    color: maakTokens.foreground,
+    lineHeight: 20,
+  },
 });

@@ -9,6 +9,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
+import { MatchTypeBadge } from "./MatchTypeBadge";
+
 function resolvePhotoUri(
   photos: string[] | undefined,
   getPublicUrl: (path: string) => string,
@@ -28,7 +30,16 @@ type Props = {
   mutual?: boolean;
 };
 
-export const MatchListCard = React.memo(function MatchListCard({
+/**
+ * Monster Match v1 hero card. Replaces MatchListCard for the daily-match
+ * feed. Photo fills the card; the LLM-voice match_story is the primary
+ * text; archetype + score + subtype-coloured badge sit underneath; pass
+ * and chat actions are pinned to the bottom.
+ *
+ * Story falls back to personalityInsight (legacy) when match_story is
+ * missing — keeps render safe for pre-Monster pool rows still in transit.
+ */
+export const MatchStoryCard = React.memo(function MatchStoryCard({
   match,
   getPublicUrl,
   onChat,
@@ -42,6 +53,7 @@ export const MatchListCard = React.memo(function MatchListCard({
   const initials = (match.matchedUser.displayName ?? "?").slice(0, 2).toUpperCase();
   const archLabel = archetypeDisplayTitle(match.matchedUser.archetype ?? null, t);
   const cardHeight = Math.round((screenWidth - maakTokens.screenPaddingHorizontal * 2) * 1.35);
+  const story = match.matchStory ?? match.personalityInsight ?? null;
 
   return (
     <Pressable onPress={onViewProfile} style={[styles.card, { height: cardHeight }]}>
@@ -60,47 +72,46 @@ export const MatchListCard = React.memo(function MatchListCard({
         </View>
       )}
 
-      {mutual ? <View style={styles.mutualBadge}>
-        <Ionicons name="heart" size={14} color={maakTokens.primaryForeground} />
-        <Text style={styles.mutualText}>{t("matches.mutual_label", { defaultValue: "Mutual" })}</Text>
-      </View> : null}
+      {mutual ? (
+        <View style={styles.mutualBadge}>
+          <Ionicons name="heart" size={14} color={maakTokens.primaryForeground} />
+          <Text style={styles.mutualText}>{t("matches.mutual_label", { defaultValue: "Mutual" })}</Text>
+        </View>
+      ) : null}
 
       <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.7)", "rgba(0,0,0,0.88)"]}
-        locations={[0, 0.4, 0.72, 1]}
+        colors={["transparent", "rgba(0,0,0,0.20)", "rgba(0,0,0,0.78)", "rgba(0,0,0,0.94)"]}
+        locations={[0, 0.32, 0.7, 1]}
         style={styles.gradient}
         pointerEvents="box-none"
       >
         <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>
-            {match.matchedUser.displayName ?? t("matches.anonymous")}
-          </Text>
-
-          <View style={styles.detailRow}>
-            {archLabel ? (
-              <View style={styles.chip}>
-                <Text style={styles.chipText}>{archLabel}</Text>
-              </View>
-            ) : null}
-            <View style={styles.chip}>
-              <Text style={styles.chipText}>{Math.round(match.matchScore)}%</Text>
-            </View>
-            <View style={[styles.chip, match.matchType === "similar" ? styles.chipSimilar : styles.chipComplementary]}>
-              <Text style={styles.chipText}>
-                {match.matchType === "similar" ? t("matches.similar") : t("matches.complementary")}
-              </Text>
-            </View>
+          <View style={styles.topMeta}>
+            <Text style={styles.name} numberOfLines={1}>
+              {match.matchedUser.displayName ?? t("matches.anonymous")}
+            </Text>
+            <MatchTypeBadge subtype={match.matchSubtype} variant="translucent" size="sm" />
           </View>
 
-          {match.interests && match.interests.length > 0 ? (
-            <View style={styles.interestRow}>
-              {match.interests.slice(0, 3).map((interest) => (
-                <View key={interest} style={styles.interestChip}>
-                  <Text style={styles.interestText}>{interest}</Text>
-                </View>
-              ))}
-            </View>
+          {story ? (
+            <Text style={styles.story} numberOfLines={3}>
+              {story}
+            </Text>
           ) : null}
+
+          <View style={styles.metaRow}>
+            {archLabel ? <Text style={styles.metaText}>{archLabel}</Text> : null}
+            {archLabel ? <Text style={styles.metaDot}>·</Text> : null}
+            <Text style={styles.metaText}>{Math.round(match.matchScore)}%</Text>
+            {match.interests.length > 0 ? (
+              <>
+                <Text style={styles.metaDot}>·</Text>
+                <Text style={styles.metaText} numberOfLines={1}>
+                  {match.interests.slice(0, 3).join(", ")}
+                </Text>
+              </>
+            ) : null}
+          </View>
 
           <View style={styles.actions}>
             {onPass ? (
@@ -177,60 +188,47 @@ const styles = StyleSheet.create({
   info: {
     paddingHorizontal: 18,
     paddingBottom: 20,
-    gap: 8,
+    gap: 10,
+  },
+  topMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   name: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
     color: "#fff",
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
-  detailRow: {
+  story: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "rgba(255,255,255,0.95)",
+    fontWeight: "500",
+  },
+  metaRow: {
     flexDirection: "row",
+    alignItems: "center",
     flexWrap: "wrap",
     gap: 6,
   },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
+  metaText: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    fontWeight: "500",
   },
-  chipSimilar: {
-    backgroundColor: `${maakTokens.primary}44`,
-    borderColor: `${maakTokens.primary}66`,
-  },
-  chipComplementary: {
-    backgroundColor: `${maakTokens.coral}44`,
-    borderColor: `${maakTokens.coral}66`,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.92)",
-  },
-  interestRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  interestChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.12)",
-  },
-  interestText: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
+  metaDot: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.55)",
   },
   actions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginTop: 4,
+    marginTop: 6,
   },
   passBtn: {
     width: 44,

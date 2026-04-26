@@ -1,6 +1,6 @@
 import { FirstMatchCelebrationRN } from "@/components/journey/FirstMatchCelebrationRN";
 import { WaitingPhaseRN } from "@/components/journey/WaitingPhaseRN";
-import { MatchListCard } from "@/components/matches/MatchListCard";
+import { MatchStoryCard } from "@/components/match/MatchStoryCard";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { MascotAssets } from "@/lib/mascotAssets";
@@ -37,7 +37,7 @@ function getNextMidnightISO(): string {
   return d.toISOString();
 }
 
-type TabKey = "all" | "similar" | "complementary";
+type TabKey = "all" | "similar" | "complementary" | "growth";
 
 const MATCHES_READY_CELEBRATION_KEY = "@maak/matches_ready_celebration_seen";
 const FIRST_MATCH_CELEBRATION_KEY = "@maak/first_match_celebration_seen";
@@ -194,19 +194,24 @@ export default function MatchesScreen() {
     [matches],
   );
   const similarMatches = useMemo(
-    () => pendingMatches.filter((m) => m.matchType === "similar"),
+    () => pendingMatches.filter((m) => m.matchSubtype === "similar"),
     [pendingMatches],
   );
   const complementaryMatches = useMemo(
-    () => pendingMatches.filter((m) => m.matchType === "complementary"),
+    () => pendingMatches.filter((m) => m.matchSubtype === "complementary"),
+    [pendingMatches],
+  );
+  const growthMatches = useMemo(
+    () => pendingMatches.filter((m) => m.matchSubtype === "growth"),
     [pendingMatches],
   );
 
   const filteredPending = useMemo(() => {
     if (activeTab === "similar") return similarMatches;
     if (activeTab === "complementary") return complementaryMatches;
+    if (activeTab === "growth") return growthMatches;
     return pendingMatches;
-  }, [activeTab, similarMatches, complementaryMatches, pendingMatches]);
+  }, [activeTab, similarMatches, complementaryMatches, growthMatches, pendingMatches]);
 
   const openChat = useCallback(
     (matchId: string) => router.push(`/(tabs)/chat?match=${encodeURIComponent(matchId)}`),
@@ -283,7 +288,7 @@ export default function MatchesScreen() {
           return <Text style={styles.sectionTitle}>{item.title}</Text>;
         case "match":
           return (
-            <MatchListCard
+            <MatchStoryCard
               match={item.match}
               getPublicUrl={getPublicUrl}
               mutual={item.mutual}
@@ -307,9 +312,10 @@ export default function MatchesScreen() {
               </View>
             </View>
           );
-        case "sunday-match":
+        case "sunday-match": {
+          const subtype = item.sundayMatch.matchSubtype ?? "similar";
           return (
-            <MatchListCard
+            <MatchStoryCard
               match={{
                 id: item.sundayMatch.id,
                 matchedUser: {
@@ -320,13 +326,18 @@ export default function MatchesScreen() {
                   archetype: item.sundayMatch.archetype ?? undefined,
                   photos: item.sundayMatch.photos,
                 },
-                matchType: "similar",
+                matchType: subtype,
+                matchSubtype: subtype,
                 matchScore: item.sundayMatch.compatibilityScore ?? 0,
                 status: "pending_intro",
                 interests: [],
                 compatibilityFactors: [],
                 expiresAt: "",
                 personalityInsight: null,
+                matchStory: item.sundayMatch.matchStory ?? null,
+                dimensionBreakdown: [],
+                icebreakers: [],
+                fallbackUsed: item.sundayMatch.fallbackUsed ?? false,
               }}
               getPublicUrl={getPublicUrl}
               onChat={() => openChat(item.sundayMatch.id)}
@@ -334,6 +345,7 @@ export default function MatchesScreen() {
               onPass={() => void passMatch(item.sundayMatch.id)}
             />
           );
+        }
       }
     },
     [getPublicUrl, openChat, openProfile, passMatch, t],
@@ -387,6 +399,7 @@ export default function MatchesScreen() {
               ["all", t("matches.tabAll"), pendingMatches.length] as const,
               ["similar", t("matches.tabSimilar"), similarMatches.length] as const,
               ["complementary", t("matches.tabComplementary"), complementaryMatches.length] as const,
+              ["growth", t("matches.tabGrowth"), growthMatches.length] as const,
             ] as const
           ).map(([key, label, count]) => (
             <Pressable
@@ -405,7 +418,7 @@ export default function MatchesScreen() {
     [
       t, onRefresh, hasValidSupabaseConfig, onlineCount,
       similarMatches.length, complementaryMatches.length,
-      pendingMatches.length, activeTab,
+      pendingMatches.length, activeTab, growthMatches.length,
     ],
   );
 

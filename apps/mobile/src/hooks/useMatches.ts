@@ -1,9 +1,15 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { isSupabaseInvokeUnauthorized } from "@maak/core";
-import type { MatchDailyMatch } from "@/types/api";
+import type {
+  DimensionBreakdownEntry,
+  MatchDailyMatch,
+  MatchSubtype,
+} from "@/types/api";
 import type { TFunction } from "i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+export type { MatchSubtype } from "@/types/api";
 
 export type Match = {
   id: string;
@@ -17,15 +23,36 @@ export type Match = {
     photos?: string[];
   };
   interests: string[];
-  matchType: "similar" | "complementary";
+  /** Legacy field kept for older callers — equals matchSubtype for new pools. */
+  matchType: MatchSubtype;
+  matchSubtype: MatchSubtype;
   matchScore: number;
   status: "pending_intro" | "active_chat" | "expired_no_intro";
   compatibilityFactors: string[];
   expiresAt: string;
   personalityInsight?: string | null;
+  /** Monster Match v1 LLM-generated story (1–2 sentences). Null for legacy pools. */
+  matchStory?: string | null;
+  /** Per-dimension explanation strings from the LLM voice. */
+  dimensionBreakdown: DimensionBreakdownEntry[];
+  /** 3 LLM-generated conversation openers; empty for legacy pools. */
+  icebreakers: string[];
+  /** True when the LLM was unavailable and a template fallback was used. */
+  fallbackUsed: boolean;
+  /** LLM's independent compatibility judgement 0–100 (null on legacy/fallback). */
+  validationScore?: number | null;
+  validationNote?: string | null;
   special_effects?: string[] | null;
   special_event_message?: string | null;
 };
+
+/** Normalise an unknown match_subtype value to the strict union. */
+function normaliseSubtype(value: unknown, fallback: MatchSubtype): MatchSubtype {
+  if (value === "similar" || value === "complementary" || value === "growth") {
+    return value;
+  }
+  return fallback;
+}
 
 const getErrorMessage = (error: unknown, t: TFunction, fallbackKey: string): string => {
   const isNetworkError = (msg: string) =>
@@ -49,32 +76,49 @@ const getErrorMessage = (error: unknown, t: TFunction, fallbackKey: string): str
   return t(fallbackKey);
 };
 
-const mapMatch = (m: MatchDailyMatch): Match => ({
-  id: m.match_id,
-  matchedUser: {
-    userId: m.profile_id,
-    displayName: m.display_name,
-    avatarUrl: m.avatar_url,
-    category: m.category ?? "",
-    archetype: m.archetype ?? undefined,
-    bio: m.bio_preview,
-    photos: m.photo_urls || [],
-  },
-  interests: m.common_interests ?? [],
-  matchType: m.match_reason?.includes("liknande") ? "similar" : "complementary",
-  matchScore: m.compatibility_percentage,
-  status:
-    m.status === "mutual"
-      ? "active_chat"
-      : m.status === "passed" || m.status === "disliked"
-        ? "expired_no_intro"
-        : "pending_intro",
-  compatibilityFactors: [],
-  expiresAt: m.expires_at,
-  personalityInsight: m.personality_insight ?? null,
-  special_effects: m.special_effects,
-  special_event_message: m.special_event_message,
-});
+const mapMatch = (m: MatchDailyMatch): Match => {
+  // Prefer match_subtype from Monster Match v1 pools; fall back to inferring
+  // from the legacy match_reason text when the new field is missing
+  // (pools generated before Build 81's deploy).
+  const inferredFromReason = m.match_reason?.includes("liknande")
+    ? "similar"
+    : "complementary";
+  const subtype = normaliseSubtype(m.match_subtype, inferredFromReason);
+
+  return {
+    id: m.match_id,
+    matchedUser: {
+      userId: m.profile_id,
+      displayName: m.display_name,
+      avatarUrl: m.avatar_url,
+      category: m.category ?? "",
+      archetype: m.archetype ?? undefined,
+      bio: m.bio_preview,
+      photos: m.photo_urls || [],
+    },
+    interests: m.common_interests ?? [],
+    matchType: subtype,
+    matchSubtype: subtype,
+    matchScore: m.compatibility_percentage,
+    status:
+      m.status === "mutual"
+        ? "active_chat"
+        : m.status === "passed" || m.status === "disliked"
+          ? "expired_no_intro"
+          : "pending_intro",
+    compatibilityFactors: [],
+    expiresAt: m.expires_at,
+    personalityInsight: m.personality_insight ?? null,
+    matchStory: m.match_story ?? null,
+    dimensionBreakdown: m.dimension_score_breakdown ?? [],
+    icebreakers: m.ai_icebreakers ?? [],
+    fallbackUsed: m.fallback_used ?? false,
+    validationScore: m.validation_score ?? null,
+    validationNote: m.validation_note ?? null,
+    special_effects: m.special_effects,
+    special_event_message: m.special_event_message,
+  };
+};
 
 export function useMatches(authLoading: boolean) {
   const { t } = useTranslation();

@@ -1,5 +1,6 @@
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useSubscription } from "@/hooks/useSubscription";
+import type { MatchSubtype } from "@/types/api";
 import { useCallback, useEffect, useState } from "react";
 
 type SundayMatch = {
@@ -13,6 +14,9 @@ type SundayMatch = {
   hometown: string | null;
   compatibilityScore: number | null;
   createdAt: string;
+  matchStory?: string | null;
+  matchSubtype?: MatchSubtype | null;
+  fallbackUsed?: boolean;
 };
 
 /**

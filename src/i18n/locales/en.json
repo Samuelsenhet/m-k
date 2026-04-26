@@ -230,7 +230,17 @@
     "edge_auth_doc": "More help: docs/EDGE_401_QUICK_FIX.md and docs/LAUNCH_401_CHECKLIST.md in the repo.",
     "edge_auth_retry": "Try again",
     "edge_auth_sign_out": "Sign out and sign in again",
-    "next_reset_prefix": "Next:"
+    "next_reset_prefix": "Next:",
+    "growth": "Growing",
+    "tabGrowth": "Growing",
+    "section_why_you": "Why you fit",
+    "section_dimensions": "Dimension analysis",
+    "section_openers": "Good first words",
+    "fallback_notice": "Template text — no AI judgement",
+    "type_similar_tagline": "Similar personality",
+    "type_complementary_tagline": "Complements you",
+    "type_growth_tagline": "Pushes you to grow",
+    "validation_divergence": "AI and math disagree here"
   },
   "chat": {
     "newMatch": "New match! 🎉",

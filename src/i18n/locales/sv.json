@@ -230,7 +230,17 @@
     "edge_auth_doc": "Mer hjälp: docs/EDGE_401_QUICK_FIX.md och docs/LAUNCH_401_CHECKLIST.md i repot.",
     "edge_auth_retry": "Försök igen",
     "edge_auth_sign_out": "Logga ut och logga in igen",
-    "next_reset_prefix": "Nästa:"
+    "next_reset_prefix": "Nästa:",
+    "growth": "Växande",
+    "tabGrowth": "Växande",
+    "section_why_you": "Varför ni passar",
+    "section_dimensions": "Dimensions-analys",
+    "section_openers": "Bra första ord",
+    "fallback_notice": "Mall-text — ingen AI-bedömning",
+    "type_similar_tagline": "Liknande personlighet",
+    "type_complementary_tagline": "Kompletterar dig",
+    "type_growth_tagline": "Utmanar dig att växa",
+    "validation_divergence": "AI och matematik är oense här"
   },
   "chat": {
     "newMatch": "Ny match! 🎉",

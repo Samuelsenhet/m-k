@@ -1,6 +1,7 @@
 import { MatchProfileScreen } from "@/components/profile/MatchProfileScreen";
 import { useSupabase } from "@/contexts/SupabaseProvider";
 import { useMatches } from "@/hooks/useMatches";
+import type { DimensionBreakdownEntry, MatchSubtype } from "@/types/api";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,6 +10,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
 
 import { maakTokens } from "@maak/core";
+
+type MatchDetailRow = {
+  user_id: string;
+  matched_user_id: string;
+  status: string | null;
+  personality_insight: string | null;
+  match_story: string | null;
+  match_subtype: MatchSubtype | null;
+  match_type: MatchSubtype | null;
+  fallback_used: boolean | null;
+  dimension_breakdown: DimensionBreakdownEntry[] | null;
+  icebreakers: string[] | null;
+};
 
 export default function ViewMatchScreen() {
   const { t } = useTranslation();
@@ -29,6 +43,7 @@ export default function ViewMatchScreen() {
   const [matchedUserId, setMatchedUserId] = useState<string | null>(null);
   const [personalityInsight, setPersonalityInsight] = useState<string | null>(null);
   const [rowStatus, setRowStatus] = useState<string | null>(null);
+  const [matchRow, setMatchRow] = useState<MatchDetailRow | null>(null);
   const [loading, setLoading] = useState(true);
 
   const matchFromList = matchId ? matches.find((m) => m.id === matchId) : undefined;
@@ -43,7 +58,9 @@ export default function ViewMatchScreen() {
       setLoading(true);
       const { data: row, error } = await supabase
         .from("matches")
-        .select("user_id, matched_user_id, personality_insight, status")
+        .select(
+          "user_id, matched_user_id, personality_insight, status, match_story, match_subtype, match_type, fallback_used, dimension_breakdown, icebreakers",
+        )
         .eq("id", matchId)
         .maybeSingle();
 
@@ -51,17 +68,18 @@ export default function ViewMatchScreen() {
         setMatchedUserId(null);
         setRowStatus(null);
         setPersonalityInsight(null);
+        setMatchRow(null);
         setLoading(false);
         return;
       }
 
+      const typedRow = row as MatchDetailRow;
       const other =
-        row.user_id === user.id ? row.matched_user_id : row.user_id;
+        typedRow.user_id === user.id ? typedRow.matched_user_id : typedRow.user_id;
       setMatchedUserId(other);
-      setRowStatus(row.status ?? null);
-      setPersonalityInsight(
-        (row as { personality_insight?: string | null }).personality_insight ?? null,
-      );
+      setRowStatus(typedRow.status ?? null);
+      setPersonalityInsight(typedRow.personality_insight ?? null);
+      setMatchRow(typedRow);
       setLoading(false);
     })().catch(() => setLoading(false));
   }, [matchId, user, supabase]);
@@ -71,6 +89,24 @@ export default function ViewMatchScreen() {
   const score = matchFromList?.matchScore;
   const status = rowStatus ?? matchFromList?.status ?? undefined;
   const showChat = status === "active_chat" || status === "pending_intro";
+
+  const matchDetail = useMemo(() => {
+    const subtype: MatchSubtype | null =
+      matchRow?.match_subtype ?? matchFromList?.matchSubtype ?? matchRow?.match_type ?? null;
+    const story = matchRow?.match_story ?? matchFromList?.matchStory ?? null;
+    if (!subtype || (!story && !matchRow?.dimension_breakdown?.length && !matchRow?.icebreakers?.length)) {
+      return undefined;
+    }
+    return {
+      subtype,
+      story,
+      fallbackUsed: matchRow?.fallback_used ?? matchFromList?.fallbackUsed ?? false,
+      dimensionBreakdown:
+        matchRow?.dimension_breakdown ?? matchFromList?.dimensionBreakdown ?? [],
+      icebreakers:
+        (matchRow?.icebreakers ?? matchFromList?.icebreakers ?? []).slice(0, 3),
+    };
+  }, [matchRow, matchFromList]);
 
   useEffect(() => {
     if (matchId && matchedUserId) {
@@ -111,6 +147,7 @@ export default function ViewMatchScreen() {
         userId={matchedUserId}
         matchScore={score}
         personalityInsight={insight}
+        matchDetail={matchDetail}
         onBack={() => router.back()}
         onChat={
           showChat
