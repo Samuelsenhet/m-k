@@ -24,7 +24,7 @@ import 'react-native-reanimated';
 //  - expo-notifications nags about Expo Go every time the module imports;
 //    we already skip the runtime calls via isExpoGo in useExpoPushToken,
 //    but the import-time warnings still fire, so silence them here.
-LogBox.ignoreLogs([
+const IGNORED_LOG_PATTERNS = [
   /\[RevenueCat\].*Purchase was cancelled/,
   /expo-notifications.*Expo Go/,
   /expo-notifications.*Android Push notifications.*removed from Expo Go/,
@@ -39,7 +39,27 @@ LogBox.ignoreLogs([
   // expo-video native-binary mismatch in Expo Go. Caught by HeroVideoErrorBoundary
   // in ProfileViewRN; dev-client and production builds ship a matching binary.
   /Received 3 arguments, but 2 was expected/,
-]);
+];
+
+LogBox.ignoreLogs(IGNORED_LOG_PATTERNS);
+
+// LogBox.ignoreLogs filters the in-app overlay only; Metro mirrors console.warn /
+// console.error to its terminal regardless. Proxy them in dev so the terminal stays
+// readable during local development. Patterns mirror IGNORED_LOG_PATTERNS above.
+if (__DEV__) {
+  const matches = (arg: unknown) =>
+    typeof arg === 'string' && IGNORED_LOG_PATTERNS.some((re) => re.test(arg));
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  console.warn = (...args: unknown[]) => {
+    if (matches(args[0])) return;
+    originalWarn(...args);
+  };
+  console.error = (...args: unknown[]) => {
+    if (matches(args[0])) return;
+    originalError(...args);
+  };
+}
 
 /** react-i18next + React 19 JSX: FC return type includes Promise<ReactNode>; cast at root only. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- upstream I18nextProvider vs @types/react 19
