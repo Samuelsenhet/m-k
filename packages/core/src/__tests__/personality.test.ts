@@ -6,6 +6,8 @@ import {
   ARCHETYPE_INFO,
   ARCHETYPE_CODES_BY_CATEGORY,
   DIMENSION_LABELS,
+  DIMENSION_WEIGHTS,
+  weightedDistance,
 } from "../personality";
 
 describe("calculateArchetype", () => {
@@ -137,5 +139,79 @@ describe("DIMENSION_LABELS", () => {
       expect(DIMENSION_LABELS[d].left).toBeTruthy();
       expect(DIMENSION_LABELS[d].right).toBeTruthy();
     });
+  });
+});
+
+describe("DIMENSION_WEIGHTS", () => {
+  it("defines weights for both modes and all 5 dimensions", () => {
+    const dims: DimensionKey[] = ["ei", "sn", "tf", "jp", "at"];
+    for (const mode of ["similar", "complementary"] as const) {
+      for (const d of dims) {
+        expect(DIMENSION_WEIGHTS[mode][d]).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("weights TF and AT high in both modes (values + anxiety base)", () => {
+    expect(DIMENSION_WEIGHTS.similar.tf).toBeGreaterThanOrEqual(1.3);
+    expect(DIMENSION_WEIGHTS.complementary.tf).toBeGreaterThanOrEqual(1.3);
+    expect(DIMENSION_WEIGHTS.similar.at).toBeGreaterThanOrEqual(1.2);
+    expect(DIMENSION_WEIGHTS.complementary.at).toBeGreaterThanOrEqual(1.2);
+  });
+
+  it("weights EI lower in similar than complementary mode", () => {
+    expect(DIMENSION_WEIGHTS.similar.ei).toBeLessThan(
+      DIMENSION_WEIGHTS.complementary.ei,
+    );
+  });
+});
+
+describe("weightedDistance", () => {
+  const identical: Record<DimensionKey, number> = {
+    ei: 50, sn: 50, tf: 50, jp: 50, at: 50,
+  };
+  const opposite: Record<DimensionKey, number> = {
+    ei: 0, sn: 0, tf: 0, jp: 0, at: 0,
+  };
+  const farOpposite: Record<DimensionKey, number> = {
+    ei: 100, sn: 100, tf: 100, jp: 100, at: 100,
+  };
+
+  it("returns 100 for identical profiles", () => {
+    expect(weightedDistance(identical, identical, "similar")).toBe(100);
+    expect(weightedDistance(identical, identical, "complementary")).toBe(100);
+  });
+
+  it("returns 0 for maximum-distance profiles", () => {
+    expect(weightedDistance(opposite, farOpposite, "similar")).toBe(0);
+    expect(weightedDistance(opposite, farOpposite, "complementary")).toBe(0);
+  });
+
+  it("returns a value between 0 and 100", () => {
+    const a: Record<DimensionKey, number> = { ei: 30, sn: 70, tf: 60, jp: 40, at: 50 };
+    const b: Record<DimensionKey, number> = { ei: 60, sn: 40, tf: 50, jp: 70, at: 60 };
+    const score = weightedDistance(a, b, "similar");
+    expect(score).toBeGreaterThan(0);
+    expect(score).toBeLessThan(100);
+  });
+
+  it("is symmetric", () => {
+    const a: Record<DimensionKey, number> = { ei: 30, sn: 70, tf: 60, jp: 40, at: 50 };
+    const b: Record<DimensionKey, number> = { ei: 60, sn: 40, tf: 50, jp: 70, at: 60 };
+    expect(weightedDistance(a, b, "similar")).toBe(weightedDistance(b, a, "similar"));
+    expect(weightedDistance(a, b, "complementary")).toBe(
+      weightedDistance(b, a, "complementary"),
+    );
+  });
+
+  it("treats TF differences more harshly than EI differences in similar mode", () => {
+    // Same magnitude, different dimensions
+    const baseA: Record<DimensionKey, number> = { ei: 50, sn: 50, tf: 50, jp: 50, at: 50 };
+    const eiDiff: Record<DimensionKey, number> = { ei: 80, sn: 50, tf: 50, jp: 50, at: 50 };
+    const tfDiff: Record<DimensionKey, number> = { ei: 50, sn: 50, tf: 80, jp: 50, at: 50 };
+    const eiScore = weightedDistance(baseA, eiDiff, "similar");
+    const tfScore = weightedDistance(baseA, tfDiff, "similar");
+    // TF mismatch should score lower (more penalty) than EI mismatch.
+    expect(tfScore).toBeLessThan(eiScore);
   });
 });

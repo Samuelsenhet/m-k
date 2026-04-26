@@ -303,3 +303,51 @@ export function getCategoryFromArchetype(
 ): PersonalityCategory {
   return ARCHETYPE_INFO[archetype].category;
 }
+
+/**
+ * Per-dimension weights used by `weightedDistance`. Driven by Monster Match v1
+ * spec section 2A: TF (values base) and AT (anxiety compatibility) are
+ * weighted high in both modes; EI and SN are weighted lower in similar mode
+ * (likeness matters more) and higher in complementary mode (difference is
+ * productive). JP stays neutral.
+ */
+export const DIMENSION_WEIGHTS: Record<
+  "similar" | "complementary",
+  Record<DimensionKey, number>
+> = {
+  similar: { ei: 0.8, sn: 0.9, tf: 1.4, jp: 1.0, at: 1.3 },
+  complementary: { ei: 1.2, sn: 1.1, tf: 1.4, jp: 1.0, at: 1.3 },
+};
+
+/**
+ * Weighted Euclidean distance between two personality profiles, normalised to
+ * a similarity score 0–100 (100 = identical, 0 = maximum distance).
+ *
+ * `mode` selects which dimension weights to use:
+ *  - "similar"      → reward likeness on every dimension
+ *  - "complementary" → tolerate (or favour) difference on EI/SN, still demand
+ *                      alignment on TF/AT
+ */
+export function weightedDistance(
+  a: Record<DimensionKey, number>,
+  b: Record<DimensionKey, number>,
+  mode: "similar" | "complementary" = "similar",
+): number {
+  const weights = DIMENSION_WEIGHTS[mode];
+  const dims: DimensionKey[] = ["ei", "sn", "tf", "jp", "at"];
+
+  let sumSq = 0;
+  let sumW = 0;
+  for (const d of dims) {
+    const diff = (a[d] ?? 50) - (b[d] ?? 50);
+    sumSq += weights[d] * diff * diff;
+    sumW += weights[d];
+  }
+
+  // Max possible weighted distance = sqrt(sumW * 100^2) when every dim is
+  // at its 100-apart extreme. Normalise to 0–100 similarity score.
+  const maxDist = Math.sqrt(sumW * 10000);
+  const dist = Math.sqrt(sumSq);
+  const similarity = 100 * (1 - dist / maxDist);
+  return Math.max(0, Math.min(100, Math.round(similarity)));
+}

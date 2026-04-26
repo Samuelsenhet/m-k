@@ -12,4 +12,12 @@ export {
   type ProfilesAuthKey,
 } from "./profilesAuthKey.js";
 export * from "./personality.js";
+export * from "./match-types.js";
+export {
+  ARCHETYPE_PAIR_SCORES,
+  getPairScore,
+  getPairLabel,
+  isGoldenPair,
+} from "./archetype-compatibility.js";
+export { generateFallbackOutput } from "./match-fallback.js";
 export { isSupabaseInvokeUnauthorized } from "./supabaseInvokeErrors.js";
