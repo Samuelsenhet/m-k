@@ -2,13 +2,17 @@
 
 > Skriven: 2026-04-18. Ersätter/kompletterar `LAUNCH_NEXT_STEPS.md` från 2026-04-12.
 > Status (2026-04-23): **build 80 submittad för review** kl 07:24 — submission ID `c9ba1007-4644-48ae-ae68-d27eb5e8475b`, status `Waiting for Review`. Build-linje: 75 (rejected) → 77 (RLS/personality-test/onboarding fixes) → 79 (response till Apple) → **80** (final submit efter matches-tab + tap-zone + phone-auth fixes). Review notes från `docs/APPLE_RESPONSE_2026-04-21.md` inklistrade i Resolution Center. Privacy-labels satta till "Data Not Used to Track You", "Manually release"-flagga satt. Nästa: bevaka ASC + mail för Apple-svar (~24–48h). Vid approval → Fas 2 (release) → Fas 3 (waitlist). Vid rejection → `hotfix/reviewer-feedback`-worktree.
+>
+> Status (2026-04-25): build 80 fortfarande `Waiting for Review` ~48h efter submit, ingen rörelse i ASC eller mailbox. Övre kanten av Apples typiska 24-48h-fönster — review kan dröja ytterligare 1-3 dagar utan att indikera problem. Post-submit har `9e3a4e0` (emoji-fallback iOS) landat i main men **ej i build 80** — flyttas till nästa rebuild. Landing-redesignen `2c93727` är **deployad till Loopia** och live på maakapp.se.
+>
+> Status (2026-04-26): emoji-fixen `9e3a4e0` (System-font) + ocommittat tillägg i `apps/mobile/src/components/Emoji.tsx` (VS16-strip via `replace(/️/g, "")`) **verifierat otillräcklig**. Buggen reproducerar fortfarande på fysisk **iOS 17**-enhet och i iOS 26.3-simulator — affekterade emojis inkluderar både VS16-glyfer (🏗️ 🛡️ 🕊️ ⚔️ 🏛️ i profil-modalen) och icke-VS16 (💬 🙅 i landing-skärmens preview-kort). Root cause är **inte** parent-fontFamily-inheritance som ursprungligen antaget — fontFamily-System-fixen påverkar inte rendering där `<Emoji>` redan ligger i `<View>`-föräldrar. Beslut: emoji-buggen **inte launch-blocker**, listas som känd kosmetisk regression. Plan B (bundled SVG-ikoner för 16 arketyper + 4 kategorier i `packages/core/src/personality.ts`) deferred till post-launch — se 4.2.4 nedan.
 
 ## TL;DR — kritisk väg
 
 1. ✅ EAS rebuild → build 80 vald i ASC → iPad-tabben borta
 2. ✅ TestFlight-sanity på riktig iPhone (verifierad före submit)
 3. ✅ Submit wizard → Submit for Review (2026-04-23 07:24, `Waiting for Review`)
-4. **Vänta på Apple-svar (~24–48h)** — vid rejection, hoppa till `hotfix/reviewer-feedback`-worktree
+4. **Vänta på Apple-svar** — typiskt 24-48h, men kan ta 3-5 dagar utan att signalera problem. Vid rejection → `hotfix/reviewer-feedback`-worktree. Vid stillestånd >5 dagar → använd `Contact Us` i ASC (kolla också spam för "missing metadata"-mail)
 5. Vid approval: stäng av demo-reset, dry-run waitlist, release
 6. Skarpt waitlist-mail
 7. Vecka 1: övervaka PostHog + RevenueCat + Supabase logs
@@ -101,7 +105,7 @@ git commit -m "chore(supabase): commit applied migrations + storage-proxy fn"
 
 Övriga modifierade appfiler: gå igenom `git status` och commit det som hör till launch, släpp resten.
 
-### 0.2 EAS rebuild för iPad-fix ✅ (klar — build 84+)
+### 0.2 EAS rebuild för iPad-fix ✅ (klar — build 80)
 
 Build 83 har **inte** `supportsTablet: false` eller `telephony`-capability i Info.plist. Rebuild krävs för att flaggorna ska nå binär.
 
@@ -111,13 +115,13 @@ eas build --platform ios --profile expo-production
 ```
 
 - 20-30 min remote
-- Nytt build number (84+)
+- Slutbygge: build 80 (efter linjen 77→79→80)
 - Inkluderar dagens fixes: expo-video safety i Expo Go, profile hero polish (commit `85a46d4`)
 
 ### 0.3 Välj nya bygget i ASC ✅ (klar 2026-04-19)
 
 1. App Store Connect → My Apps → MÄÄK → Version 1.0
-2. Build-sektionen → ta bort 83 → lägg till 84+
+2. Build-sektionen → 83 ersatt med 80
 3. **Spara** → iPad-screenshots-tabben ska försvinna
 
 ### 0.4 TestFlight-sanity på riktig iPhone ✅ (klar)
@@ -181,6 +185,25 @@ Klickat 2026-04-23 07:24. Status: `Waiting for Review` → `In Review` (24-48h).
 - Aktivera ASC-appens push-notiser på telefon
 - Bevaka email `connection.dts@gmail.com` för Apple-meddelanden
 - Om reviewer ber om login-info: credentials redan i Notes (`+46701234567` / `123456`)
+
+---
+
+## Post-submit-arbete i main (mellan 2026-04-23 och 2026-04-25)
+
+Commits som landat **efter** build 80 submittades — finns i `main` men **inte i binären Apple reviewar**. Vid approval flyttas mobile-relevanta items till nästa rebuild (1.0.1); vid rejection paketeras de med hotfixen.
+
+| Commit | Vad | Status | Vart |
+|---|---|---|---|
+| `9e3a4e0` | Emoji-fallback iOS i `apps/mobile/src/components/Emoji.tsx` | I main, **ej i build 80**, **verifierat otillräcklig 2026-04-26** | Behåll i koden (skadar inte) men lös root cause separat — se 4.2.4 |
+| `2c93727` | Landing-redesign (nya porträtt + "Matchas → Chatta → Träffas") | **Deployad till Loopia** | Live på maakapp.se |
+| `cda1c64` | Pruning av stale pre-launch-checklists | Docs only | — |
+| `cda99e2` | tsconfig.json-doc-fix i CLAUDE.md | Docs only | — |
+| `9b89ce1` | `const poolError`-lint-fix i match-daily | Edge-fn, redan deployad | match-daily v92 |
+| `470d0fc` | Supabase types regen (ai_usage) | Type-only | — |
+| `838ca3a` | Tog bort `create-video-session` edge fn (oanvänd) | Edge-fn-cleanup | Verifiera att den inte finns deployad i prod |
+| `a3f9ae2`, `0bd6f5b`, `5fb463d` | Shadcn / orphan-snapshot / m-k-backup-städning | Cleanup | — |
+
+**Notera:** `9e3a4e0` är den enda mobile-koden som behöver ny binär. Övriga rader är antingen docs, edge-fn (redan i prod) eller landing (redan på Loopia).
 
 ---
 
@@ -325,6 +348,23 @@ curl -X POST https://jappgthiyedycwhttpcu.supabase.co/functions/v1/waitlist-noti
 
 **Status 2026-04-23**: alla tre ursprungliga v1.0.1-polish-items landade i main före submit — inte deferred. Inga v1.0.1-items kvarstår. `post-launch/v1.0.1-polish`-worktreen kan avvecklas eller återanvändas.
 
+**Status 2026-04-25**: en ny v1.0.1-kandidat har landat i main efter submit:
+
+| # | Task | Commit | Status |
+|---|---|---|---|
+| 4.2.4 | **Emoji-rendering iOS** — bundled SVG/PNG-ikoner ersätter native emojis i `packages/core/src/personality.ts` (16 arketyper + 4 kategorier) | TBD | ❌ **deferred till post-launch v1.1** — `9e3a4e0` (System-font) + VS16-strip i `Emoji.tsx` verifierat otillräckligt 2026-04-26 på iOS 17-enhet |
+
+**Bakgrund 4.2.4** (2026-04-26): `9e3a4e0` antog att root cause var `<Text>` som ärver fontFamily (Playfair/DM Sans) från förälder och därmed tappar Apple Color Emoji-fallbacken. Test på fysisk iOS 17 + iOS 26.3-sim visade att fixen **inte räcker** — buggen reproducerar även där `<Emoji>` ligger direkt under `<View>` (ingen Text-inheritance). Affekterade emojis inkluderar icke-VS16 (💬 U+1F4AC, 🙅 U+1F645 i landing-skärmens preview-cirklar), så VS16-strippningen löser inte heller hela ytan. Slutsats: native emoji-rendering via `<Text>` är inte pålitlig på vår RN/iOS-kombination, lösningen är att äga glyferna själv.
+
+**Plan v1.1**:
+1. Ersätt `emoji: string` i `ARCHETYPE_INFO` och `CATEGORY_INFO` (`packages/core/src/personality.ts`) med ikon-asset-referenser
+2. Skapa 20 SVG-ikoner (16 arketyper + 4 kategorier) i brand-stil — kan startas parallellt med Apple-review
+3. Byt ut `<Emoji>{info.emoji}</Emoji>` → `<Image source={info.icon}>` i konsumenter (`ProfileDetailsModal`, `ProfileViewRN`, `MatchProfileScreen`, `PersonalityGuideRN`, `OnboardingWizardRN/PersonalityResultRN`, `WelcomeScreenRN`)
+4. UI-emojis i `landing.tsx` (💬 🙅) kan stanna native — dekorativa preview-element, drabbar inte produktionsanvändare på utgivna iOS-versioner
+5. `<Emoji>`-wrappern och `9e3a4e0`/VS16-stripen kan tas bort när alla data-emojis migrerats — eller behållas för framtida edge-cases
+
+**Beslut 2026-04-26**: emoji-buggen är **inte launch-blocker** (kosmetisk, ingen funktionell påverkan, drabbar bara personlighetssektionen och landing-preview). Behåll `9e3a4e0` + VS16-strip i koden så att eventuella iOS-versioner där fixen *gör* nytta täcks; jaga inte vidare innan launch.
+
 ### 4.3 Värdar (Host-programmet)
 
 - [ ] Aktivera `host-eligibility-check` cron när ~50+ aktiva användare finns (behöver data att mäta mot)
@@ -376,8 +416,9 @@ curl -X POST https://jappgthiyedycwhttpcu.supabase.co/functions/v1/waitlist-noti
 | R4 | Phone OTP rate-limit hos Supabase vid trafikspik | Låg | Hög | Övervaka första 100 användare, be Supabase höja cap om nödvändigt |
 | R5 | Demo-reset kvar aktiv i prod → säkerhetshål | Medium (glömbart) | Hög | Checklista-punkt Fas 2.1 |
 | R6 | Crash i profile-tab från expo-video-diff → dålig recensions-risk | Låg (nu skyddad) | Medium | ErrorBoundary + LogBox-filter committat (85a46d4) |
-| R7 | Supabase point-in-time recovery inte på → dataloss-risk | Okänt | Hög | **Verifiera innan launch** i Dashboard → Database → Backups |
+| R7 | Supabase point-in-time recovery inte på → dataloss-risk | **Bekräftad 2026-04-26** | Hög | **Verifierat 2026-04-26 22:50 via Management API** (`GET /v1/projects/jappgthiyedycwhttpcu/database/backups`): `pitr_enabled: false`, `walg_enabled: true`, `region: eu-west-1`, 8 dagliga physical backups (senaste `2026-04-26 09:42 UTC`). Org `Samuelsenhet's Org` är på `pro`-plan, så PITR-add-on är direkt aktiverbar. **Action innan Apple approverar Build 80**: Dashboard → Project Settings → Add-ons → *Point in Time Recovery* → 7-day retention (~$100/mån). Re-verify samma curl efter ~5–15 min → `pitr_enabled: true` innan Release-knappen i ASC. |
 | R8 | Waitlist tom på launch-dagen → mailet når 0 personer | **Hög (bekräftad 2026-04-23)** | Medium | **Beslut 2026-04-23**: avvaktar signup-drive tills Apple approverar. När notisen kommer: bestäm om drive körs i fönstret mellan approval och `Ready for Sale` (2-4h), eller accepteras som 0 recipients. Pipeline är klar att köra när beslut tas. |
+| R9 | Apple-review tar >5 dagar utan rörelse → osäkerhet om något fastnat | Låg | Medium | Vid 2026-04-25 har vi ~48h utan rörelse (normalt). Om >5 dagar: (a) `Contact Us`-flow i ASC, (b) kolla spam för "missing metadata"-mail, (c) verifiera att `APP_REVIEW_BYPASS_ENABLED` + reviewer-credentials fortfarande funkar. |
 
 ---
 
