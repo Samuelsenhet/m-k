@@ -20,4 +20,12 @@ export {
   isGoldenPair,
 } from "./archetype-compatibility.js";
 export { generateFallbackOutput } from "./match-fallback.js";
+export {
+  buildDrivingDimensions,
+  classifyMatchSubtype,
+  computeCompositeScore,
+  geoScore,
+  interestOverlap,
+  balanceBatch,
+} from "./match-classifier.js";
 export { isSupabaseInvokeUnauthorized } from "./supabaseInvokeErrors.js";

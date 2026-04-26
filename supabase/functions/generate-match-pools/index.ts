@@ -2,6 +2,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+import {
+  type ArchetypeCode,
+  type DimensionKey,
+  type DrivingDimension,
+  type MatchSubtype,
+  type SignalBreakdown,
+  buildDrivingDimensions,
+  classifyMatchSubtype,
+  computeCompositeScore,
+  geoScore,
+  getPairLabel,
+  getPairScore,
+  interestOverlap,
+  weightedDistance,
+  balanceBatch,
+  VALIDATION_DIVERGENCE_THRESHOLD,
+} from "../_shared/match_math.ts";
+
+import {
+  buildCacheKey,
+  generateMatchPayload,
+  type MatchContext,
+  type MatchPayload,
+  type MatchPayloadOutput,
+} from "../_shared/llm.ts";
+
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
 const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -9,8 +35,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// --- Matching algorithm (ported from src/lib/matching.ts) ---
-type DimensionKey = "ei" | "sn" | "tf" | "jp" | "at";
+// ---------- types ----------
+
 type PersonalityCategory = "DIPLOMAT" | "STRATEGER" | "BYGGARE" | "UPPTÄCKARE";
 
 interface PersonalityScores {
@@ -26,7 +52,7 @@ interface MatchCandidate {
   displayName: string;
   avatarUrl?: string;
   category: PersonalityCategory;
-  archetype?: string;
+  archetype: ArchetypeCode;
   scores: PersonalityScores;
   bio?: string;
   age?: number;
@@ -39,58 +65,54 @@ interface UserProfile extends MatchCandidate {
   minAge?: number;
   maxAge?: number;
   interestedIn?: string;
+  locale: "sv" | "en";
 }
 
-interface DimensionBreakdown {
-  dimension: string;
-  score: number;
-  alignment: "high" | "medium" | "low";
-  description: string;
-}
-
-interface MatchResult {
-  user: MatchCandidate;
-  matchType: "similar" | "complementary";
+/** Output shape stored in user_daily_match_pools.candidates_data. */
+interface MonsterPoolCandidate {
+  // Backwards-compatible fields (read by existing match-daily) ----
+  user: {
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+    age?: number;
+    archetype?: string;
+    photos?: string[];
+    bio?: string;
+  };
+  /** Subtype is one of three values; old clients see "growth" as unfamiliar. */
+  matchType: MatchSubtype;
+  /** Composite score 0–100. */
   matchScore: number;
-  compositeScore: number;
-  dimensionBreakdown?: DimensionBreakdown[];
-  archetypeScore?: number;
-  anxietyScore?: number;
+  /** Per-dimension breakdown (legacy shape — derived from drivingDimensions). */
+  dimensionBreakdown: Array<{
+    dimension: string;
+    score: number;
+    alignment: "high" | "medium" | "low";
+    description: string;
+  }>;
+  archetypeScore: number;
+  anxietyScore: number;
+  /** LLM-generated icebreakers. Empty until Fas 3 wires generate-icebreakers through the cache. */
+  icebreakers: string[];
+  /** Mirrored from matchStory for old clients. */
+  personalityInsight: string;
+  commonInterests: string[];
+
+  // Monster Match v1 additions ----
+  matchStory: string;
+  matchSubtype: MatchSubtype;
+  drivingDimensions: DrivingDimension[];
+  archetypePair: { their: ArchetypeCode; yours: ArchetypeCode; pair_score: number; label: string };
+  signalBreakdown: SignalBreakdown;
+  llmDimensionBreakdown: Array<{ dim: DimensionKey; text: string }>;
+  validationScore: number;
+  validationNote: string;
+  fallbackUsed: boolean;
+  notableFacts: string[];
 }
 
-const DEFAULT_WEIGHTS = { PERSONALITY_SIMILARITY: 0.4, ARCHETYPE_ALIGNMENT: 0.3, INTEREST_OVERLAP: 0.3 };
-const DEFAULT_SIMILAR_RATIO = 0.6;
-
-/** Per-user learned weight adjustments from match_engagement_scores. */
-interface LearnedPreferences {
-  personalityWeight: number;
-  archetypeWeight: number;
-  interestWeight: number;
-  similarRatio: number;
-}
-
-const DEFAULT_PREFS: LearnedPreferences = {
-  personalityWeight: 1.0,
-  archetypeWeight: 1.0,
-  interestWeight: 1.0,
-  similarRatio: DEFAULT_SIMILAR_RATIO,
-};
-
-function getWeightedSignals(prefs: LearnedPreferences) {
-  const raw = {
-    personality: DEFAULT_WEIGHTS.PERSONALITY_SIMILARITY * prefs.personalityWeight,
-    archetype: DEFAULT_WEIGHTS.ARCHETYPE_ALIGNMENT * prefs.archetypeWeight,
-    interest: DEFAULT_WEIGHTS.INTEREST_OVERLAP * prefs.interestWeight,
-  };
-  // Normalize so weights sum to 1.0
-  const sum = raw.personality + raw.archetype + raw.interest;
-  return {
-    PERSONALITY_SIMILARITY: raw.personality / sum,
-    ARCHETYPE_ALIGNMENT: raw.archetype / sum,
-    INTEREST_OVERLAP: raw.interest / sum,
-  };
-}
-const DIMENSIONS: DimensionKey[] = ["ei", "sn", "tf", "jp", "at"];
+// ---------- dealbreakers + helpers ----------
 
 function passesDealbreakers(user: UserProfile, candidate: MatchCandidate): boolean {
   if (candidate.onboardingCompleted === false) return false;
@@ -109,251 +131,6 @@ function passesDealbreakers(user: UserProfile, candidate: MatchCandidate): boole
   return true;
 }
 
-function calculateSimilarityScore(s1: PersonalityScores, s2: PersonalityScores): number {
-  let totalDiff = 0;
-  DIMENSIONS.forEach((dim) => {
-    totalDiff += Math.abs(s1[dim] - s2[dim]);
-  });
-  return Math.round(((500 - totalDiff) / 500) * 100);
-}
-
-function calculateComplementaryScore(s1: PersonalityScores, s2: PersonalityScores): number {
-  const similarDims: DimensionKey[] = ["ei", "at"];
-  const compDims: DimensionKey[] = ["sn", "tf", "jp"];
-  let score = 0;
-  similarDims.forEach((dim) => {
-    score += (100 - Math.abs(s1[dim] - s2[dim])) / 2;
-  });
-  compDims.forEach((dim) => {
-    const diff = Math.abs(s1[dim] - s2[dim]);
-    if (diff >= 25 && diff <= 55) score += 40;
-    else if (diff >= 15 && diff <= 65) score += 25;
-    else score += 10;
-  });
-  return Math.round((score / 220) * 100);
-}
-
-function calculateArchetypeAlignment(a1?: string, a2?: string): number {
-  if (!a1 || !a2) return 50;
-  if (a1 === a2) return 95;
-  const categoryMap: Record<string, string> = {
-    INFJ: "DIPLOMAT", INFP: "DIPLOMAT", ENFJ: "DIPLOMAT", ENFP: "DIPLOMAT",
-    INTJ: "STRATEGER", INTP: "STRATEGER", ENTJ: "STRATEGER", ENTP: "STRATEGER",
-    ISTJ: "BYGGARE", ISFJ: "BYGGARE", ESTJ: "BYGGARE", ESFJ: "BYGGARE",
-    ISTP: "UPPTÄCKARE", ISFP: "UPPTÄCKARE", ESTP: "UPPTÄCKARE", ESFP: "UPPTÄCKARE",
-  };
-  const c1 = categoryMap[a1];
-  const c2 = categoryMap[a2];
-  if (c1 && c2 && c1 === c2) return 80;
-  return 60;
-}
-
-function calculateInterestOverlap(i1?: string[], i2?: string[]): number {
-  if (!i1?.length || !i2?.length) return 50;
-  const set1 = new Set(i1.map((x) => x.toLowerCase()));
-  const set2 = new Set(i2.map((x) => x.toLowerCase()));
-  let overlap = 0;
-  set1.forEach((x) => {
-    if (set2.has(x)) overlap++;
-  });
-  const maxPossible = Math.min(set1.size, set2.size);
-  return maxPossible === 0 ? 50 : Math.round((overlap / maxPossible) * 100);
-}
-
-function calculateCompositeScore(
-  user: UserProfile,
-  candidate: MatchCandidate,
-  prefs: LearnedPreferences = DEFAULT_PREFS,
-): { total: number; breakdown: Record<string, number> } {
-  const signals = getWeightedSignals(prefs);
-  const personality = calculateSimilarityScore(user.scores, candidate.scores);
-  const archetype = calculateArchetypeAlignment(user.archetype, candidate.archetype);
-  const interests = calculateInterestOverlap(user.interests, candidate.interests);
-  const total =
-    personality * signals.PERSONALITY_SIMILARITY +
-    archetype * signals.ARCHETYPE_ALIGNMENT +
-    interests * signals.INTEREST_OVERLAP;
-  return { total: Math.round(total), breakdown: { personality, archetype, interests } };
-}
-
-function getDimensionBreakdown(user: UserProfile, candidate: MatchCandidate): DimensionBreakdown[] {
-  const { breakdown } = calculateCompositeScore(user, candidate);
-  const desc: Record<string, { high: string; medium: string; low: string }> = {
-    personality: { high: "Ni delar liknande personlighetsdrag", medium: "Era personligheter kompletterar varandra", low: "Era personligheter är olika men kan balansera" },
-    archetype: { high: "Era arketyper harmonierar väl", medium: "Era arketyper skapar intressant dynamik", low: "Era arketyper utmanar varandra positivt" },
-    interests: { high: "Många gemensamma intressen", medium: "Några gemensamma intressen", low: "Möjlighet att upptäcka nya intressen" },
-  };
-  return Object.entries(breakdown).map(([dimension, score]) => {
-    const alignment = score >= 75 ? "high" : score >= 50 ? "medium" : "low";
-    const d = desc[dimension];
-    return {
-      dimension,
-      score,
-      alignment,
-      description: d ? d[alignment] : "",
-    };
-  });
-}
-
-function calculateAnxietyReduction(s1: PersonalityScores, s2: PersonalityScores): number {
-  const avgEnergy = (s1.ei + s2.ei) / 2;
-  const tfDiff = Math.abs(s1.tf - s2.tf);
-  return Math.min(100, Math.round(avgEnergy + (100 - tfDiff) / 4));
-}
-
-function generateUserMatchPool(
-  currentUser: UserProfile,
-  candidates: MatchCandidate[],
-  batchSize: number,
-  previousMatchedIds: string[] = [],
-  prefs: LearnedPreferences = DEFAULT_PREFS,
-): MatchResult[] {
-  const otherUsers = candidates.filter((c) => c.userId !== currentUser.userId);
-  const eligible = otherUsers.filter((c) => passesDealbreakers(currentUser, c));
-  const prevSet = new Set(previousMatchedIds);
-  const fresh = eligible.filter((c) => !prevSet.has(c.userId));
-  const pool = fresh.length >= batchSize ? fresh : fresh.length > 0 ? fresh : eligible;
-  if (pool.length === 0) return [];
-
-  const scored = pool.map((candidate) => {
-    const { total, breakdown } = calculateCompositeScore(currentUser, candidate, prefs);
-    return {
-      candidate,
-      compositeScore: total,
-      similarScore: calculateSimilarityScore(currentUser.scores, candidate.scores),
-      complementaryScore: calculateComplementaryScore(currentUser.scores, candidate.scores),
-      breakdown,
-      interestScore: calculateInterestOverlap(currentUser.interests, candidate.interests),
-      archetypeScore: calculateArchetypeAlignment(currentUser.archetype, candidate.archetype),
-    };
-  });
-
-  const actualBatchSize = Math.min(batchSize, pool.length);
-  const similarCount = Math.ceil(actualBatchSize * prefs.similarRatio);
-  const complementaryCount = actualBatchSize - similarCount;
-
-  const similarMatches = [...scored]
-    .sort((a, b) => {
-      if (b.similarScore !== a.similarScore) return b.similarScore - a.similarScore;
-      if (b.interestScore !== a.interestScore) return b.interestScore - a.interestScore;
-      return b.archetypeScore - a.archetypeScore;
-    })
-    .slice(0, similarCount)
-    .map((item) => ({
-      user: item.candidate,
-      matchType: "similar" as const,
-      matchScore: item.similarScore,
-      compositeScore: item.compositeScore,
-      dimensionBreakdown: getDimensionBreakdown(currentUser, item.candidate),
-      archetypeScore: item.archetypeScore,
-      anxietyScore: calculateAnxietyReduction(currentUser.scores, item.candidate.scores),
-    }));
-
-  const similarIds = new Set(similarMatches.map((m) => m.user.userId));
-  const complementaryMatches = [...scored]
-    .filter((item) => !similarIds.has(item.candidate.userId))
-    .sort((a, b) => {
-      if (b.complementaryScore !== a.complementaryScore) return b.complementaryScore - a.complementaryScore;
-      if (b.interestScore !== a.interestScore) return b.interestScore - a.interestScore;
-      return b.archetypeScore - a.archetypeScore;
-    })
-    .slice(0, complementaryCount)
-    .map((item) => ({
-      user: item.candidate,
-      matchType: "complementary" as const,
-      matchScore: item.complementaryScore,
-      compositeScore: item.compositeScore,
-      dimensionBreakdown: getDimensionBreakdown(currentUser, item.candidate),
-      archetypeScore: item.archetypeScore,
-      anxietyScore: calculateAnxietyReduction(currentUser.scores, item.candidate.scores),
-    }));
-
-  const all = [...similarMatches, ...complementaryMatches];
-  return all.sort(() => Math.random() - 0.5);
-}
-
-// --- Pool output format expected by match-daily ---
-interface CandidateUser {
-  userId: string;
-  displayName: string;
-  avatarUrl?: string;
-  age?: number;
-  archetype?: string;
-  photos?: string[];
-  bio?: string;
-}
-
-interface MatchPoolCandidate {
-  user: CandidateUser;
-  matchType: "similar" | "complementary";
-  matchScore: number;
-  dimensionBreakdown?: DimensionBreakdown[];
-  archetypeScore?: number;
-  anxietyScore?: number;
-  icebreakers?: string[];
-  personalityInsight?: string;
-  commonInterests?: string[];
-}
-
-const CATEGORY_TITLES: Record<string, string> = {
-  DIPLOMAT: "Diplomaten",
-  STRATEGER: "Strategen",
-  BYGGARE: "Byggaren",
-  UPPTÄCKARE: "Upptäckaren",
-};
-const CATEGORY_SHORT: Record<string, string> = {
-  DIPLOMAT: "empatisk och värdesätter djupa relationer",
-  STRATEGER: "analytisk och målinriktad",
-  BYGGARE: "praktisk och pålitlig",
-  UPPTÄCKARE: "spontan och äventyrlig",
-};
-const COMPLEMENTARY_POOL_INSIGHT: Record<string, Record<string, string>> = {
-  DIPLOMAT: {
-    STRATEGER: "Din empati och deras tydlighet kan balansera varandra.",
-    BYGGARE: "Din känslighet och deras stabilitet skapar trygghet.",
-    UPPTÄCKARE: "Du bidrar med djup, de med energi och nya perspektiv.",
-  },
-  STRATEGER: {
-    DIPLOMAT: "Din analytiska sida och deras empati kompletterar varandra.",
-    BYGGARE: "Du ser helheten, de gör saker verklighet.",
-    UPPTÄCKARE: "Din planering möter deras spontanitet.",
-  },
-  BYGGARE: {
-    DIPLOMAT: "Din stabilitet och deras värme ger balans.",
-    STRATEGER: "Du förankrar i vardagen, de tänker stort.",
-    UPPTÄCKARE: "Du ger grunden, de ger nya impulser.",
-  },
-  UPPTÄCKARE: {
-    DIPLOMAT: "Din energi och deras djup ger meningsfulla äventyr.",
-    STRATEGER: "Din spontanitet och deras strategi inspirerar varandra.",
-    BYGGARE: "Du bidrar med nyfikenhet, de med trygghet.",
-  },
-};
-
-function buildPoolInsight(
-  matchType: "similar" | "complementary",
-  userCategory: PersonalityCategory,
-  candidateCategory: PersonalityCategory,
-  candidateName: string,
-): string {
-  if (matchType === "similar") {
-    const title = CATEGORY_TITLES[userCategory] ?? userCategory;
-    const desc = CATEGORY_SHORT[userCategory] ?? "";
-    return `Ni är båda ${title} – ${desc}. Det gör det lättare att förstå varandras behov.`;
-  }
-  const insight = COMPLEMENTARY_POOL_INSIGHT[userCategory]?.[candidateCategory]
-    ?? "Era olika styrkor kan komplettera varandra.";
-  const uTitle = CATEGORY_TITLES[userCategory] ?? userCategory;
-  const cTitle = CATEGORY_TITLES[candidateCategory] ?? candidateCategory;
-  return `Du är ${uTitle}, ${candidateName} är ${cTitle}. ${insight}`;
-}
-
-function findCommonInterests(a: string[], b: string[]): string[] {
-  if (!a.length || !b.length) return [];
-  const setB = new Set(b.map((x) => x.toLowerCase()));
-  return a.filter((x) => setB.has(x.toLowerCase()));
-}
-
 function ageFromDob(dob: string | null): number | undefined {
   if (!dob) return undefined;
   const birth = new Date(dob);
@@ -363,6 +140,321 @@ function ageFromDob(dob: string | null): number | undefined {
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age >= 18 ? age : undefined;
 }
+
+function calculateAnxietyReduction(s1: PersonalityScores, s2: PersonalityScores): number {
+  const avgEnergy = (s1.ei + s2.ei) / 2;
+  const tfDiff = Math.abs(s1.tf - s2.tf);
+  return Math.min(100, Math.round(avgEnergy + (100 - tfDiff) / 4));
+}
+
+function findCommonInterests(a: string[], b: string[]): string[] {
+  if (!a.length || !b.length) return [];
+  const setB = new Set(b.map((x) => x.toLowerCase()));
+  return a.filter((x) => setB.has(x.toLowerCase()));
+}
+
+const DIM_ALIGNMENT_DESC_SV: Record<"similar" | "complementary", string> = {
+  similar: "Likhet på den här dimensionen — ni ser den världen lika",
+  complementary: "Olikhet på den här dimensionen — kan komplettera om ni vågar",
+};
+
+/** Convert Monster Match driving dimensions to legacy DimensionBreakdown shape. */
+function toLegacyDimensionBreakdown(driving: DrivingDimension[]): MonsterPoolCandidate["dimensionBreakdown"] {
+  return driving.slice(0, 3).map((d) => ({
+    dimension: d.dim,
+    score: 100 - Math.abs(d.your - d.their),
+    alignment: d.impact,
+    description: DIM_ALIGNMENT_DESC_SV[d.alignment],
+  }));
+}
+
+function buildNotableFacts(
+  user: UserProfile,
+  candidate: MatchCandidate,
+): string[] {
+  const facts: string[] = [];
+  if (user.age && candidate.age && Math.abs(user.age - candidate.age) <= 2) {
+    facts.push(`båda omkring ${user.age} år`);
+  }
+  if (candidate.archetype && user.archetype === candidate.archetype) {
+    facts.push("samma arketyp");
+  }
+  return facts;
+}
+
+// ---------- Monster Match scoring ----------
+
+interface ScoredCandidate {
+  candidate: MatchCandidate;
+  payload: MatchPayload;
+  composite: { total: number; breakdown: SignalBreakdown };
+  subtype: MatchSubtype;
+}
+
+function scoreCandidate(
+  user: UserProfile,
+  candidate: MatchCandidate,
+): ScoredCandidate {
+  const subtype = classifyMatchSubtype(user.scores, candidate.scores);
+  const personality = weightedDistance(
+    user.scores,
+    candidate.scores,
+    subtype === "complementary" ? "complementary" : "similar",
+  );
+  const archetype = getPairScore(user.archetype, candidate.archetype);
+  const interests = interestOverlap(user.interests, candidate.interests);
+  const geo = geoScore(user.age, candidate.age);
+
+  const composite = computeCompositeScore({
+    personality,
+    archetype,
+    interests,
+    geo,
+    subtype,
+  });
+
+  const drivingDimensions = buildDrivingDimensions(user.scores, candidate.scores);
+  const sharedInterests = findCommonInterests(user.interests ?? [], candidate.interests ?? []);
+
+  const payload: MatchPayload = {
+    user_id: candidate.userId,
+    raw_score: composite.total,
+    match_subtype: subtype,
+    driving_dimensions: drivingDimensions,
+    archetype_pair: {
+      their: candidate.archetype,
+      yours: user.archetype,
+      pair_score: archetype,
+      label: getPairLabel(archetype),
+    },
+    signal_breakdown: composite.breakdown,
+    shared_interests: sharedInterests,
+    notable_facts: buildNotableFacts(user, candidate),
+  };
+
+  return { candidate, payload, composite, subtype };
+}
+
+// ---------- LLM enrichment per candidate ----------
+
+interface SupabaseLike {
+  from: (t: string) => any;
+}
+
+interface CacheRow {
+  cache_key: string;
+  story: string;
+  breakdown: Array<{ dim: DimensionKey; text: string }>;
+  icebreakers: string[];
+  validation_score: number | null;
+  validation_note: string | null;
+  hit_count: number;
+}
+
+async function readCachedStory(
+  supabase: SupabaseLike,
+  cacheKey: string,
+): Promise<CacheRow | null> {
+  const { data } = await supabase
+    .from("match_story_cache")
+    .select("cache_key, story, breakdown, icebreakers, validation_score, validation_note, hit_count")
+    .eq("cache_key", cacheKey)
+    .maybeSingle();
+  return (data as CacheRow | null) ?? null;
+}
+
+async function writeCachedStory(
+  supabase: SupabaseLike,
+  cacheKey: string,
+  output: MatchPayloadOutput,
+  locale: "sv" | "en",
+): Promise<void> {
+  await supabase.from("match_story_cache").upsert(
+    {
+      cache_key: cacheKey,
+      story: output.story,
+      breakdown: output.dimension_breakdown,
+      icebreakers: output.icebreakers,
+      validation_score: output.validation_score,
+      validation_note: output.validation_note,
+      locale,
+      last_used_at: new Date().toISOString(),
+    },
+    { onConflict: "cache_key" },
+  );
+}
+
+async function bumpCacheHit(supabase: SupabaseLike, row: CacheRow): Promise<void> {
+  await supabase
+    .from("match_story_cache")
+    .update({
+      hit_count: (row.hit_count ?? 0) + 1,
+      last_used_at: new Date().toISOString(),
+    })
+    .eq("cache_key", row.cache_key);
+}
+
+async function logValidationDivergence(
+  supabase: SupabaseLike,
+  args: {
+    mathScore: number;
+    llmScore: number;
+    archetype_pair: string;
+    match_subtype: MatchSubtype;
+  },
+): Promise<void> {
+  const divergence = Math.abs(args.llmScore - args.mathScore);
+  if (divergence <= VALIDATION_DIVERGENCE_THRESHOLD) return;
+  await supabase.from("match_validation_flags").insert({
+    math_score: args.mathScore,
+    llm_score: args.llmScore,
+    divergence,
+    archetype_pair: args.archetype_pair,
+    match_subtype: args.match_subtype,
+  });
+}
+
+interface LlmStats {
+  cache_hits: number;
+  cache_misses: number;
+  fallback_used: number;
+  divergent: number;
+}
+
+async function enrichWithLlm(
+  supabase: SupabaseLike,
+  user: UserProfile,
+  scored: ScoredCandidate,
+  stats: LlmStats,
+): Promise<{ output: MatchPayloadOutput; fallbackUsed: boolean }> {
+  const context: MatchContext = {
+    payload: scored.payload,
+    viewer_archetype: user.archetype,
+    viewer_display_name: user.displayName,
+    candidate_display_name: scored.candidate.displayName,
+    candidate_bio: scored.candidate.bio ?? null,
+    locale: user.locale,
+  };
+
+  const cacheKey = buildCacheKey(context);
+  const cached = await readCachedStory(supabase, cacheKey);
+
+  if (cached) {
+    stats.cache_hits++;
+    await bumpCacheHit(supabase, cached);
+    return {
+      output: {
+        story: cached.story,
+        dimension_breakdown: cached.breakdown,
+        icebreakers: (cached.icebreakers ?? []).slice(0, 3) as [string, string, string],
+        validation_score: cached.validation_score ?? scored.composite.total,
+        validation_note: cached.validation_note ?? "",
+      },
+      fallbackUsed: false,
+    };
+  }
+
+  stats.cache_misses++;
+  const result = await generateMatchPayload(context);
+  if (result.fallback_used) {
+    stats.fallback_used++;
+  } else {
+    await writeCachedStory(supabase, cacheKey, result.output, user.locale);
+  }
+
+  // Divergence flagging — only meaningful when the LLM actually scored.
+  if (!result.fallback_used) {
+    const divergence = Math.abs(result.output.validation_score - scored.composite.total);
+    if (divergence > VALIDATION_DIVERGENCE_THRESHOLD) stats.divergent++;
+    await logValidationDivergence(supabase, {
+      mathScore: scored.composite.total,
+      llmScore: result.output.validation_score,
+      archetype_pair: `${user.archetype}-${scored.candidate.archetype}`,
+      match_subtype: scored.subtype,
+    });
+  }
+
+  return { output: result.output, fallbackUsed: result.fallback_used };
+}
+
+// ---------- per-user pool generation ----------
+
+const BATCH_SIZE = 10;
+const LLM_PARALLEL_CHUNK = 4;
+
+async function generateUserPool(
+  supabase: SupabaseLike,
+  user: UserProfile,
+  candidates: MatchCandidate[],
+  previousMatchedIds: string[],
+  blockedPairs: Set<string>,
+  photosByUserId: Map<string, string[]>,
+  stats: LlmStats,
+): Promise<MonsterPoolCandidate[]> {
+  // Filter eligibility
+  const others = candidates.filter((c) => c.userId !== user.userId);
+  const eligible = others.filter((c) => passesDealbreakers(user, c));
+  const unblocked = eligible.filter((c) => !blockedPairs.has(`${user.userId}:${c.userId}`));
+  const prevSet = new Set(previousMatchedIds);
+  const fresh = unblocked.filter((c) => !prevSet.has(c.userId));
+  const pool = fresh.length >= BATCH_SIZE ? fresh : fresh.length > 0 ? fresh : unblocked;
+  if (pool.length === 0) return [];
+
+  // Score every candidate (math only)
+  const scored = pool.map((c) => scoreCandidate(user, c));
+
+  // Balance batch towards 50/35/15
+  const balanced = balanceBatch(
+    scored.map((s) => ({ candidate: s, subtype: s.subtype, score: s.composite.total })),
+    BATCH_SIZE,
+  );
+
+  // Enrich each picked candidate with LLM (parallel chunks).
+  const picked = balanced.map((b) => b.candidate);
+  const enriched: Array<{ scored: ScoredCandidate; output: MatchPayloadOutput; fallbackUsed: boolean }> = [];
+  for (let i = 0; i < picked.length; i += LLM_PARALLEL_CHUNK) {
+    const chunk = picked.slice(i, i + LLM_PARALLEL_CHUNK);
+    const results = await Promise.all(
+      chunk.map((s) => enrichWithLlm(supabase, user, s, stats).then((r) => ({ scored: s, ...r }))),
+    );
+    enriched.push(...results);
+  }
+
+  return enriched.map(({ scored, output, fallbackUsed }) => {
+    const candidate = scored.candidate;
+    return {
+      user: {
+        userId: candidate.userId,
+        displayName: candidate.displayName,
+        avatarUrl: candidate.avatarUrl,
+        age: candidate.age,
+        archetype: candidate.archetype,
+        photos: photosByUserId.get(candidate.userId) || [],
+        bio: candidate.bio,
+      },
+      matchType: scored.subtype,
+      matchScore: scored.composite.total,
+      dimensionBreakdown: toLegacyDimensionBreakdown(scored.payload.driving_dimensions),
+      archetypeScore: scored.payload.archetype_pair.pair_score,
+      anxietyScore: calculateAnxietyReduction(user.scores, candidate.scores),
+      icebreakers: output.icebreakers,
+      personalityInsight: output.story,
+      commonInterests: scored.payload.shared_interests,
+      matchStory: output.story,
+      matchSubtype: scored.subtype,
+      drivingDimensions: scored.payload.driving_dimensions,
+      archetypePair: scored.payload.archetype_pair,
+      signalBreakdown: scored.composite.breakdown,
+      llmDimensionBreakdown: output.dimension_breakdown,
+      validationScore: output.validation_score,
+      validationNote: output.validation_note,
+      fallbackUsed,
+      notableFacts: scored.payload.notable_facts,
+    };
+  });
+}
+
+// ---------- HTTP handler ----------
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -394,33 +486,28 @@ serve(async (req: Request) => {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(
         JSON.stringify({ error: "Server configuration missing (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" });
-    const yesterday = new Date(Date.now() - 864e5).toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" });
-    const BATCH_SIZE = 10;
 
-    // 1. Fetch profiles with personality_results (eligible for matching)
+    // 1. Fetch profiles eligible for matching.
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(
-        "id, user_id, display_name, avatar_url, date_of_birth, gender, min_age, max_age, interested_in, looking_for, onboarding_completed, bio"
+        "id, user_id, display_name, avatar_url, date_of_birth, gender, min_age, max_age, interested_in, looking_for, onboarding_completed, bio",
       )
       .eq("onboarding_completed", true)
       .eq("is_visible", true)
-      // Deactivated-hidden profiles are excluded from all pools. Deactivated-
-      // visible profiles still appear (the owner just won't respond until
-      // they log back in, which auto-clears deactivated_at).
       .or("deactivated_at.is.null,deactivation_hidden.eq.false");
 
     if (profilesError) {
       console.error("Profiles error:", profilesError);
       return new Response(
         JSON.stringify({ error: "Failed to fetch profiles", message: profilesError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -432,7 +519,7 @@ serve(async (req: Request) => {
       console.error("Personality error:", persError);
       return new Response(
         JSON.stringify({ error: "Failed to fetch personality results", message: persError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -441,16 +528,14 @@ serve(async (req: Request) => {
         r.user_id,
         {
           scores: (r.scores || {}) as PersonalityScores,
-          archetype: r.archetype || "INFJ",
+          archetype: (r.archetype || "INFJ") as ArchetypeCode,
           category: r.category as PersonalityCategory,
         },
-      ])
+      ]),
     );
 
-    // Map profile id to auth user id for pool row (user_daily_match_pools.user_id = profile id when profiles.id = auth.uid())
     const profileIdToAuthId = new Map<string, string>();
     const candidatesList: MatchCandidate[] = [];
-    const profileIdToCandidate = new Map<string, MatchCandidate>();
 
     for (const p of profiles || []) {
       const pid = p.id as string;
@@ -472,7 +557,7 @@ serve(async (req: Request) => {
       }
 
       const age = ageFromDob(p.date_of_birth as string | null);
-      const candidate: MatchCandidate = {
+      candidatesList.push({
         userId: pid,
         displayName: (p.display_name as string) || "Anonym",
         avatarUrl: (p.avatar_url as string) || undefined,
@@ -486,19 +571,17 @@ serve(async (req: Request) => {
           ? p.interested_in.split(",").map((s: string) => s.trim()).filter(Boolean)
           : [],
         onboardingCompleted: p.onboarding_completed === true,
-      };
-      candidatesList.push(candidate);
-      profileIdToCandidate.set(pid, candidate);
+      });
     }
 
     if (candidatesList.length < 2) {
       return new Response(
         JSON.stringify({ date: today, users_processed: 0, message: "Not enough users with personality results" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
       );
     }
 
-    // 2. Fetch blocked_users pairs (bidirectional — neither party should see the other)
+    // 2. Bidirectional blocked pairs.
     const { data: blockedRows } = await supabase
       .from("blocked_users")
       .select("blocker_id, blocked_id");
@@ -511,7 +594,7 @@ serve(async (req: Request) => {
       blockedPairs.add(`${b}:${a}`);
     }
 
-    // 3. Recent match ids per user (7-day window to avoid repeat fatigue)
+    // 3. Recent match ids per user (7-day repeat-fatigue window).
     const sevenDaysAgo = new Date(Date.now() - 7 * 864e5).toLocaleDateString("en-CA", { timeZone: "Europe/Stockholm" });
     const { data: recentMatches } = await supabase
       .from("matches")
@@ -526,7 +609,7 @@ serve(async (req: Request) => {
       previousByUser.get(uid)!.push(mid);
     }
 
-    // 3. Profile photos for candidates (for pool display)
+    // 4. Profile photos for candidates.
     const { data: photosRows } = await supabase
       .from("profile_photos")
       .select("user_id, storage_path, display_order")
@@ -544,106 +627,56 @@ serve(async (req: Request) => {
       photosByUserId.get(uid)!.push(url);
     }
 
-    // 4. Load learned preferences for all users (ML behavioral scoring).
-    const allUserIds = candidatesList.map((c) => profileIdToAuthId.get(c.userId) ?? c.userId);
-    const { data: prefsData } = await supabase
-      .from("user_match_preferences")
-      .select("user_id, personality_weight, archetype_weight, interest_weight, similar_ratio, ab_bucket, collaborative_boosts")
-      .in("user_id", allUserIds);
-    const prefsMap = new Map<string, LearnedPreferences>();
-    for (const p of prefsData ?? []) {
-      // A/B test: bucket 0-49 = control (default weights), 50-99 = treatment (learned weights)
-      const abBucket = p.ab_bucket ?? 0;
-      const useLearned = abBucket >= 50;
-
-      prefsMap.set(p.user_id, {
-        personalityWeight: useLearned ? (p.personality_weight ?? 1.0) : 1.0,
-        archetypeWeight: useLearned ? (p.archetype_weight ?? 1.0) : 1.0,
-        interestWeight: useLearned ? (p.interest_weight ?? 1.0) : 1.0,
-        similarRatio: useLearned ? (p.similar_ratio ?? DEFAULT_SIMILAR_RATIO) : DEFAULT_SIMILAR_RATIO,
-      });
-    }
-
-    // 5. Build UserProfile for each recipient and generate pool
-    const poolInserts: { user_id: string; pool_date: string; candidates_data: MatchPoolCandidate[] }[] = [];
+    // 5. Generate per-user pool.
     type ProfileRow = { id: string; min_age?: number; max_age?: number; interested_in?: string; looking_for?: string };
     const getProfile = (userId: string) => (profiles || []).find((p: { id: string }) => p.id === userId) as ProfileRow | undefined;
 
+    const stats: LlmStats = { cache_hits: 0, cache_misses: 0, fallback_used: 0, divergent: 0 };
+    let inserted = 0;
+    let skipped = 0;
+
     for (const c of candidatesList) {
-      // On-demand mode: only generate a pool for the targeted recipient,
-      // but keep candidatesList complete so they still have peers to match.
       if (targetUserId && c.userId !== targetUserId) continue;
 
       const profileRow = getProfile(c.userId);
-      const currentUser: UserProfile = {
+      const user: UserProfile = {
         ...c,
         minAge: profileRow?.min_age ?? undefined,
         maxAge: profileRow?.max_age ?? undefined,
         interestedIn: profileRow?.interested_in ?? profileRow?.looking_for ?? undefined,
+        // TODO: read profiles.preferred_language once column exists; default Swedish.
+        locale: "sv",
       };
-
-      const recipientAuthId = profileIdToAuthId.get(currentUser.userId) ?? currentUser.userId;
+      const recipientAuthId = profileIdToAuthId.get(user.userId) ?? user.userId;
       const previousMatchedIds = previousByUser.get(recipientAuthId) || [];
-      const userPrefs = prefsMap.get(recipientAuthId) ?? DEFAULT_PREFS;
 
-      // Filter out blocked users (bidirectional) before matching
-      const unblockedCandidates = candidatesList.filter(
-        (cand) => !blockedPairs.has(`${currentUser.userId}:${cand.userId}`)
+      const candidates = await generateUserPool(
+        supabase,
+        user,
+        candidatesList,
+        previousMatchedIds,
+        blockedPairs,
+        photosByUserId,
+        stats,
       );
-      const results = generateUserMatchPool(currentUser, unblockedCandidates, BATCH_SIZE, previousMatchedIds, userPrefs);
-      if (results.length === 0) continue;
 
-      const poolCandidates: MatchPoolCandidate[] = results.map((m) => ({
-        user: {
-          userId: m.user.userId,
-          displayName: m.user.displayName,
-          avatarUrl: m.user.avatarUrl,
-          age: m.user.age,
-          archetype: m.user.archetype,
-          photos: photosByUserId.get(m.user.userId) || [],
-          bio: m.user.bio,
-        },
-        matchType: m.matchType,
-        matchScore: m.matchScore,
-        dimensionBreakdown: m.dimensionBreakdown,
-        archetypeScore: m.archetypeScore ?? 80,
-        anxietyScore: m.anxietyScore ?? 75,
-        icebreakers: [],
-        personalityInsight: buildPoolInsight(
-          m.matchType,
-          currentUser.category,
-          m.user.category,
-          m.user.displayName,
-        ),
-        commonInterests: findCommonInterests(
-          currentUser.interests ?? [],
-          m.user.interests ?? [],
-        ),
-      }));
+      if (candidates.length === 0) {
+        skipped++;
+        continue;
+      }
 
-      // user_daily_match_pools.user_id must equal auth.uid() for match-daily to find the pool
-      poolInserts.push({
-        user_id: recipientAuthId,
-        pool_date: today,
-        candidates_data: poolCandidates,
-      });
-    }
-
-    // 5. Upsert pools (one row per user per day)
-    let inserted = 0;
-    for (const row of poolInserts) {
       const { error: insertErr } = await supabase
         .from("user_daily_match_pools")
         .upsert(
           {
-            user_id: row.user_id,
-            pool_date: row.pool_date,
-            candidates_data: row.candidates_data,
+            user_id: recipientAuthId,
+            pool_date: today,
+            candidates_data: candidates,
           },
-          { onConflict: "user_id,pool_date" }
+          { onConflict: "user_id,pool_date" },
         );
       if (insertErr) {
-        console.error("Pool insert error for", row.user_id, insertErr);
+        console.error("Pool insert error for", user.userId, insertErr);
       } else {
         inserted++;
       }
@@ -653,16 +686,18 @@ serve(async (req: Request) => {
       JSON.stringify({
         date: today,
         users_processed: inserted,
+        users_skipped: skipped,
         total_eligible: candidatesList.length,
         batch_size: BATCH_SIZE,
+        llm: stats,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (err) {
     console.error("generate-match-pools error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
