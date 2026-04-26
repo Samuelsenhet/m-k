@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeadersFor } from "../_shared/cors.ts"
 import { getSupabaseEnv, verifySupabaseJWT } from "../_shared/env.ts"
 
-type MatchType = 'similar' | 'complementary'
+type MatchType = 'similar' | 'complementary' | 'growth'
 
 interface DimensionBreakdown {
   dimension: string
@@ -23,7 +23,32 @@ interface CandidateUser {
   bio?: string
 }
 
-interface MatchPoolCandidate {
+/** Monster Match v1 fields written by generate-match-pools. Optional so this
+ *  type covers both legacy pre-Monster pools and post-Monster pools. */
+interface MonsterPoolFields {
+  matchStory?: string
+  matchSubtype?: MatchType
+  drivingDimensions?: Array<{
+    dim: 'ei' | 'sn' | 'tf' | 'jp' | 'at'
+    your: number
+    their: number
+    alignment: 'similar' | 'complementary'
+    impact: 'high' | 'medium' | 'low'
+  }>
+  llmDimensionBreakdown?: Array<{ dim: string; text: string }>
+  signalBreakdown?: {
+    personality: number
+    archetype_pair: number
+    interests: number
+    geo: number
+    complementary_bonus: number
+  }
+  validationScore?: number
+  validationNote?: string
+  fallbackUsed?: boolean
+}
+
+interface MatchPoolCandidate extends MonsterPoolFields {
   user: CandidateUser
   matchType: MatchType
   matchScore: number
@@ -40,7 +65,15 @@ interface ProfileRelation {
   avatar_url?: string | null
 }
 
-interface ExistingMatchRowDetailed {
+interface MatchRowMonsterFields {
+  match_story?: string | null
+  match_subtype?: MatchType | null
+  validation_score?: number | null
+  validation_note?: string | null
+  fallback_used?: boolean | null
+}
+
+interface ExistingMatchRowDetailed extends MatchRowMonsterFields {
   id: string
   matched_user_id: string
   status: 'pending' | 'liked' | 'passed' | 'mutual' | 'disliked'
@@ -60,7 +93,7 @@ interface ExistingMatchRowDetailed {
   profiles?: ProfileRelation | null
 }
 
-interface InsertedMatchRow {
+interface InsertedMatchRow extends MatchRowMonsterFields {
   id: string
   matched_user_id: string
   status?: 'pending' | 'liked' | 'passed' | 'mutual' | 'disliked'
@@ -85,6 +118,22 @@ interface MatchIdRow {
 
 interface MatchRecordId {
   id: string
+}
+
+/** Short SV one-liner per subtype, used as a fallback when match_story
+ *  is null (legacy pre-Monster matches). New Monster matches surface
+ *  match_story directly so the client can render the LLM voice. */
+function matchReasonFor(t: MatchType | string | null | undefined): string {
+  switch (t) {
+    case 'similar':
+      return 'Liknande personlighet och värderingar'
+    case 'complementary':
+      return 'Kompletterande energi och styrkor'
+    case 'growth':
+      return 'Utmanar varandra på rätt sätt'
+    default:
+      return 'Liknande personlighet och värderingar'
+  }
 }
 
 serve(async (req: Request) => {
@@ -396,12 +445,17 @@ serve(async (req: Request) => {
         conversation_anxiety_reduction_score: m.anxiety_reduction_score || 75,
         ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3),
         personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
-        match_reason: m.match_type === 'similar' ? '60% liknande värderingar' : '40% kompletterande energi',
+        match_reason: matchReasonFor(m.match_type),
         is_first_day_match: index === 0,
         expires_at: m.expires_at ?? null,
         photo_urls: m.photo_urls || [],
         bio_preview: m.bio_preview || '',
-        common_interests: m.common_interests || []
+        common_interests: m.common_interests || [],
+        match_story: m.match_story ?? null,
+        match_subtype: m.match_subtype ?? m.match_type,
+        validation_score: m.validation_score ?? null,
+        validation_note: m.validation_note ?? null,
+        fallback_used: m.fallback_used ?? false,
       }))
 
       return new Response(
@@ -475,12 +529,16 @@ serve(async (req: Request) => {
       return `Ni är en motsatsmatch – era personligheter kompletterar varandra. ${pairInsight}`
     }
 
-    // 7. Insert new matches into database (with explanation for every match so it shows directly in profile)
+    // 7. Insert new matches into database. Monster Match v1 fields are
+    // written when the pool came from the post-Monster generator; older
+    // pools fall through to null + the legacy buildMatchTypeExplanation
+    // text below so existing clients keep working.
     const matchInserts = newMatchesToDeliver.map((match) => {
       const matchedArchetype = match.user.archetype || 'INFJ'
       const matchedCategory = ARCHETYPE_CATEGORY[matchedArchetype] ?? null
       const matchedDisplayName = match.user.displayName || 'Match'
       const explanation = buildMatchTypeExplanation(userCategory, matchedCategory, matchedDisplayName, match.matchType)
+      const story = match.matchStory ?? match.personalityInsight ?? explanation
       return {
         user_id: requestUserId,
         matched_user_id: match.user.userId,
@@ -498,7 +556,13 @@ serve(async (req: Request) => {
         match_archetype: matchedArchetype,
         photo_urls: match.user.photos || [],
         bio_preview: match.user.bio || '',
-        common_interests: match.commonInterests || []
+        common_interests: match.commonInterests || [],
+        // --- Monster Match v1 columns (nullable on legacy pools) ---
+        match_story: story,
+        match_subtype: match.matchSubtype ?? match.matchType,
+        validation_score: match.validationScore ?? null,
+        validation_note: match.validationNote ?? null,
+        fallback_used: match.fallbackUsed ?? false,
       }
     })
 
@@ -544,27 +608,36 @@ serve(async (req: Request) => {
     const isFirstMatchEver = userMatchRows.length === insertedMatchRows.length
 
     // 11. Format response as MatchOutput[]
-    const formattedMatches = insertedMatchRows.map((m, index) => ({
-      match_id: m.id,
-      profile_id: m.matched_user_id,
-      status: m.status ?? 'pending',
-      display_name: newMatchesToDeliver[index]?.user?.displayName || 'Anonym',
-      age: m.match_age || 25,
-      archetype: m.match_archetype || 'INFJ',
-      compatibility_percentage: m.match_score || 85,
-      dimension_score_breakdown: m.dimension_breakdown || [],
-      archetype_alignment_score: m.archetype_score || 80,
-      conversation_anxiety_reduction_score: m.anxiety_reduction_score || 75,
-      ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3),
-      personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
-      match_reason: m.match_type === 'similar' ? '60% liknande värderingar' : '40% kompletterande energi',
-      is_first_day_match: index === 0 && isFirstMatchEver,
-      expires_at: m.expires_at ?? null,
-      special_effects: index === 0 && isFirstMatchEver ? ['confetti', 'celebration'] : null,
-      photo_urls: m.photo_urls || [],
-      bio_preview: m.bio_preview || '',
-      common_interests: m.common_interests || []
-    }))
+    const formattedMatches = insertedMatchRows.map((m, index) => {
+      const sourceCandidate = newMatchesToDeliver[index]
+      return {
+        match_id: m.id,
+        profile_id: m.matched_user_id,
+        status: m.status ?? 'pending',
+        display_name: sourceCandidate?.user?.displayName || 'Anonym',
+        age: m.match_age || 25,
+        archetype: m.match_archetype || 'INFJ',
+        compatibility_percentage: m.match_score || 85,
+        dimension_score_breakdown: m.dimension_breakdown || [],
+        archetype_alignment_score: m.archetype_score || 80,
+        conversation_anxiety_reduction_score: m.anxiety_reduction_score || 75,
+        ai_icebreakers: (m.icebreakers || ['Hej!', 'Hur mår du?', 'Vad gör du?']).slice(0, 3),
+        personality_insight: m.personality_insight || 'Ni delar liknande värderingar',
+        match_reason: matchReasonFor(m.match_type),
+        is_first_day_match: index === 0 && isFirstMatchEver,
+        expires_at: m.expires_at ?? null,
+        special_effects: index === 0 && isFirstMatchEver ? ['confetti', 'celebration'] : null,
+        photo_urls: m.photo_urls || [],
+        bio_preview: m.bio_preview || '',
+        common_interests: m.common_interests || [],
+        // --- Monster Match v1 ---
+        match_story: m.match_story ?? sourceCandidate?.matchStory ?? null,
+        match_subtype: (m.match_subtype ?? sourceCandidate?.matchSubtype ?? m.match_type) as MatchType,
+        validation_score: m.validation_score ?? sourceCandidate?.validationScore ?? null,
+        validation_note: m.validation_note ?? sourceCandidate?.validationNote ?? null,
+        fallback_used: m.fallback_used ?? sourceCandidate?.fallbackUsed ?? false,
+      }
+    })
     
     // Determine special event message
     let specialEventMessage: string | null = null

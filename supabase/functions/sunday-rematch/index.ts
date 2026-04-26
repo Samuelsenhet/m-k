@@ -96,10 +96,17 @@ serve(async (req: Request) => {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoIso = sevenDaysAgo.toISOString();
 
-  // Find all matches from the past 7 days where the user is a participant
+  // Find all matches from the past 7 days where the user is a participant.
+  // NB: prior implementation read `compatibility_score` here but the matches
+  // table only stores `match_score` — the column-mismatch returned null for
+  // every row. Now reads the canonical column and surfaces the Monster
+  // Match v1 fields so the iOS client gets a consistent shape across
+  // match-daily and sunday-rematch.
   const { data: weekMatches, error: matchErr } = await supabase
     .from("matches")
-    .select("id, user_id, matched_user_id, created_at, compatibility_score")
+    .select(
+      "id, user_id, matched_user_id, created_at, match_score, match_story, match_subtype, fallback_used",
+    )
     .or(`user_id.eq.${userId},matched_user_id.eq.${userId}`)
     .gte("created_at", sevenDaysAgoIso)
     .order("created_at", { ascending: false });
@@ -177,7 +184,10 @@ serve(async (req: Request) => {
       archetype: profile?.archetype ?? null,
       bio: profile?.bio ?? null,
       hometown: profile?.hometown ?? null,
-      compatibilityScore: m.compatibility_score,
+      compatibilityScore: m.match_score,
+      matchStory: m.match_story ?? null,
+      matchSubtype: m.match_subtype ?? null,
+      fallbackUsed: m.fallback_used ?? false,
       createdAt: m.created_at,
     };
   });

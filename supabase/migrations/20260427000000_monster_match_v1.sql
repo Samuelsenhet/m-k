@@ -104,7 +104,40 @@ CREATE POLICY "service_role manages match_validation_flags" ON public.match_vali
   USING (true)
   WITH CHECK (true);
 
--- ---------- 4) refresh PostgREST schema cache ----------
+-- ---------- 4) widen matches.match_type CHECK to accept 'growth' ----------
+
+-- The existing match_type column was constrained to 'similar' or
+-- 'complementary' before Monster Match v1 introduced the 'growth' subtype.
+-- We don't know the exact name of the existing CHECK constraint (it varies
+-- between environments), so we drop any CHECK that mentions match_type and
+-- recreate a known-named one. Idempotent and safe to re-run.
+DO $$
+DECLARE
+  existing_check text;
+BEGIN
+  FOR existing_check IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'public.matches'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%match_type%'
+      AND conname <> 'matches_match_type_check'
+  LOOP
+    EXECUTE format('ALTER TABLE public.matches DROP CONSTRAINT %I', existing_check);
+  END LOOP;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'public.matches'::regclass
+      AND conname = 'matches_match_type_check'
+  ) THEN
+    ALTER TABLE public.matches
+      ADD CONSTRAINT matches_match_type_check
+      CHECK (match_type IS NULL OR match_type IN ('similar', 'complementary', 'growth'));
+  END IF;
+END$$;
+
+-- ---------- 5) refresh PostgREST schema cache ----------
 
 -- Without this the next edge-function call hits "could not find the
 -- 'match_story' column of 'matches' in the schema cache" until the
