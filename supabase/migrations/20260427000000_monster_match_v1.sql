@@ -1,6 +1,6 @@
 -- Monster Match v1 — schema additions for the new matching algorithm.
 --
--- Spec: docs in /Users/samuelsenhet/.claude/plans/context-pure-taco.md.
+-- Spec: docs/MONSTER_MATCH_V1.md
 -- Adds:
 --   1) Five new columns on matches for LLM-generated content + match
 --      classification + validation/fallback metadata
