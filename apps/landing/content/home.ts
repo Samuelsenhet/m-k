@@ -23,7 +23,7 @@ import {
 // konkret, utan fluff.
 
 export const SITE = {
-  name: "määk",
+  name: "MÄÄK",
   url: "https://maakapp.se",
   appStoreUrl: process.env.NEXT_PUBLIC_APP_STORE_URL ?? "https://apps.apple.com/app/maak",
   contactEmail: "hej@maakapp.se",
@@ -40,8 +40,8 @@ export const NAV_LINKS = [
 export const HERO = {
   eyebrow: "Ny på App Store",
   title: "Mänskligare dejtande börjar här.",
-  lead: "määk hjälper dig hitta rätt personer i lugn takt. Färre svep, mer riktiga samtal och tryggare möten.",
-  primaryCta: "Ladda ner määk",
+  lead: "MÄÄK hjälper dig hitta rätt personer i lugn takt. Färre svep, mer riktiga samtal och tryggare möten.",
+  primaryCta: "Ladda ner MÄÄK",
   secondaryCta: "Se funktioner",
   availability: "Tillgänglig på iOS · För dig som är 20+",
   downloadLabel: "Hämta i App Store",
@@ -69,7 +69,7 @@ export const STEPS = [
     description:
       "Inget svepande. Algoritmen väger personlighet (40 %), arketyp (30 %) och intressen (30 %) - du får några få, välvalda personer per dag.",
     variant: "matches" as const,
-    imageAlt: "Mockup: dagens matchningar i määk",
+    imageAlt: "Mockup: dagens matchningar i MÄÄK",
   },
   {
     step: 2,
@@ -78,7 +78,7 @@ export const STEPS = [
     description:
       "Fem personliga öppningar för varje match - byggda på era profiler, inte generiska mallar. Roligt, djupt eller en aktivitet.",
     variant: "chat" as const,
-    imageAlt: "Mockup: chatt med AI-förslag i määk",
+    imageAlt: "Mockup: chatt med AI-förslag i MÄÄK",
   },
   {
     step: 3,
@@ -87,7 +87,7 @@ export const STEPS = [
     description:
       "Verifierade profiler och valfri Kemi-Check innan ni ses IRL. Du vet vem du möter - både person och stil.",
     variant: "kemi" as const,
-    imageAlt: "Mockup: Kemi-Check video-samtal i määk",
+    imageAlt: "Mockup: Kemi-Check video-samtal i MÄÄK",
   },
 ] as const;
 
@@ -224,7 +224,7 @@ export const PHILOSOPHY = {
     "Det är då något äkta börjar.",
   ],
   emphasisLines: [4, 6, 10] as readonly number[],
-  cta: "Ladda ner määk",
+  cta: "Ladda ner MÄÄK",
 } as const;
 
 export const FACTS_HEADING = {
@@ -243,8 +243,8 @@ export const FACTS = [
 export const CTA = {
   eyebrow: "MÄÄK i App Store",
   title: "Redo att träffa någon som passar dig?",
-  body: "Ladda ner määk och börja med lugnare, tryggare och mer mänskligt dejtande.",
-  primary: "Ladda ner määk",
+  body: "Ladda ner MÄÄK och börja med lugnare, tryggare och mer mänskligt dejtande.",
+  primary: "Ladda ner MÄÄK",
   secondary: "Utforska funktioner",
   availability: "Tillgänglig på iOS · För dig som är 20+",
 } as const;

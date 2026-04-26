@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Användarvillkor",
   description:
-    "Användarvillkor för määk: åldersgräns, verifiering, användaransvar, betalningar, immaterialrätt och tvistlösning.",
+    "Användarvillkor för MÄÄK: åldersgräns, verifiering, användaransvar, betalningar, immaterialrätt och tvistlösning.",
   alternates: { canonical: "/terms/" },
   openGraph: {
-    title: "Användarvillkor · määk",
-    description: "Fullständiga användarvillkor för määk.",
+    title: "Användarvillkor · MÄÄK",
+    description: "Fullständiga användarvillkor för MÄÄK.",
     url: "/terms/",
     type: "article",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Användarvillkor · määk" }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Användarvillkor · MÄÄK" }],
   },
   twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };

@@ -3,8 +3,8 @@ import { ConsentGate } from "@/components/ConsentGate";
 import "./globals.css";
 
 const SITE = "https://maakapp.se";
-const NAME = "määk";
-const TITLE = "määk - träffa människor som passar dig";
+const NAME = "MÄÄK";
+const TITLE = "MÄÄK - träffa människor som passar dig";
 const DESCRIPTION =
   "En lugn dejtingapp utan swipe-stress. Matchning, chatt och profiler - designad för att kännas trygg och mänsklig.";
 
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     title: NAME,
     statusBarStyle: "black-translucent",
   },
-  authors: [{ name: "määk", url: SITE }],
-  creator: "määk",
-  publisher: "määk",
+  authors: [{ name: "MÄÄK", url: SITE }],
+  creator: "MÄÄK",
+  publisher: "MÄÄK",
   keywords: [
     "dejting",
     "dejtingapp",

@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Rapportering & säkerhet",
   description:
-    "Hur määk hanterar rapporter, moderering, sanktioner och samarbete med rättsvårdande myndigheter för att hålla plattformen trygg.",
+    "Hur MÄÄK hanterar rapporter, moderering, sanktioner och samarbete med rättsvårdande myndigheter för att hålla plattformen trygg.",
   alternates: { canonical: "/reporting/" },
   openGraph: {
-    title: "Rapportering & säkerhet · määk",
-    description: "Säkerhet, moderering och rapporthantering hos määk.",
+    title: "Rapportering & säkerhet · MÄÄK",
+    description: "Säkerhet, moderering och rapporthantering hos MÄÄK.",
     url: "/reporting/",
     type: "article",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Rapportering & säkerhet · määk" }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Rapportering & säkerhet · MÄÄK" }],
   },
   twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };

@@ -1,5 +1,5 @@
 export const VANTA = {
-  title: "Väntelista - määk",
+  title: "Väntelista - MÄÄK",
   metaDescription:
     "Gå med i MÄÄK:s väntelista och bli bland de första att hitta din match.",
   heading: "Din match väntar\npå andra sidan.",

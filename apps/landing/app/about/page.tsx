@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Om määk",
+  title: "Om MÄÄK",
   description:
-    "määk är en lugn dejtingapp som sätter personlighet och trygghet främst. Läs om visionen, teamet och varför vi bygger en annorlunda dejtingupplevelse.",
+    "MÄÄK är en lugn dejtingapp som sätter personlighet och trygghet främst. Läs om visionen, teamet och varför vi bygger en annorlunda dejtingupplevelse.",
   alternates: { canonical: "/about/" },
   openGraph: {
-    title: "Om määk",
+    title: "Om MÄÄK",
     description: "Visionen bakom en mänskligare dejtingapp.",
     url: "/about/",
     type: "article",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Om määk" }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Om MÄÄK" }],
   },
   twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
 };
