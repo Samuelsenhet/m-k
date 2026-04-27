@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type VisibilityChoice = "hidden" | "visible";
+type AccountChoice = "hidden" | "visible" | "delete";
 
 type Props = {
   visible: boolean;
@@ -29,7 +29,7 @@ export function DeactivateAccountSheet({ visible, onClose }: Props) {
   const { supabase, session } = useSupabase();
   const user = session?.user;
 
-  const [choice, setChoice] = useState<VisibilityChoice>("hidden");
+  const [choice, setChoice] = useState<AccountChoice>("hidden");
   const [submitting, setSubmitting] = useState(false);
 
   const runDeactivate = async () => {
@@ -64,7 +64,45 @@ export function DeactivateAccountSheet({ visible, onClose }: Props) {
     }
   };
 
-  const confirmDeactivate = () => {
+  // Apple 5.1.1(v): account deletion must be available IN-APP and permanently
+  // remove the user's account + personal data. Calls the delete-user edge fn
+  // (service role) which runs auth.admin.deleteUser + cascade cleanup.
+  const runDelete = async () => {
+    if (!user || submitting) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: user.id },
+      });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      onClose();
+      router.replace("/phone-auth");
+      Alert.alert("", t("settings.delete_account_success"));
+    } catch (e) {
+      if (__DEV__) console.warn("[DeactivateAccountSheet] delete failed:", e);
+      Alert.alert(t("common.error"), t("settings.delete_account_failed"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const confirmAction = () => {
+    if (choice === "delete") {
+      Alert.alert(
+        t("settings.delete_account_title"),
+        t("settings.delete_account_description"),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          {
+            text: t("settings.delete_account_confirm"),
+            style: "destructive",
+            onPress: () => void runDelete(),
+          },
+        ],
+      );
+      return;
+    }
     Alert.alert(
       t("settings.deactivate_account_title"),
       t("settings.deactivate_account_description"),
@@ -113,6 +151,13 @@ export function DeactivateAccountSheet({ visible, onClose }: Props) {
             title={t("settings.deactivate_visibility_visible")}
             hint={t("settings.deactivate_visibility_visible_desc")}
           />
+          <VisibilityOption
+            selected={choice === "delete"}
+            onPress={() => setChoice("delete")}
+            title={t("settings.delete_account")}
+            hint={t("settings.delete_account_description")}
+            destructive
+          />
 
           <Pressable
             style={({ pressed }) => [
@@ -120,18 +165,28 @@ export function DeactivateAccountSheet({ visible, onClose }: Props) {
               pressed && { opacity: 0.92 },
               submitting && { opacity: 0.7 },
             ]}
-            onPress={confirmDeactivate}
+            onPress={confirmAction}
             disabled={submitting}
             accessibilityRole="button"
-            accessibilityLabel={t("settings.deactivate_confirm")}
+            accessibilityLabel={
+              choice === "delete"
+                ? t("settings.delete_account_confirm")
+                : t("settings.deactivate_confirm")
+            }
           >
             {submitting ? (
               <ActivityIndicator color={maakTokens.destructive} />
             ) : (
               <>
-                <Ionicons name="pause-circle-outline" size={20} color={maakTokens.destructive} />
+                <Ionicons
+                  name={choice === "delete" ? "trash-outline" : "pause-circle-outline"}
+                  size={20}
+                  color={maakTokens.destructive}
+                />
                 <Text style={styles.confirmTxt}>
-                  {t("settings.deactivate_confirm")}
+                  {choice === "delete"
+                    ? t("settings.delete_account_confirm")
+                    : t("settings.deactivate_confirm")}
                 </Text>
               </>
             )}
@@ -147,28 +202,42 @@ function VisibilityOption({
   onPress,
   title,
   hint,
+  destructive,
 }: {
   selected: boolean;
   onPress: () => void;
   title: string;
   hint: string;
+  destructive?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.option, selected && styles.optionSelected]}
+      style={[
+        styles.option,
+        selected && styles.optionSelected,
+        destructive && selected && styles.optionDestructiveSelected,
+      ]}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={title}
     >
       <View style={styles.optionTextCol}>
-        <Text style={styles.optionTitle}>{title}</Text>
+        <Text style={[styles.optionTitle, destructive && { color: maakTokens.destructive }]}>
+          {title}
+        </Text>
         <Text style={styles.optionHint}>{hint}</Text>
       </View>
       <Ionicons
         name={selected ? "radio-button-on" : "radio-button-off"}
         size={22}
-        color={selected ? maakTokens.primary : maakTokens.mutedForeground}
+        color={
+          selected
+            ? destructive
+              ? maakTokens.destructive
+              : maakTokens.primary
+            : maakTokens.mutedForeground
+        }
       />
     </Pressable>
   );
@@ -230,6 +299,10 @@ const styles = StyleSheet.create({
   optionSelected: {
     borderColor: maakTokens.primary,
     backgroundColor: `${maakTokens.primary}12`,
+  },
+  optionDestructiveSelected: {
+    borderColor: maakTokens.destructive,
+    backgroundColor: `${maakTokens.destructive}12`,
   },
   optionTextCol: { flex: 1, minWidth: 0 },
   optionTitle: {

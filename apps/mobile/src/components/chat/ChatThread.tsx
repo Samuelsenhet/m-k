@@ -1,5 +1,6 @@
 import { IcebreakerPanel } from "@/components/chat/IcebreakerPanel";
 import { useSupabase } from "@/contexts/SupabaseProvider";
+import { useBlockUser } from "@/hooks/useBlockUser";
 import { maakTokens } from "@maak/core";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -49,6 +50,7 @@ export function ChatThread({
   const insets = useSafeAreaInsets();
   const { supabase, session } = useSupabase();
   const userId = session?.user?.id;
+  const { showActions } = useBlockUser();
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -227,7 +229,24 @@ export function ChatThread({
             {matchedUserName}
           </Text>
         </Pressable>
-        <View style={styles.headerSpacer} />
+        <Pressable
+          onPress={() =>
+            showActions(matchedUserId, matchedUserName, {
+              matchId,
+              onBlocked: onBack,
+            })
+          }
+          hitSlop={12}
+          style={styles.headerBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.more")}
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={22}
+            color={maakTokens.foreground}
+          />
+        </Pressable>
       </View>
 
       {loading ? (

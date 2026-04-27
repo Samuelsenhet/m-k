@@ -3,6 +3,7 @@ import { IntroduceButton } from "@/components/host/IntroduceButton";
 import { DimensionBreakdownList } from "@/components/match/DimensionBreakdownList";
 import { MatchExplanationBlock } from "@/components/match/MatchExplanationBlock";
 import { useSupabase } from "@/contexts/SupabaseProvider";
+import { useBlockUser } from "@/hooks/useBlockUser";
 import { archetypeDisplayTitle } from "@/lib/archetypeTitle";
 import {
   ARCHETYPE_INFO,
@@ -117,6 +118,7 @@ export function MatchProfileScreen({
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const { supabase } = useSupabase();
+  const { showActions } = useBlockUser();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -265,11 +267,22 @@ export function MatchProfileScreen({
           <Pressable style={styles.heroIconBtn} onPress={onBack} hitSlop={8}>
             <Ionicons name="chevron-back" size={22} color="#fff" />
           </Pressable>
-          {matchScore != null ? (
-            <View style={styles.scoreBadge}>
-              <Text style={styles.scoreText}>{Math.round(matchScore)}%</Text>
-            </View>
-          ) : null}
+          <View style={styles.topBarRight}>
+            {matchScore != null ? (
+              <View style={styles.scoreBadge}>
+                <Text style={styles.scoreText}>{Math.round(matchScore)}%</Text>
+              </View>
+            ) : null}
+            <Pressable
+              style={styles.heroIconBtn}
+              onPress={() => showActions(userId, name, { onBlocked: onBack })}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.more")}
+            >
+              <Ionicons name="ellipsis-horizontal" size={22} color="#fff" />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -464,6 +477,7 @@ const styles = StyleSheet.create({
     position: "absolute", top: 16, left: 16, right: 16,
     flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", zIndex: 20,
   },
+  topBarRight: { flexDirection: "row", alignItems: "center", gap: 10 },
   heroIconBtn: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.22)",

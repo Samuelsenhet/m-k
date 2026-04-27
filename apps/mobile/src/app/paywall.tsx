@@ -218,6 +218,27 @@ export default function PaywallScreen() {
 
           <Text style={styles.fineprint}>{t("mobile.paywall.auto_renew_notice")}</Text>
 
+          {/* Apple 3.1.2: tappable Terms + Privacy links must be on the in-app subscription screen. */}
+          <View style={styles.legalLinkRow}>
+            <Pressable
+              onPress={() => router.push("/terms")}
+              accessibilityRole="link"
+              accessibilityLabel={t("settings.terms")}
+              hitSlop={8}
+            >
+              <Text style={styles.legalLink}>{t("settings.terms")}</Text>
+            </Pressable>
+            <Text style={styles.legalLinkSep}>·</Text>
+            <Pressable
+              onPress={() => router.push("/privacy")}
+              accessibilityRole="link"
+              accessibilityLabel={t("settings.privacy_policy")}
+              hitSlop={8}
+            >
+              <Text style={styles.legalLink}>{t("settings.privacy_policy")}</Text>
+            </Pressable>
+          </View>
+
           <Pressable onPress={handleRestore} style={styles.restoreBtn} accessibilityRole="button">
             <Text style={styles.restoreText}>{t("mobile.paywall.cta_restore")}</Text>
           </Pressable>
@@ -341,6 +362,19 @@ const styles = StyleSheet.create({
   ctaDisabled: { opacity: 0.5 },
   ctaText: { color: maakTokens.primaryForeground, fontSize: 16, fontWeight: "700" },
   fineprint: { fontSize: 12, lineHeight: 18, color: maakTokens.mutedForeground, textAlign: "center", marginBottom: 8 },
+  legalLinkRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  legalLink: {
+    fontSize: 12,
+    color: maakTokens.primary,
+    textDecorationLine: "underline",
+  },
+  legalLinkSep: { fontSize: 12, color: maakTokens.mutedForeground },
   restoreBtn: { paddingVertical: 12, alignItems: "center" },
   restoreText: { color: maakTokens.primary, fontSize: 15, fontWeight: "600" },
 });

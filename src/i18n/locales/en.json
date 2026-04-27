@@ -23,6 +23,7 @@
     "not_found_message": "This screen does not exist.",
     "not_found_link": "Go to home",
     "delete": "Delete",
+    "more": "More options",
     "link_open_failed": "Could not open the link. Please try again."
   },
   "nav": {
@@ -469,6 +470,8 @@
     "delete_account_title": "Delete your account",
     "delete_account_description": "Are you sure you want to delete your account? All your data will be permanently removed. This action cannot be undone.",
     "delete_account_confirm": "Yes, delete my account",
+    "delete_account_success": "Your account has been deleted",
+    "delete_account_failed": "Could not delete the account. Try again or contact dataskydd@maakapp.se.",
     "deleting": "Deleting...",
     "deactivate_account": "Deactivate account",
     "deactivate_account_title": "Deactivate your account",
