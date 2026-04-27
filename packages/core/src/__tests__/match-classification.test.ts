@@ -3,6 +3,7 @@ import {
   buildDrivingDimensions,
   classifyMatchSubtype,
   computeCompositeScore,
+  cosineSimilarity,
   geoScore,
   interestOverlap,
   balanceBatch,
@@ -195,6 +196,167 @@ describe("computeCompositeScore", () => {
     });
     expect(a.breakdown.complementary_bonus).toBe(0);
     expect(b.breakdown.complementary_bonus).toBe(0);
+  });
+
+  // ---------- synthesis-mode (Monster Match v1 refit) ----------
+
+  it("activates synthesis weights when BOTH embedding_similarity AND llm_judgment are present", () => {
+    // 0.30*100 + 0.20*100 + 0.20*100 + 0.20*100 + 0.05*100 + 0.05*100 = 100
+    const result = computeCompositeScore({
+      personality: 100,
+      archetype: 100,
+      interests: 100,
+      geo: 100,
+      subtype: "similar",
+      embedding_similarity: 100,
+      llm_judgment: 100,
+    });
+    expect(result.total).toBe(100);
+    expect(result.breakdown.embedding_similarity).toBe(100);
+    expect(result.breakdown.llm_judgment).toBe(100);
+  });
+
+  it("synthesis formula matches the documented 0.30/0.20/0.20/0.20/0.05/0.05 weights", () => {
+    // Real-world case from prod verification 2026-04-28:
+    // personality=75, archetype=76, embedding=79, llm=71, interests=50, geo=90
+    // 0.30*75 + 0.20*76 + 0.20*79 + 0.20*71 + 0.05*50 + 0.05*90
+    //  = 22.5 + 15.2 + 15.8 + 14.2 + 2.5 + 4.5 = 74.7 → 75
+    const result = computeCompositeScore({
+      personality: 75,
+      archetype: 76,
+      interests: 50,
+      geo: 90,
+      subtype: "similar",
+      embedding_similarity: 79,
+      llm_judgment: 71,
+    });
+    expect(result.total).toBe(75);
+  });
+
+  it("falls back to v1 weights when only embedding_similarity is provided", () => {
+    // No llm_judgment → v1 formula. Should match the "all 100s, no bonus" case.
+    const synthesisOnly = computeCompositeScore({
+      personality: 100,
+      archetype: 100,
+      interests: 100,
+      geo: 100,
+      subtype: "similar",
+      embedding_similarity: 100,
+    });
+    const v1 = computeCompositeScore({
+      personality: 100,
+      archetype: 100,
+      interests: 100,
+      geo: 100,
+      subtype: "similar",
+    });
+    expect(synthesisOnly.total).toBe(v1.total);
+    // The signal is still recorded in the breakdown for observability.
+    expect(synthesisOnly.breakdown.embedding_similarity).toBe(100);
+    expect(synthesisOnly.breakdown.llm_judgment).toBeNull();
+  });
+
+  it("falls back to v1 weights when only llm_judgment is provided", () => {
+    const llmOnly = computeCompositeScore({
+      personality: 100,
+      archetype: 100,
+      interests: 100,
+      geo: 100,
+      subtype: "similar",
+      llm_judgment: 100,
+    });
+    const v1 = computeCompositeScore({
+      personality: 100,
+      archetype: 100,
+      interests: 100,
+      geo: 100,
+      subtype: "similar",
+    });
+    expect(llmOnly.total).toBe(v1.total);
+    expect(llmOnly.breakdown.llm_judgment).toBe(100);
+    expect(llmOnly.breakdown.embedding_similarity).toBeNull();
+  });
+
+  it("treats null synthesis signals the same as missing", () => {
+    const explicitNull = computeCompositeScore({
+      personality: 50,
+      archetype: 50,
+      interests: 50,
+      geo: 50,
+      subtype: "similar",
+      embedding_similarity: null,
+      llm_judgment: null,
+    });
+    const missing = computeCompositeScore({
+      personality: 50,
+      archetype: 50,
+      interests: 50,
+      geo: 50,
+      subtype: "similar",
+    });
+    expect(explicitNull.total).toBe(missing.total);
+  });
+
+  it("preserves all signals in the breakdown regardless of which formula ran", () => {
+    const result = computeCompositeScore({
+      personality: 60,
+      archetype: 70,
+      interests: 80,
+      geo: 90,
+      subtype: "complementary",
+      embedding_similarity: 65,
+      llm_judgment: 75,
+    });
+    expect(result.breakdown.personality).toBe(60);
+    expect(result.breakdown.archetype_pair).toBe(70);
+    expect(result.breakdown.interests).toBe(80);
+    expect(result.breakdown.geo).toBe(90);
+    expect(result.breakdown.embedding_similarity).toBe(65);
+    expect(result.breakdown.llm_judgment).toBe(75);
+  });
+});
+
+describe("cosineSimilarity", () => {
+  it("returns 100 for identical vectors", () => {
+    expect(cosineSimilarity([1, 2, 3], [1, 2, 3])).toBe(100);
+  });
+
+  it("returns 100 for any positive scalar multiple", () => {
+    // Scaling preserves direction → cosine = 1 → maps to 100.
+    expect(cosineSimilarity([1, 2, 3], [2, 4, 6])).toBe(100);
+  });
+
+  it("returns 0 for opposite-direction vectors", () => {
+    expect(cosineSimilarity([1, 0], [-1, 0])).toBe(0);
+  });
+
+  it("returns 50 for orthogonal vectors", () => {
+    // cos = 0 → maps to 50 (neutral midpoint).
+    expect(cosineSimilarity([1, 0], [0, 1])).toBe(50);
+  });
+
+  it("falls back to 50 for mismatched lengths", () => {
+    expect(cosineSimilarity([1, 2, 3], [1, 2])).toBe(50);
+  });
+
+  it("falls back to 50 for empty inputs", () => {
+    expect(cosineSimilarity([], [])).toBe(50);
+  });
+
+  it("falls back to 50 when either vector is the zero vector", () => {
+    expect(cosineSimilarity([0, 0, 0], [1, 2, 3])).toBe(50);
+    expect(cosineSimilarity([1, 2, 3], [0, 0, 0])).toBe(50);
+  });
+
+  it("clamps to [0, 100] (sanity for floating-point edge cases)", () => {
+    // High-dim self-similarity from a real embedding-style vector.
+    const v = Array.from({ length: 1536 }, (_, i) => Math.sin(i / 100));
+    expect(cosineSimilarity(v, v)).toBe(100);
+  });
+
+  it("gives a moderate score for partially-aligned vectors", () => {
+    // 45° between [1,0] and [1,1] → cos ≈ 0.707 → ((0.707+1)/2)*100 ≈ 85
+    expect(cosineSimilarity([1, 0], [1, 1])).toBe(85);
   });
 });
 
