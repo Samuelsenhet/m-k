@@ -26,20 +26,22 @@ För **fysisk enhet** (development client): följ [Expo: iOS device development 
 
 ## EAS Workflows (CI)
 
-YAML-filer ligger i [apps/mobile/.eas/workflows/](../apps/mobile/.eas/workflows/) (samma nivå som [apps/mobile/eas.json](../apps/mobile/eas.json)).
+Auto-triggade YAML-filer ligger i [.eas/workflows/](../.eas/workflows/) (repo-rot). Manuella App Store-/TestFlight-flöden ligger i [apps/mobile/.eas/workflows/](../apps/mobile/.eas/workflows/).
 
 | Fil | Syfte |
 | --- | --- |
-| `ios-development-build.yml` | **Development client** (iOS Simulator), profil `expo-development`; kör manuellt. |
-| `create-production-builds.yml` | **Production**-build (iOS); kör manuellt. |
-| `preview-builds.yml` | **Preview**-build (iOS, internal distribution). |
-| `production-on-push-main.yml` | Production (iOS) vid **push till `main`**, endast om `apps/mobile/**` eller `packages/core/**` ändrats. Kräver att GitHub är kopplat till Expo-projektet. |
+| `.eas/workflows/deploy-to-production.yml` | Push till `main` (paths: `apps/mobile/**`, `packages/core/**`) → fingerprint, bygg om native ändrats, annars OTA, sedan submit. |
+| `.eas/workflows/publish-preview-update.yml` | Push till valfri branch (paths: `apps/mobile/**`, `packages/core/**`) → OTA preview-update. |
+| `.eas/workflows/e2e-test-ios.yml` | PR → simulator-build + Maestro-flöden. |
+| `.eas/workflows/create-development-builds.yml` | Development client (enhet + simulator); kör manuellt. |
+| `.eas/workflows/create-production-builds.yml` | Production-build (iOS); kör manuellt. |
+| `apps/mobile/.eas/workflows/ios-testflight.yml` | Production-build → TestFlight; körs via `npm run mobile:eas:workflow:testflight`. |
+| `apps/mobile/.eas/workflows/ios-app-store-submit.yml` | Production-build → App Store Submit; körs via `npm run mobile:eas:workflow:app-store`. |
 
-Kör manuellt från `apps/mobile`:
+Kör manuellt från repo-rot:
 
 ```bash
-cd apps/mobile
-npx eas-cli@latest workflow:run .eas/workflows/ios-development-build.yml
+npx eas-cli@latest workflow:run .eas/workflows/create-development-builds.yml
 npx eas-cli@latest workflow:run .eas/workflows/create-production-builds.yml
 ```
 

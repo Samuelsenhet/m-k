@@ -1,11 +1,15 @@
-# Publicerar en preview OTA-uppdatering (EAS Update) för varje push till valfri branch.
+# Publicerar en preview OTA-uppdatering (EAS Update) för push som rör mobilkoden.
 # Baserat på officiellt Expo-exempel "Publish preview update" — anpassat till iOS only.
+# Path-filtret matchar deploy-to-production.yml så landing-/docs-pushar inte triggar tomma OTA-jobb.
 # Triggas automatiskt vid push; manuellt: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/publish-preview-update.yml
 name: Publish preview update (iOS)
 
 on:
   push:
     branches: ['*']
+    paths:
+      - "apps/mobile/**"
+      - "packages/core/**"
 
 jobs:
   publish_preview_update:

@@ -143,7 +143,7 @@ More detail: [iOS device development build](https://docs.expo.dev/tutorial/eas/i
 
 ## CI / EAS Workflows
 
-Simulator dev builds can be triggered with [apps/mobile/.eas/workflows/ios-development-build.yml](../apps/mobile/.eas/workflows/ios-development-build.yml) (`profile: expo-development`). See [EXPO_EAS_IOS.md](./EXPO_EAS_IOS.md).
+Simulator + device dev builds can be triggered with [.eas/workflows/create-development-builds.yml](../.eas/workflows/create-development-builds.yml) (profiles `expo-development` + `expo-development-device`). See [EXPO_EAS_IOS.md](./EXPO_EAS_IOS.md).
 
 ## Install the app
 

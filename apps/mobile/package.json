@@ -31,7 +31,6 @@
     "eas:build:preview:ios": "npx eas-cli@^18.4.0 build --profile expo-preview --platform ios",
     "eas:build:production:ios": "npx eas-cli@^18.4.0 build --profile expo-production --platform ios",
     "eas:build:production:ios:submit": "npx eas-cli@^18.4.0 build --profile expo-production --platform ios --auto-submit",
-    "eas:workflow:production": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/create-production-builds.yml --wait",
     "eas:workflow:testflight": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/ios-testflight.yml --wait",
     "eas:workflow:app-store": "npx eas-cli@^18.4.0 workflow:run .eas/workflows/ios-app-store-submit.yml --wait",
     "mobile:eas:workflow:testflight": "npm run eas:workflow:testflight",
