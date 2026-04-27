@@ -84,6 +84,8 @@ export type GenerateMatchPayloadResult = {
   fallback_used: boolean;
   provider: string;
   latency_ms: number;
+  /** Populated when fallback_used=true and we attempted the LLM. */
+  failure_reason?: string;
 };
 
 // ---------- public API ----------
@@ -101,27 +103,40 @@ export async function generateMatchPayload(
   const provider = (Deno.env.get("LLM_PROVIDER") ?? "anthropic").toLowerCase();
   const start = Date.now();
 
+  let failure_reason: string | undefined;
+
   if (provider === "anthropic") {
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (apiKey) {
+    if (!apiKey) {
+      failure_reason = "ANTHROPIC_API_KEY missing";
+    } else {
       const result = await tryAnthropic(context, apiKey);
-      if (result) {
+      if ("output" in result) {
         return {
-          output: result,
+          output: result.output,
           fallback_used: false,
           provider: "anthropic",
           latency_ms: Date.now() - start,
         };
       }
+      failure_reason = result.reason;
     }
+  } else {
+    failure_reason = `unknown provider: ${provider}`;
   }
 
-  // Fallback path
+  // Fallback path — surface the diagnostic in validation_note so it's visible
+  // in candidates_data without needing the function logs.
+  const fallbackOutput = generateFallbackOutput(context);
+  if (failure_reason) {
+    fallbackOutput.validation_note = `[llm-failure] ${failure_reason}`;
+  }
   return {
-    output: generateFallbackOutput(context),
+    output: fallbackOutput,
     fallback_used: true,
     provider: "fallback",
     latency_ms: Date.now() - start,
+    failure_reason,
   };
 }
 
@@ -148,10 +163,11 @@ export function buildCacheKey(context: MatchContext): string {
 async function tryAnthropic(
   context: MatchContext,
   apiKey: string,
-): Promise<MatchPayloadOutput | null> {
+): Promise<{ output: MatchPayloadOutput } | { reason: string }> {
   const systemPrompt = buildSystemPrompt(context.locale);
   const userPrompt = buildUserPrompt(context);
 
+  let lastReason = "unknown";
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -170,24 +186,25 @@ async function tryAnthropic(
       });
 
       if (!response.ok) {
-        console.warn(
-          `[llm] anthropic attempt ${attempt + 1} failed:`,
-          response.status,
-        );
+        const bodyText = await response.text().catch(() => "");
+        lastReason = `http ${response.status}: ${bodyText.slice(0, 160)}`;
+        console.warn(`[llm] anthropic attempt ${attempt + 1}:`, lastReason);
         continue;
       }
 
       const json = await response.json();
       const text = json?.content?.[0]?.text ?? "";
       const parsed = parseLLMOutput(text);
-      if (parsed) return parsed;
+      if (parsed) return { output: parsed };
 
-      console.warn(`[llm] anthropic attempt ${attempt + 1}: invalid JSON`);
+      lastReason = `invalid JSON (text excerpt: ${text.slice(0, 100)})`;
+      console.warn(`[llm] anthropic attempt ${attempt + 1}:`, lastReason);
     } catch (err) {
-      console.warn(`[llm] anthropic attempt ${attempt + 1} crashed:`, err);
+      lastReason = `crashed: ${err}`;
+      console.warn(`[llm] anthropic attempt ${attempt + 1}:`, lastReason);
     }
   }
-  return null;
+  return { reason: lastReason };
 }
 
 function buildSystemPrompt(locale: "sv" | "en"): string {
