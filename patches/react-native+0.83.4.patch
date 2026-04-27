@@ -1,0 +1,43 @@
+diff --git a/node_modules/react-native/scripts/cocoapods/helpers.rb b/node_modules/react-native/scripts/cocoapods/helpers.rb
+index cdb1e14..dfd75ae 100644
+--- a/node_modules/react-native/scripts/cocoapods/helpers.rb
++++ b/node_modules/react-native/scripts/cocoapods/helpers.rb
+@@ -27,11 +27,14 @@ class Environment
+     end
+ end
+ 
++require "shellwords"
++
+ class Finder
+     def self.find_codegen_file(path)
+         js_files = '-name "Native*.js" -or -name "*NativeComponent.js"'
+         ts_files = '-name "Native*.ts" -or -name "*NativeComponent.ts"'
+-        return `find #{path} -type f \\( #{js_files} -or #{ts_files} \\)`.split("\n").sort()
++        escaped = Shellwords.escape(path)
++        return `find #{escaped} -type f \\( #{js_files} -or #{ts_files} \\)`.split("\n").sort()
+     end
+ end
+ 
+diff --git a/node_modules/react-native/scripts/cocoapods/new_architecture.rb b/node_modules/react-native/scripts/cocoapods/new_architecture.rb
+index 8c7508b..56b75fe 100644
+--- a/node_modules/react-native/scripts/cocoapods/new_architecture.rb
++++ b/node_modules/react-native/scripts/cocoapods/new_architecture.rb
+@@ -3,7 +3,8 @@
+ # This source code is licensed under the MIT license found in the
+ # LICENSE file in the root directory of this source tree.
+ 
+-require 'json'
++require "json"
++require "shellwords"
+ 
+ require_relative "./utils.rb"
+ require_relative "./helpers.rb"
+@@ -165,7 +166,7 @@ class NewArchitectureHelper
+         excluded_info_plist = ["/Pods", "Tests", "metainternal", ".bundle", "build/", "DerivedData/", ".xcframework", ".framework", "watchkitapp", "today-extention"]
+         projectPaths.each do |projectPath|
+             projectFolderPath = File.dirname(projectPath)
+-            infoPlistFiles = `find #{projectFolderPath} -name "Info.plist"`
++            infoPlistFiles = `find #{Shellwords.escape(projectFolderPath)} -name Info.plist`
+             infoPlistFiles = infoPlistFiles.split("\n").map { |f| f.strip }
+ 
+             infoPlistFiles.each do |infoPlistFile|

@@ -80,9 +80,31 @@ export function usePushNotifications() {
         tag,
       });
     } catch (error: unknown) {
-      console.error('Failed to send notification:', error);
+      if (import.meta.env.DEV) console.error('Failed to send notification:', error);
     }
   }, [state.permission]);
+
+  // Subscribe to Realtime notification channel and show browser notifications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase.channel(`user:${user.id}:notifications`, {
+      config: { broadcast: { self: false } },
+    });
+
+    channel
+      .on('broadcast', { event: 'notification_received' }, (msg) => {
+        const payload = msg.payload as { title?: string; message?: string };
+        if (payload?.title && payload?.message) {
+          sendLocalNotification(payload.title, payload.message);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, sendLocalNotification]);
 
   return {
     ...state,

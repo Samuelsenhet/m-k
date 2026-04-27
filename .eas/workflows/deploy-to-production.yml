@@ -1,0 +1,55 @@
+# Smart production-deploy: fingerprint → bygg bara om native-koden ändrats, annars OTA-uppdatering.
+# Baserat på officiellt Expo-exempel "Deploy to production" — anpassat till iOS only med monorepo path-filter.
+# Triggas vid push till main (apps/mobile/** eller packages/core/**).
+# Manuellt: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/deploy-to-production.yml
+name: Deploy to production (iOS)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/core/**"
+
+jobs:
+  fingerprint:
+    name: Fingerprint
+    type: fingerprint
+    environment: production
+
+  get_ios_build:
+    name: Check for existing iOS build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+      profile: production
+
+  build_ios:
+    name: Build iOS
+    needs: [get_ios_build]
+    if: ${{ !needs.get_ios_build.outputs.build_id }}
+    type: build
+    environment: production
+    params:
+      platform: ios
+      profile: expo-production
+
+  submit_ios_build:
+    name: Submit iOS build to App Store
+    needs: [build_ios]
+    type: submit
+    environment: production
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  publish_ios_update:
+    name: Publish iOS OTA update
+    needs: [get_ios_build]
+    if: ${{ needs.get_ios_build.outputs.build_id }}
+    type: update
+    environment: production
+    params:
+      branch: production
+      platform: ios

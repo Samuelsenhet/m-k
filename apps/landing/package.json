@@ -1,0 +1,31 @@
+{
+  "name": "maak-landing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 3000",
+    "prebuild": "node scripts/optimize-images.mjs && node scripts/generate-favicons.mjs",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "optimize:images": "node scripts/optimize-images.mjs",
+    "favicons": "node scripts/generate-favicons.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^1.7.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.8.3"
+  }
+}

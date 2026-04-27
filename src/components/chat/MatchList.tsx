@@ -2,13 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageCircle, Heart } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { sv, enUS } from 'date-fns/locale';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { ChatListItemCard, AvatarWithRing, EmptyStateWithMascot, LoadingStateWithMascot } from '@/components/ui-v2';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface Match {
   id: string;
@@ -20,6 +19,7 @@ interface Match {
   matched_profile?: {
     display_name: string;
     avatar_url: string | null;
+    id_verification_status?: string | null;
   };
   last_message?: {
     content: string;
@@ -31,14 +31,27 @@ interface Match {
 interface MatchListProps {
   onSelectMatch: (match: Match) => void;
   selectedMatchId?: string;
+  /** Filter conversations by display name (from main Chat page search) */
+  searchQuery?: string;
 }
 
-export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
+type ProfileLookupRow = {
+  display_name: string | null;
+  avatar_url: string | null;
+} & Record<string, unknown>;
+
+export function MatchList({ onSelectMatch, selectedMatchId, searchQuery = '' }: MatchListProps) {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const dateLocale = i18n.language === 'sv' ? sv : enUS;
+
+  const query = searchQuery.trim().toLowerCase();
+  const displayName = (m: Match) => m.matched_profile?.display_name ?? 'Användare';
+  const filteredMatches = query
+    ? matches.filter((m) => displayName(m).toLowerCase().includes(query))
+    : matches;
 
   const fetchMutualMatches = useCallback(async () => {
     if (!user) return;
@@ -53,7 +66,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
         .order('created_at', { ascending: false });
 
       if (matchesError) {
-        console.error('Error fetching matches:', matchesError);
+        if (import.meta.env.DEV) console.error('Error fetching matches:', matchesError);
         setLoading(false);
         return;
       }
@@ -64,17 +77,36 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
         return;
       }
 
+      // Filter out blocked users (bidirectional)
+      const { data: blockedRows } = await supabase
+        .from('blocked_users')
+        .select('blocker_id, blocked_id')
+        .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`);
+
+      const blockedIds = new Set<string>();
+      for (const row of blockedRows || []) {
+        const r = row as { blocker_id: string; blocked_id: string };
+        if (r.blocker_id === user.id) blockedIds.add(r.blocked_id);
+        else blockedIds.add(r.blocker_id);
+      }
+
+      const unblockedMatches = matchesData.filter((match) => {
+        const partnerId = match.user_id === user.id ? match.matched_user_id : match.user_id;
+        return !blockedIds.has(partnerId);
+      });
+
       // Get all matched user IDs
-      const matchedUserIds = matchesData.map(match => 
+      const matchedUserIds = unblockedMatches.map(match =>
         match.user_id === user.id ? match.matched_user_id : match.user_id
       );
-      const matchIds = matchesData.map(m => m.id);
+      const matchIds = unblockedMatches.map(m => m.id);
 
       // Batch fetch all profiles at once
+      const profileKey = await getProfilesAuthKey(user.id);
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', matchedUserIds);
+        .select(`${profileKey}, display_name, avatar_url, id_verification_status`)
+        .in(profileKey, matchedUserIds);
 
       // Batch fetch last messages for all matches (using a subquery approach)
       const { data: lastMessagesData } = await supabase
@@ -92,7 +124,13 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
         .eq('is_read', false);
 
       // Create lookup maps
-      const profileMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+      const profileMap = new Map<string, ProfileLookupRow>();
+      (profilesData as unknown as ProfileLookupRow[] | null | undefined)?.forEach((p) => {
+        const keyValue = p?.[profileKey];
+        if (typeof keyValue === 'string') {
+          profileMap.set(keyValue, p);
+        }
+      });
       
       // Get last message per match (first occurrence since ordered desc)
       const lastMessageMap = new Map<string, { content: string; created_at: string }>();
@@ -109,7 +147,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
       });
 
       // Combine data
-      const matchesWithProfiles = matchesData.map(match => {
+      const matchesWithProfiles = unblockedMatches.map(match => {
         const matchedUserId = match.user_id === user.id 
           ? match.matched_user_id 
           : match.user_id;
@@ -129,7 +167,7 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
 
       setMatches(matchesWithProfiles);
     } catch (error) {
-      console.error('Error fetching matches:', error);
+      if (import.meta.env.DEV) console.error('Error fetching matches:', error);
     } finally {
       setLoading(false);
     }
@@ -145,83 +183,96 @@ export function MatchList({ onSelectMatch, selectedMatchId }: MatchListProps) {
     return data.publicUrl;
   };
 
+  const chatListEmotionalConfig = { screen: "chat" as const, hasMessages: false };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
+      <LoadingStateWithMascot className="py-12" emotionalConfig={chatListEmotionalConfig} />
     );
   }
 
   if (matches.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Heart className="w-8 h-8 text-primary" />
-        </div>
-        <h3 className="font-serif font-semibold text-foreground mb-2">
-          {t('matches.noMatches')}
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          {t('chat.chooseIcebreaker')}
-        </p>
-      </div>
+      <EmptyStateWithMascot
+        screenState={MASCOT_SCREEN_STATES.NO_CHATS}
+        title={t('chat.noChats', t('matches.noMatches'))}
+        description="Övning ger färdighet! Hej! 👋"
+        className="py-12"
+        emotionalConfig={chatListEmotionalConfig}
+      />
     );
   }
 
   return (
-    <div className="space-y-2">
-      {matches.map((match) => (
-        <Card
-          key={match.id}
-          onClick={() => onSelectMatch(match)}
-          className={cn(
-            'p-3 cursor-pointer transition-all hover:shadow-md',
-            selectedMatchId === match.id && 'ring-2 ring-primary bg-primary/5'
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={getPhotoUrl(match.matched_profile?.avatar_url || null)} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {match.matched_profile?.display_name?.charAt(0).toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-foreground truncate">
-                  {match.matched_profile?.display_name || 'Användare'}
-                </h4>
-                {match.last_message && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(match.last_message.created_at), {
-                      addSuffix: true,
-                      locale: dateLocale,
-                    })}
+    <div className="flex flex-col">
+      {/* Recent Match – horizontal scroll of avatars + names */}
+      {filteredMatches.length > 0 && (
+        <div className="px-3 pt-4 pb-3 border-b border-border">
+          <h2 className="font-semibold text-foreground text-sm mb-3">{t('chat.recentMatch')}</h2>
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex gap-4 pb-2">
+              {filteredMatches.map((match) => (
+                <button
+                  key={match.id}
+                  type="button"
+                  onClick={() => onSelectMatch(match)}
+                  className="flex flex-col items-center gap-2 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl p-1 transition-colors duration-normal hover:bg-muted/50"
+                >
+                  <AvatarWithRing
+                    showRing
+                    ringVariant="coral"
+                    src={getPhotoUrl(match.matched_profile?.avatar_url ?? null)}
+                    fallback={displayName(match).slice(0, 2).toUpperCase()}
+                    size="lg"
+                  />
+                  <span className="text-xs font-medium text-foreground truncate max-w-[72px]">
+                    {displayName(match)}
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {match.last_message ? (
-                  <p className="text-sm text-muted-foreground truncate flex-1">
-                    {match.last_message.content}
-                  </p>
-                ) : (
-                  <p className="text-sm text-primary flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3" />
-                    {t('chat.chooseIcebreaker')}
-                  </p>
-                )}
-                {match.unread_count && match.unread_count > 0 && (
-                  <Badge className="bg-primary text-primary-foreground h-5 min-w-5 flex items-center justify-center">
-                    {match.unread_count}
-                  </Badge>
-                )}
-              </div>
+                </button>
+              ))}
             </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+      )}
+
+      {/* Conversation list – avatar | name + last message | time + read/unread */}
+      <div className="divide-y divide-border">
+        {filteredMatches.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            {query ? t('chat.noResults', 'Inga träffar') : t('matches.noMatches')}
           </div>
-        </Card>
-      ))}
+        ) : (
+          filteredMatches.map((match) => {
+            const hasUnread = (match.unread_count ?? 0) > 0;
+            const lastMsg = match.last_message;
+            const chatStatus = !lastMsg
+              ? ('start-chat' as const)
+              : hasUnread
+                ? ('your-turn' as const)
+                : undefined;
+            const timeLabel = lastMsg
+              ? format(new Date(lastMsg.created_at), 'p', { locale: dateLocale })
+              : '';
+            const preview = lastMsg ? lastMsg.content : t('chat.chooseIcebreaker');
+            return (
+              <ChatListItemCard
+                key={match.id}
+                displayName={displayName(match)}
+                lastMessagePreview={preview}
+                timeLabel={timeLabel}
+                status={chatStatus}
+                avatarSrc={getPhotoUrl(match.matched_profile?.avatar_url ?? null)}
+                avatarFallback={displayName(match).slice(0, 2).toUpperCase()}
+                showRing={hasUnread}
+                state={selectedMatchId === match.id ? 'active' : hasUnread ? 'unread' : 'idle'}
+                verified={match.matched_profile?.id_verification_status === 'approved'}
+                onClick={() => onSelectMatch(match)}
+              />
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

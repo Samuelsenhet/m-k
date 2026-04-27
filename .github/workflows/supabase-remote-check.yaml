@@ -1,0 +1,53 @@
+# Verifies the linked production database has all migrations from git applied.
+# Runs after a successful production deploy (no race with db push) + weekly + manual.
+# Supabase security advisors (MCP get_advisors) have no official GitHub Action — see docs/SUPABASE_DEPLOY.md.
+
+name: Supabase remote migration check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_run:
+    workflows: ["Deploy to Production"]
+    types:
+      - completed
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    # Only verify after deploy when that workflow succeeded; always run for schedule / dispatch
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: supabase/setup-cli@v1
+        with:
+          # Pinned — see production.yaml for rationale.
+          version: 2.75.0
+
+      - name: Require production secrets
+        run: |
+          if [ -z "${{ secrets.PRODUCTION_PROJECT_ID }}" ]; then
+            echo "::error::PRODUCTION_PROJECT_ID missing (GitHub → Settings → Secrets → Actions)."
+            exit 1
+          fi
+          if [ -z "${{ secrets.PRODUCTION_DB_PASSWORD }}" ]; then
+            echo "::error::PRODUCTION_DB_PASSWORD missing."
+            exit 1
+          fi
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN missing."
+            exit 1
+          fi
+
+      - name: Link to production project
+        run: supabase link --project-ref "${{ secrets.PRODUCTION_PROJECT_ID }}"
+
+      - name: Fail if remote is behind git migrations
+        run: bash scripts/ci-supabase-remote-drift.sh

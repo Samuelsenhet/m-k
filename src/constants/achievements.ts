@@ -104,6 +104,17 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     category: 'matching',
     points: 50,
   },
+  {
+    id: 'id_verified',
+    code: 'id_verified',
+    name_sv: 'Verifierad',
+    name_en: 'Verified',
+    description_sv: 'Verifiera din identitet med ID',
+    description_en: 'Verify your identity with ID',
+    icon: '🪪',
+    category: 'profile',
+    points: 15,
+  },
 ];
 
 /**

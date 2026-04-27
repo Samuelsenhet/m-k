@@ -6,14 +6,29 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth';
 import { usePhoneAuth, PhoneAuthStep } from '@/hooks/usePhoneAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Database } from '@/integrations/supabase/types';
+import {
+  ButtonPrimary,
+  ButtonGhost,
+  CardV2,
+  CardV2Content,
+  CardV2Header,
+  CardV2Title,
+  InputOTPV2,
+  InputOTPV2Group,
+  InputOTPV2Slot,
+} from '@/components/ui-v2';
+import { Label } from '@/components/ui/label';
 import { PhoneInput } from '@/components/auth/PhoneInput';
-import { OtpInput } from '@/components/auth/OtpInput';
 import { AgeVerification } from '@/components/auth/AgeVerification';
 import { calculateAge } from '@/components/auth/age-utils';
 import { Heart, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { isSupabaseConfigured, isDemoEnabled } from '@/config/supabase';
+import { COLORS } from '@/design/tokens';
+
+type ProfilesInsert = Database['public']['Tables']['profiles']['Insert'];
 
 const phoneSchema = z.string()
   .min(9, 'Ange ett giltigt telefonnummer')
@@ -39,7 +54,7 @@ export default function PhoneAuth() {
   const [countdown, setCountdown] = useState(0);
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
   
-  const { step, loading, error, sendOtp, verifyOtp, resendOtp, setStep } = usePhoneAuth();
+  const { step, loading, error, sendOtp, verifyOtp, resendOtp, setStep, hasValidSupabaseConfig } = usePhoneAuth();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -47,11 +62,12 @@ export default function PhoneAuth() {
     const checkUserStatus = async () => {
       // Don't redirect if we're in the middle of completing profile
       if (user && !isCompletingProfile) {
+        const profileKey = await getProfilesAuthKey(user.id);
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_completed, date_of_birth')
-          .eq('id', user.id)
-          .single();
+          .eq(profileKey, user.id)
+          .maybeSingle();
         
         // Returning user with completed onboarding -> matches
         if (profile?.onboarding_completed) {
@@ -140,37 +156,60 @@ export default function PhoneAuth() {
       const { data: session } = await supabase.auth.getSession();
       
       if (session.session) {
+        const sessionUserId = session.session.user.id;
+        const profileKey = await getProfilesAuthKey(sessionUserId);
+        const patch = {
+          date_of_birth: dobString,
+          phone: formattedPhone,
+          phone_verified_at: new Date().toISOString(),
+        };
+
         // Try to update first, returning the updated row
         const { data: updatedProfile, error: updateError } = await supabase
           .from('profiles')
-          .update({
-            date_of_birth: dobString,
-            phone: formattedPhone,
-            phone_verified_at: new Date().toISOString(),
-          })
-          .eq('id', session.session.user.id)
+          .update(patch)
+          .eq(profileKey, sessionUserId)
           .select('date_of_birth, onboarding_completed')
-          .single();
+          .maybeSingle();
 
         let savedProfile = updatedProfile;
 
-        if (updateError) {
-          console.error('Profile update error:', updateError);
+        if (updateError || !savedProfile) {
+          if (import.meta.env.DEV) {
+            if (import.meta.env.DEV) console.error('Profile update error:', updateError);
+          }
           // If profile doesn't exist, create it and return the inserted row
-          const { data: insertedProfile, error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.session.user.id,
-              date_of_birth: dobString,
-              phone: formattedPhone,
-              phone_verified_at: new Date().toISOString(),
-            })
-            .select('date_of_birth, onboarding_completed')
-            .single();
+          const insertWithKey = async (key: 'id' | 'user_id') => {
+            const insertPayload =
+              key === 'id'
+                ? ({ id: sessionUserId, ...patch } as const)
+                : ({ user_id: sessionUserId, ...patch } as const);
+
+            return await supabase
+              .from('profiles')
+              .insert(insertPayload as unknown as ProfilesInsert)
+              .select('date_of_birth, onboarding_completed')
+              .single();
+          };
+
+          // Try detected key first, then fallback to the other key (handles ambiguous schemas).
+          let { data: insertedProfile, error: insertError } = await insertWithKey(profileKey);
+          if (insertError) {
+            const fallbackKey: 'id' | 'user_id' = profileKey === 'id' ? 'user_id' : 'id';
+            const fallbackRes = await insertWithKey(fallbackKey);
+            insertedProfile = fallbackRes.data;
+            insertError = fallbackRes.error;
+          }
           
           if (insertError) {
-            console.error('Profile insert error:', insertError);
-            toast.error(t('profile.error_saving'));
+            if (import.meta.env.DEV) {
+              if (import.meta.env.DEV) console.error('Profile insert error:', insertError);
+            }
+            const base = t('profile.error_saving');
+            const details =
+              (insertError as { message?: string } | null)?.message ||
+              (updateError as { message?: string } | null)?.message;
+            toast.error(import.meta.env.DEV && details ? `${base}: ${details}` : base);
             setIsCompletingProfile(false);
             return;
           }
@@ -232,24 +271,51 @@ export default function PhoneAuth() {
           {step === 'phone' ? t('common.back') : t('common.back')}
         </button>
 
-        <Card className="shadow-card border-border overflow-hidden">
-          <CardHeader className="text-center">
+        {step === 'phone' && !isSupabaseConfigured && !isDemoEnabled && (
+          <CardV2 className="mb-4 border-destructive/30 bg-destructive/5" padding="none">
+            <CardV2Content className="pt-4 pb-4">
+              <p className="text-sm text-foreground">
+                Supabase är inte konfigurerad. Lägg till <code className="text-xs bg-muted px-1 rounded">VITE_SUPABASE_URL</code> och <code className="text-xs bg-muted px-1 rounded">VITE_SUPABASE_PUBLISHABLE_KEY</code> i <code className="text-xs bg-muted px-1 rounded">.env</code>. Kontakta support om problem kvarstår.
+              </p>
+            </CardV2Content>
+          </CardV2>
+        )}
+        {step === 'phone' && isDemoEnabled && (
+          <CardV2 className="mb-4 border-primary/30 bg-primary/5" padding="none">
+            <CardV2Content className="pt-4 pb-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Testa appen utan konto:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <ButtonGhost size="sm" asChild>
+                  <Link to="/demo-seed">Demo – matchningar & chatt</Link>
+                </ButtonGhost>
+                <ButtonGhost size="sm" asChild>
+                  <Link to="/demo-samlingar">Demo-samlingar</Link>
+                </ButtonGhost>
+              </div>
+            </CardV2Content>
+          </CardV2>
+        )}
+
+        <CardV2 className="overflow-hidden">
+          <CardV2Header className="text-center">
             <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow">
               <Heart className="w-7 h-7 text-primary-foreground" fill="currentColor" />
             </div>
-            <CardTitle className="text-2xl font-serif">
+            <CardV2Title className="text-2xl font-serif">
               {step === 'phone' && t('auth.phoneTitle')}
               {step === 'verify' && t('auth.verifyTitle')}
               {step === 'profile' && t('auth.ageTitle')}
-            </CardTitle>
-            <CardDescription>
+            </CardV2Title>
+            <p className="text-sm text-muted-foreground">
               {step === 'phone' && t('auth.phoneDescription')}
               {step === 'verify' && `${t('auth.verifyDescription')} +46 ${phone}`}
               {step === 'profile' && t('auth.ageDescription')}
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </CardV2Header>
 
-          <CardContent>
+          <CardV2Content className="pt-0">
             <AnimatePresence mode="wait">
               {step === 'phone' && (
                 <motion.div
@@ -268,13 +334,13 @@ export default function PhoneAuth() {
                     disabled={loading}
                   />
                   
-                  <Button
+                  <ButtonPrimary
                     onClick={handleSendOtp}
-                    className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
+                    className="w-full"
                     disabled={loading || phone.replace(/\D/g, '').length < 9}
                   >
                     {loading ? t('common.sending') : t('auth.sendCode')}
-                  </Button>
+                  </ButtonPrimary>
 
                   {/* Email auth link removed - phone only */}
                 </motion.div>
@@ -290,20 +356,39 @@ export default function PhoneAuth() {
                   transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  <OtpInput
-                    value={otp}
-                    onChange={setOtp}
-                    error={errors.otp || (error || undefined)}
-                    disabled={loading}
-                  />
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium" style={{ color: COLORS.primary[800] }}>
+                      Verifieringskod
+                    </Label>
+                    <InputOTPV2
+                      value={otp}
+                      onChange={setOtp}
+                      maxLength={6}
+                      disabled={loading}
+                      render={({ slots }) => (
+                        <InputOTPV2Group
+                          className={errors.otp || error ? 'border-destructive rounded-md' : ''}
+                        >
+                          {slots.map((slot, i) => (
+                            <InputOTPV2Slot key={i} {...slot} />
+                          ))}
+                        </InputOTPV2Group>
+                      )}
+                    />
+                    {(errors.otp || error) && (
+                      <p className="text-sm text-center" style={{ color: COLORS.coral[600] }}>
+                        {errors.otp || error}
+                      </p>
+                    )}
+                  </div>
                   
-                  <Button
+                  <ButtonPrimary
                     onClick={handleVerifyOtp}
-                    className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
+                    className="w-full"
                     disabled={loading || otp.length !== 6}
                   >
                     {loading ? t('common.verifying') : t('auth.verify')}
-                  </Button>
+                  </ButtonPrimary>
 
                   <div className="text-center">
                     <button
@@ -336,18 +421,18 @@ export default function PhoneAuth() {
                     error={errors.age || errors['dateOfBirth.day'] || errors['dateOfBirth.month'] || errors['dateOfBirth.year']}
                   />
 
-                  <Button
+                  <ButtonPrimary
                     onClick={handleCompleteProfile}
-                    className="w-full gradient-primary text-primary-foreground border-0 shadow-glow"
+                    className="w-full"
                     disabled={loading || !dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year}
                   >
                     {loading ? t('auth.completing') : t('auth.completeProfile')}
-                  </Button>
+                  </ButtonPrimary>
                 </motion.div>
               )}
             </AnimatePresence>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
 
         {/* Progress indicator */}
         <div className="flex justify-center gap-2 mt-6">

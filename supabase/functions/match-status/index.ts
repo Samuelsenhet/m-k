@@ -1,59 +1,85 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeadersFor } from "../_shared/cors.ts"
+import { getSupabaseEnv, verifySupabaseJWT } from "../_shared/env.ts"
 
 serve(async (req: Request) => {
+  const corsHeaders = corsHeadersFor(req, 'GET, POST, OPTIONS')
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
+    const envResult = getSupabaseEnv(req);
+    if (envResult instanceof Response) return envResult;
+    const { supabaseUrl, supabaseAnonKey } = envResult;
+    const authHeader = req.headers.get('Authorization') ?? '';
+
+    const url = new URL(req.url);
+    let body: { user_id?: string } = {};
+    if (req.method === 'POST') {
+      try {
+        body = await req.json();
+      } catch {
+        // ignore
       }
-    )
-
-    // Get the user from auth
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
-
-    if (!user) {
-      throw new Error('Not authenticated')
     }
 
-    const url = new URL(req.url)
-    const user_id = url.searchParams.get('user_id') || user.id
+    const jwtUserId = await verifySupabaseJWT(authHeader, supabaseUrl, supabaseAnonKey);
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    // Verify user matches
-    if (user_id !== user.id) {
-      throw new Error('Unauthorized')
+    let requestUserId: string;
+    let dbClient: ReturnType<typeof createClient>;
+
+    if (jwtUserId) {
+      requestUserId = body.user_id || url.searchParams.get('user_id') || jwtUserId;
+      if (requestUserId !== jwtUserId) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      // Use service role for DB queries (auth already verified via JWT above)
+      dbClient = createClient(supabaseUrl, serviceRoleKey ?? supabaseAnonKey);
+    } else if (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) {
+      requestUserId = body.user_id || url.searchParams.get('user_id') || '';
+      if (!requestUserId && typeof body === 'object' && body !== null) {
+        const uuidKey = Object.keys(body).find((k) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(k));
+        if (uuidKey) requestUserId = uuidKey;
+      }
+      if (!requestUserId) {
+        return new Response(
+          JSON.stringify({ error: 'user_id required (body or query) when using service role (dashboard test)' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      dbClient = createClient(supabaseUrl, serviceRoleKey);
+    } else {
+      console.warn('match-status: auth failed – JWT invalid or expired');
+      return new Response(
+        JSON.stringify({ error: 'Not authenticated' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
-    // Use CET timezone for date (Europe/Stockholm)
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' })
+    // Use CET timezone for date (Europe/Stockholm) – YYYY-MM-DD for DB
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Stockholm' })
     const now = new Date()
 
     // 1. Check user's onboarding status
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await dbClient
       .from('profiles')
       .select('onboarding_completed')
-      .eq('user_id', user_id)
+      .eq('id', requestUserId)
       .single()
 
     if (profileError || !profile) {
-      throw new Error('Profile not found')
+      return new Response(
+        JSON.stringify({ error: 'Profile not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      )
     }
 
     // Determine journey phase
@@ -63,10 +89,10 @@ serve(async (req: Request) => {
       journey_phase = 'WAITING'
     } else {
       // Check if matches exist for today
-      const { data: todayMatches, error: matchError } = await supabaseClient
+      const { data: todayMatches, error: matchError } = await dbClient
         .from('matches')
         .select('id, created_at')
-        .eq('user_id', user_id)
+        .eq('user_id', requestUserId)
         .eq('match_date', today)
         .limit(1)
 
@@ -74,10 +100,10 @@ serve(async (req: Request) => {
 
       if (todayMatches && todayMatches.length > 0) {
         // Check if this is the first match ever
-        const { data: allMatches, error: allMatchError } = await supabaseClient
+        const { data: allMatches, error: allMatchError } = await dbClient
           .from('matches')
           .select('id')
-          .eq('user_id', user_id)
+          .eq('user_id', requestUserId)
           .order('created_at', { ascending: true })
           .limit(1)
 
@@ -90,11 +116,11 @@ serve(async (req: Request) => {
         }
       } else {
         // Check if pool exists (means matches are ready to be delivered)
-        const { data: matchPool } = await supabaseClient
-          .from('user_daily_match_pool')
+        const { data: matchPool } = await dbClient
+          .from('user_daily_match_pools')
           .select('id')
-          .eq('user_id', user_id)
-          .eq('date', today)
+          .eq('user_id', requestUserId)
+          .eq('pool_date', today)
           .maybeSingle()
 
         journey_phase = matchPool ? 'READY' : 'WAITING'
@@ -102,10 +128,10 @@ serve(async (req: Request) => {
     }
 
     // 2. Count delivered matches today
-    const { data: deliveredMatches, error: deliveredError } = await supabaseClient
+    const { data: deliveredMatches, error: deliveredError } = await dbClient
       .from('matches')
       .select('id')
-      .eq('user_id', user_id)
+      .eq('user_id', requestUserId)
       .eq('match_date', today)
 
     if (deliveredError) throw deliveredError

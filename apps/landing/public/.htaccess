@@ -1,0 +1,74 @@
+# MÄÄK – landing-sajt på Loopia webbhotell (Apache 2.4 + nginx-proxy)
+# Next.js static export. Bara statisk HTML.
+
+RewriteEngine On
+
+# Tvinga HTTPS – undanta ACME challenge (Let's Encrypt validering).
+# Loopia har nginx framför Apache; %{HTTPS} är alltid "off" på Apache-nivån,
+# så kolla X-Forwarded-Proto från nginx istället.
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# /vilkor/ är svensk alias för /terms/ – Next's redirect() funkar inte i
+# static export så vi gör 301 på Apache-nivå. Fullständig URL så att
+# redirecten landar direkt på HTTPS (annars gissar Apache HTTP).
+RewriteRule ^vilkor/?$ https://%{HTTP_HOST}/terms/ [L,R=301]
+
+# Brandad 404 istället för Apache defaulten. Next bygger out/404.html från
+# app/not-found.tsx.
+ErrorDocument 404 /404.html
+
+# Trailing slash på mappar — Apache mod_dir gör detta default men via HTTP.
+# Stäng av mod_dir's auto-slash och lägg till egen regel som går direkt till HTTPS.
+DirectorySlash Off
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.+[^/])$ https://%{HTTP_HOST}/$1/ [L,R=301]
+
+# Next static export skapar opengraph-image som fil utan extension. Tvinga image/png
+# så sociala crawlers (Facebook, X, LinkedIn, Slack) ser den som riktig bild.
+<Files "opengraph-image">
+  ForceType image/png
+</Files>
+
+# ---- Cache-kontroll ----------------------------------------------------------
+# Next's /_next/static/**-filer har innehålls-hash i filnamnet → immutable 1 år.
+# Bilder i /screenshots/ och /icon*-filerna byts sällan → 1 år.
+# HTML byts vid varje deploy → måste revalidera direkt.
+#
+# mod_expires/mod_headers wrappas i IfModule så .htaccess inte kraschar om
+# någon modul saknas (Loopia shared host har båda enabled).
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # Hashade Next-assets – säkra att cacha för evigt
+  <FilesMatch "\.(js|css|woff2?|ttf|eot|otf)$">
+    ExpiresDefault "access plus 1 year"
+  </FilesMatch>
+
+  # Bilder & ikoner – byts sällan, 1 år räcker
+  <FilesMatch "\.(webp|png|jpg|jpeg|gif|svg|ico)$">
+    ExpiresDefault "access plus 1 year"
+  </FilesMatch>
+
+  # HTML & JSON – alltid revalidera (byts vid varje deploy)
+  <FilesMatch "\.(html|htm|json|xml|webmanifest|txt)$">
+    ExpiresDefault "access plus 0 seconds"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Immutable för hashade assets
+  <FilesMatch "\.(js|css|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(webp|png|jpg|jpeg|gif|svg|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # HTML: revalidera varje gång men cacha under validering (snabb 304)
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>

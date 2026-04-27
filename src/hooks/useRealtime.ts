@@ -23,9 +23,6 @@ export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseReal
   }, [onMessage, onError]);
 
   useEffect(() => {
-    // Check if already subscribed to prevent multiple subscriptions
-    if (channelRef.current?.state === 'subscribed') return;
-
     const channel = supabase.channel(`room:${roomId}:messages`, {
       config: {
         broadcast: { self: true, ack: true },
@@ -72,14 +69,24 @@ export function useRealtime<T = unknown>({ roomId, onMessage, onError }: UseReal
       throw new Error('Channel not subscribed yet');
     }
 
-    const { error } = await channelRef.current.send({
+    const sendResult: unknown = await channelRef.current.send({
       type: 'broadcast',
       event: 'message_created',
       payload: message,
     });
 
-    if (error) {
-      throw error;
+    // Supabase returns a status object/string depending on version; treat non-ok as error
+    if (typeof sendResult === 'string') {
+      if (sendResult.toLowerCase() !== 'ok') {
+        throw new Error(`Realtime send failed: ${sendResult}`);
+      }
+      return;
+    }
+    if (typeof sendResult === 'object' && sendResult !== null && 'status' in sendResult) {
+      const status = (sendResult as { status?: unknown }).status;
+      if (typeof status === 'string' && status.toLowerCase() !== 'ok') {
+        throw new Error(`Realtime send failed: ${status}`);
+      }
     }
   };
 

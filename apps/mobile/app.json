@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "extra": {
+      "runtimeSupabaseUrl": "https://jappgthiyedycwhttpcu.supabase.co",
+      "runtimeSupabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcHBndGhpeWVkeWN3aHR0cGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDM0NzQsImV4cCI6MjA4NDgxOTQ3NH0.ztXAOOFh0AUuTBNDsvvVxcxncsKP4sju4AgfghvDNVc",
+      "EXPO_PUBLIC_SUPABASE_URL": "https://jappgthiyedycwhttpcu.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcHBndGhpeWVkeWN3aHR0cGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDM0NzQsImV4cCI6MjA4NDgxOTQ3NH0.ztXAOOFh0AUuTBNDsvvVxcxncsKP4sju4AgfghvDNVc",
+      "router": {},
+      "eas": {
+        "projectId": "4d900a70-4327-4740-83cc-4ac6745ef8eb"
+      }
+    }
+  }
+}

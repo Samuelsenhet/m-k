@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ButtonPrimary, CardV2, CardV2Content } from '@/components/ui-v2';
 import { Progress } from '@/components/ui/progress';
 import { Camera, Heart, Sparkles, X, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { Mascot } from '@/components/system/Mascot';
+import { useMascot } from '@/hooks/useMascot';
+import { MASCOT_SCREEN_STATES } from '@/lib/mascot';
 
 interface ProfileCompletionPromptProps {
   onDismiss?: () => void;
@@ -21,22 +24,34 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
   const checkProfileCompletion = useCallback(async () => {
     if (!user) return;
 
-    const [profileRes, photosRes, personalityRes] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('display_name, bio, gender, looking_for, hometown, work, education, height')
-        .eq('id', user.id)
-        .single(),
-      supabase
-        .from('profile_photos')
-        .select('id')
-        .eq('user_id', user.id),
-      supabase
-        .from('personality_results')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1)
-    ]);
+    try {
+      const profileKey = await getProfilesAuthKey(user.id);
+      if (!profileKey) {
+        if (import.meta.env.DEV) console.error('ProfileCompletionPrompt: Failed to get profile key');
+        return;
+      }
+
+      const [profileRes, photosRes, personalityRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('display_name, bio, gender, looking_for, hometown, work, education, height')
+          .eq(profileKey, user.id)
+          .maybeSingle(),
+        supabase
+          .from('profile_photos')
+          .select('id')
+          .eq('user_id', user.id),
+        supabase
+          .from('personality_results')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+      ]);
+
+      if (profileRes.error) {
+        console.error('ProfileCompletionPrompt: Error fetching profile', profileRes.error);
+        return;
+      }
 
     const profile = profileRes.data;
     const photoCount = photosRes.data?.length || 0;
@@ -58,6 +73,9 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
 
     setCompletion(Math.round((filled / total) * 100));
     setMissingItems(missing.slice(0, 3));
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('ProfileCompletionPrompt: Error checking completion', error);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -78,12 +96,13 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
       >
-        <Card className="shadow-card border-primary/20 overflow-hidden">
+        <CardV2 padding="none" className="border-primary/20 overflow-hidden">
           <div className="gradient-primary p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-primary-foreground">
-                <Sparkles className="w-5 h-5" />
-                <span className="font-medium text-sm">Slutför din profil</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-primary-foreground min-w-0">
+                {mascot.shouldShow && <Mascot {...mascot} className="flex-shrink-0" />}
+                <Sparkles className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium text-sm truncate">Slutför din profil</span>
               </div>
               <button 
                 onClick={handleDismiss}
@@ -93,7 +112,7 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
               </button>
             </div>
           </div>
-          <CardContent className="p-4 space-y-3">
+          <CardV2Content className="p-4 space-y-3">
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Profilstyrka</span>
@@ -126,13 +145,13 @@ export function ProfileCompletionPrompt({ onDismiss }: ProfileCompletionPromptPr
               </div>
             )}
 
-            <Button asChild size="sm" className="w-full">
-              <Link to="/profile">
+            <ButtonPrimary asChild size="sm" className="w-full">
+              <Link to="/profile" className="text-white">
                 Redigera profil
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonPrimary>
+          </CardV2Content>
+        </CardV2>
       </motion.div>
     </AnimatePresence>
   );

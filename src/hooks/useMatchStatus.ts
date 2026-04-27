@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/useAuth';
+import { isSupabaseInvokeUnauthorized } from '@/lib/supabase-functions-errors';
 
 interface MatchStatus {
   journey_phase: 'WAITING' | 'READY' | 'FIRST_MATCH';
@@ -12,44 +14,61 @@ export function useMatchStatus() {
   const [status, setStatus] = useState<MatchStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.id;
+  const fetchingRef = useRef(false);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
+    if (!userId || authLoading || fetchingRef.current) return;
+    fetchingRef.current = true;
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Not authenticated');
+      // getSession auto-refreshes if the token is close to expiry.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setError(new Error('Not authenticated'));
+        return;
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/match-status?user_id=${user.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-            'Content-Type': 'application/json'
-          }
+      const invokeStatus = (accessToken: string) =>
+        supabase.functions.invoke('match-status', {
+          body: { user_id: userId },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+      let { data, error } = await invokeStatus(session.access_token);
+
+      // On error, refresh once and retry (skip for 401 — wrong Edge secrets won't fix).
+      if (error && !isSupabaseInvokeUnauthorized(error)) {
+        const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+        if (refreshed?.access_token) {
+          ({ data, error } = await invokeStatus(refreshed.access_token));
         }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      setStatus(data);
+      if (error) {
+        if (import.meta.env.DEV && isSupabaseInvokeUnauthorized(error)) {
+          console.warn(
+            "[match-status] 401 – Edge Function rejected auth. See docs/LAUNCH_401_CHECKLIST.md. Run: supabase link --project-ref <ref> then npm run edge:fix-401",
+          );
+        }
+        throw new Error(error.message ?? "match-status failed");
+      }
+      if (data != null) setStatus(data as MatchStatus);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
     } finally {
       setIsLoading(false);
+      fetchingRef.current = false;
     }
-  };
+  }, [userId, authLoading]);
 
   useEffect(() => {
     fetchStatus();
-  }, []);
+  }, [fetchStatus]);
 
   return {
     status,

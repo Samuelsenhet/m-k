@@ -1,0 +1,9 @@
+# Root eas.json profile "production" is Expo (extends expo-production). Capacitor uses capacitor-production + capacitor-ios.yml.
+name: Create Production Builds (iOS only)
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: expo-production

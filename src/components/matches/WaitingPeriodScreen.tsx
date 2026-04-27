@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Clock, User, Sparkles, Heart } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { MaakMascot } from "@/components/mascot/MaakMascot";
+import { User, Sparkles, Heart, Clock } from "lucide-react";
+import { CardV2, CardV2Content, CardV2Header, CardV2Title } from "@/components/ui-v2";
+import { ButtonGhost } from "@/components/ui-v2";
+import { Mascot } from "@/components/system/Mascot";
+import { useMascot } from "@/hooks/useMascot";
+import { getEmotionalState } from "@/lib/emotional-state";
+import { MASCOT_SCREEN_STATES } from "@/lib/mascot";
 import { TimeRemaining } from "@/hooks/useUserJourney";
 import { useNavigate } from "react-router-dom";
 
@@ -18,14 +20,8 @@ export const WaitingPeriodScreen = ({
 }: WaitingPeriodScreenProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
-  // Calculate progress (24 hours total)
-  const totalSeconds = 24 * 60 * 60;
-  const remainingSeconds =
-    timeRemaining.hours * 3600 +
-    timeRemaining.minutes * 60 +
-    timeRemaining.seconds;
-  const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+  const emotionalConfig = { screen: "waiting" as const };
+  const mascot = useMascot(MASCOT_SCREEN_STATES.WAITING, { emotionalConfig });
 
   const tips = [
     {
@@ -49,43 +45,43 @@ export const WaitingPeriodScreen = ({
   return (
     <div className="min-h-screen bg-background p-4 flex flex-col items-center justify-center">
       <div className="w-full max-w-md space-y-6">
-        {/* Mascot */}
-        <div className="flex justify-center">
-          <MaakMascot pose="idle" expression="😊" size={120} />
-        </div>
+        {mascot.shouldShow && <Mascot {...mascot} />}
+        <p className="text-center text-sm text-muted-foreground">
+          {t("maak.waiting")}
+        </p>
 
         {/* Main Card */}
-        <Card className="border-primary/20">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-xl">
+        <CardV2 className="border border-primary/20">
+          <CardV2Header className="text-center pb-2">
+            <CardV2Title className="text-xl">
               Dina första matchningar kommer snart! 🎯
-            </CardTitle>
+            </CardV2Title>
             <p className="text-muted-foreground text-sm">
               Vi analyserar dina personlighetssvar och hittar perfekta
               matchningar för dig
             </p>
-          </CardHeader>
+          </CardV2Header>
 
-          <CardContent className="space-y-6">
+          <CardV2Content className="space-y-6">
             {/* Countdown */}
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-2">
                 Tid kvar till matchningar
               </p>
               <div className="flex justify-center gap-4">
-                <div className="bg-primary/10 rounded-lg px-4 py-2">
+                <div className="bg-primary-50 rounded-xl px-4 py-2">
                   <span className="text-2xl font-bold text-primary">
                     {String(timeRemaining.hours).padStart(2, "0")}
                   </span>
                   <p className="text-xs text-muted-foreground">timmar</p>
                 </div>
-                <div className="bg-primary/10 rounded-lg px-4 py-2">
+                <div className="bg-primary-50 rounded-xl px-4 py-2">
                   <span className="text-2xl font-bold text-primary">
                     {String(timeRemaining.minutes).padStart(2, "0")}
                   </span>
                   <p className="text-xs text-muted-foreground">min</p>
                 </div>
-                <div className="bg-primary/10 rounded-lg px-4 py-2">
+                <div className="bg-primary-50 rounded-xl px-4 py-2">
                   <span className="text-2xl font-bold text-primary">
                     {String(timeRemaining.seconds).padStart(2, "0")}
                   </span>
@@ -94,17 +90,9 @@ export const WaitingPeriodScreen = ({
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
-                {Math.round(progress)}% klar
-              </p>
-            </div>
-
             {/* Profile Completion Prompt */}
             {profileCompletion < 100 && (
-              <div className="bg-accent/50 rounded-lg p-4">
+              <div className="bg-sage-100 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4 text-primary" />
                   <span className="font-medium text-sm">
@@ -115,14 +103,13 @@ export const WaitingPeriodScreen = ({
                   Din profil är {profileCompletion}% komplett. Fullförd profil
                   ger bättre matchningar!
                 </p>
-                <Button
-                  variant="outline"
+                <ButtonGhost
                   size="sm"
-                  className="w-full"
+                  className="w-full border border-border"
                   onClick={() => navigate("/profile")}
                 >
                   Fullförd min profil
-                </Button>
+                </ButtonGhost>
               </div>
             )}
 
@@ -141,8 +128,8 @@ export const WaitingPeriodScreen = ({
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </CardV2Content>
+        </CardV2>
       </div>
     </div>
   );

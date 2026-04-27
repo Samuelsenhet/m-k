@@ -1,121 +1,121 @@
-# MÄÄK - Personality Test Dating App
+# MÄÄK – Personality-based dating app
 
-Swedish personality-based dating platform with PRP compliance and user journey phases.
+**Määk är en iOS-app.** En svensk personlighetsbaserad dejtingplattform med telefoninloggning, dagliga matcher (liknande & komplementära), realtidschatt, videoanrop (Kemi-Check) och designsystem kring paletten **Eucalyptus Grove** (skogsgrön, salvia, off-white). PRP-anpassad med användarresa och GDPR-onboarding.
 
-## Tech Stack
+Webbappen byggs med **Vite/React** (`src/`). **Expo / EAS** levererar iOS-appen i `apps/mobile`. **Capacitor** (`ios/`, `npm run ios:build`) finns kvar som alternativ för webb → Xcode om du använder den kedjan.
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Supabase (PostgreSQL + Edge Functions)
-- **UI**: shadcn/ui + Tailwind CSS + Framer Motion
-- **Auth**: Phone-based authentication
-- **PWA**: Service worker enabled
+## Tech stack
+
+- **Frontend**: React 18/19, TypeScript, Vite (webb)
+- **UI**: shadcn/ui, Tailwind CSS, Framer Motion, Playfair Display + DM Sans
+- **Backend**: Supabase (PostgreSQL, Realtime, Edge Functions)
+- **Auth**: Phone (SMS OTP via Twilio)
+- **i18n**: react-i18next (Swedish + English)
+- **Plattform**: **Expo (iOS) / EAS** (`apps/mobile`); valfritt **Capacitor (iOS)** för webb-build → Xcode
 
 ## Setup
 
-1. Clone the repository
-2. Copy `.env.example` to `.env`
-3. Add your Supabase credentials from https://supabase.com/dashboard
+**Config:** See `src/config/supabase.ts` for `isSupabaseConfigured` and `isDemoEnabled`. **Important:** Open **this folder** in Cursor (File → Open Folder → select the `m-k` project root). Run `npm run dev` from here so the app finds your `.env` file. If you open a different copy of the repo (e.g. a worktree), `.env` won’t be there and login won’t work.
+
+1. Clone the repo.
+2. **Node.js:** Använd Node 22 (projektet kräver `>=22.0.0`). Med nvm: `nvm install 22 && nvm use` (`.nvmrc` finns). För EAS (`eas build`, `eas device:create`) kräver Expo/React Native Node **≥20.19.4** – uppgradera om du ser `EBADENGINE` eller `ConfigError`.
+3. Copy `.env.example` to `.env` and add your Supabase and Twilio credentials (see [Supabase Dashboard](https://supabase.com/dashboard)).
 4. Install dependencies: `npm install`
-5. Run dev server: `npm run dev`
+5. **Supabase one-time setup**
+   - Option A: `npx supabase db push`
+   - Option B: In Supabase → SQL Editor, run `supabase/ONE_TIME_SETUP.sql`
+   - If you hit “Could not find the 'alcohol' column” or profile save errors after onboarding, run `supabase/ADD_PROFILE_COLUMNS.sql` once.
+6. Start dev server: `npm run dev` (default port 8080)
 
-## Available Scripts
+## Scripts
 
-- `npm run dev` - Start development server (port 8080)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+| Command           | Description                    |
+|-------------------|--------------------------------|
+| `npm run dev`     | Start dev server (Vite)        |
+| `npm run build`   | Production build (webb → används av iOS) |
+| `npm run preview` | Preview production build       |
+| `npm run lint`    | ESLint + spellcheck            |
+| **iOS (EAS / Expo)** |                                |
+| `npm run mobile:eas:build:production:ios:submit` | EAS production iOS-build + App Store-submit (`apps/mobile`) |
+| `npm run ios:eas-build` | Preview/internal EAS-build (workspace maak-mobile) |
+| `npm run ios:build` | Bygg webb + Capacitor `sync` till `ios/` (om du använder Capacitor) |
+| `npm run ios:sync`  | Synka `dist/` till Capacitor iOS |
+| `npm run ios:open` | Öppna Capacitor iOS i Xcode |
+| `eas device:create` | Registrera enhet för internal distribution (kör efter `npm i -g eas-cli`) |
+
+**Preview in VS Code / Cursor:** Use the Vite dev server (Tasks: Run Task → “Start dev server (Vite)”) or run `npm run dev` and open http://localhost:8080. The Live Server extension will not work for this app.
 
 ## Deployment
 
-Built for deployment on Vercel with Supabase backend.
+Built for deployment on Vercel with Supabase backend. See [docs/DEPLOY.md](docs/DEPLOY.md) for the full checklist. To use **maakapp.se** (or määkapp.com / määkapp.se), see [docs/DOMAIN_SETUP.md](docs/DOMAIN_SETUP.md).
 
-## Project Structure
+## Phase 2 (post-launch)
+
+Post-launch tasks live in **PRD.md** under "Phase 2 – Post-launch" (US-030 and onwards). To work on them:
+
+1. Open **PRD.md** and find the first unchecked story (first `- [ ]` in Phase 2).
+2. Implement that story, then run `npm run typecheck` and `npm run build`.
+3. Mark the story's acceptance criteria `[x]` in PRD.md when done.
+
+**Ralph:** The scripts `ralph.sh` / `ralph.ps1` use **docs/PRE_DEV_CHECKLIST.md** by default. To have Ralph work on Phase 2 stories, point the script at **PRD.md** (first `- [ ]` in the file). See **progress.txt** for how the task source was switched to the Pre-dev checklist; reverse that to use PRD again for Phase 2.
+
+## Project structure
 
 ```
-src/
-├── components/     # React components (17+ folders)
-├── contexts/       # React contexts (Auth, Consent)
-├── hooks/          # Custom hooks (12 hooks)
-├── pages/          # Route pages (9 pages)
-├── integrations/   # Supabase integration
-└── lib/           # Utilities
+apps/mobile/        # Expo / EAS iOS-app (expo-router, `src/app`, delad @maak/core)
+src/                # Vite/React webbapp
+├── components/     # UI and feature components (chat, profile, matches, settings, etc.)
+├── contexts/       # Auth, Consent, Achievements
+├── hooks/          # useMatches, useAuth, usePushNotifications, etc.
+├── pages/          # Route-level pages (see Routes below)
+├── i18n/           # Locales (en.json, sv.json)
+├── integrations/   # Supabase client and types
+└── lib/            # Utils, profiles, matching helpers
 ```
+
+## Main routes
+
+| Path | Description |
+|------|-------------|
+| `/` | Landing / home |
+| `/phone-auth` | Phone number + OTP login |
+| `/onboarding` | Profile + personality test |
+| `/profile` | Profile view, edit, settings (Inställningar) |
+| `/matches` | Daily matches (similar/complementary), mutual list |
+| `/chat` | Chat list + conversation (with Kemi-Check video entry) |
+| `/match/:userId` | View match profile |
+| `/notifications` | Notifications feed (view / interest + Accept/Reject) |
+| `/demo-seed` | Demo: matches + chat without backend |
+| `/personality-guide` | Personality types and archetypes |
+| `/terms`, `/privacy` | Terms and privacy |
+| `/about` | About the app |
+| `/reporting`, `/report`, `/report-history`, `/appeal` | Reporting and appeals |
+| `/admin/reports` | Moderator report queue |
 
 ## Features
 
-- 🔐 Phone-based authentication
-- 🎭 Personality test & matching algorithm
-- 💬 Real-time chat
-- 🎉 Achievement system
-- 🤖 AI assistant
-- 📱 PWA support
-- 🌍 i18n (Swedish)
-- 🛡️ GDPR compliant
+- **Auth**: Phone-based sign-in (SMS OTP)
+- **Personality**: 30-question test, 16 archetypes, 4 categories (Diplomat, Strateg, Byggare, Upptäckare)
+- **Matching**: Daily match pool; filters for similar vs complementary; match score and AI-style explanation; “Se profil” and Chatta from cards
+- **Chat**: Real-time messages, icebreakers (incl. AI-generated), read receipts, search, “Recent match” strip; per-conversation Block / Delete / Report and Kemi-Check (video) when 10+ messages
+- **Notifications**: Feed with “viewed you” and “interested in you” items; Accept/Reject on interest (Määk styling: primary green, cards)
+- **Samlingar**: Gruppchatt – skapa grupper från mutual matches, chatta i grupp, lämna grupp. Se [docs/SAMLINGAR.md](docs/SAMLINGAR.md) för Realtime och testflöde.
+- **Profile**: View/edit profile, matching settings (age, distance), language, achievements, AI assistant, terms, reporting, delete account
+- **Design**: Eucalyptus Grove (primary green, sage, off-white), serif titles (Playfair), soft shadows and card layout
+- **Other**: Achievements, AI assistant panel, PWA, i18n (sv/en), GDPR consent onboarding
 
-## How can I edit this code?
+## Deployment (iOS)
 
-There are several ways of editing your application.
+Appen levereras som **Expo iOS-app** via **EAS** (`apps/mobile`). Produktion + ev. App Store-submit: `npm run mobile:eas:build:production:ios:submit` från rot (eller `cd apps/mobile` och `eas build --platform ios --profile expo-production --auto-submit`). Intern/preview: `npm run ios:eas-build`. **Kör inte** `eas build --platform ios` från reporoten utan profil — då väljs Capacitor-profilen `production` och bygget faller (*No Podfile*). Capacitor-webb→iOS (om du använder det): `npm run ios:build`. Registrera enheter med `eas device:create` (kräver `eas-cli`). Xcode lokalt är valfritt: `npm run ios:open`. För webbdeploy (Vercel): `VITE_SUPABASE_*` och `npm run vercel:env`.
 
-**Use Lovable**
+**App Store-submit:** `apps/mobile/eas.json` innehåller inga hårdkodade ASC-nycklar. Sätt **numeriskt** Apple App ID, API Key Issuer (UUID från App Store Connect) och `.p8` via [`eas credentials`](https://docs.expo.dev/submit/ios/) eller lokala hemligheter — committa aldrig riktiga nycklar.
 
-Simply visit the Lovable Project and start prompting.
+## Editing the code
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Local IDE**: Clone the repo, run `npm i` and `npm run dev`. Node.js 22+ recommended (see `.nvmrc`).
+- **GitHub**: Edit files in the GitHub UI and commit.
 
-**Use your preferred IDE**
+## Design reference
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Colors**: `--primary` (forest), `--secondary` (sage), `--background` (off-white). See `src/index.css` for full tokens.
+- **Notifications**: Määk version uses primary green, card list, “Today” section, and Accept/Reject actions (no “like” wording).

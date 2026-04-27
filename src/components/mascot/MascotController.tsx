@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MaakMascot, Pose, Expression } from "./MaakMascot";
+import { Mascot } from "@/components/system/Mascot";
+import { MASCOT_ALL_IMAGES, type MascotToken } from "@/lib/mascot";
 import {
   Select,
   SelectContent,
@@ -7,95 +8,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
+import { CardV2 } from "@/components/ui-v2";
 
+/** Demo: pick a mascot token and see the asset. Replaces pose/expression with token-based system. */
 export const MascotController = () => {
-  const [pose, setPose] = useState<Pose>("idle");
-  const [expression, setExpression] = useState<Expression>("😊");
+  const [token, setToken] = useState<MascotToken>(MASCOT_ALL_IMAGES[0]);
 
   return (
     <div className="flex flex-col items-center gap-6 p-8">
-      <Card className="p-6 bg-gradient-to-br from-pink-50 to-purple-50">
-        <MaakMascot size={300} pose={pose} expression={expression} />
-      </Card>
+      <CardV2 padding="lg" className="bg-gradient-to-br from-primary/5 to-primary/10">
+        <Mascot token={token} size="hero" placement="center" />
+      </CardV2>
 
       <div className="flex gap-4 flex-wrap justify-center">
-        {/* Pose Selector */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">Pose</label>
-          <Select value={pose} onValueChange={(v) => setPose(v as Pose)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Välj pose" />
+          <label className="text-sm font-medium text-foreground">Mascot token</label>
+          <Select value={token} onValueChange={(v) => setToken(v as MascotToken)}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Välj token" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="idle">Idle (Vila)</SelectItem>
-              <SelectItem value="jump">Jump (Hoppa)</SelectItem>
-              <SelectItem value="fall">Fall (Falla)</SelectItem>
-              <SelectItem value="bounce">Bounce (Studsa)</SelectItem>
-              <SelectItem value="startled">Startled (Skrämd)</SelectItem>
-              <SelectItem value="love">Love (Kärlek)</SelectItem>
-              <SelectItem value="tired">Tired (Trött)</SelectItem>
-              <SelectItem value="confused">Confused (Förvirrad)</SelectItem>
-              <SelectItem value="happy">Happy (Glad)</SelectItem>
-              <SelectItem value="angry">Angry (Arg)</SelectItem>
-              <SelectItem value="asleep">Asleep (Sover)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Expression Selector */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">Expression</label>
-          <Select value={expression} onValueChange={(v) => setExpression(v as Expression)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Välj uttryck" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="😊">😊 Glad</SelectItem>
-              <SelectItem value="😴">😴 Trött</SelectItem>
-              <SelectItem value="😵‍💫">😵‍💫 Förvirrad</SelectItem>
-              <SelectItem value="😍">😍 Kärlek</SelectItem>
-              <SelectItem value="😡">😡 Arg</SelectItem>
-              <SelectItem value="😐">😐 Neutral</SelectItem>
-              <SelectItem value="🤗">🤗 Kram</SelectItem>
-              <SelectItem value="😮">😮 Förvånad</SelectItem>
+              {MASCOT_ALL_IMAGES.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name.replace(/^mascot_/, "")}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {/* Quick presets */}
-      <div className="flex gap-2 flex-wrap justify-center">
-        <button
-          onClick={() => { setPose("love"); setExpression("😍"); }}
-          className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
-        >
-          💕 Kärlek
-        </button>
-        <button
-          onClick={() => { setPose("asleep"); setExpression("😴"); }}
-          className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-        >
-          😴 Sover
-        </button>
-        <button
-          onClick={() => { setPose("startled"); setExpression("😮"); }}
-          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-        >
-          😮 Förvånad
-        </button>
-        <button
-          onClick={() => { setPose("jump"); setExpression("😊"); }}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-        >
-          🎉 Hoppar av glädje
-        </button>
-      </div>
-
-      {/* Current state display */}
-      <div className="text-sm text-gray-600 text-center">
-        <p>Aktuell pose: <span className="font-semibold">{pose}</span></p>
-        <p>Aktuellt uttryck: <span className="font-semibold text-xl">{expression}</span></p>
+      <div className="text-sm text-muted-foreground text-center">
+        <p>
+          Token: <span className="font-mono font-semibold">{token}</span>
+        </p>
       </div>
     </div>
   );

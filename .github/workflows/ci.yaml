@@ -5,8 +5,34 @@ on:
   workflow_dispatch:
 
 jobs:
+  secret-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block obvious secrets in client paths
+        run: bash scripts/ci-secret-guard.sh
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # Critical blocks the job; high is logged for visibility (review log + Dependabot).
+      - name: npm audit (critical severity — fail on critical)
+        run: npm audit --audit-level=critical
+      - name: npm audit (high severity — log only, non-blocking)
+        if: always()
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
   test:
     runs-on: ubuntu-latest
+    needs: [secret-guard, audit]
     steps:
       - uses: actions/checkout@v4
 

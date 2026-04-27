@@ -1,9 +1,10 @@
-import { type PersonalityTestResult, type DimensionKey, DIMENSION_LABELS, CATEGORY_INFO, ARCHETYPE_INFO } from '@/types/personality';
+import { type PersonalityTestResult, type DimensionKey, type PersonalityCategory, DIMENSION_LABELS, CATEGORY_INFO, ARCHETYPE_INFO, ARCHETYPE_CODES_BY_CATEGORY } from '@/types/personality';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
+import { useTranslation } from 'react-i18next';
 
 interface PersonalityResultProps {
   result: PersonalityTestResult;
@@ -19,7 +20,15 @@ const dimensionColors: Record<DimensionKey, string> = {
   at: 'bg-dimension-at',
 };
 
+const CATEGORY_STYLES: Record<PersonalityCategory, string> = {
+  DIPLOMAT: 'badge-diplomat',
+  STRATEGER: 'badge-strateger',
+  BYGGARE: 'badge-byggare',
+  UPPTÄCKARE: 'badge-upptackare',
+};
+
 export const PersonalityResult = ({ result, isExistingResult = false, onContinue }: PersonalityResultProps) => {
+  const { t } = useTranslation();
   const categoryInfo = CATEGORY_INFO[result.category];
   const archetypeInfo = result.archetype ? ARCHETYPE_INFO[result.archetype] : null;
   const { user } = useAuth();
@@ -39,7 +48,60 @@ export const PersonalityResult = ({ result, isExistingResult = false, onContinue
           )}
         </div>
 
-        {/* Archetype Card (if available) */}
+        {/* 1. En huvudkategori – din primära förbindelsestil */}
+        <div className="mb-6 animate-slide-up">
+          <h2 className="font-serif text-lg font-bold text-foreground mb-1">{t('personality.main_category_label', 'En huvudkategori')}</h2>
+          <p className="text-sm text-muted-foreground mb-3">{t('personality.main_category_sub', 'Din primära förbindelsestil')}</p>
+          <div className={cn('bg-card rounded-2xl p-4 shadow-card border border-border flex items-center gap-4', CATEGORY_STYLES[result.category])}>
+            <span className="text-5xl">{categoryInfo.emoji}</span>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">{categoryInfo.title}</h3>
+              <p className="text-sm text-muted-foreground">{categoryInfo.description}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Fyra arketyper – olika sidor av din personlighet */}
+        {archetypeInfo && (
+          <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+            <h2 className="font-serif text-lg font-bold text-foreground mb-1">{t('personality.four_archetypes_label', 'Fyra arketyper')}</h2>
+            <p className="text-sm text-muted-foreground mb-2">{t('personality.four_archetypes_sub', 'Olika sidor av din personlighet – din typ är markerad')}</p>
+            <p className="text-sm font-medium text-foreground mb-3">
+              {t('personality.test_result_line', 'Din typ från testet: {{title}} ({{code}}) – 1 av 4 i {{category}}.', {
+                title: archetypeInfo.title,
+                code: archetypeInfo.name,
+                category: categoryInfo.title,
+              })}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {ARCHETYPE_CODES_BY_CATEGORY[result.category].map((code) => {
+                const info = ARCHETYPE_INFO[code];
+                const isUserArchetype = result.archetype === code;
+                return (
+                  <div
+                    key={code}
+                    className={cn(
+                      'p-3 rounded-xl border bg-card shadow-card flex items-center gap-2',
+                      CATEGORY_STYLES[result.category],
+                      isUserArchetype && 'ring-2 ring-primary'
+                    )}
+                  >
+                    <span className="text-2xl">{info.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-foreground truncate">
+                        {info.title}
+                        {isUserArchetype && <span className="ml-1 text-xs font-normal text-muted-foreground">({t('personality.your_type', 'din typ')})</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{info.name}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Din arketyp – full kort */}
         {archetypeInfo && (
           <div 
             className="bg-card rounded-3xl overflow-hidden shadow-card border border-border mb-6 animate-slide-up"

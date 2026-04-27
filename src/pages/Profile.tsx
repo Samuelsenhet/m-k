@@ -1,12 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { LogOut, Settings, X, Trophy, Sparkles, Trash2 } from 'lucide-react';
+import { LogOut, Settings, X, Trophy, Sparkles, Trash2, ShieldCheck, ChevronDown, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
+import { ButtonGhost, ButtonPrimary, ButtonIcon, CardV2, CardV2Content, CardV2Header, CardV2Title } from '@/components/ui-v2';
+import { LoadingStateWithMascot } from '@/components/ui-v2';
 import { ProfileView } from '@/components/profile/ProfileView';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { BottomNav } from '@/components/navigation/BottomNav';
@@ -14,24 +15,49 @@ import { AchievementsPanel } from '@/components/achievements/AchievementsPanel';
 import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
 import { LanguageToggle } from '@/components/settings/LanguageToggle';
 import { MatchingSettings } from '@/components/settings/MatchingSettings';
+import { IdVerificationStep } from '@/components/onboarding/IdVerificationStep';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { getProfilesAuthKey } from '@/lib/profiles';
+import { normalizeArchetypeCode } from '@/lib/normalizeArchetype';
+import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { hasValidSupabaseConfig } from '@/integrations/supabase/client';
+import { COLORS } from '@/design/tokens';
 
 interface PersonalityResultRow {
   id: string;
   archetype?: string;
 }
 
+const SETTINGS_SUBPAGES = ['/terms', '/privacy', '/reporting', '/about', '/report', '/report-history', '/appeal', '/admin/reports'];
+
 export default function Profile() {
+  // Profile data is fetched below when user is present (no data router in use)
+  const initialProfile: {
+    displayName: string | null;
+    archetype: string | null;
+    isModerator: boolean;
+  } | null = null;
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const [archetype, setArchetype] = useState<string | null>(null);
+  const location = useLocation();
+  const { t, i18n } = useTranslation();
+  const prevPathRef = useRef(location.pathname);
+  const [archetype, setArchetype] = useState<string | null>(initialProfile?.archetype ?? null);
+  const [displayName, setDisplayName] = useState<string | null>(initialProfile?.displayName ?? null);
   const [isEditing, setIsEditing] = useState(false);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [verifyIdOpen, setVerifyIdOpen] = useState(false);
+  const [privacyManageOpen, setPrivacyManageOpen] = useState(false);
+  const onlineCount = useOnlineCount(user?.id);
+  const [isModerator, setIsModerator] = useState<boolean | null>(
+    initialProfile != null ? initialProfile.isModerator : null
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -39,25 +65,71 @@ export default function Profile() {
     }
   }, [user, loading, navigate]);
 
+  // When navigating back to Profile with openSettings state (from Terms, Report, etc.), open Inställningar.
+  useEffect(() => {
+    const state = location.state as { openSettings?: boolean } | null;
+    if (location.pathname === '/profile' && state?.openSettings) {
+      setSettingsOpen(true);
+      // Clear state so refresh doesn't reopen the sheet
+      window.history.replaceState({ ...state, openSettings: undefined }, '');
+    }
+    prevPathRef.current = location.pathname;
+  }, [location.pathname, location.state]);
+
   const fetchArchetype = useCallback(async () => {
     if (!user) return;
-
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('personality_results')
-      .select('archetype')
+      .select('archetype, scores')
       .eq('user_id', user.id)
       .maybeSingle();
-
-    if (data?.archetype) {
-      setArchetype(data.archetype);
+    if (error) {
+      if (import.meta.env.DEV) console.error('Profile: personality_results fetch error', error);
+      const isNetworkError = error?.message === 'Failed to fetch' || (typeof error?.message === 'string' && /fetch|network/i.test(error.message));
+      const message = isNetworkError
+        ? t('profile.network_error', 'Ingen internetanslutning. Kontrollera nätverket och försök igen.')
+        : t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.');
+      toast.error(message, {
+        action: { label: t('common.retry', 'Försök igen'), onClick: () => fetchArchetype() },
+      });
+      return;
     }
-  }, [user]);
+    const normalized = normalizeArchetypeCode(data?.archetype);
+    setArchetype(normalized);
+  }, [user, t]);
 
   useEffect(() => {
-    if (user) {
-      fetchArchetype();
+    if (!user) return;
+    void fetchArchetype();
+  }, [user, profileRefreshKey, fetchArchetype]);
+
+  const fetchProfileAndModerator = useCallback(async () => {
+    if (!user) return;
+    try {
+      const profileKey = await getProfilesAuthKey(user.id);
+      const [profileRes, modRes] = await Promise.all([
+        supabase.from('profiles').select('display_name').eq(profileKey, user.id).maybeSingle(),
+        supabase.from('moderator_roles').select('user_id').eq('user_id', user.id).maybeSingle(),
+      ]);
+      if (profileRes.error) throw profileRes.error;
+      if (modRes.error) throw modRes.error;
+      if (profileRes.data?.display_name) setDisplayName(profileRes.data.display_name);
+      setIsModerator(!!modRes.data);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('Profile: profile/moderator fetch error', err);
+      const isNetworkError = err instanceof TypeError && err.message === 'Failed to fetch';
+      const message = isNetworkError
+        ? t('profile.network_error', 'Ingen internetanslutning. Kontrollera nätverket och försök igen.')
+        : t('profile.load_error', 'Kunde inte ladda profilen. Försök igen.');
+      toast.error(message, {
+        action: { label: t('common.retry', 'Försök igen'), onClick: () => fetchProfileAndModerator() },
+      });
     }
-  }, [user, fetchArchetype]);
+  }, [user, t]);
+
+  useEffect(() => {
+    if (user && !initialProfile) fetchProfileAndModerator();
+  }, [user, initialProfile, fetchProfileAndModerator]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -85,14 +157,20 @@ export default function Profile() {
       const errors = results.filter(r => r.error).map(r => r.error);
       
       if (errors.length > 0) {
-        console.error('Errors during account deletion:', errors);
+        if (import.meta.env.DEV) {
+          if (import.meta.env.DEV) console.error('Errors during account deletion:', errors);
+        }
         // Continue anyway - some tables might not exist or be empty
       }
 
       // Delete profile last (has foreign key constraints)
-      const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
+      const profileKey = await getProfilesAuthKey(user.id);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq(profileKey, user.id);
       if (profileError) {
-        console.error('Error deleting profile:', profileError);
+        if (import.meta.env.DEV) console.error('Error deleting profile:', profileError);
         throw new Error(t('profile.error_saving'));
       }
       
@@ -102,7 +180,9 @@ export default function Profile() {
       toast.success(t('settings.delete_account_title'));
       navigate('/');
     } catch (error) {
-      console.error('Error deleting account:', error);
+      if (import.meta.env.DEV) {
+        if (import.meta.env.DEV) console.error('Error deleting account:', error);
+      }
       toast.error(t('common.error') + '. ' + t('common.retry'));
     } finally {
       setIsDeleting(false);
@@ -111,163 +191,308 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
-      </div>
+      <>
+        <div className="min-h-screen bg-gradient-premium pb-24 safe-area-bottom flex flex-col">
+          <LoadingStateWithMascot
+            message={t('common.loading')}
+            className="flex-1"
+            emotionalConfig={{ screen: "profile" }}
+          />
+        </div>
+        <BottomNav />
+      </>
     );
   }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen gradient-hero">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute top-1/2 -left-20 w-60 h-60 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="relative container max-w-lg mx-auto px-4 py-4 pb-24">
-        {/* Header */}
-        <nav className="flex justify-between items-center mb-4">
-          <h1 className="font-serif font-bold text-lg">{t('profile.my_profile')}</h1>
-          <div className="flex items-center gap-1">
-            <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Settings className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle className="font-serif">{t('settings.title')}</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6 space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">{t('settings.account')}</CardTitle>
-                      <CardDescription className="text-sm">{user.email}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">{t('settings.language')}</span>
-                        <LanguageToggle />
-                      </div>
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">{t('settings.notifications')}</span>
-                        <Button variant="ghost" size="sm">{t('settings.manage')}</Button>
-                      </div>
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <span className="text-sm">{t('settings.privacy')}</span>
-                        <Button variant="ghost" size="sm">{t('settings.manage')}</Button>
-                      </div>
-                      <button 
-                        onClick={() => { setSettingsOpen(false); setShowAchievements(true); }}
-                        className="flex items-center justify-between py-2 border-b border-border w-full text-left"
-                      >
-                        <span className="text-sm flex items-center gap-2">
-                          <Trophy className="w-4 h-4" />
-                          {t('settings.achievements')}
-                        </span>
-                        <Button variant="ghost" size="sm">{t('settings.view')}</Button>
-                      </button>
-                    </CardContent>
-                  </Card>
-                  <Button 
-                    variant="destructive" 
-                    className="w-full"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {t('settings.logout')}
-                  </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('settings.delete_account')}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('settings.delete_account_title')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('settings.delete_account_description')}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDeleteAccount}
-                          disabled={isDeleting}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {isDeleting ? t('settings.deleting') : t('settings.delete_account_confirm')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+    <div className="min-h-screen bg-black">
+      {/* Settings Sheet - Accessible from ProfileView action buttons */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent aria-describedby="settings-description" className="flex flex-col p-0 h-full overflow-hidden min-h-0">
+          <SheetHeader className="shrink-0 border-b border-border px-6 py-4">
+            <SheetTitle className="font-serif">{t('settings.title')}</SheetTitle>
+            <SheetDescription id="settings-description" className="sr-only">
+              {t('settings.account')} {t('settings.language')} {t('settings.notifications')} {t('settings.privacy')} {t('settings.achievements')}
+            </SheetDescription>
+          </SheetHeader>
+          <ScrollArea className="flex-1 min-h-0 max-h-[70vh] w-full">
+            <div className="px-6 py-4 space-y-4">
+              {hasValidSupabaseConfig && (
+                <div
+                  className="rounded-2xl py-3 px-4 text-center text-sm font-medium tabular-nums"
+                  style={{ background: COLORS.primary[500], color: COLORS.neutral.white }}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {t('common.online_now_full', { count: onlineCount.toLocaleString(i18n.language || navigator.language) })}
                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </nav>
+              )}
+              <CardV2>
+                <CardV2Header className="pb-2">
+                  <CardV2Title className="text-base">{t('settings.account')}</CardV2Title>
+                  {displayName && (
+                    <p className="text-sm font-medium text-primary">
+                      @{displayName.toLowerCase().replace(/\s+/g, '_')}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </CardV2Header>
+                <CardV2Content className="space-y-3">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/personality-guide'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/personality-guide'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm flex items-center gap-2 font-normal">
+                      <BookOpen className="w-4 h-4" />
+                      {t('settings.learn_personality', 'Läs om personlighet & arketyper')}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm">{t('settings.language')}</span>
+                    <LanguageToggle />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/notifications'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/notifications'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.notifications')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm">{t('settings.privacy')}</span>
+                    <ButtonGhost size="sm" onClick={() => setPrivacyManageOpen(true)}>
+                      {t('settings.manage')}
+                    </ButtonGhost>
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); setShowAchievements(true); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); setShowAchievements(true); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm flex items-center gap-2 font-normal">
+                      <Trophy className="w-4 h-4" />
+                      {t('settings.achievements')}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/terms'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/terms'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.terms')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/terms#integritet'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/terms#integritet'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.privacy_policy')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/reporting'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/reporting'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.reporting')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/about'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/about'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('settings.about_us')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                </CardV2Content>
+              </CardV2>
+              {/* Matching settings – Age & Distance sliders + Submit */}
+              <CardV2 className="overflow-hidden" padding="none">
+                <CardV2Content className="p-0">
+                  <MatchingSettings />
+                </CardV2Content>
+              </CardV2>
+              <CardV2>
+                <CardV2Header className="pb-2">
+                  <CardV2Title className="text-base">{t('settings.support_and_reports')}</CardV2Title>
+                </CardV2Header>
+                <CardV2Content className="space-y-0">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/report-history'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/report-history'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('report.history_title')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/report'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/report'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('report.report_problem')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSettingsOpen(false); navigate('/appeal'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/appeal'); } }}
+                    className="flex items-center justify-between py-2 border-b border-border w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                  >
+                    <span className="text-sm font-normal">{t('appeal.title')}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </div>
+                  {isModerator === true && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => { setSettingsOpen(false); navigate('/admin/reports'); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSettingsOpen(false); navigate('/admin/reports'); } }}
+                      className="flex items-center justify-between py-2 w-full text-left cursor-pointer hover:bg-muted/50 rounded-sm text-foreground no-underline"
+                    >
+                      <span className="text-sm font-normal">{t('admin.reports_title')}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </div>
+                  )}
+                </CardV2Content>
+              </CardV2>
+              <ButtonPrimary className="w-full" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                {t('settings.logout')}
+              </ButtonPrimary>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <ButtonGhost className="w-full border border-destructive/40 text-destructive hover:bg-destructive/10">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('settings.delete_account')}
+                  </ButtonGhost>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('settings.delete_account_title')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('settings.delete_account_description')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? t('settings.deleting') : t('settings.delete_account_confirm')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
-        {/* Profile Content */}
+      {/* Verify ID Sheet - for users who skipped during onboarding */}
+      <Sheet open={verifyIdOpen} onOpenChange={setVerifyIdOpen}>
+        <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-serif">{t('settings.verify_id')}</SheetTitle>
+            <SheetDescription id="verify-id-description" className="sr-only">
+              Upload your ID to verify your account
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 pb-8">
+            <IdVerificationStep onSubmit={() => setVerifyIdOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Privacy manage sheet */}
+      <Sheet open={privacyManageOpen} onOpenChange={setPrivacyManageOpen}>
+        <SheetContent side="bottom" className="h-auto max-h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-serif">{t('settings.privacy')}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {t('settings.privacy')} – {t('settings.manage')}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 pb-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Hantera vilka som ser din profil, dina foton och dina aktiviteter. Mer alternativ kommer snart.
+            </p>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm">Profilsynlighet</span>
+              <ButtonGhost size="sm" disabled>Kommer snart</ButtonGhost>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm">Deldata</span>
+              <ButtonGhost size="sm" disabled>Kommer snart</ButtonGhost>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <div className="relative w-full h-screen">
         {showAIAssistant ? (
-          <div className="space-y-4">
+          <div className="absolute inset-0 bg-black z-30 p-4">
             <AIAssistantPanel onClose={() => setShowAIAssistant(false)} />
           </div>
         ) : showAchievements ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif font-bold text-xl">{t('achievements.title')}</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setShowAchievements(false)}
-              >
+          <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif font-bold text-xl text-white">{t('achievements.title')}</h2>
+              <ButtonIcon onClick={() => setShowAchievements(false)} className="text-white hover:bg-white/10">
                 <X className="w-5 h-5" />
-              </Button>
+              </ButtonIcon>
             </div>
             <AchievementsPanel />
           </div>
         ) : isEditing ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif font-bold text-xl">{t('profile.edit_profile')}</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsEditing(false)}
-              >
+          <div className="absolute inset-0 bg-black z-30 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif font-bold text-xl text-white">{t('profile.edit_profile')}</h2>
+              <ButtonIcon onClick={() => setIsEditing(false)} className="text-white hover:bg-white/10">
                 <X className="w-5 h-5" />
-              </Button>
+              </ButtonIcon>
             </div>
-            <ProfileEditor onComplete={() => setIsEditing(false)} />
+            <ProfileEditor onComplete={() => { setIsEditing(false); setProfileRefreshKey((k) => k + 1); }} />
           </div>
         ) : (
-          <div className="space-y-4">
-            <ProfileView 
-              onEdit={() => setIsEditing(true)} 
-              archetype={archetype}
-            />
-            
-            {/* Matching Settings */}
-            <MatchingSettings />
-            
-            {/* AI Assistant Quick Access */}
-            <Button
-              onClick={() => setShowAIAssistant(true)}
-              className="w-full gradient-primary text-primary-foreground border-0 shadow-glow gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              {t('ai_assistant.title')}
-            </Button>
+          <div className="w-full max-w-none mx-auto px-0 pt-4 sm:pt-6 pb-24 safe-area-top">
+            <div className="space-y-6">
+              <ProfileView
+                key={profileRefreshKey}
+                onEdit={() => setIsEditing(true)}
+                archetype={archetype}
+                onSettings={() => setSettingsOpen(true)}
+              />
+            </div>
           </div>
         )}
       </div>

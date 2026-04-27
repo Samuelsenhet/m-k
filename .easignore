@@ -1,0 +1,42 @@
+# EAS Build tarball exclusions (smaller upload).
+# When present, EAS uses this instead of .gitignore for the project tarball.
+# See: https://docs.expo.dev/build-reference/vcs/#uploading-the-project
+#
+# Do NOT list .git here — EAS Build needs the repo metadata on the worker
+# (commit hash, VCS). Ignoring .git causes "git repository not initialized".
+
+node_modules
+**/node_modules
+dist
+dist-ssr
+*.log
+logs
+.expo/
+docs/
+.cursor/
+.roo/
+*.local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# Monorepo: full duplicate tree blows the archive to ~300MB+ and can destabilize builds.
+m-k-backup/
+
+# Capacitor legacy ios/ at repo root — Expo CNG generates apps/mobile/ios/ via prebuild.
+# Including it causes EAS Build to pick up the stale root Podfile instead of the CNG one.
+ios/
+android/
+*.ipa
+*.dSYM.zip
+
+# Next / Vite outputs under apps (dependencies come from npm ci, not these folders)
+apps/landing/.next/
+apps/landing/out/
+apps/landing/dist/
+coverage/
+.playwright/

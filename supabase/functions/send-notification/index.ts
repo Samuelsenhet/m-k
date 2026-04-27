@@ -1,75 +1,78 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifySupabaseJWT } from "../_shared/env.ts";
 
 interface NotificationPayload {
   user_id: string;
   title: string;
   message: string;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  type?: "info" | "success" | "warning" | "error";
+  /** Notification category — used to check user preferences before sending push */
+  category?: "new_match" | "message" | "system";
 }
 
-// Get allowed origin from environment or default to wildcard for development
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req: Request) => {
-  // handle cors preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // create authenticated supabase client
+    const authHeader = req.headers.get("Authorization") || "";
+    const userId = await verifySupabaseJWT(authHeader);
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
-      }
+      },
     );
 
-    // verify user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    let payload: NotificationPayload;
+    try {
+      payload = await req.json() as NotificationPayload;
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // parse request body
-    const payload: NotificationPayload = await req.json();
-
-    // validate required fields
     if (!payload.user_id || !payload.title || !payload.message) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: user_id, title, message' }),
+        JSON.stringify({ error: "Missing required fields: user_id, title, message" }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
-    // create notification record in database
     const { data, error: dbError } = await supabaseClient
-      .from('notifications')
+      .from("notifications")
       .insert({
         user_id: payload.user_id,
         title: payload.title,
         message: payload.message,
-        type: payload.type || 'info',
-        sent_by: user.id,
+        type: payload.type || "info",
+        sent_by: userId,
         created_at: new Date().toISOString(),
       })
       .select()
@@ -79,31 +82,121 @@ serve(async (req: Request) => {
       throw dbError;
     }
 
-    // broadcast notification via realtime
+    // --- Realtime broadcast (in-app, best-effort) ---
     const channel = supabaseClient.channel(`user:${payload.user_id}:notifications`);
-    
-    await channel.send({
-      type: 'broadcast',
-      event: 'notification_received',
-      payload: data,
-    });
 
-    return new Response(
-      JSON.stringify({ success: true, notification: data }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    try {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const t = setTimeout(() => reject(new Error("Realtime subscribe timeout")), 15_000);
+          channel.subscribe((status, err) => {
+            if (status === "SUBSCRIBED") {
+              clearTimeout(t);
+              resolve();
+            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+              clearTimeout(t);
+              reject(err ?? new Error(`Realtime subscribe failed: ${status}`));
+            }
+          });
+        });
+
+        const sendRes = await channel.send({
+          type: "broadcast",
+          event: "notification_received",
+          payload: data,
+        });
+        if (sendRes !== "ok" && sendRes !== "queued") {
+          console.warn("send-notification: channel.send status", sendRes);
+        }
+      } catch (rtErr) {
+        console.warn("send-notification: realtime subscribe/send failed (best-effort)", rtErr);
       }
-    );
+    } finally {
+      await supabaseClient.removeChannel(channel);
+    }
+
+    // --- Check user notification preferences before sending push ---
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    let pushAllowed = true;
+
+    if (serviceRoleKey && payload.category) {
+      try {
+        const adminClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          serviceRoleKey,
+        );
+        const { data: prefs } = await adminClient
+          .from("profiles")
+          .select("push_new_matches, push_messages")
+          .eq("id", payload.user_id)
+          .maybeSingle();
+
+        if (prefs) {
+          if (payload.category === "new_match" && prefs.push_new_matches === false) {
+            pushAllowed = false;
+          } else if (payload.category === "message" && prefs.push_messages === false) {
+            pushAllowed = false;
+          }
+          // "system" category always allowed
+        }
+      } catch (prefErr) {
+        console.warn("send-notification: preference check failed, allowing push", prefErr);
+      }
+    }
+
+    // --- Expo Push (mobile, best-effort) ---
+    // Uses service role to read expo_push_tokens for the target user
+    if (serviceRoleKey && pushAllowed) {
+      try {
+        const adminClient = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          serviceRoleKey,
+        );
+        const { data: tokens } = await adminClient
+          .from("expo_push_tokens")
+          .select("token")
+          .eq("user_id", payload.user_id);
+
+        const pushTokens = (tokens ?? [])
+          .map((t: { token: string }) => t.token)
+          .filter((t: string) => t.startsWith("ExponentPushToken["));
+
+        if (pushTokens.length > 0) {
+          const messages = pushTokens.map((token: string) => ({
+            to: token,
+            sound: "default",
+            title: payload.title,
+            body: payload.message,
+            data: { notification_id: data.id, type: payload.type || "info" },
+          }));
+
+          await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(messages),
+          });
+        }
+      } catch (pushErr) {
+        console.warn("send-notification: expo push failed (best-effort)", pushErr);
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, notification: data }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error("Error sending notification:", error);
 
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
 });

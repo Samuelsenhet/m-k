@@ -1,0 +1,125 @@
+---
+description: MĀĀK Universal Agent Guide – använd för ALLA uppdrag (startup questions, faser, checklista, rapportering)
+alwaysApply: true
+---
+
+# 🌿 MĀĀK Universal Agent Guide
+
+För alla uppdrag i detta projekt. Oavsett om uppgiften är buggfix, ny feature, städning eller design – följ denna struktur.
+
+**Fullständig guide med exempel och tom mall:** `docs/MAAK_UNIVERSAL_AGENT_GUIDE.md`
+
+## 1. Startup questions – ALLTID FÖRST
+
+Innan något arbete påbörjas, ställ (eller klistra in) dessa frågor:
+
+```
+## 🚀 STARTUP QUESTIONS - [UPPDRAGSNAMN]
+
+1. **Projektstruktur:** Vilka filer/kataloger är relevanta? Exakta filvägar om möjligt.
+2. **Beroenden:** Finns redan implementerade lösningar eller liknande kod att utgå från?
+3. **Design/Visuellt:** Finns designskisser, Figma, referensbilder eller önskad visuell stil?
+4. **Teknisk kontext:** Vilka delar av stacken berörs (React, Supabase, etc.)? Databas-schema eller API-dokumentation?
+5. **Prioritet:** Vad är viktigast att lösa först? Deadlines eller milstolpar?
+6. **Risker:** Finns något som kan gå sönder? Behöver jag vara extra försiktig?
+7. **Acceptanskriterier:** Hur vet vi att uppgiften är korrekt löst? Specifika tester som måste passera?
+```
+
+## 2. Arbetsmetodik
+
+**ALDRIG:** Hoppa mellan uppgifter, gissa dig fram, ignorera checklistor, arbeta utan kontext, göra flera saker samtidigt.
+
+**ALLTID:** Börja med startup questions, dela upp i faser, följ checklistan, rapportera enligt format, fråga vid osäkerhet, testa efter ändringar, markera när en fas är klar.
+
+## 3. Fas-indelning
+
+Dela upp uppdraget i **tydliga faser**. Varje fas ska vara avgränsad, testbar och hanterbar.
+
+- **FAS 1, 2, 3...:** Beskrivande namn, mål, checklista, Definition of Done.
+- En fas i taget; rapportera när fasen är klar innan nästa.
+
+## 4. Checklista per fas
+
+Varje fas ska ha en **konkret, mätbar** checklista. Exempel på bra punkter:
+
+- "Skapa filen `/src/components/X.tsx`"
+- "Implementera variant='primary' med gradient"
+- "Kör `npm run lint` och fixa fel"
+- "Uppdatera dokumentation"
+
+## 5. Rapporteringsformat (använd vid varje fas/svar)
+
+```
+## [FAS X: NAMN]
+**Status:** 🟡 Pågående / ✅ Klar / 🔴 Blockerad
+
+### 📁 FILER ÄNDRADE:
+- `/path/to/file` - [Förklaring]
+
+### ✅ CHECKLISTA STATUS:
+- [x] Punkt klar
+- [ ] Punkt kvar
+
+### 📊 STATISTIK:
+- Nya/ändrade/borttagna filer, testresultat
+
+### ❓ FRÅGOR/OSÄKERHETER:
+- [Frågor som behöver svar]
+
+### 🚀 NÄSTA STEG:
+- [Konkreta nästa steg]
+
+### ⚠️ RISKER/BLOCKERS:
+- Inga / eller beskrivning
+
+### 📝 KOMMENTARER:
+- [Observationer, reflektioner]
+```
+
+## 6. Definition of Done (global)
+
+En fas/uppgift är **klar** först när:
+
+- Checklistan är 100 % avbockad
+- Inga console errors (kontrollera i devtools)
+- Bygget fungerar: `npm run build`
+- Lint klar: `npm run lint`
+- Type check OK om det finns (`npm run typecheck` eller tsc)
+- Funktionen testad manuellt
+- Vid behov dokumenterat i kod
+- Inga regressioner i annan funktionalitet
+
+**Kör alltid build och lint innan du rapporterar en fas som klar.**
+
+## 7. Problemhantering
+
+Vid problem du inte löser direkt:
+
+1. **STANNA** – gissa eller chansa inte vidare.
+2. **RAPPORTERA** med: problembeskrivning, vad du försökt, förslag på lösningar, tydlig fråga.
+3. **VÄNTA** på svar innan du går vidare.
+
+## 8. Snabbflöde
+
+1. **Nytt uppdrag** → Ställ startup questions / bekräfta kontext.
+2. **Få svar** → Föreslå fas-indelning och få godkännande.
+3. **Arbeta** → En fas i taget; rapportera efter varje fas.
+4. **Klar** → Alla faser klara, Definition of Done uppfylld.
+
+## Viktiga tabeller
+
+| Situation           | Gör detta                    |
+|--------------------|-----------------------------|
+| Osäker på något    | Fråga direkt                |
+| Hittar ett problem | Rapportera med status Blockerad |
+| Klar med en fas    | Rapportera och ange nästa steg |
+| Behöver mer info   | Ställ startup questions     |
+| Allt fungerar      | Gå vidare till nästa fas    |
+
+Denna guide gäller för **alla** uppdrag i MĀĀK-projektet – oavsett storlek.
+
+**Vid nytt uppdrag:** Börja med att ställa Startup Questions (se ovan) eller bekräfta kontext med användaren innan du börjar koda. Rapportera sedan fas för fas enligt rapporteringsformatet.
+
+---
+
+**Vid nytt uppdrag:** Börja med att ställa Startup Questions (se ovan) eller bekräfta kontext med användaren innan du börjar koda. Rapportera sedan fas för fas enligt rapporteringsformatet.

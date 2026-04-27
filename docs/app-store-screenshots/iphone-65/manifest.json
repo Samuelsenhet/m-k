@@ -1,0 +1,35 @@
+{
+  "label": "iPhone 6.5\"",
+  "target": "1242x2688",
+  "generatedAt": "2026-04-10T14:48:16.091Z",
+  "brandBackground": "#F2F0EF",
+  "items": [
+    {
+      "slug": "01-intro",
+      "figmaNode": "3:499",
+      "source": "docs/app-store-screenshots/figma-import/Swedish / iPhone 6.5 / iPhone 6.5 - 1.png",
+      "output": "docs/app-store-screenshots/iphone-65/01-intro-1242x2688.png",
+      "width": 1242,
+      "height": 2688,
+      "md5": "2cd4425e59e0c2f711fa9b2b4bc33277"
+    },
+    {
+      "slug": "02-matching",
+      "figmaNode": "3:498",
+      "source": "docs/app-store-screenshots/figma-import/Swedish / iPhone 6.5 / iPhone 6.5 - 2.png",
+      "output": "docs/app-store-screenshots/iphone-65/02-matching-1242x2688.png",
+      "width": 1242,
+      "height": 2688,
+      "md5": "d0342b9b48a654762429f02169b98d3a"
+    },
+    {
+      "slug": "03-personlighet",
+      "figmaNode": "3:497",
+      "source": "docs/app-store-screenshots/figma-import/Swedish / iPhone 6.5 / iPhone 6.5 - 3.png",
+      "output": "docs/app-store-screenshots/iphone-65/03-personlighet-1242x2688.png",
+      "width": 1242,
+      "height": 2688,
+      "md5": "425425ec8533e59b013c8127c299bef2"
+    }
+  ]
+}

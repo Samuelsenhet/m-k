@@ -1,0 +1,10 @@
+# Manual or CLI: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/create-production-builds.yml
+# Requires: prior successful eas build + credentials (see docs/EXPO_EAS_IOS.md).
+name: Create production build (iOS only)
+
+jobs:
+  build_ios:
+    type: build
+    params:
+      platform: ios
+      profile: expo-production

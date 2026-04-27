@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MÄÄK Mascot System</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --primary: #2D5A45;
+      --primary-light: #E8F0EC;
+      --coral: #E07A5F;
+      --coral-light: #FCE8E4;
+      --sage: #87A28E;
+      --sage-light: #F0F4F1;
+      --dark: #1A2F23;
+      --text: #2C3E35;
+      --text-muted: #6B7D74;
+      --bg: #FAFBFA;
+      --white: #FFFFFF;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      font-style: italic;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+    
+    .intro-card {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--sage-light) 100%);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .intro-card p {
+      font-size: 1rem;
+      color: var(--text);
+    }
+    
+    section {
+      margin-bottom: 3rem;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--sage-light);
+    }
+    
+    .card {
+      background: var(--white);
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 1.5rem;
+    }
+    
+    .card-dark {
+      background: var(--dark);
+    }
+    
+    .card img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .card-caption {
+      padding: 1rem;
+      background: var(--sage-light);
+    }
+    
+    .card-caption h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 0.25rem;
+    }
+    
+    .card-caption p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    .token-map {
+      background: var(--dark);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    .token-map pre {
+      color: #87D68D;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.8rem;
+      line-height: 1.8;
+    }
+    
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    
+    .rule-item {
+      background: var(--sage-light);
+      border-radius: 1rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    
+    .rule-item .emoji {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .rule-item h4 {
+      font-size: 0.875rem;
+      color: var(--primary);
+    }
+    
+    .rule-item p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    
+    .style-item {
+      background: var(--white);
+      border-radius: 1rem;
+      padding: 1rem;
+      text-align: center;
+      border: 2px solid var(--sage-light);
+    }
+    
+    .style-item .number {
+      width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .copy-section {
+      background: var(--coral-light);
+      border-radius: 1rem;
+      padding: 1.5rem;
+    }
+    
+    .copy-item {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(224, 122, 95, 0.2);
+    }
+    
+    .copy-item:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    
+    .copy-item strong {
+      color: var(--coral);
+      font-size: 0.875rem;
+    }
+    
+    .copy-item p {
+      font-style: italic;
+      color: var(--text);
+      margin-top: 0.25rem;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    @media (max-width: 600px) {
+      h1 { font-size: 2rem; }
+      .style-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🐉 MÄÄK Mascot System</h1>
+      <p class="subtitle">"En lugn vän som hjälper, inte en robot."</p>
+    </header>
+    
+    <div class="intro-card">
+      <p>
+        <strong>Jag heter Määk.</strong><br>
+        Jag finns här med dig – medan vi hittar någon som verkligen passar.
+      </p>
+    </div>
+    
+    <!-- AI Assistant Mode -->
+    <section>
+      <h2>🤖 AI Assistant Personality Mode</h2>
+      <div class="card">
+        <img src="mascot/ai_assistant_modes.png" alt="AI Assistant Modes: Listening, Thinking, Answering, Celebrating">
+        <div class="card-caption">
+          <h3>Listening → Thinking → Answering → Celebrating</h3>
+          <p>Fyra states för AI-assistenten i chatt-läge</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Style System -->
+    <section>
+      <h2>🎨 Style System</h2>
+      <div class="card">
+        <img src="mascot/style_system.png" alt="Style System: Line illustration, Soft 3D, Micro mono">
+        <div class="card-caption">
+          <h3>Tre visuella stilar för olika användningsområden</h3>
+          <p>Line (in-app), Soft 3D (marketing), Micro mono (badges)</p>
+        </div>
+      </div>
+      
+      <div class="style-grid">
+        <div class="style-item">
+          <div class="number">1</div>
+          <h4>Line illustration</h4>
+          <p style="font-size: 0.75rem; color: var(--text-muted);">Primary in-app system</p>
+        </div>
+        <div class="style-item">
+          <div class="number">2</div>
+          <h4>Soft 3D / plush</h4>
+          <p style="font-size: 0.75rem; color: var(--text-muted);">Marketing, App Store</p>
+        </div>
+        <div class="style-item">
+          <div class="number">3</div>
+          <h4>Micro mono</h4>
+          <p style="font-size: 0.75rem; color: var(--text-muted);">App icon, Badges</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Placement Logic -->
+    <section>
+      <h2>📐 Placement Logic</h2>
+      <div class="card card-dark">
+        <img src="mascot/placement_logic.png" alt="Placement Logic: Hero, Medium, Icon">
+        <div class="card-caption">
+          <h3>Production asset guide</h3>
+          <p>Hero (onboarding, empty states) • Medium (AI assistant) • Icon (face only)</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Usage Rules -->
+    <section>
+      <h2>📋 Usage Rules (brand protection)</h2>
+      <div class="card">
+        <img src="mascot/usage_rules_light.png" alt="Usage Rules: Teaches, Reassures, Explains, Celebrates gently">
+        <div class="card-caption">
+          <h3>Mascoten visas endast när den:</h3>
+          <p>teaches • reassures • explains • waits • celebrates gently</p>
+        </div>
+      </div>
+      
+      <div class="rules-grid">
+        <div class="rule-item">
+          <div class="emoji">📖</div>
+          <h4>Teaches</h4>
+          <p>Lär ut nya funktioner</p>
+        </div>
+        <div class="rule-item">
+          <div class="emoji">💛</div>
+          <h4>Reassures</h4>
+          <p>Lugnar användaren</p>
+        </div>
+        <div class="rule-item">
+          <div class="emoji">💬</div>
+          <h4>Explains</h4>
+          <p>Förklarar UI-element</p>
+        </div>
+        <div class="rule-item">
+          <div class="emoji">☕</div>
+          <h4>Waits</h4>
+          <p>Väntar på laddning</p>
+        </div>
+        <div class="rule-item">
+          <div class="emoji">🏮</div>
+          <h4>Celebrates</h4>
+          <p>Firar varsamt</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- App States -->
+    <section>
+      <h2>📱 App States</h2>
+      <div class="card card-dark">
+        <img src="mascot/app_states.png" alt="App States: Empty Matches, Loading, No Chats, First Match">
+        <div class="card-caption">
+          <h3>Empty Matches • Loading • No Chats • First Match</h3>
+          <p>States för olika app-situationer</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Empty States -->
+    <section>
+      <h2>📭 Empty States</h2>
+      <div class="card card-dark">
+        <img src="mascot/empty_states_dark.png" alt="Empty States variations">
+        <div class="card-caption">
+          <h3>Empty Matches • No Chats • First Match</h3>
+          <p>Planting seed, practicing mirror, lighting lantern</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Base Poses -->
+    <section>
+      <h2>🧍 Base Poses</h2>
+      <div class="card card-dark">
+        <img src="mascot/base_poses.png" alt="Base Poses: Front, Sitting, Walking, Social">
+        <div class="card-caption">
+          <h3>Front • Sitting • Walking • Social</h3>
+          <p>Grundläggande poser för mascoten</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Emotional States -->
+    <section>
+      <h2>💝 Emotional States</h2>
+      <div class="card card-dark">
+        <img src="mascot/emotional_states.png" alt="Emotional States: Calm, Encouraging, Waiting, Social, Offline">
+        <div class="card-caption">
+          <h3>Calm • Encouraging • Waiting • Social • Offline</h3>
+          <p>Emotionella states för olika situationer</p>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Token Map -->
+    <section>
+      <h2>🔑 Token Map (API)</h2>
+      <div class="token-map">
+        <pre>const MASCOT_TOKENS = {
+  // App states
+  home_idle: "mascot_calm_idle",
+  loading: "mascot_waiting_tea",
+  empty_matches: "mascot_planting_seed",
+  no_chats: "mascot_practicing_mirror",
+  first_match: "mascot_lighting_lantern",
+  
+  // AI Assistant states
+  ai_listening: "mascot_ai_listening",
+  ai_thinking: "mascot_ai_thinking",
+  ai_answering: "mascot_ai_open_hand",
+  ai_celebrating: "mascot_ai_tiny_sparkle",
+  
+  // Usage rules
+  teaching: "mascot_teaching_book",
+  reassuring: "mascot_holding_warm_light",
+  explaining: "mascot_presenting_ui_card",
+  waiting: "mascot_waiting_tea",
+  celebrating_gently: "mascot_lighting_lantern"
+}</pre>
+      </div>
+    </section>
+    
+    <!-- Copy -->
+    <section>
+      <h2>💬 Intro Copy</h2>
+      <div class="copy-section">
+        <div class="copy-item">
+          <strong>Landing</strong>
+          <p>"Jag heter Määk. Jag finns här med dig – medan vi hittar någon som verkligen passar."</p>
+        </div>
+        <div class="copy-item">
+          <strong>Onboarding</strong>
+          <p>"Jag guidar dig lugnt genom det här."</p>
+        </div>
+        <div class="copy-item">
+          <strong>Waiting</strong>
+          <p>"Jag är här medan vi väntar. Bra saker får ta tid."</p>
+        </div>
+        <div class="copy-item">
+          <strong>First match</strong>
+          <p>"Jag sa ju att det var värt att vänta. 💛"</p>
+        </div>
+      </div>
+    </section>
+    
+    <footer>
+      <p>🐉 MÄÄK Mascot System • "En lugn vän som hjälper, inte en robot."</p>
+      <p style="margin-top: 0.5rem;">Appens själ som en relation – inte bara en mascot.</p>
+    </footer>
+  </div>
+</body>
+</html>

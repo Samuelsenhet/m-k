@@ -1,0 +1,24 @@
+# E2E-tester med Maestro för iOS (simulator-bygge → Maestro-flöden).
+# Baserat på officiellt Expo-exempel "Run E2E tests" — anpassat till iOS only.
+# Triggas vid pull request; manuellt: cd apps/mobile && npx eas-cli@latest workflow:run .eas/workflows/e2e-test-ios.yml
+name: E2E tests iOS (Maestro)
+
+on:
+  pull_request:
+    branches: ['*']
+
+jobs:
+  build_ios_for_e2e:
+    name: Build iOS for E2E
+    type: build
+    params:
+      platform: ios
+      profile: e2e-test
+
+  maestro_test:
+    name: Run Maestro tests
+    needs: [build_ios_for_e2e]
+    type: maestro
+    params:
+      build_id: ${{ needs.build_ios_for_e2e.outputs.build_id }}
+      flow_path: ['.maestro/landing.yml', '.maestro/landing_navigation.yml']

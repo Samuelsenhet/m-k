@@ -1,10 +1,39 @@
+// reset-demo-password — resets the password for the single demo/reviewer
+// account that App Store review uses when evaluating MÄÄK. It is gated by
+// two layers:
+//
+//   1. `ALLOW_DEMO_RESET` must be the literal string "true" (default: not set
+//      → function returns 403). DO NOT set this in production. It is intended
+//      for a short review window; flip it off again as soon as Apple review
+//      has finished.
+//
+//   2. Only the email in `DEMO_ACCOUNT_EMAIL` can have its password reset —
+//      arbitrary emails are rejected with 403 even when the flag is on.
+//
+// There is no JWT / API key check beyond the env flag. That is deliberate
+// for the demo workflow, but it also means ALLOW_DEMO_RESET=true in prod is
+// equivalent to leaving a password reset endpoint unauthenticated. Treat the
+// flag as the entire security boundary: set it only when needed, unset it
+// immediately after.
+//
+// Alarm/safety:
+//   - `supabase secrets list --project-ref <ref>` should be part of the
+//     post-launch checklist to confirm ALLOW_DEMO_RESET is unset in prod.
+//   - If Apple ever requests ongoing access, wire this behind a stronger
+//     mechanism (JWT scope, per-call signature, IP allowlist).
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const DEMO_EMAIL = Deno.env.get("DEMO_ACCOUNT_EMAIL") || "demo@maakapp.se";
 
 interface ResetPasswordRequest {
   email: string;
@@ -16,68 +45,125 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (Deno.env.get("ALLOW_DEMO_RESET") !== "true") {
+    return new Response(
+      JSON.stringify({ error: "Demo password reset is disabled" }),
+      { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } },
+    );
+  }
+
   try {
     const { email, newPassword }: ResetPasswordRequest = await req.json();
 
     if (!email || !newPassword) {
       return new Response(
         JSON.stringify({ error: "Email and password are required" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
-    // Create admin client with service role
+    if (email.toLowerCase().trim() !== DEMO_EMAIL.toLowerCase().trim()) {
+      return new Response(
+        JSON.stringify({ error: "Only the demo account password can be reset via this endpoint" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } },
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { autoRefreshToken: false, persistSession: false } }
+      { auth: { autoRefreshToken: false, persistSession: false } },
     );
 
-    // Get user by email
-    const { data: userData, error: getUserError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (getUserError) {
-      console.error("Error listing users:", getUserError);
-      return new Response(
-        JSON.stringify({ error: "Could not find user" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    const normalizedEmail = email.toLowerCase().trim();
+    const demoUserId = Deno.env.get("DEMO_USER_ID")?.trim();
+
+    let user:
+      | { id: string }
+      | undefined;
+
+    if (demoUserId) {
+      const { data: byId, error: byIdErr } = await supabaseAdmin.auth.admin.getUserById(demoUserId);
+      if (byIdErr) {
+        console.error("reset-demo-password: getUserById(DEMO_USER_ID)", byIdErr);
+        return new Response(
+          JSON.stringify({ error: "Could not load demo user" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
+        );
+      }
+      const u = byId?.user;
+      if (u && (u.email ?? "").toLowerCase().trim() === normalizedEmail) {
+        user = { id: u.id };
+      }
     }
 
-    const user = userData.users.find(u => u.email === email);
-    
+    if (!user) {
+      const perPage = 200;
+      let page = 1;
+      let found:
+        | { id: string }
+        | undefined;
+      while (true) {
+        const { data: pageData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage,
+        });
+        if (listErr) {
+          console.error("Error listing users:", listErr);
+          return new Response(
+            JSON.stringify({ error: "Could not find user" }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
+          );
+        }
+        const u = pageData.users.find(
+          (x) => (x.email ?? "").toLowerCase().trim() === normalizedEmail,
+        );
+        if (u) {
+          found = { id: u.id };
+          break;
+        }
+        if (pageData.users.length < perPage) break;
+        page += 1;
+        if (page > 50) {
+          console.error("reset-demo-password: listUsers pagination limit exceeded");
+          return new Response(
+            JSON.stringify({ error: "User lookup limit exceeded" }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
+          );
+        }
+      }
+      user = found;
+    }
+
     if (!user) {
       return new Response(
         JSON.stringify({ error: "User not found", userNotFound: true }),
-        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
-    // Update user's password
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
-      { password: newPassword }
-    );
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      password: newPassword,
+    });
 
     if (updateError) {
       console.error("Error updating password:", updateError);
       return new Response(
         JSON.stringify({ error: "Could not update password" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
     return new Response(
       JSON.stringify({ success: true, message: "Password updated" }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
-
   } catch (error: unknown) {
     console.error("Error in reset-demo-password:", error);
     const message = error instanceof Error ? error.message : "Unexpected error";
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   }
 };

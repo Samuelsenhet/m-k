@@ -1,0 +1,78 @@
+{
+  "cli": {
+    "version": ">=18.4.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "extends": "expo-development"
+    },
+    "development-device": {
+      "extends": "expo-development-device"
+    },
+    "preview": {
+      "extends": "expo-preview"
+    },
+    "production": {
+      "extends": "expo-production"
+    },
+    "capacitor-development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "node": "22.12.0",
+      "ios": {
+        "config": "capacitor-ios.yml",
+        "applicationArchivePath": "ios/App/build/App.ipa"
+      }
+    },
+    "capacitor-preview": {
+      "distribution": "internal",
+      "node": "22.12.0",
+      "ios": {
+        "config": "capacitor-ios.yml",
+        "applicationArchivePath": "ios/App/build/App.ipa"
+      }
+    },
+    "capacitor-production": {
+      "autoIncrement": true,
+      "node": "22.12.0",
+      "ios": {
+        "config": "capacitor-ios.yml",
+        "applicationArchivePath": "ios/App/build/App.ipa"
+      }
+    },
+    "expo-development": {
+      "node": "22.18.0",
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "expo-development-device": {
+      "node": "22.18.0",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "expo-preview": {
+      "node": "22.18.0",
+      "channel": "preview",
+      "distribution": "internal"
+    },
+    "expo-production": {
+      "node": "22.18.0",
+      "channel": "production",
+      "autoIncrement": true,
+      "environment": "production",
+      "distribution": "store"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "bundleIdentifier": "com.samuelsenhet.maak",
+        "ascAppId": "6761346022"
+      }
+    }
+  }
+}

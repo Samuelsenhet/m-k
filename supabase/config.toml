@@ -145,9 +145,9 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+site_url = "http://127.0.0.1:8080"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["http://127.0.0.1:8080"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -347,6 +347,60 @@ enabled = false
 authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
+
+# Gateway JWT verification off: validate inside the handler with GoTrue (getUser).
+# Project uses asymmetric JWT (ES256) — the platform gateway's JWT verifier
+# rejects them with "Invalid JWT" even when GoTrue accepts the same token.
+# Every function that calls verifySupabaseJWT internally MUST be listed here
+# with verify_jwt = false, otherwise its first real invocation from the client
+# fails 401 at the gateway before reaching the handler code.
+[functions.match-daily]
+verify_jwt = false
+
+[functions.match-status]
+verify_jwt = false
+
+[functions.initiate-verification]
+verify_jwt = false
+
+[functions.moderate-verification]
+verify_jwt = false
+
+[functions.ai-assistant]
+verify_jwt = false
+
+[functions.generate-icebreakers]
+verify_jwt = false
+
+[functions.generate-followups]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-notification]
+verify_jwt = false
+
+[functions.send-bulk-email]
+verify_jwt = false
+
+[functions.introduction-create]
+verify_jwt = false
+
+[functions.introduction-respond]
+verify_jwt = false
+
+[functions.traff-rsvp]
+verify_jwt = false
+
+[functions.super-responder]
+verify_jwt = false
+
+[functions.sunday-rematch]
+verify_jwt = false
+
+[functions.storage-proxy]
+verify_jwt = false
 
 [edge_runtime]
 enabled = true

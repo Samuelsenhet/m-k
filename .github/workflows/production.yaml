@@ -9,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
@@ -17,13 +18,27 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned to 2.75.0 — matches what runs successfully locally. Older
+          # pins (2.40.7, 2.52.0) failed at `supabase link` with 0.0s exits.
+          # Bump deliberately when we want a newer CLI.
+          version: 2.75.0
+
+      - name: Print CLI version
+        run: supabase --version
+
+      - name: Require production Supabase project ref
+        run: |
+          if [ -z "${{ secrets.PRODUCTION_PROJECT_ID }}" ]; then
+            echo "::error::PRODUCTION_PROJECT_ID secret is missing. Add it in GitHub → Settings → Secrets → Actions (Supabase project ref from Dashboard → Project Settings → General)."
+            exit 1
+          fi
 
       - name: Link to Production Project
-        run: supabase link --project-ref ${{ secrets.PRODUCTION_PROJECT_ID }}
+        # 2.75.0 reads SUPABASE_DB_PASSWORD from env; no -p flag needed on link.
+        run: supabase link --project-ref "${{ secrets.PRODUCTION_PROJECT_ID }}"
 
       - name: Push Migrations to Production
-        run: supabase db push
+        run: supabase db push --yes
 
       - name: Deploy Edge Functions to Production
         run: supabase functions deploy
