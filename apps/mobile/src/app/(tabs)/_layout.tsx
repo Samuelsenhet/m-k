@@ -2,7 +2,9 @@ import { MaakTabBar } from "@/components/navigation/MaakTabBar";
 import { useThemeTokens } from "@/hooks/useThemeTokens";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
+import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
+import { Platform } from "react-native";
 
 /**
  * Theme-aware tab bar with green indicator above active tab, outline/filled icons.
@@ -13,6 +15,13 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => {
+          if (Platform.OS === "ios") {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        },
+      }}
       screenOptions={
         ({
         headerShown: false,
