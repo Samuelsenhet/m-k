@@ -23,6 +23,7 @@
     "not_found_message": "Den här skärmen finns inte.",
     "not_found_link": "Till startsidan",
     "delete": "Ta bort",
+    "more": "Fler val",
     "link_open_failed": "Kunde inte öppna länken. Försök igen."
   },
   "nav": {
@@ -459,6 +460,8 @@
     "delete_account_title": "Radera ditt konto",
     "delete_account_description": "Är du säker på att du vill radera ditt konto? All din data kommer att tas bort permanent. Denna åtgärd kan inte ångras.",
     "delete_account_confirm": "Ja, radera mitt konto",
+    "delete_account_success": "Kontot är raderat",
+    "delete_account_failed": "Kunde inte radera kontot. Försök igen eller kontakta dataskydd@maakapp.se.",
     "deleting": "Raderar...",
     "deactivate_account": "Inaktivera konto",
     "deactivate_account_title": "Inaktivera ditt konto",
