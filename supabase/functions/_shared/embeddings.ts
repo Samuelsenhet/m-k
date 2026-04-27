@@ -22,28 +22,40 @@ export type EmbedResult = {
   latency_ms: number;
 };
 
-export async function embed(text: string): Promise<EmbedResult | null> {
+export type EmbedFailure = {
+  reason: string;
+  http_status?: number;
+  body_excerpt?: string;
+};
+
+export async function embed(text: string): Promise<EmbedResult | EmbedFailure> {
   const provider = (Deno.env.get("EMBEDDING_PROVIDER") ?? "openai").toLowerCase();
   const start = Date.now();
 
   if (provider === "openai") {
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
-      console.warn("[embeddings] OPENAI_API_KEY missing");
-      return null;
+      return { reason: "OPENAI_API_KEY missing" };
     }
-    const vector = await tryOpenAI(text, apiKey);
-    if (vector) {
-      return { vector, provider: "openai", latency_ms: Date.now() - start };
+    const result = await tryOpenAI(text, apiKey);
+    if ("vector" in result) {
+      return { vector: result.vector, provider: "openai", latency_ms: Date.now() - start };
     }
-  } else {
-    console.warn(`[embeddings] unknown provider: ${provider}`);
+    return result;
   }
 
-  return null;
+  return { reason: `unknown provider: ${provider}` };
 }
 
-async function tryOpenAI(text: string, apiKey: string): Promise<number[] | null> {
+export function isEmbedSuccess(r: EmbedResult | EmbedFailure): r is EmbedResult {
+  return "vector" in r;
+}
+
+async function tryOpenAI(
+  text: string,
+  apiKey: string,
+): Promise<{ vector: number[] } | EmbedFailure> {
+  let lastFailure: EmbedFailure = { reason: "unknown" };
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const response = await fetch("https://api.openai.com/v1/embeddings", {
@@ -60,24 +72,28 @@ async function tryOpenAI(text: string, apiKey: string): Promise<number[] | null>
       });
 
       if (!response.ok) {
-        console.warn(
-          `[embeddings] openai attempt ${attempt + 1} failed:`,
-          response.status,
-        );
+        const bodyText = await response.text().catch(() => "");
+        lastFailure = {
+          reason: `openai http ${response.status}`,
+          http_status: response.status,
+          body_excerpt: bodyText.slice(0, 200),
+        };
+        console.warn(`[embeddings] openai attempt ${attempt + 1}:`, lastFailure);
         continue;
       }
 
       const json = await response.json();
       const vector = json?.data?.[0]?.embedding;
       if (Array.isArray(vector) && vector.length === OPENAI_DIMENSIONS) {
-        return vector;
+        return { vector };
       }
-      console.warn(`[embeddings] openai attempt ${attempt + 1}: unexpected response shape`);
+      lastFailure = { reason: "unexpected openai response shape" };
     } catch (err) {
-      console.warn(`[embeddings] openai attempt ${attempt + 1} crashed:`, err);
+      lastFailure = { reason: `openai crashed: ${err}` };
+      console.warn(`[embeddings] openai attempt ${attempt + 1}:`, lastFailure);
     }
   }
-  return null;
+  return lastFailure;
 }
 
 /**

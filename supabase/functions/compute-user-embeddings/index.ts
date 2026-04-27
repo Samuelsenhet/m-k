@@ -1,7 +1,7 @@
 /// <reference types="https://deno.land/x/types/index.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { embed, toPgVector } from "../_shared/embeddings.ts";
+import { embed, isEmbedSuccess, toPgVector } from "../_shared/embeddings.ts";
 
 /**
  * compute-user-embeddings
@@ -169,22 +169,25 @@ async function processProfile(
     answersText ? embed(answersText) : Promise.resolve(null),
   ]);
 
-  if (bioText && !bioResult) {
+  const bioOk = bioResult !== null && isEmbedSuccess(bioResult);
+  const answersOk = answersResult !== null && isEmbedSuccess(answersResult);
+
+  if (bioText && !bioOk) {
     return {
       user_id: profile.id,
       status: "embed_failed",
       bio_embedded: false,
-      answers_embedded: !!answersResult,
-      error: "bio embedding failed",
+      answers_embedded: answersOk,
+      error: `bio: ${JSON.stringify(bioResult)}`,
     };
   }
-  if (answersText && !answersResult) {
+  if (answersText && !answersOk) {
     return {
       user_id: profile.id,
       status: "embed_failed",
-      bio_embedded: !!bioResult,
+      bio_embedded: bioOk,
       answers_embedded: false,
-      error: "answers embedding failed",
+      error: `answers: ${JSON.stringify(answersResult)}`,
     };
   }
 
@@ -192,8 +195,8 @@ async function processProfile(
     user_id: profile.id,
     signals_updated_at: new Date().toISOString(),
   };
-  if (bioResult) upsertRow.bio_embedding = toPgVector(bioResult.vector);
-  if (answersResult) upsertRow.answers_embedding = toPgVector(answersResult.vector);
+  if (bioOk) upsertRow.bio_embedding = toPgVector((bioResult as { vector: number[] }).vector);
+  if (answersOk) upsertRow.answers_embedding = toPgVector((answersResult as { vector: number[] }).vector);
 
   const { error: upsertErr } = await supabase
     .from("user_signals")
@@ -203,8 +206,8 @@ async function processProfile(
     return {
       user_id: profile.id,
       status: "upsert_failed",
-      bio_embedded: !!bioResult,
-      answers_embedded: !!answersResult,
+      bio_embedded: bioOk,
+      answers_embedded: answersOk,
       error: upsertErr.message,
     };
   }
@@ -212,8 +215,8 @@ async function processProfile(
   return {
     user_id: profile.id,
     status: "ok",
-    bio_embedded: !!bioResult,
-    answers_embedded: !!answersResult,
+    bio_embedded: bioOk,
+    answers_embedded: answersOk,
   };
 }
 
