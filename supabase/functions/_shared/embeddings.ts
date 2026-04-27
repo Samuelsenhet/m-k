@@ -104,3 +104,69 @@ async function tryOpenAI(
 export function toPgVector(v: number[]): string {
   return `[${v.join(",")}]`;
 }
+
+/**
+ * Parse a pgvector value as returned by supabase-js. PostgREST returns vectors
+ * as the literal string "[0.1,0.2,...]" (or null). Returns null if the input
+ * is null, malformed, or the wrong dimensionality.
+ */
+export function parsePgVector(v: unknown, expectedDim = 1536): number[] | null {
+  if (v == null) return null;
+  if (Array.isArray(v)) {
+    return v.length === expectedDim && v.every((n) => typeof n === "number")
+      ? (v as number[])
+      : null;
+  }
+  if (typeof v !== "string") return null;
+  const trimmed = v.trim();
+  if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null;
+  const parts = trimmed.slice(1, -1).split(",");
+  if (parts.length !== expectedDim) return null;
+  const out = new Array<number>(expectedDim);
+  for (let i = 0; i < expectedDim; i++) {
+    const n = Number(parts[i]);
+    if (!Number.isFinite(n)) return null;
+    out[i] = n;
+  }
+  return out;
+}
+
+export type UserSignalsLite = {
+  user_id: string;
+  bio_embedding: number[] | null;
+  answers_embedding: number[] | null;
+};
+
+/**
+ * Bulk-fetch user_signals for a set of user_ids. Service-role only — caller
+ * must use the service-role Supabase client.
+ *
+ * Missing rows are dropped. Per-row null embeddings are preserved (caller
+ * decides fallback behavior).
+ */
+export async function fetchUserSignals(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userIds: string[],
+): Promise<Map<string, UserSignalsLite>> {
+  const out = new Map<string, UserSignalsLite>();
+  if (userIds.length === 0) return out;
+  const { data, error } = await supabase
+    .from("user_signals")
+    .select("user_id, bio_embedding, answers_embedding")
+    .in("user_id", userIds);
+  if (error) {
+    console.warn("[embeddings] fetchUserSignals error:", error.message);
+    return out;
+  }
+  for (const row of (data ?? []) as Array<
+    { user_id: string; bio_embedding: unknown; answers_embedding: unknown }
+  >) {
+    out.set(row.user_id, {
+      user_id: row.user_id,
+      bio_embedding: parsePgVector(row.bio_embedding),
+      answers_embedding: parsePgVector(row.answers_embedding),
+    });
+  }
+  return out;
+}

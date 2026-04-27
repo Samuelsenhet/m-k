@@ -11,6 +11,7 @@ import {
   buildDrivingDimensions,
   classifyMatchSubtype,
   computeCompositeScore,
+  cosineSimilarity,
   geoScore,
   getPairLabel,
   getPairScore,
@@ -27,6 +28,11 @@ import {
   type MatchPayload,
   type MatchPayloadOutput,
 } from "../_shared/llm.ts";
+
+import {
+  fetchUserSignals,
+  type UserSignalsLite,
+} from "../_shared/embeddings.ts";
 
 const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://maakapp.se";
 const corsHeaders = {
@@ -390,6 +396,30 @@ async function enrichWithLlm(
   return { output: result.output, fallbackUsed: result.fallback_used };
 }
 
+// ---------- synthesis helpers (Monster Match v1) ----------
+
+/**
+ * Average the cosine similarity of bio_embedding and answers_embedding pairs
+ * into a single 0-100 score. Falls back to neutral 50 when both embeddings
+ * are missing on either side. When only one of bio/answers is present, that
+ * one carries the score.
+ */
+function pairEmbeddingSimilarity(
+  a: UserSignalsLite | undefined,
+  b: UserSignalsLite | undefined,
+): number {
+  if (!a || !b) return 50;
+  const sims: number[] = [];
+  if (a.bio_embedding && b.bio_embedding) {
+    sims.push(cosineSimilarity(a.bio_embedding, b.bio_embedding));
+  }
+  if (a.answers_embedding && b.answers_embedding) {
+    sims.push(cosineSimilarity(a.answers_embedding, b.answers_embedding));
+  }
+  if (sims.length === 0) return 50;
+  return Math.round(sims.reduce((s, n) => s + n, 0) / sims.length);
+}
+
 // ---------- per-user pool generation ----------
 
 const BATCH_SIZE = 10;
@@ -431,6 +461,43 @@ async function generateUserPool(
       chunk.map((s) => enrichWithLlm(supabase, user, s, stats).then((r) => ({ scored: s, ...r }))),
     );
     enriched.push(...results);
+  }
+
+  // Synthesis layer: recompute composite with embedding similarity + LLM
+  // judgment (validation_score). Subtype balance was preserved by the math-only
+  // balanceBatch above; here we only refine the per-pair score that lands in
+  // matches.match_score and matches.signal_breakdown.
+  if (MONSTER_MATCH_ENABLED && enriched.length > 0) {
+    const userSignal = (await fetchUserSignals(supabase, [user.userId])).get(user.userId);
+    const candSignals = await fetchUserSignals(
+      supabase,
+      enriched.map((e) => e.scored.candidate.userId),
+    );
+
+    for (const e of enriched) {
+      const candSignal = candSignals.get(e.scored.candidate.userId);
+      const embSim = pairEmbeddingSimilarity(userSignal, candSignal);
+      const llmJudge = e.fallbackUsed ? null : e.output.validation_score;
+
+      const synth = computeCompositeScore({
+        personality: e.scored.composite.breakdown.personality,
+        archetype: e.scored.composite.breakdown.archetype_pair,
+        interests: e.scored.composite.breakdown.interests,
+        geo: e.scored.composite.breakdown.geo,
+        subtype: e.scored.subtype,
+        embedding_similarity: embSim,
+        llm_judgment: llmJudge,
+      });
+
+      e.scored.composite = synth;
+      e.scored.payload.raw_score = synth.total;
+      e.scored.payload.signal_breakdown = synth.breakdown;
+    }
+
+    // Re-sort within the picked batch by synthesis score so the best-fit
+    // synthesis match leads. (Subtype quotas are unchanged — they were
+    // enforced earlier on the math composite.)
+    enriched.sort((a, b) => b.scored.composite.total - a.scored.composite.total);
   }
 
   return enriched.map(({ scored, output, fallbackUsed }) => {
