@@ -124,8 +124,21 @@ export function geoScore(
 }
 
 /**
- * Multi-factor composite score. See spec section 2C.
- *   45% personality + 25% archetype + 15% interests + 10% geo + 5% complementary_bonus
+ * Multi-factor composite score.
+ *
+ * Two formulas, picked by which signals are available:
+ *
+ *   v1 (default — embedding_similarity AND llm_judgment both null):
+ *     45% personality + 25% archetype + 15% interests + 10% geo + 5% complementary_bonus
+ *
+ *   v1-synthesis (MONSTER_MATCH_ENABLED + user_signals + LLM all available):
+ *     30% personality + 20% archetype + 20% embedding_similarity + 20% llm_judgment
+ *     + 5% interests + 5% geo
+ *     (complementary_bonus collapses into the "either-or" via subtype/archetype already)
+ *
+ * The synthesis formula triggers only when BOTH new signals are present — partial
+ * upgrades (e.g. embedding only) keep the v1 weights so we don't double-count
+ * personality.
  */
 export function computeCompositeScore(parts: {
   personality: number;
@@ -133,15 +146,29 @@ export function computeCompositeScore(parts: {
   interests: number;
   geo: number;
   subtype: MatchSubtype;
+  embedding_similarity?: number | null;
+  llm_judgment?: number | null;
 }): { total: number; breakdown: SignalBreakdown } {
   const complementary_bonus =
     parts.subtype === "complementary" && isGoldenPair(parts.archetype) ? 100 : 0;
-  const total =
-    0.45 * parts.personality +
-    0.25 * parts.archetype +
-    0.15 * parts.interests +
-    0.10 * parts.geo +
-    0.05 * complementary_bonus;
+
+  const hasSynthesis =
+    typeof parts.embedding_similarity === "number" &&
+    typeof parts.llm_judgment === "number";
+
+  const total = hasSynthesis
+    ? 0.30 * parts.personality +
+      0.20 * parts.archetype +
+      0.20 * (parts.embedding_similarity as number) +
+      0.20 * (parts.llm_judgment as number) +
+      0.05 * parts.interests +
+      0.05 * parts.geo
+    : 0.45 * parts.personality +
+      0.25 * parts.archetype +
+      0.15 * parts.interests +
+      0.10 * parts.geo +
+      0.05 * complementary_bonus;
+
   return {
     total: Math.max(0, Math.min(100, Math.round(total))),
     breakdown: {
@@ -150,8 +177,33 @@ export function computeCompositeScore(parts: {
       interests: parts.interests,
       geo: parts.geo,
       complementary_bonus,
+      embedding_similarity: parts.embedding_similarity ?? null,
+      llm_judgment: parts.llm_judgment ?? null,
     },
   };
+}
+
+/**
+ * Cosine similarity for two equal-length numeric vectors → 0–100 score.
+ * Used by Monster Match synthesis layer to score bio/answers embedding pairs.
+ * Returns 50 (neutral) for invalid inputs (mismatched lengths or zero vectors).
+ */
+export function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 50;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  if (denom === 0) return 50;
+  // cosine in [-1, 1] → map to [0, 100], clamp.
+  const cos = dot / denom;
+  const mapped = Math.round(((cos + 1) / 2) * 100);
+  return Math.max(0, Math.min(100, mapped));
 }
 
 /**

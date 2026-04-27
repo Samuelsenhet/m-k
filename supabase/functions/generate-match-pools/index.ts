@@ -35,6 +35,19 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+/**
+ * MONSTER_MATCH_ENABLED gates the synthesis-layer scoring (embedding similarity
+ * + LLM judgment in the composite formula). Default off so deploys are safe
+ * while Build 80 is in App Review — the function still runs the v1 composite,
+ * still calls the LLM for stories/icebreakers/validation, but the new score
+ * components stay null and computeCompositeScore falls back to v1 weights.
+ *
+ * Flip: `supabase secrets set MONSTER_MATCH_ENABLED=true`. Step 3d wires up
+ * the user_signals fetch and cosine similarity that this flag enables.
+ */
+const MONSTER_MATCH_ENABLED =
+  (Deno.env.get("MONSTER_MATCH_ENABLED") ?? "false").toLowerCase() === "true";
+
 // ---------- types ----------
 
 type PersonalityCategory = "DIPLOMAT" | "STRATEGER" | "BYGGARE" | "UPPTÄCKARE";

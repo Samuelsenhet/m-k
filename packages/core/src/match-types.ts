@@ -46,6 +46,11 @@ export type SignalBreakdown = {
   interests: number; // 0–100
   geo: number; // 0–100
   complementary_bonus: number; // 0 or 100
+  // Synthesis layer (Monster Match v1 refit). Both null when MONSTER_MATCH_ENABLED
+  // is off OR when user_signals/LLM are unavailable for this pair, in which case
+  // computeCompositeScore falls back to the original formula.
+  embedding_similarity?: number | null; // 0–100, cosine-derived
+  llm_judgment?: number | null; // 0–100, validation_score from generateMatchPayload
 };
 
 /**
