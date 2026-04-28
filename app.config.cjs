@@ -67,6 +67,7 @@ const expo = {
     // To re-enable iPad later: flip to true, add iPad screenshots, rebuild + submit.
     supportsTablet: false,
     bundleIdentifier: "com.samuelsenhet.maak",
+    icon: "./assets/app-icon.icon",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       UIRequiredDeviceCapabilities: ["armv7", "telephony"],
@@ -326,6 +327,12 @@ module.exports = {
     // Bare workflow: policy-based runtimeVersion is not supported — use a string (keep in sync with expo.version / native build).
     runtimeVersion: typeof expo.version === "string" ? expo.version : "1.0.0",
     icon: fromMobile(expo.icon),
+    ios: expo.ios
+      ? {
+          ...expo.ios,
+          icon: fromMobile(expo.ios.icon),
+        }
+      : expo.ios,
     splash: expo.splash
       ? {
           ...expo.splash,
