@@ -42,6 +42,18 @@ export type Match = {
   /** LLM's independent compatibility judgement 0–100 (null on legacy/fallback). */
   validationScore?: number | null;
   validationNote?: string | null;
+  /** Composite signal breakdown — synthesis fields populated when
+   *  MONSTER_MATCH_ENABLED=true server-side and LLM landed real output.
+   *  Useful for __DEV__ overlays and v1.1 score-explanation UI. */
+  signalBreakdown?: {
+    personality: number;
+    archetype_pair: number;
+    interests: number;
+    geo: number;
+    complementary_bonus: number;
+    embedding_similarity?: number | null;
+    llm_judgment?: number | null;
+  } | null;
   special_effects?: string[] | null;
   special_event_message?: string | null;
 };
@@ -115,6 +127,7 @@ const mapMatch = (m: MatchDailyMatch): Match => {
     fallbackUsed: m.fallback_used ?? false,
     validationScore: m.validation_score ?? null,
     validationNote: m.validation_note ?? null,
+    signalBreakdown: m.signal_breakdown ?? null,
     special_effects: m.special_effects,
     special_event_message: m.special_event_message,
   };

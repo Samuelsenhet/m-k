@@ -42,6 +42,11 @@ interface MonsterPoolFields {
     interests: number
     geo: number
     complementary_bonus: number
+    // Synthesis-refit (Monster Match v1, 2026-04-28). Both populated only when
+    // MONSTER_MATCH_ENABLED=true and the LLM call landed real output. Null in
+    // v1 path / fallback path; consumers should tolerate either case.
+    embedding_similarity?: number | null
+    llm_judgment?: number | null
   }
   validationScore?: number
   validationNote?: string

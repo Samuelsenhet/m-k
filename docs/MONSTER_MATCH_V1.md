@@ -1,10 +1,12 @@
 # Monster Match v1 — MÄÄK matchnings-algoritmen som differentieringsmotor
 
-> **Status (2026-04-26):** Fas 1 (Foundations) klar i working tree, ej committad. Fas 2 (backend), Fas 3 (iOS UI), Fas 4 (verifiering) kvar. Migration ej applicerad mot prod.
+> **Status (2026-04-28):** Fas 1 (foundations), Fas 2 (backend), Fas 3 (iOS UI) **alla committade på `feature/monster-match-v1`**. Synthesis-refit (lager 4 in i ranking + embeddings) committad på `feature/monster-match-synthesis` (7 commits framåt). Schema, embeddings-cron, scoring-uppgradering: **allt deployat mot prod**. End-to-end synthesis verifierad live 2026-04-28 — flagga `MONSTER_MATCH_ENABLED` är off i prod tills Build 81 godkänd.
 >
-> **Källa:** internt arbetsdokument `~/.claude/plans/context-pure-taco.md` (mer detaljerat). Denna fil är kanonisk plan i repo.
+> **Återstår:** Steg 4 (iOS UI-refresh — komponenterna finns, useMatches konsumerar redan nya fält), Steg 5 (Build 81 ship + permanent flag-flip efter Apple), Steg 6 (v1.1 — beteende- och foto-signaler om 3–4 veckor).
 >
-> **Tidsram:** ingår i Build 81 (efter Apple-svar på Build 80). Uppskattat ~5–8 dagars effektivt arbete.
+> **Källa:** plan-fil `~/.claude/plans/eager-honking-stream.md` (synthesis-refit godkänd 2026-04-28).
+>
+> **Tidsram:** Backend klart. Build 81 = iOS-refresh + Apple submission.
 
 ---
 
@@ -137,68 +139,90 @@ Nyckel: `your_archetype | their_archetype | top_2_dim_alignments | match_subtype
 Båda `service_role`-only (RLS).
 
 ### Migration
-`supabase/migrations/20260427000000_monster_match_v1.sql` — additiv, idempotent, säker att köra parallellt med Build 80.
+`supabase/migrations/20260427000000_monster_match_v1.sql` — additiv, idempotent, applicerad mot prod 2026-04-28.
 
 ---
 
-## Status-tracker
+## Synthesis-refit (2026-04-28)
 
-### ✅ Fas 1 — Foundations (KLAR i working tree, ej committad)
+Efter Fas 1–3 var v1-baselinen fortfarande "aggregering med kosmetika": LLM såg bara fem strängar (archetyper + top-2-dim + subtyp + locale), validation-loop scorade från samma input, cache var 7 700 fasta mallar. Synthesis-refiten gör algon till äkta syntes.
 
-| Fil | Status |
-|---|---|
-| `packages/core/src/match-types.ts` | ✅ klar — alla typer + konstanter |
-| `packages/core/src/archetype-compatibility.ts` | ✅ klar — full 16×16 matris + helpers |
-| `packages/core/src/match-fallback.ts` | ✅ klar — sv/en templates per archetyp × subtyp |
-| `packages/core/src/personality.ts` | ✅ `DIMENSION_WEIGHTS` + `weightedDistance()` tillagda |
-| `packages/core/src/index.ts` | ✅ re-exports tillagda |
-| `packages/core/src/__tests__/personality.test.ts` | ✅ 5 nya describe-block för weightedDistance + DIMENSION_WEIGHTS |
-| `packages/core/src/__tests__/archetype-compatibility.test.ts` | ✅ 16×16 symmetri, golden pairs, label buckets |
-| `packages/core/src/__tests__/match-fallback.test.ts` | ✅ alla archetyp × subtyp × locale |
-| `supabase/functions/_shared/llm.ts` | ✅ klar — Anthropic + retry + fallback + cacheKey |
-| `supabase/migrations/20260427000000_monster_match_v1.sql` | ✅ skriven, **ej applicerad mot prod** |
+### Lager 2 omformat: math shortlistar, LLM scorar, composite rankar
 
-**Nästa steg på Fas 1:** kör `npm test` i `packages/core` → committa → applicera migration mot prod (efter Build 80-godkännande).
+Slutgiltig composite-formel ersätter `0.45/0.25/0.15/0.10/0.05`:
 
-### ❌ Fas 2 — Backend (PENDING)
+```
+final_score =
+    0.30 × math_distance         (Lager 2A — weightedDistance)
+  + 0.20 × archetype_pair        (Lager 2B — 16×16 matris)
+  + 0.20 × embedding_similarity  (NY — pgvector cosine på bio + answers)
+  + 0.20 × llm_judgment          (NY — validation_score från generateMatchPayload)
+  + 0.05 × interests
+  + 0.05 × geo
+```
 
-| Fil | Status |
-|---|---|
-| `supabase/functions/generate-match-pools/index.ts` | ❌ uppgradera till ny scoring (2A–D) + LLM-anrop per par |
-| `supabase/functions/generate-match-pools/index.test.ts` | ❌ Deno integration-test (success + fallback + divergens) |
-| `supabase/functions/match-daily/index.ts` | ❌ surface nya fält i response |
-| `supabase/functions/generate-icebreakers/index.ts` | ❌ migrera till `_shared/llm.ts` (samma flöde, ny wrapper) |
+Synthesis-vikterna aktiveras endast när BÅDA nya signaler finns. Partial-mode (bara embedding eller bara llm) faller tillbaka på v1-formeln för att inte dubbelräkna personlighet.
 
-**Beror på:** Fas 1 committad + migration applicerad.
+### Ny: Lager 1.5 — feature store (`user_signals`)
 
-### ❌ Fas 3 — iOS UI (PENDING, parallellt med Fas 2)
+Per-user-tabell som scoring läser från. Att lägga till nya signaler i v1.1+ = ny kolumn, **inte** refactor av formel.
 
-| Fil | Status |
-|---|---|
-| `apps/mobile/src/components/match/MatchStoryCard.tsx` | ❌ ny — foto + badge + story + meta |
-| `apps/mobile/src/components/match/MatchTypeBadge.tsx` | ❌ ny — sage/forest/guld per typ |
-| `apps/mobile/src/components/match/DimensionBreakdownList.tsx` | ❌ ny |
-| `apps/mobile/src/components/match/MatchExplanationBlock.tsx` | ❌ ny |
-| `apps/mobile/src/app/(tabs)/index.tsx` | ❌ använd `MatchStoryCard` |
-| `apps/mobile/src/app/view-match.tsx` | ❌ tre-sektion-layout |
-| `apps/mobile/src/hooks/useMatches.ts` | ❌ plocka in nya fält |
-| `apps/mobile/src/i18n/locales/{sv,en}.json` | ❌ `match.type.*` + `match.section.*` + fallback-mallar |
+| Kolumn | v1 | v1.1 |
+|---|---|---|
+| `bio_embedding vector(1536)` | ✅ populeras nattligt | |
+| `answers_embedding vector(1536)` | ✅ populeras nattligt | |
+| `response_time_p50 numeric` | (null) | ✅ från Build 81-data |
+| `kemi_check_avg_seconds numeric` | (null) | ✅ |
+| `message_depth_p50 numeric` | (null) | ✅ |
+| `photo_aesthetic_tags jsonb` | (null) | ✅ vision-API |
 
-**Beror på:** Fas 1 typer (klar) — kan börjas direkt parallellt med Fas 2.
+Service-role-only RLS. HNSW-index på båda embeddings för cosine-ANN-sökning.
 
-### ❌ Fas 4 — Verifiering (PENDING)
+### Embedding-cron (Lager 1.5 producent)
 
-- [ ] `npm test` (Vitest) grönt
-- [ ] `supabase functions deno test` grönt
-- [ ] Migration applicerad rent (`npx supabase db reset` lokalt → push)
-- [ ] `generate-match-pools` producerar alla 3 typer i daglig batch
-- [ ] Story-text på rätt språk per användare
-- [ ] Cache-träff på upprepad körning
-- [ ] Validation-divergenser loggade
-- [ ] iOS simulator: nya kort + detaljvy korrekt
-- [ ] Fallback-väg verifierad (invalid API-key)
-- [ ] Shadow run mot staging — manuell sanity-check på ~20 par
-- [ ] `CLAUDE.md` "Core data flow"-sektionen uppdaterad
+`supabase/functions/compute-user-embeddings` — kör nattligt 00:45 UTC (efter match-pools 23:00 + engagement 00:30). OpenAI `text-embedding-3-small` (1536 dim, $0.02/M tokens). Provider-abstraktion i `_shared/embeddings.ts` så Voyage/Cohere kan kopplas in senare via `EMBEDDING_PROVIDER`-env.
+
+### Cache-strategi-byte
+
+- **Innan:** 7 700 fasta mallar keyade per archetyp-par × subtyp × locale → ~99 % hit, ~0 syntes.
+- **Efter:** per-par cache keyad på `(user_a_id, user_b_id, signals_hash, model_version)`, TTL 7 dagar. Lägre hit-rate (~60–70 %) men äkta syntes. Kostnad <100 USD/dag vid 10k DAU.
+
+### Feature flag
+
+`MONSTER_MATCH_ENABLED` (default off). Med flaggan av går scoring v1-vägen → Build 80 i App Review opåverkad. Flippas till true efter Build 81 godkänd.
+
+---
+
+## Status-tracker (2026-04-28)
+
+### ✅ Fas 1 — Foundations (commit `d2c26d8` på `feature/monster-match-v1`)
+Typer, 16×16 matris, fallback-mallar, `_shared/llm.ts`, migration `20260427000000_monster_match_v1.sql`. **Migration applicerad mot prod.**
+
+### ✅ Fas 2 — Backend (commits `ac422e4` + `c8d4653` på `feature/monster-match-v1`)
+generate-match-pools wirar Monster Match-fält, match-daily + sunday-rematch surfacar dem.
+
+### ✅ Fas 3 — iOS UI (commit `4062ca2` på `feature/monster-match-v1`)
+`MatchStoryCard`, `MatchTypeBadge`, `DimensionBreakdownList`, `MatchExplanationBlock`. `useMatches.ts` konsumerar nya fält.
+
+### ✅ Synthesis-refit (commits `2aff68a` → `e7f17e9` på `feature/monster-match-synthesis`)
+
+| Steg | Commit | Verifierad |
+|---|---|---|
+| 1. Schema (user_signals + pgvector + revoke-anon) | `2aff68a` + `e07e300` | ✓ prod |
+| 2. compute-user-embeddings cron | `9cfbd6e` + `fafd5ce` | ✓ 2/3 users embeddade |
+| 3a-c. Composite + cosine + flag | `668b0e4` | ✓ 156/156 tester |
+| 3d. Wire embedding + LLM-judgment | `92a0af8` | ✓ deployad |
+| 3e. End-to-end synthesis | (live test) | ✓ matchScore 75 = full formel |
+| 3f. Synthesis-mode tester | `e7f17e9` | ✓ 15 nya tester |
+| Diagnostic-fix för LLM-fel | `9a5e3e0` | ✓ |
+
+### ❌ Fas 4 — Återstår
+
+- [ ] iOS UI testat i Expo Go efter att ha satt `MONSTER_MATCH_ENABLED=true` lokalt
+- [ ] Build 81 submission till Apple
+- [ ] Permanent flag-flip i prod efter Apple-godkännande
+- [ ] Övervaka `match_validation_flags` första 7 dagarna
+- [ ] CLAUDE.md "Core data flow"-sektionen uppdaterad med synthesis-formeln
 
 ---
 

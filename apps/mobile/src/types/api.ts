@@ -39,4 +39,16 @@ export interface MatchDailyMatch {
   fallback_used?: boolean | null;
   ai_icebreakers?: string[] | null;
   dimension_score_breakdown?: DimensionBreakdownEntry[] | null;
+  // Synthesis-refit (2026-04-28). Both populated only when
+  // MONSTER_MATCH_ENABLED=true server-side AND the LLM call returned real
+  // output. Consumers should tolerate null on both legacy and fallback rows.
+  signal_breakdown?: {
+    personality: number;
+    archetype_pair: number;
+    interests: number;
+    geo: number;
+    complementary_bonus: number;
+    embedding_similarity?: number | null;
+    llm_judgment?: number | null;
+  } | null;
 }
